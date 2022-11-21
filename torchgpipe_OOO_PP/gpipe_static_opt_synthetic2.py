@@ -181,24 +181,45 @@ class OutGradOnlyLinear(torch.nn.Module):
 class TestModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.linear1 = OutGradOnlyLinear(in_features, hidden)
-        self.linear2 = nn.ModuleList()
-        for i in range(20):
-            self.linear2.append(OutGradOnlyLinear(hidden, hidden))
+        if OPTIMIZE_FLAG == True:
+            self.linear1 = OutGradOnlyLinear(in_features, hidden)
+            self.linear2 = nn.ModuleList()
+            for i in range(20):
+                self.linear2.append(OutGradOnlyLinear(hidden, hidden))
 
-        self.linear3 = nn.ModuleList()
-        for i in range(20):
-            self.linear3.append(OutGradOnlyLinear(hidden, hidden))
+            self.linear3 = nn.ModuleList()
+            for i in range(20):
+                self.linear3.append(OutGradOnlyLinear(hidden, hidden))
 
-        self.linear4 = nn.ModuleList()
-        for i in range(20):
-            self.linear4.append(OutGradOnlyLinear(hidden, hidden))
+            self.linear4 = nn.ModuleList()
+            for i in range(20):
+                self.linear4.append(OutGradOnlyLinear(hidden, hidden))
 
-        self.linear5 = nn.ModuleList()
-        for i in range(20):
-            self.linear5.append(OutGradOnlyLinear(hidden, hidden))
-        self.linear6 = OutGradOnlyLinear(hidden, out_features)
-        self.relu = nn.ReLU(inplace = True)
+            self.linear5 = nn.ModuleList()
+            for i in range(20):
+                self.linear5.append(OutGradOnlyLinear(hidden, hidden))
+            self.linear6 = OutGradOnlyLinear(hidden, out_features)
+            self.relu = nn.ReLU(inplace = True)
+
+        else:
+            self.linear1 = nn.Linear(in_features, hidden)
+            self.linear2 = nn.ModuleList()
+            for i in range(20):
+                self.linear2.append(nn.Linear(hidden, hidden))
+
+            self.linear3 = nn.ModuleList()
+            for i in range(20):
+                self.linear3.append(nn.Linear(hidden, hidden))
+
+            self.linear4 = nn.ModuleList()
+            for i in range(20):
+                self.linear4.append(nn.Linear(hidden, hidden))
+
+            self.linear5 = nn.ModuleList()
+            for i in range(20):
+                self.linear5.append(nn.Linear(hidden, hidden))
+            self.linear6 = nn.Linear(hidden, out_features)
+            self.relu = nn.ReLU(inplace = True)
 
 
     def forward(self, x):
