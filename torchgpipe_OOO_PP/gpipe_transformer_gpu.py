@@ -281,24 +281,30 @@ best_val_loss = float("inf")
 epochs = 3 # The number of epochs
 best_model = None
 
+tick = time.time()
+
 for epoch in range(1, epochs + 1):
     epoch_start_time = time.time()
     train()
-    val_loss = evaluate(model, val_data)
-    print('-' * 89)
-    print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-          'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
-                                     val_loss, math.exp(val_loss)))
-    print('-' * 89)
+    ###
+    #val_loss = evaluate(model, val_data)
+    #print('-' * 89)
+    #print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+    #      'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
+    #                                 val_loss, math.exp(val_loss)))
+    #print('-' * 89)
 
-    if val_loss < best_val_loss:
-        best_val_loss = val_loss
-        best_model = model
+    #if val_loss < best_val_loss:
+    #    best_val_loss = val_loss
+    #    best_model = model
 
     scheduler.step()
 
-test_loss = evaluate(best_model, test_data)
-print('=' * 89)
-print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
-    test_loss, math.exp(test_loss)))
-print('=' * 89)
+#test_loss = evaluate(best_model, test_data)
+#print('=' * 89)
+#print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
+#    test_loss, math.exp(test_loss)))
+#print('=' * 89)
+
+tock = time.time()
+print('#### Time elapsed: %.3f sec' % (tock - tick))
