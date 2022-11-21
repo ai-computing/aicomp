@@ -21,9 +21,9 @@ from torchgpipe.gpipe import verify_module
 torch.manual_seed(42)
 
 batch_size = 64
-in_features = 32
-out_features = 32
-hidden = 16
+in_features = 64
+out_features = 64
+hidden = 64
 
 # Comment this line when measuring
 torch.autograd.set_detect_anomaly(True)
@@ -147,44 +147,44 @@ class TestModel(nn.Module):
     def __init__(self):
         super().__init__()
         if OPTIMIZE_FLAG == True:
-            self.linear1 = OutGradOnlyLinear(in_features, hidden+16)
+            self.linear1 = OutGradOnlyLinear(in_features, hidden)
             self.linear2 = nn.ModuleList()
             for i in range(20):
-                self.linear2.append(OutGradOnlyLinear(hidden+16, hidden+16))
+                self.linear2.append(OutGradOnlyLinear(hidden, hidden))
 
             self.linear3 = nn.ModuleList()
             for i in range(20):
-                self.linear3.append(OutGradOnlyLinear(hidden+16, hidden+16))
+                self.linear3.append(OutGradOnlyLinear(hidden, hidden))
 
             self.linear4 = nn.ModuleList()
             for i in range(20):
-                self.linear4.append(OutGradOnlyLinear(hidden+16, hidden+16))
+                self.linear4.append(OutGradOnlyLinear(hidden, hidden))
 
             self.linear5 = nn.ModuleList()
             for i in range(20):
-                self.linear5.append(OutGradOnlyLinear(hidden+16, hidden+16))
-            self.linear6 = OutGradOnlyLinear(hidden+16, out_features)
+                self.linear5.append(OutGradOnlyLinear(hidden, hidden))
+            self.linear6 = OutGradOnlyLinear(hidden, out_features)
             self.relu = nn.ReLU(inplace = True)
 
         else:
 
-            self.linear1 = nn.Linear(in_features, hidden+16)
+            self.linear1 = nn.Linear(in_features, hidden)
             self.linear2 = nn.ModuleList()
             for i in range(20):
-                self.linear2.append(nn.Linear(hidden+16, hidden+16))
+                self.linear2.append(nn.Linear(hidden, hidden))
 
             self.linear3 = nn.ModuleList()
             for i in range(20):
-                self.linear3.append(nn.Linear(hidden+16, hidden+16))
+                self.linear3.append(nn.Linear(hidden, hidden))
 
             self.linear4 = nn.ModuleList()
             for i in range(20):
-                self.linear4.append(nn.Linear(hidden+16, hidden+16))
+                self.linear4.append(nn.Linear(hidden, hidden))
 
             self.linear5 = nn.ModuleList()
             for i in range(20):
-                self.linear5.append(nn.Linear(hidden+16, hidden+16))
-            self.linear6 = nn.Linear(hidden+16, out_features)
+                self.linear5.append(nn.Linear(hidden, hidden))
+            self.linear6 = nn.Linear(hidden, out_features)
             self.relu = nn.ReLU(inplace = True)
 
     def forward(self, x):
