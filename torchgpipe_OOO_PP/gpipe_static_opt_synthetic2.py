@@ -22,9 +22,9 @@ from torchgpipe.gpipe import verify_module
 torch.manual_seed(42)
 
 batch_size = 64
-in_features = 32
-out_features = 32
-hidden = 16
+in_features = 64
+out_features = 64
+hidden = 64
 
 # Comment this line when measuring
 torch.autograd.set_detect_anomaly(True)
@@ -33,8 +33,6 @@ _HOOKING_LIST = []
 
 OPTIMIZE_FLAG = True
 #OPTIMIZE_FLAG = False
-RELU_ON = 1
-#RELU_ON = 0
 
 counter = 0
 counter_fwd_h = 0
@@ -183,73 +181,38 @@ class OutGradOnlyLinear(torch.nn.Module):
 class TestModel(nn.Module):
     def __init__(self):
         super().__init__()
-        if OPTIMIZE_FLAG == True:
-            self.linear1 = OutGradOnlyLinear(in_features, hidden+16)
-            self.linear2 = nn.ModuleList()
-            for i in range(20):
-                self.linear2.append(OutGradOnlyLinear(hidden+16, hidden+16))
+        self.linear1 = OutGradOnlyLinear(in_features, hidden)
+        self.linear2 = nn.ModuleList()
+        for i in range(20):
+            self.linear2.append(OutGradOnlyLinear(hidden, hidden))
 
-            self.linear3 = nn.ModuleList()
-            for i in range(20):
-                self.linear3.append(OutGradOnlyLinear(hidden+16, hidden+16))
+        self.linear3 = nn.ModuleList()
+        for i in range(20):
+            self.linear3.append(OutGradOnlyLinear(hidden, hidden))
 
-            self.linear4 = nn.ModuleList()
-            for i in range(20):
-                self.linear4.append(OutGradOnlyLinear(hidden+16, hidden+16))
+        self.linear4 = nn.ModuleList()
+        for i in range(20):
+            self.linear4.append(OutGradOnlyLinear(hidden, hidden))
 
-            self.linear5 = nn.ModuleList()
-            for i in range(20):
-                self.linear5.append(OutGradOnlyLinear(hidden+16, hidden+16))
-            self.linear6 = OutGradOnlyLinear(hidden+16, out_features)
-            if RELU_ON == 1:
-                self.relu = nn.ReLU(inplace = True)
+        self.linear5 = nn.ModuleList()
+        for i in range(20):
+            self.linear5.append(OutGradOnlyLinear(hidden, hidden))
+        self.linear6 = OutGradOnlyLinear(hidden, out_features)
+        self.relu = nn.ReLU(inplace = True)
 
-        else:
-
-            self.linear1 = nn.Linear(in_features, hidden+16)
-            self.linear2 = nn.ModuleList()
-            for i in range(20):
-                self.linear2.append(nn.Linear(hidden+16, hidden+16))
-
-            self.linear3 = nn.ModuleList()
-            for i in range(20):
-                self.linear3.append(nn.Linear(hidden+16, hidden+16))
-
-            self.linear4 = nn.ModuleList()
-            for i in range(20):
-                self.linear4.append(nn.Linear(hidden+16, hidden+16))
-
-            self.linear5 = nn.ModuleList()
-            for i in range(20):
-                self.linear5.append(nn.Linear(hidden+16, hidden+16))
-            self.linear6 = nn.Linear(hidden+16, out_features)
-            if RELU_ON == 1:
-                self.relu = nn.ReLU(inplace = True)
 
     def forward(self, x):
-        if RELU_ON == 1:
-            x = self.relu(self.linear1(x))
-            for m in self.linear2:
-                x = self.relu(m(x))
-            for m in self.linear3:
-                x = self.relu(m(x))
-            for m in self.linear4:
-                x = self.relu(m(x))
-            for m in self.linear5:
-                x = self.relu(m(x))
-            x = self.linear6(x)
-            x = self.relu(x)
-        else:
-            x = self.linear1(x)
-            for m in self.linear2:
-                x = m(x)
-            for m in self.linear3:
-                x = m(x)
-            for m in self.linear4:
-                x = m(x)
-            for m in self.linear5:
-                x = m(x)
-            x = self.linear6(x)
+        x = self.relu(self.linear1(x))
+        for m in self.linear2:
+            x = self.relu(m(x))
+        for m in self.linear3:
+            x = self.relu(m(x))
+        for m in self.linear4:
+            x = self.relu(m(x))
+        for m in self.linear5:
+            x = self.relu(m(x))
+        x = self.linear6(x)
+        x = self.relu(x)
 
         return x
 
