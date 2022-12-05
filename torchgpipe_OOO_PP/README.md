@@ -2,7 +2,7 @@
 
 This project is for the development of low-cost and high-efficiency AI computing platform technology to overcome the inefficiency of using excessive computing resources required for learning a large model and the dependency on a specific high-cost hypercluster when training a large learning model.
 
-For now, we present the result of developing PoC that applies out of order technology to pipeline parallelization.
+For now, we present the result of developing PoC that applies out of order technology (https://dl.acm.org/doi/pdf/10.1145/3492321.3519563) to pipeline parallelization.
 
 ## Usage
 
