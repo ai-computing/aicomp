@@ -11,6 +11,15 @@ Training Transformer models using Pipeline Parallelism
 
 """
 
+#
+# Transformer model on torchgpipe (GPU & microbatch version)
+#
+#   RUN_FLAG = True --> During program execution, Out Of Order technology is
+#                        applied to this transformer model.
+#                        Then, this model's nn.Linear is replaced with OutGradOnlyLinear.
+#
+
+
 
 import sys
 import math

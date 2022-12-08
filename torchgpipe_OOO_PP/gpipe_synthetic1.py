@@ -2,6 +2,10 @@
 # Copyright (c) 2022-present, ETRI, All rights reserved.
 #
 
+# 
+# thin, synthetic model on torchgpipe
+#
+
 import torch
 import torch.nn as nn
 from torch.optim import Adam

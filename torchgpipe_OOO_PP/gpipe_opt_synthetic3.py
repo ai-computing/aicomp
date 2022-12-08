@@ -2,6 +2,17 @@
 # Copyright (c) 2022-present, ETRI, All rights reserved.
 #
 
+#
+# Thin, synthetic model on torchgpipe (CPU version)
+#
+#   RUN_FLAG = True --> At first, this model is composed of the original nn.Linear.
+#                        During program execution, however, Out Of Order technology is 
+#                        applied to the model. 
+#                        Then, nn.Linear is replaced with OutGradOnlyLinear.
+#
+#    *** In this models, the Out Of Order technique does not work well.
+#
+
 import math
 import torch
 from torch import Tensor

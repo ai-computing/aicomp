@@ -6,6 +6,11 @@ Training Transformer models using Pipeline Parallelism
 
 """
 
+#
+#  Transformer model on torchgpipe (GPU version)
+#
+
+
 
 import sys
 import math

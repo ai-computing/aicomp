@@ -2,6 +2,15 @@
 # Copyright (c) 2022-present, ETRI, All rights reserved.
 #
 
+#
+# Thin, synthetic model on torchgpipe (CPU version)
+#
+#    OPTIMIZE_FLAG = True --> This model is composed of the OutGradOnlyLinear instead of nn.Linear
+#    OPTIMIZE_FLAG = False --> This model is composed of the original nn.Linear
+#
+#      *** In this models, the Out Of Order technique does not work well.
+#
+
 import math
 import torch
 from torch import Tensor
