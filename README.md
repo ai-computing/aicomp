@@ -6,6 +6,8 @@ For now, we present the result of developing PoC that applies out of order techn
 
 In addition, we want to apply 3D to the model based on the compiler. In this regard, related PoCs are being developed preemptively, and the ETRI framework SW will be developed in earnest in the second half of the year.
 
+As part of the related project, tunib, a joint research and development organization, is separately carrying out the OSLO project(https://github.com/EleutherAI/oslo).
+
 ## Usage
 
 This SW requires:
