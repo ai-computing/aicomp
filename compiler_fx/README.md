@@ -1,4 +1,4 @@
-3D parallelism by compiler based FX IR
+## 3D parallelism by compiler based FX IR
 
 Current: Pipeline parallelism PoC based on FX IR
 
