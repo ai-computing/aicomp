@@ -2,8 +2,12 @@ BSD 3-Clause License
 
 Copyright (c) 2022-present, ETRI, All rights reserved.
 
+From PyTorch:
+Copyright (c) 2014-     Facebook, Inc, All rights reserved.
+
 From torchgpipe:
 Copyright (c) 2019-2020, Kakao Brain,  All rights reserved.
+
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
