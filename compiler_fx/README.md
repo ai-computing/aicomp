@@ -1,6 +1,6 @@
 ## 3D parallelism by compiler based FX IR
 
-Current: Pipeline parallelism PoC based on FX IR
+Current: FX IR-based Pipeline Parallelism PoC, FX IR manipulation PoC, and so on
 
 Future work: Integration into Pytorch 2.0's compiler mechanism
 
