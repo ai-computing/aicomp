@@ -14,7 +14,7 @@ whereis cuda
 #mkdir ~/nvidia
 #cd ~/nvidia
 CUDNN_DEB_FILE="cudnn-local-repo-ubuntu2004-8.8.0.121_1.0-1_amd64.deb"
-wget  https://developer.download.nvidia.com/compute/redist/cudnn/v8.8.0/local_installers/12.0/${CUDNN_DEB_FILE}
+#wget  https://developer.download.nvidia.com/compute/redist/cudnn/v8.8.0/local_installers/12.0/${CUDNN_DEB_FILE}
 sudo dpkg -i ${CUDNN_DEB_FILE}
 sudo cp /var/cudnn-local-repo-ubuntu2004-8.8.0.121/cudnn-local-A9E17745-keyring.gpg /usr/share/keyrings/
 sudo apt update

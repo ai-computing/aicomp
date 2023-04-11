@@ -1,5 +1,8 @@
 #!/bin/bash
 
+sudo apt update
+sudo apt upgrade -y
+
 nodelistfile='nodes.txt'
 USER=etri-aicomputing
 echo Start
