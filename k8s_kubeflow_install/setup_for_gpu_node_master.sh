@@ -6,25 +6,28 @@ PROGRESS_FILE="$PWD/progress.stat"
 chmod a+x common/*.sh
 
 # create progress stat file
-if ! [ -e $PROGRESS_FILE ]; then
-	echo "0" > $PROGRESS_FILE
-fi
-
 STAGE=$(<$PROGRESS_FILE)
-echo "stage=$STAGE"
 
 cd common
+
+if ! [ -e $PROGRESS_FILE ]; then
+	./00-prepare-nodes.sh
+	echo "0" > $PROGRESS_FILE
+	STAGE=0
+fi
 
 # installing CUDNN and Nvidia-driver
 if (( $STAGE < 1 )); then
 	./01-install-cudnn-and-nvidia-driver.sh
 	echo "1" > $PROGRESS_FILE
+	sudo reboot
 fi
 
 # installing docker
 if (( $STAGE < 2 )); then
 	./02-install-docker.sh
 	echo "2" > $PROGRESS_FILE
+	sudo reboot
 fi
 
 # installing nvidia docker - for testing docker and gpus
@@ -37,12 +40,14 @@ fi
 if (( $STAGE < 4 )); then
 	./04-install-k8s.sh
 	echo "4" > $PROGRESS_FILE
+	sudo reboot
 fi
 
 # configuring Kubernetes
 if (( $STAGE < 5 )); then
 	./05-init-k8s-master-only.sh
 	echo "5" > $PROGRESS_FILE
+	sudo reboot
 fi
 
 cd $ORG_DIR

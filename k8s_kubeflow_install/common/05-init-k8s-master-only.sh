@@ -52,4 +52,3 @@ if [ $? = 1 ]
     echo 'alias k=kubectl' >>$shellconf
     echo 'complete -F __start_kubectl k' >>$shellconf
 fi
-$SHELL
