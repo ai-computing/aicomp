@@ -195,7 +195,7 @@ print(output_node)
 
 def make_ir_for_backwards(graph: fx.Graph, loss_node: fx.Node, output_node: fx.Node):
 
-    tuples: Dict[pippy.fx.Node, Tuple] = {}
+    tuples: Dict[fx.Node, Tuple] = {}
     for node in reversed(graph.nodes):
         if node.op == 'call_function':
             indexed_value, node_idx = tuple(node.args)
