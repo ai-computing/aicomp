@@ -82,7 +82,7 @@ else:
 
 #
 for node in gm.graph.nodes:
-    print(f"node.op:{node.op}, node.target:{node.target}")
+    print(f"node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
 
 print("-------------")
 print(gm.code)
