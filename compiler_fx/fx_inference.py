@@ -82,7 +82,7 @@ else:
 
 #
 for node in gm.graph.nodes:
-    print(f"node.op:{node.op}, node.target:{node.target}")
+    print(f"node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
 
 print("-------------")
 print(gm.code)
@@ -109,14 +109,14 @@ class FXRun:
                 result = next(args_iter)
 
             elif node.op == 'get_attr':
-                target_atoms = target.split('.')
+                target_atoms = node.target.split('.')
                 attr_itr = self.mod
                 for i , atom in enumerate(target_atoms):
                     if not hasattr(attr_itr, atom):
                         raise RuntimeError(\
                                 f"Node referenced nonexistant target{'.'.join(target_atoms[:i])}")
                     attr_itr = getattr(attr_itr, atom)
-                result = attr_iter
+                result = attr_itr
 
             elif node.op == 'call_function':
                 result = node.target(\

@@ -195,7 +195,7 @@ print(output_node)
 
 def make_ir_for_backwards(graph: fx.Graph, loss_node: fx.Node, output_node: fx.Node):
 
-    tuples: Dict[pippy.fx.Node, Tuple] = {}
+    tuples: Dict[fx.Node, Tuple] = {}
     for node in reversed(graph.nodes):
         if node.op == 'call_function':
             indexed_value, node_idx = tuple(node.args)
@@ -316,7 +316,7 @@ class FXRun:
                         raise RuntimeError(\
                                 f"Node referenced nonexistant target{'.'.join(target_atoms[:i])}")
                     attr_itr = getattr(attr_itr, atom)
-                result = attr_iter
+                result = attr_itr
 
             elif node.op == 'call_function':
 
@@ -350,6 +350,9 @@ class FXRun:
                     kwargs = dict(kwargs)
                     ( kwargs["stage_output"], kwargs["input_values"],) = self.fwd_cache.pop(self.stage_num)
                     
+                    # DEBUG
+                    #print(f" ===> kwargs: {kwargs}")
+
                     #
                     #print(f" [call_function-stage_backward, stage_num[{self.stage_num}]]: node.target:{node.target}, node.name:{node.name}, len(args):{len(args)}, len(kwargs):{len(kwargs)}, args:{args}, kwargs:{kwargs}")
 
