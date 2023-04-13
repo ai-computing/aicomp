@@ -287,7 +287,6 @@ class FXRun:
                 pass
 
             if node.op == 'call_module':
-                #print(f" fx_backward: call_module - none.name: {node.name}")
 
                 def extract_tensor_args(b):
                     a = self.env[b.name]
@@ -317,11 +316,6 @@ class FXRun:
                 #print(f"1 kwargs: {kwargs}")
                 #( kwargs["output_grads"],) = ( self.grads[node.name], )
                 #( kwargs["outputs_with_grads_idxs"],) = ( [0], )
-
-                # DEBUG
-                #print(f"1 args: {args}")
-                #print(f"2 kwargs: {kwargs}")
-                #print(f"3 node.all_input_nodes {str(node.all_input_nodes[0])}")
 
                 result = stage_backward(*args, **kwargs)
 
