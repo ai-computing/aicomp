@@ -355,7 +355,7 @@ class FXRun:
 
                 cnt = len(result[0])
                 for m in next_:
-                    if len(result[0]) > 1:
+                    if cnt > 1:
                         self.grads[m.name] = tuple(result[0])
                     else:
                         self.grads[m.name] = result[0]
