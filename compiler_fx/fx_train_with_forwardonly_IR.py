@@ -120,6 +120,9 @@ loss_node, output_node = _get_loss_output(gm1.graph)
 #print(loss_node)
 #print(output_node)
 
+#
+# backward function (cited from PiPPy)
+#
 def stage_backward(
     stage_output,
     output_grads,
@@ -187,13 +190,21 @@ class FXRun:
         #self.env: Dict[Node, Any] = {}
 
         # TODO
-        self.fwd_cache: Dict[int, Tuple[Any, List[torch.Tensor]]] = {}
-
-        # TODO
+        #self.fwd_cache: Dict[int, Tuple[Any, List[torch.Tensor]]] = {}
+        self.fwd_cache: Dict[str, Tuple[Any, List[torch.Tensor]]] = {}
         self.grads: Dict[str, Any] = {}
 
-        # TODO
-        self.stage_num = 0
+    def get_destination(self, input_nodes, set_):
+        for i, m in enumerate(input_nodes):
+            for n in self.graph.nodes:
+                if n.name == m.name:
+                    if m.op == 'call_module' or m.op == 'call_method':
+                        set_.add(m)
+                        break
+
+                    if m.op == 'call_function':
+                        self.get_destination(m.all_input_nodes, set_)
+
 
     def fx_forward(self, *args):
         args_iter = iter(args)
@@ -219,9 +230,39 @@ class FXRun:
                         **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
 
             elif node.op == 'call_method':
-                self_obj, *args = fx.graph.map_arg(node.args, lambda n: self.env[n.name])
-                kwargs = fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name])
+                #self_obj, *args = fx.graph.map_arg(node.args, lambda n: self.env[n.name])
+                #kwargs = fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name])
+                #result = getattr(self_obj, node.target)(*args, **kwargs)
+
+                arg0_b = node.args[0]
+
+                arg0_a = self.env[arg0_b.name]
+                self_obj = arg0_a.detach().requires_grad_(arg0_a.requires_grad)
+
+                flat_args = [self_obj, ]
+
+                def extract_tensor_args(b):
+                    a = self.env[b.name]
+                    nonlocal flat_args
+                    if isinstance(a, torch.Tensor):
+                        val = a.detach().requires_grad_(a.requires_grad)
+                        flat_args.append(val)
+                        return val
+                    else:
+                        flat_args.append(a)
+                        return a
+
+                    return a
+
+                args = fx.graph.map_arg(node.args[1:], extract_tensor_args)
+                kwargs = fx.graph.map_arg(node.kwargs, extract_tensor_args)
+
                 result = getattr(self_obj, node.target)(*args, **kwargs)
+
+                self.fwd_cache[node.name] = \
+                        ( result if isinstance(result, tuple) else (result,), \
+                        flat_args, )
+
 
             elif node.op == 'call_module':
                 #result = self.modules[node.target](\
@@ -255,18 +296,15 @@ class FXRun:
                 submod = attr_itr
                 result = submod(*args, **kwargs)
 
-                # DEBUG
+
                 if node.target == 'loss_fn':
                     if not str(node.all_input_nodes[0]).startswith("target"):
                         self.output = self.env[str(node.all_input_nodes[0])]
                     self.grads[node.name] = (None,)
 
-                # TODO
-                self.fwd_cache[self.stage_num] = \
+                self.fwd_cache[node.name] = \
                         ( result if isinstance(result, tuple) else (result,), \
                         flat_args, )
-
-                self.stage_num += 1
 
                 if node.target == 'loss_fn':
                     self.loss = result
@@ -286,7 +324,7 @@ class FXRun:
             if node.op == 'output':
                 pass
 
-            if node.op == 'call_module':
+            if node.op == 'call_module' or node.op == 'call_method':
 
                 def extract_tensor_args(b):
                     a = self.env[b.name]
@@ -300,28 +338,27 @@ class FXRun:
                 args = ()
                 kwargs = fx.graph.map_arg(node.kwargs, extract_tensor_args)
 
-                self.stage_num -= 1
-
                 kwargs = dict(kwargs)
-                k1, k2 = self.fwd_cache.pop(self.stage_num)
+                k1, k2 = self.fwd_cache.pop(node.name)
 
                 kwargs["stage_output"] = k1
                 kwargs["input_values"] = k2
                 kwargs["output_grads"] = self.grads[node.name]
                 kwargs["outputs_with_grads_idxs"] = [0]
 
-
-                #( kwargs["stage_output"], kwargs["input_values"],) = self.fwd_cache.pop(self.stage_num)
-                ##
-                #print(f"1 kwargs: {kwargs}")
-                #( kwargs["output_grads"],) = ( self.grads[node.name], )
-                #( kwargs["outputs_with_grads_idxs"],) = ( [0], )
-
                 result = stage_backward(*args, **kwargs)
 
                 #
-                self.grads[str(node.all_input_nodes[0])] = result[0]
+                #self.grads[str(node.all_input_nodes[0])] = result[0]
+                next_ = set([])
+                self.get_destination(node.all_input_nodes, next_)
 
+                cnt = len(result[0])
+                for m in next_:
+                    if len(result[0]) > 1:
+                        self.grads[m.name] = tuple(result[0])
+                    else:
+                        self.grads[m.name] = result[0]
 
 for node in gm1.graph.nodes:
     print(f"node.op:{node.op}, node.name:{node.name}, node.target:{node.target}")
