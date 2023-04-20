@@ -68,7 +68,7 @@ Print K8s join command in master node.
 ```
 ./09-print-join-cmd.sh
 ```
-Then, the join command will be printed similar to following. (ex. sudo kubeadm join 192.168.0.27:6443 --token pis8vh.t37edt4hiu9ldsdh --discovery-token-ca-cert-hash sha256:f0acbe5893e5115907f4326c135876b2d0f748303e440730bcf9216d7593cb27)
+Then, the join command will be printed. (ex. sudo kubeadm join 192.168.0.27:6443 --token pis8vh.t37edt4hiu9ldsdh --discovery-token-ca-cert-hash sha256:f0acbe5893e5115907f4326c135876b2d0f748303e440730bcf9216d7593cb27)
 
 In a worker node, type the join command to join to the K8s cluster.
 ```
