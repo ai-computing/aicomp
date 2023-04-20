@@ -5,13 +5,22 @@ The following describes the common installation process for both master and work
 All scripts and necessary files are placed in **common/** directory.  
 
 ## Common Setup
+Change to common/ directory.
+```
+cd common
+```
 ### 00. Preparing Nodes
 Swap has to be disabled, because Kubernetes will throw an error if Swap is enabled on the nodes.
 ```
-cd common
 ./00-prepare-nodes.sh
 ```
-
+### 01. CUDNN and Nvidia driver
+Remove existing nvidia drivers and cuda packages.  
+Nouveau driver has to be disabled.  
+Install nvidia-cuda-toolkit, cudnn, and nvidia-driver-525.
+```
+./01-install-cudnn-and-nvidia-driver.sh
+```
 ## Master node
 ...
 ...
