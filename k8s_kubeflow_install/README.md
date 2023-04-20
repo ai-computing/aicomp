@@ -5,7 +5,7 @@ The following describes the common installation process for both master and work
 All scripts and necessary files are placed in common/ directory.
 
 ## Common Setup
-###00. Preparing Nodes
+### 00. Preparing Nodes
 Swap has to be disabled, because Kubernetes will throw an error if Swap is enabled on the nodes.
 ```
 cd common
