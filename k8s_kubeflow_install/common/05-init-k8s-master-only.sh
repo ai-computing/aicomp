@@ -27,7 +27,7 @@ kubectl get storageclass
 kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 kubectl get sc
 
-# install kusomize 
+# install kustomize 
 # 
 if [ ! -f /usr/local/bin/kusomize ]
   then
