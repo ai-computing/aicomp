@@ -56,7 +56,7 @@ Build binaries and launch kubeflow pods.
 ./06-install-kubeflow-master-only.sh
 ```
 ### 07. Add Certification
-Allow HTTPS port forward to Kubeflow Dashboard and add HTTPS certification.
+Map HTTPS port of Kubeflow Dashboard to gateway, and add HTTPS certification.
 ```
 ./07-certificate-kubeflow-master-only.sh
 ```
@@ -75,5 +75,14 @@ In a worker node, type the join command to join to the K8s cluster.
 sudo kubeadm join 192.168.0.27:6443 --token pis8vh.t37edt4hiu9ldsdh --discovery-token-ca-cert-hash sha256:f0acbe5893e5115907f4326c135876b2d0f748303e440730bcf9216d7593cb27
 ```
 
-For another worker node, run ./09-print-join-cmd.sh again. Because the join command is only valid for one node.
+For another worker node, run ./09-print-join-cmd.sh again. Because the join command is only valid for one node.  
 
+## Master node
+Run port forward command.
+```
+08-port-forward-kubeflow-master-only.sh
+```
+Then you can connect Kubeflow dashboard through web browser using following url.
+```
+https://[master node ip]:8080
+```
