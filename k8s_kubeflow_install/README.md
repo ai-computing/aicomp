@@ -82,7 +82,8 @@ Run port forward command.
 ```
 08-port-forward-kubeflow-master-only.sh
 ```
-Then you can connect Kubeflow dashboard through web browser using following url.
+Then you can connect Kubeflow dashboard through web browser using following url.  
+You will get some warning. Ignore it.
 ```
 https://[master node ip]:8080
 ```
