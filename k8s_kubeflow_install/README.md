@@ -3,7 +3,7 @@ This document describes how to configure a Kubernetes cluster and Kubeflow envir
 Kubernetes consists of master and worker nodes, and Kubeflow is the same.  
 The following describes the common installation process for both master and worker nodes, and then describes the settings for master nodes and worker nodes respectably.  
 All scripts and necessary files are placed in **common/** directory.  
-If you want to know more about kubeflow, check up https://github.com/myoh0623/kubeflow and https://www.youtube.com/watch?v=tDqatoU2fhM&list=PL6ZWs3MJaiphOwtHQvBCA4GNw-EPDely-&ab_channel=%ED%95%9C%EC%96%91%EB%82%A8%EC%9E%90.  
+If you want to know more about kubeflow, check up   https://github.com/myoh0623/kubeflow   and   https://www.youtube.com/watch?v=tDqatoU2fhM&list=PL6ZWs3MJaiphOwtHQvBCA4GNw-EPDely-&ab_channel=%ED%95%9C%EC%96%91%EB%82%A8%EC%9E%90.  
 I borrowed some scripts from the git. Thanks.  
 
 ## Common Setup
