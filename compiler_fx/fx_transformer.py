@@ -34,14 +34,6 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 #
 torch.manual_seed(42)
 
-"""
-if sys.platform == 'win32':
-    print('Windows platform is not supported for pipeline parallelism')
-    sys.exit(0)
-if torch.cuda.device_count() < 2:
-    print('Need at least two GPU devices for this tutorial')
-    sys.exit(0)
-"""
 
 class Encoder(nn.Module):
     def __init__(self, ntoken, ninp, dropout=0.5):
@@ -180,7 +172,7 @@ module_list.append(nn.Sequential(*tmp_list))
 
 model = torch.nn.Sequential(*module_list)
 
-# LossWrapper: cited from from PiPPy
+# LossWrapper: cited from PiPPy
 class LossWrapper(torch.nn.Module):
     def __init__(self, module, loss_fn):
         super().__init__()
@@ -190,7 +182,7 @@ class LossWrapper(torch.nn.Module):
     def forward(self, *args, **kwargs):
         raise NotImplementedError("LossWrapper: no forward implementation")
 
-# SimpleLossWrapper: cited from from PiPPy
+# SimpleLossWrapper: cited from PiPPy
 class SimpleLossWrapper(LossWrapper):
     def forward(self, x, targets):
         out1 = self.module(x)
@@ -239,7 +231,7 @@ def _get_loss_output(graph: fx.Graph):
 loss_node, output_node = _get_loss_output(gm1.graph)
 
 
-# stage_backward function: cited from from PiPPy
+# stage_backward function: cited from PiPPy
 def stage_backward(
     stage_output,
     output_grads,
