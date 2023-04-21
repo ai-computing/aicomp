@@ -92,6 +92,7 @@ print(t1)
 print("-----------------------")
 print(t2)
 
+# LossWrapper: cited form PiPPy
 class LossWrapper(torch.nn.Module):
     def __init__(self, module, loss_fn):
         super().__init__()
@@ -101,6 +102,7 @@ class LossWrapper(torch.nn.Module):
     def forward(self, *args, **kwargs):
         raise NotImplementedError("LossWrapper: no forward implementation")
 
+# SimpleLossWrapper: cited from PiPPy
 class SimpleLossWrapper(LossWrapper):
     def forward(self, x, targets):
         out1 = self.module(x)
@@ -119,6 +121,7 @@ print("-----------------------")
 print(gm1.code)
 print("-----------------------")
 
+# stage_backward function: cited from PiPPy
 def stage_backward(
     stage_output,
     output_grads,
@@ -172,7 +175,7 @@ def stage_backward(
     return grad_inputs, barrier_token
 
 
-
+# _get_loss_output: adapted from PiPPy
 def _get_loss_output(graph: fx.Graph):
     output_nodes = [n for n in graph.nodes if n.op == "output"]
     assert len(output_nodes) == 1
@@ -183,6 +186,7 @@ def _get_loss_output(graph: fx.Graph):
 
     return loss_node, output_node
 
+# sync_barrier: cited from PiPPy
 def sync_barrier(loss, barrier_tokens, last_grads):
     return loss, last_grads
     
@@ -193,6 +197,7 @@ print(loss_node)
 print(output_node)
 
 
+# make_ir_for_backwards: adapted from PiPPy
 def make_ir_for_backwards(graph: fx.Graph, loss_node: fx.Node, output_node: fx.Node):
 
     tuples: Dict[fx.Node, Tuple] = {}
@@ -282,7 +287,8 @@ make_ir_for_backwards(gm1.graph, loss_node, output_node)
 
 # DEBUG
 for node in gm1.graph.nodes:
-    print(f"node.op:{node.op}, node.target:{node.target}, node.name:{node.name}, node.all_input_nodes: {node.all_input_nodes}")
+    #print(f"node.op:{node.op}, node.target:{node.target}, node.name:{node.name}, node.all_input_nodes: {node.all_input_nodes}")
+    print(f"node.op:{node.op}, node.target:{node.target}, node.name:{node.name}, node.args:{node.args}, node.all_input_nodes: {node.all_input_nodes}")
 print("-----------------------")
 
 class FXRun:
