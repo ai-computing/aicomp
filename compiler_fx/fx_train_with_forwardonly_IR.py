@@ -80,6 +80,7 @@ print(t1)
 print("-----------------------")
 #print(t2)
 
+# LossWrapper: cited from PiPPy
 class LossWrapper(torch.nn.Module):
     def __init__(self, module, loss_fn):
         super().__init__()
@@ -89,6 +90,7 @@ class LossWrapper(torch.nn.Module):
     def forward(self, *args, **kwargs):
         raise NotImplementedError("LossWrapper: no forward implementation")
 
+# SimpleLossWrapper: cited from PiPPy
 class SimpleLossWrapper(LossWrapper):
     def forward(self, x, targets):
         out1 = self.module(x)
@@ -107,6 +109,7 @@ print("-------------")
 print(gm1.code)
 print("-------------")
 
+# _get_loss_output: adapted from PiPPy
 def _get_loss_output(graph: fx.Graph):
      output_nodes = [n for n in graph.nodes if n.op == 'output']
      assert len(output_nodes) == 1
@@ -120,9 +123,8 @@ loss_node, output_node = _get_loss_output(gm1.graph)
 #print(loss_node)
 #print(output_node)
 
-#
-# backward function (cited from PiPPy)
-#
+
+# stage_backward function: cited from PiPPy
 def stage_backward(
     stage_output,
     output_grads,
