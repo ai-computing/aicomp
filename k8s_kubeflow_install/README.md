@@ -93,3 +93,9 @@ Then you can connect Kubeflow dashboard through web browser using following url.
 https://[master node ip]:8080
 ```
 You will get some warning. Ignore it.  
+
+Default user's ID and Password
+```
+user@example.com
+12341234
+```
