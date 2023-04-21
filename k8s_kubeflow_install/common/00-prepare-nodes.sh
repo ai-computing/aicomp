@@ -5,7 +5,7 @@ sudo apt upgrade -y
 
 #disable swap
 sudo swapoff -a
-sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+sudo sed -e '/swap/ s/^#*/#/' -i /etc/fstab
 
 nodelistfile='nodes.txt'
 USER=etri-aicomputing

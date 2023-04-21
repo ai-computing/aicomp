@@ -55,6 +55,7 @@ Build binaries and launch kubeflow pods.
 ```
 ./06-install-kubeflow-master-only.sh
 ```
+Wait until all pods are "Running" Status.
 ### 07. Add Certification
 Map HTTPS port of Kubeflow Dashboard to gateway, and add HTTPS certification.
 ```
