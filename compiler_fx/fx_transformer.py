@@ -309,12 +309,13 @@ class FXRun:
         for i, m in enumerate(input_nodes):
             for n in self.graph.nodes:
                 if n.name == m.name:
-                    if m.op == 'call_module' or m.op == 'call_method':
+                    #if m.op == 'call_module' or m.op == 'call_method':
+                    if m.op == 'call_module' or m.op == 'call_method' or m.op == 'call_function':
                         lst_.append(m)
                         break
 
-                    if m.op == 'call_function':
-                        self.get_destination(m.all_input_nodes, lst_)
+                    #if m.op == 'call_function':
+                    #    self.get_destination(m.all_input_nodes, lst_)
 
 
     def fx_forward(self, *args):
@@ -336,9 +337,32 @@ class FXRun:
                 result = attr_itr
 
             elif node.op == 'call_function':
-                result = node.target(\
-                        *fx.graph.map_arg(node.args, lambda n: self.env[n.name]), \
-                        **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
+                #result = node.target(\
+                #        *fx.graph.map_arg(node.args, lambda n: self.env[n.name]), \
+                #        **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
+
+                flat_args = []
+                def extract_tensor_args(b):
+                    a = self.env[b.name]
+                    nonlocal flat_args
+                    if isinstance(a, torch.Tensor):
+                        val = a.detach().requires_grad_(a.requires_grad)
+                        flat_args.append(val)
+                        return val
+                    else:
+                        flat_args.append(a)
+                        return a
+                
+                    return a
+
+                args = fx.graph.map_arg(node.args, extract_tensor_args)
+                kwargs = fx.graph.map_arg(node.kwargs, extract_tensor_args)
+                
+                result = node.target(*args, **kwargs)
+                
+                self.fwd_cache[node.name] = \
+                        ( result if isinstance(result, tuple) else (result,), \
+                        flat_args, )
 
 
             elif node.op == 'call_method':
@@ -454,7 +478,9 @@ class FXRun:
             if node.op == 'output':
                 pass
 
-            if node.op == 'call_module' or node.op == 'call_method':
+            #if node.op == 'call_module' or node.op == 'call_method':
+            if node.op == 'call_module' or node.op == 'call_method' or node.op == 'call_function':
+
 
                 def extract_tensor_args(b):
                     a = self.env[b.name]
@@ -476,6 +502,9 @@ class FXRun:
                 kwargs["output_grads"] = self.grads[node.name]
                 kwargs["outputs_with_grads_idxs"] = [0]
 
+                if node.target != 'loss_fn' and self.grads[node.name] == (None,):
+                    continue
+
                 result = stage_backward(*args, **kwargs)
 
                 next_ = []
@@ -489,6 +518,7 @@ class FXRun:
                             self.grads[m.name] = torch.stack(result[0][i], 0)
                         else:
                             self.grads[m.name] = ((result[0][i], ) if not isinstance(result[0][i], tuple) else result[0][i])
+
                     else:
                         if isinstance(result[0], list) and result[0][0] != None:
                             self.grads[m.name] = torch.stack(result[0], 0)
