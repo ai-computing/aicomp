@@ -249,12 +249,6 @@ def stage_backward(
         output_grads[i] for i in outputs_with_grads_idxs
     ]
 
-    #if len(output_grads) >= 2:
-    #    output_grads_with_grads = [output_grads[i] for i in range(len(output_grads))]
-    #else:
-    #    output_grads_with_grads = [output_grads[0]]
-
-
     stage_output_tensors = []
     output_grad_tensors = []
 
@@ -311,17 +305,17 @@ class FXRun:
 
 
 
-    def get_destination(self, input_nodes, set_):
+    def get_destination(self, input_nodes, lst_):
         for i, m in enumerate(input_nodes):
             for n in self.graph.nodes:
                 if n.name == m.name:
                     if m.op == 'call_module' or m.op == 'call_method':
-                        set_.add(m)
+                        lst_.append(m)
                         break
 
                     if m.op == 'call_function':
-                        self.get_destination(m.all_input_nodes, set_)
-                    
+                        self.get_destination(m.all_input_nodes, lst_)
+
 
     def fx_forward(self, *args):
         args_iter = iter(args)
@@ -346,6 +340,7 @@ class FXRun:
                         *fx.graph.map_arg(node.args, lambda n: self.env[n.name]), \
                         **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
 
+
             elif node.op == 'call_method':
 
                 #self_obj, *args = fx.graph.map_arg(node.args, lambda n: self.env[n.name])
@@ -355,7 +350,13 @@ class FXRun:
                 arg0_b = node.args[0]
 
                 arg0_a = self.env[arg0_b.name]
-                self_obj = arg0_a.detach().requires_grad_(arg0_a.requires_grad)
+
+                #self_obj = arg0_a.detach().requires_grad_(arg0_a.requires_grad)
+                if isinstance(arg0_a, torch.Tensor):
+                    self_obj = arg0_a.detach().requires_grad_(arg0_a.requires_grad)
+                else:
+                    self_obj = arg0_a
+
 
                 flat_args = [self_obj, ]
 
@@ -449,7 +450,6 @@ class FXRun:
     def fx_backward(self, *args):
         loss = args
 
-
         for node in reversed(self.graph.nodes):
             if node.op == 'output':
                 pass
@@ -476,18 +476,24 @@ class FXRun:
                 kwargs["output_grads"] = self.grads[node.name]
                 kwargs["outputs_with_grads_idxs"] = [0]
 
-
                 result = stage_backward(*args, **kwargs)
 
-                next_ = set([])
+                next_ = []
                 self.get_destination(node.all_input_nodes, next_)
 
                 cnt = len(result[0])
-                for m in next_:
-                    if cnt  > 1:
-                        self.grads[m.name] = tuple(result[0])
+
+                for i, m in enumerate(next_):
+                    if cnt > 1:
+                        if isinstance(result[0][i], list) and result[0][i] != None:
+                            self.grads[m.name] = torch.stack(result[0][i], 0)
+                        else:
+                            self.grads[m.name] = ((result[0][i], ) if not isinstance(result[0][i], tuple) else result[0][i])
                     else:
-                        self.grads[m.name] = result[0]
+                        if isinstance(result[0], list) and result[0][0] != None:
+                            self.grads[m.name] = torch.stack(result[0], 0)
+                        else:
+                            self.grads[m.name] = ((result[0], ) if not isinstance(result[0], tuple) else result[0])
 
 
 for node in gm1.graph.nodes:
@@ -518,17 +524,6 @@ def train():
         loss = fx_run.loss
         fx_run.fx_backward(loss)
 
-        #output1 = fx_run.fx_forward(data)
-        #loss = criterion(output1.reshape(-1, ntokens), targets)
-        #fx_run.fx_backward(loss)
-
-
-        #output = model(data)
-        #
-        #loss = criterion(output.reshape(-1, ntokens), targets)
-        #
-        #loss.backward()
-
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         optimizer.step()
 
@@ -548,7 +543,7 @@ def train():
 
 
 best_val_loss = float("inf")
-epochs = 3 # The number of epochs
+epochs = 5 # The number of epochs
 best_model = None
 
 tick = time.time()
