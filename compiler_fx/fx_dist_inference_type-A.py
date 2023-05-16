@@ -232,9 +232,6 @@ class FXRun2:
         return obj
 
     def send_activation(self, split_node_name, to_rank):
-        #obj = []
-        #obj.append(self.env[split_node_name])
-        #dist.broadcast_object_list(obj, src=0, device=self.device)
 
         obj = self.env[split_node_name]
 
