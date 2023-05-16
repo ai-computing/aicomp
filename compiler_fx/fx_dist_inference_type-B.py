@@ -103,7 +103,7 @@ class TestModel(nn.Module):
         return x
 
 
-class Simple_split_test(object):
+class Simple_split_test2(object):
     def __init__(self):
         self.initialize_comm()
 
@@ -144,10 +144,16 @@ class Simple_split_test(object):
 
         length = gm.graph.nodes.__len__()
         segment = length // num_host
-        print(f"segment ==> {segment}")
+        print(f"length:{length}, num_host:{num_host}, segment:{segment}")
 
+        self.last_flag = False
         def part_fn(node):
             last_idx, last_name = metadata_range[-1]
+
+            if self.last_flag == True:
+                idx = last_idx
+                #print(f" part_fn:  node.name:{node.name}, --> {idx}")
+                return idx
 
             idx = 0
 
@@ -163,6 +169,8 @@ class Simple_split_test(object):
 
             if cur.name == last_name:
                 idx = last_idx
+                self.last_flag = True
+
             #print(f" part_fn:  node.name:{node.name}, --> {idx}")
             return idx
 
@@ -176,6 +184,12 @@ class Simple_split_test(object):
                 metadata_range.append((k, n.name))
                 k = k + 1
                 cnt = 0
+
+            if k > num_host - 1:
+                break
+
+        if len(metadata_range) <  num_host:
+            metadata_range.append((k, n.name))
 
         print(metadata_range)
 
@@ -219,7 +233,7 @@ class Simple_split_test(object):
         print(f"##In rank[{self.rank}], setup_ctrl_group completed")
 
         
-    def metadata_transfer(self):
+    def metadata_transfer2(self):
 
         self.metadata_range = []
 
@@ -284,9 +298,9 @@ class Simple_split_test(object):
 
 
 
-class FXRun2:
+class FXRun3:
 
-    def __init__(self, split_info: Simple_split_test, device):
+    def __init__(self, split_info: Simple_split_test2, device):
 
         self.mod = split_info.model_ir[0]
         self.graph = self.mod.graph
@@ -333,7 +347,7 @@ class FXRun2:
 
 
 
-    def fx_forward2(self, *args):
+    def fx_forward3(self, *args):
         self.args_iter = iter(args)
 
         for n in self.mod.graph.nodes:
@@ -345,8 +359,6 @@ class FXRun2:
             break
 
         if self.rank > 0:
-            #split_node_name = from_._prev.name
-            #split_node_name = str(self.stage - 1)
             split_node_name = "placeholder"
             pre_split_rank = self.rank - 1
             #print(f"## rank:{self.rank}, receive activation from {pre_split_rank}, split_node_name:{split_node_name}")
@@ -354,15 +366,13 @@ class FXRun2:
 
         cur = from_
         while cur != to_:
-            self.fx_ir_run_node(cur)
+            self.fx_ir_run_node2(cur)
             cur = cur._next
-        result = self.fx_ir_run_node(cur)
+        result = self.fx_ir_run_node2(cur)
 
         #print(f" rank:{self.rank}, cur.node name{cur.name}, split_node_name:{to_.name}")
 
         if self.rank < self.world_size - 1:
-            #split_node_name = to_.name
-            #split_node_name = str(self.stage)
             split_node_name = "output"
             next_split_rank = self.rank + 1
             #print(f"### rank:{self.rank} send activation to {next_split_rank}, split_node_name:{split_node_name}")
@@ -385,7 +395,7 @@ class FXRun2:
         return args, kwargs
         
 
-    def fx_ir_run_node(self, node):
+    def fx_ir_run_node2(self, node):
 
         args, kwargs = self.restore_env(node)
 
@@ -424,7 +434,7 @@ class FXRun2:
             result = fx.graph.map_arg(node.args[0], lambda n: self.env[n.name])
 
         #
-        print(f" ## run - node:{node.name}, node.op:{node.op}")
+        print(f" ## [rank:{sim_split.rank}], run - node:{node.name}, node.op:{node.op}")
 
         self.env[node.name] = result
 
@@ -432,8 +442,8 @@ class FXRun2:
 
 
 
-sim_split = Simple_split_test()
-sim_split.metadata_transfer()
+sim_split = Simple_split_test2()
+sim_split.metadata_transfer2()
 
 
 if sim_split.rank == 0:
@@ -441,14 +451,15 @@ if sim_split.rank == 0:
 else:
     sample_input = None
 
-fx_run2 = FXRun2(sim_split, sim_split.device)
+fx_run3 = FXRun3(sim_split, sim_split.device)
 
-fx_run2.print_range()
-output1 = fx_run2.fx_forward2(sample_input)
+fx_run3.print_range()
 
-if int(os.environ["RANK"]) == 3:
+output1 = fx_run3.fx_forward3(sample_input)
+
+if sim_split.rank == sim_split.world_size - 1:
     print(output1)
-print(f"run completed ...")
+print(f"[rank:{sim_split.rank}], run completed ...")
 
 rpc.shutdown()
 
