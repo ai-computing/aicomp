@@ -168,13 +168,13 @@ class Simple_split_test(object):
             # blocking call
             dist.broadcast_object_list(self.model_ir, src=0, device=self.device)
 
-            print(f" >> worker:{self.rank} ==> FX IR transferred")
+            print(f" >> worker:{self.rank} ==> FX IR transfer to all other workers")
 
             self.simple_split(gm.graph)
 
             dist.broadcast_object_list(self.range_metadata, src=0, device=self.device)
 
-            print(f" >> worker:{self.rank} ==> split metadata {self.range_metadata} transferred")
+            print(f" >> worker:{self.rank} ==> range metadata {self.range_metadata} transfer to all other workers")
 
         else:
             self.device = torch.device("cpu")
@@ -189,16 +189,18 @@ class Simple_split_test(object):
             if gm is None:
                 print(f"FX IR sync failed")
             else:
-                print(f" worker: {self.rank} <==  FX IR")
+                print(f" worker: {self.rank} <==  FX IR transferred")
                 for node in gm.graph.nodes:
                     print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.all_input_nodes:{node.all_input_nodes}")
+                print(f" ---------------------------------")
 
             for i in range(num_host):
                 self.range_metadata.append(None)
 
             dist.broadcast_object_list(self.range_metadata, src=0, device=self.device)
 
-            print(f" worker: {self.rank} <==  split metadata:{self.range_metadata}")
+            print(f" worker: {self.rank} <==  range metadata:{self.range_metadata} transferred")
+            print(f" ---------------------------------")
 
 
 class FXRun2:
@@ -285,9 +287,10 @@ class FXRun2:
 
         cur = from_ # first node assigned to the host#{rank} in metadata_range
         while cur != to_:
-             print(f" ---- cur node:{cur.name}")
+             print(f" ---- node:{cur.name}")
              cur = cur._next
-        print(f" ---- cur node:{cur.name}")  # last node assigned to the host#{rank} in metadata_range
+        print(f" ---- node:{cur.name}")  # last node assigned to the host#{rank} in metadata_range
+        print(f" -------------------------------")
 
 
     def fx_forward2(self, *args):
@@ -375,7 +378,7 @@ class FXRun2:
             result = fx.graph.map_arg(node.args[0], lambda n: self.env[n.name])
 
         #
-        print(f" ## run - node:{node.name}, node.op:{node.op}")
+        print(f" ## [rank:{sim_split.rank}], run - node:{node.name}, node.op:{node.op}")
 
         self.env[node.name] = result
 
@@ -395,11 +398,13 @@ else:
 fx_run2 = FXRun2(sim_split, sim_split.device)
 
 fx_run2.print_range()
+
 output1 = fx_run2.fx_forward2(sample_input)
 
 if sim_split.rank == sim_split.world_size - 1:
     print(output1)
-print(f"run completed ...")
+
+print(f"[rank:{sim_split.rank}], run completed ...")
 
 rpc.shutdown()
 
