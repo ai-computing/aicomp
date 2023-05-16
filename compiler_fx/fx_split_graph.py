@@ -89,14 +89,24 @@ for n in gm.graph.nodes:
 
 metadata_range = []
 
-N = 4   # 4 hosts
+num_host = 4   # 4 hosts
+#num_host = 6   # 6 hosts
+#num_host = 8   # 8 hosts
 
+# CASE:  num_host == 4
 #metadata_range = [(0, 'linear2_1'), (1, 'relu_4'), (2, 'linear5_0'), (3, 'relu_9')]
 
+last_flag = False
 
 def part_fn(node):
 
+    global last_flag
     last_idx, last_name = metadata_range[-1]
+
+    if last_flag == True:
+        idx = last_idx
+        print(f" part_fn:  node.name:{node.name}, --> {idx}")
+        return idx
 
     idx = 0
 
@@ -106,20 +116,22 @@ def part_fn(node):
             if cur.name == m_name:
                 idx = i
                 #print(f" part_fn:  node.name:{node.name}, m_name:{m_name}, --> {idx}")
+                print(f" part_fn:  node.name:{node.name}, cur.name:{cur.name} m_name:{m_name}, --> {idx}")
                 return idx
 
         cur = cur._next
 
     if cur.name == last_name:
         idx = last_idx
-    #print(f" part_fn:  node.name:{node.name}, --> {idx}")
+        last_flag = True
+    print(f" part_fn:  node.name:{node.name}, --> {idx}")
     return idx
 
 
 def simple_split(gm, t1, metadata_range):
     length = gm.graph.nodes.__len__()
-    segment = length // N
-    print(f"segment ==> {segment}")
+    segment = length // num_host
+    print(f"length: {length}, segment ==> {segment}")
     
     k, cnt = 0, 0
     for n in gm.graph.nodes:
@@ -130,6 +142,12 @@ def simple_split(gm, t1, metadata_range):
             metadata_range.append((k, n.name))
             k = k + 1
             cnt = 0
+
+        if k > num_host - 1:
+            break
+
+    if len(metadata_range) <  num_host:
+        metadata_range.append((k, n.name))
 
     print(metadata_range)
 
