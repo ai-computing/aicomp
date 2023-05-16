@@ -397,7 +397,7 @@ fx_run2 = FXRun2(sim_split, sim_split.device)
 fx_run2.print_range()
 output1 = fx_run2.fx_forward2(sample_input)
 
-if int(os.environ["RANK"]) == 3:
+if sim_split.rank == sim_split.world_size - 1:
     print(output1)
 print(f"run completed ...")
 
