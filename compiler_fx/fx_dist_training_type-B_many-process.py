@@ -13,17 +13,12 @@
 #
 #  Sample Usage:
 #      <machine #0>
-#            torchrun --nproc_per_node=1 --nnodes=N --node_rank=0
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B.py
+#            torchrun --nproc_per_node=4 --nnodes=2 --node_rank=0
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B_many-process.py
 #      <machine #1>
-#            torchrun --nproc_per_node=1 --nnodes=N --node_rank=1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B.py
+#            torchrun --nproc_per_node=4 --nnodes=2 --node_rank=1
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B_many-process.py
 #
-#          (...)
-#
-#      <machine #N-1>
-#            torchrun --nproc_per_node=1 --nnodes=N --node_rank=N-1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B.py
 
 
 import torch
@@ -199,7 +194,7 @@ class Simple_split_test(object):
 
             if self.last_flag == True:
                 idx = last_idx
-                #print(f" part_fn:  node.name:{node.name}, --> {idx}")
+                print(f" part_fn:  node.name:{node.name}, --> {idx}")
                 return idx
 
             idx = 0
