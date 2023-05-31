@@ -13,10 +13,10 @@
 #
 #  Sample Usage:
 #      <machine #0>
-#            torchrun --nproc_per_node=4 --nnodes=2 --node_rank=0
+#            torchrun --nproc_per_node=8 --nnodes=2 --node_rank=0
 #                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B_many-process.py
 #      <machine #1>
-#            torchrun --nproc_per_node=4 --nnodes=2 --node_rank=1
+#            torchrun --nproc_per_node=8 --nnodes=2 --node_rank=1
 #                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B_many-process.py
 #
 
@@ -54,7 +54,8 @@ torch.manual_seed(42)
 #num_host=N
 #num_host=4  
 #num_host=6  
-num_host=8  
+#num_host=8  
+num_host=16
 
 batch_size = 64
 in_features = 5120
@@ -85,13 +86,31 @@ class TestModel(nn.Module):
 
         #
         self.linear5_0 = nn.ModuleList()
-        for i in range(4):
+        for i in range(2):
             self.linear5_0.append(nn.Linear(hidden, hidden))
         self.linear5_1 = nn.ModuleList()
-        for i in range(4):
+        for i in range(2):
             self.linear5_0.append(nn.Linear(hidden, hidden))
         self.linear5_2 = nn.ModuleList()
-        for i in range(4):
+        for i in range(2):
+            self.linear5_0.append(nn.Linear(hidden, hidden))
+        self.linear5_3 = nn.ModuleList()
+        for i in range(2):
+            self.linear5_0.append(nn.Linear(hidden, hidden))
+        self.linear5_4 = nn.ModuleList()
+        for i in range(2):
+            self.linear5_0.append(nn.Linear(hidden, hidden))
+        self.linear5_5 = nn.ModuleList()
+        for i in range(2):
+            self.linear5_0.append(nn.Linear(hidden, hidden))
+        self.linear5_6 = nn.ModuleList()
+        for i in range(2):
+            self.linear5_0.append(nn.Linear(hidden, hidden))
+        self.linear5_7 = nn.ModuleList()
+        for i in range(2):
+            self.linear5_0.append(nn.Linear(hidden, hidden))
+        self.linear5_8 = nn.ModuleList()
+        for i in range(2):
             self.linear5_0.append(nn.Linear(hidden, hidden))
         #
 
@@ -116,6 +135,18 @@ class TestModel(nn.Module):
         for m in self.linear5_1:
             x = self.relu(m(x))
         for m in self.linear5_2:
+            x = self.relu(m(x))
+        for m in self.linear5_3:
+            x = self.relu(m(x))
+        for m in self.linear5_4:
+            x = self.relu(m(x))
+        for m in self.linear5_5:
+            x = self.relu(m(x))
+        for m in self.linear5_6:
+            x = self.relu(m(x))
+        for m in self.linear5_7:
+            x = self.relu(m(x))
+        for m in self.linear5_8:
             x = self.relu(m(x))
         #
 
