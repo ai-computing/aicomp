@@ -306,6 +306,27 @@ class Simple_split_test(object):
 
         print(f"##In rank[{self.rank}], setup_ctrl_group completed")
 
+    def check_last_submods(self, submods):
+        gmodule_cnt = 0
+        mod_cnt = 0
+        for submod in submods.modules():
+            if isinstance(submod, fx.GraphModule):
+                gmodule_cnt = gmodule_cnt + 1
+                last_submod = submod
+                continue
+
+        assert gmodule_cnt > num_host, f"GraphModule #:[{gmodule_cnt}] must have more than host #:[{num_host}]"
+
+        for node in last_submod.graph.nodes:
+            print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.all_input_nodes:{node.all_input_nodes}")
+            if node.op == 'call_module' and node.target != 'loss_fn':
+                mod_cnt = mod_cnt + 1
+
+        print(f">>> GraphModule cnt:{gmodule_cnt},  Last GraphModule's  mod_cnt ==> {mod_cnt}")
+
+        assert mod_cnt > 0, f"Last partition has {mod_cnt} modules. It must have more than 0 modules"
+
+
         
     def metadata_transfer(self):
 
@@ -333,6 +354,8 @@ class Simple_split_test(object):
         if self.rank == 0:
             #submods = self.simple_split(gm, t1, self.metadata_range)
             submods = self.simple_split(gm, wrapper, self.metadata_range)
+
+            self.check_last_submods(submods)
 
             skip = False
             to_rank = 0
