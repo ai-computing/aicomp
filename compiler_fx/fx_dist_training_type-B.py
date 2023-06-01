@@ -13,17 +13,12 @@
 #
 #  Sample Usage:
 #      <machine #0>
-#            torchrun --nproc_per_node=1 --nnodes=N --node_rank=0
+#            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
 #                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B.py
 #      <machine #1>
-#            torchrun --nproc_per_node=1 --nnodes=N --node_rank=1
+#            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1
 #                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B.py
 #
-#          (...)
-#
-#      <machine #N-1>
-#            torchrun --nproc_per_node=1 --nnodes=N --node_rank=N-1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_training_type-B.py
 
 
 import torch
