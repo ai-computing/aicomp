@@ -361,7 +361,6 @@ class Simple_split_test(object):
                         print(f"### rank = 0 holding submod_0")
 
                         self.model_ir.append(submod)
-                        self.model_ir.append(0)
 
                         #for node in submod.graph.nodes:
                         #    print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.all_input_nodes:{node.all_input_nodes}")
