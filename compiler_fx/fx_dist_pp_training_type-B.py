@@ -778,7 +778,6 @@ class FXRun2:
                 continue
     
             if node.op == 'output':
-                pass
                 continue
     
     
@@ -824,9 +823,7 @@ class FXRun2:
                 continue
     
     
-            # TODO: when multiple grads 
             if node.op == 'placeholder' and node.target == 'targets':
-                pass
                 continue
     
             if node.op == 'placeholder' and node.target != 'targets' and self.rank > 0:
