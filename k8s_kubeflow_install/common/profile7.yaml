@@ -1,0 +1,19 @@
+apiVersion: kubeflow.org/v1beta1
+kind: Profile
+metadata:
+  name: aicomputing7
+#replace with the name of profile you want, this will be user's namespace name
+spec:
+  owner:
+    kind: User
+    name: aicomputing7@etri.re.kr
+    #replace with the email of the user
+
+  resourceQuotaSpec:
+  #resource quota can be set optionally
+  #  hard:
+  #    cpu: "2"
+  #    memory: 2 Gi
+  #    requests.nvidia.com / gpu: "1"
+  #    persistentvolumeclaims: "1"
+  #    requests.storage: "5Gi"
