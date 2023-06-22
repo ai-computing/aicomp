@@ -119,22 +119,29 @@ class FXRun2:
             result = attr_itr
 
         elif node.op == 'call_function':
-            result = node.target(\
-                    *fx.graph.map_arg(node.args, lambda n: self.env[n.name]), \
-                    **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
+            #result = node.target(\
+            #        *fx.graph.map_arg(node.args, lambda n: self.env[n.name]), \
+            #        **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
+            result = node.target(*args, **kwargs)
 
         elif node.op == 'call_method':
-            self_obj, *args = fx.graph.map_arg(node.args, lambda n: self.env[n.name])
-            kwargs = fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name])
+            #self_obj, *args = fx.graph.map_arg(node.args, lambda n: self.env[n.name])
+            #kwargs = fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name])
+            #result = getattr(self_obj, node.target)(*args, **kwargs)
+
+            self_obj = args[0]
+            args = args[1:]
             result = getattr(self_obj, node.target)(*args, **kwargs)
 
         elif node.op == 'call_module':
-            result = self.modules[node.target](\
-                    *fx.graph.map_arg(node.args, lambda n: self.env[n.name]),\
-                    **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
+            #result = self.modules[node.target](\
+            #        *fx.graph.map_arg(node.args, lambda n: self.env[n.name]),\
+            #        **fx.graph.map_arg(node.kwargs, lambda n: self.env[n.name]))
+            result = self.modules[node.target](*args, **kwargs)
 
         elif node.op == 'output':
-            result = fx.graph.map_arg(node.args[0], lambda n: self.env[n.name])
+            #result = fx.graph.map_arg(node.args[0], lambda n: self.env[n.name])
+            result = args[0]
 
         #
         print(f" ## run - node:{node.name}, node.op:{node.op}")
