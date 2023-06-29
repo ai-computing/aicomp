@@ -903,7 +903,8 @@ class FXRun2:
             self.grads2[mb_idx][target_node_name] = self.receive_data(pre_split_rank)
     
         node = to_
-        while node != from_:
+        #while node != from_:
+        while node != from_._prev:
 
 
             if node.op == 'output':
@@ -989,6 +990,7 @@ class FXRun2:
         if self.rank > 0:
             #target_node_name = str(node.target)
             target_node_name = node.name
+            #target_node_name = node._prev.name
             next_split_rank = self.rank - 1
             #print(f" ---- fx_backward: got {target_node_name}'s grads --> to be sent to rank:{next_split_rank}") # DEBUG
             obj = self.grads2[mb_idx][target_node_name]
