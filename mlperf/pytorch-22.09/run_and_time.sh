@@ -116,7 +116,6 @@ BERT_CMD="\
     /workspace/bert/run_pretraining.py \
     $PHASE2 \
     --do_train \
-    --skip_checkpoint \
     --train_mlm_accuracy_window_size=0 \
     --target_mlm_accuracy=${TARGET_MLM_ACCURACY} \
     --weight_decay_rate=${WEIGHT_DECAY_RATE} \
@@ -131,6 +130,7 @@ BERT_CMD="\
     --log_freq=0 \
     --bert_config_path=/workspace/phase1/bert_config.json "
 
+#    --skip_checkpoint \
 if [ -n "${SLURM_LOCALID-}" ]; then
   BERT_CMD="${BERT_CMD} --local_rank=${SLURM_LOCALID} "
 fi
@@ -171,6 +171,10 @@ fi
 # Options
 
 [ "${DEBUG}" = "1" ] && set -x
+
+#swsok, for debug
+echo "${BERT_CMD} --seed=${SEED}"
+#exit 0
 
 eval "${LOGGER} ${BERT_CMD} --seed=${SEED}"
 

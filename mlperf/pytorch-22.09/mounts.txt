@@ -4,8 +4,9 @@ ${CHECKPOINTDIR_PHASE1}:/workspace/phase1
 ${EVALDIR}:/workspace/evaldata
 ${UNITTESTDIR}:/workspace/unit_test_data
 #
-#${PWD}/run_pretraining.py:/workspace/bert/run_pretraining.py
-#${PWD}/run_and_time.sh:/workspace/bert/run_and_time.sh
+${PWD}/run_pretraining.py:/workspace/bert/run_pretraining.py
+${PWD}/run_and_time.sh:/workspace/bert/run_and_time.sh
+${CHECKPOINTDIR}:/workspace/checkpoints
 #${PWD}/bert_config_no-dp.json:/workspace/phase1/bert_config.json
 #${PWD}/modeling.py:/workspace/bert/modeling.py
 #${PWD}/fwd_loss_bwd_trainer.py:/workspace/bert/fwd_loss_bwd_trainer.py

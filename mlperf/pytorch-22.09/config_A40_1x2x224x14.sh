@@ -17,7 +17,8 @@ export EVAL_ITER_SAMPLES=150000
 
 ## System run parms
 export DGXNNODES=1
-export DGXSYSTEM=$(basename $(readlink -f ${BASH_SOURCE[0]}) | sed 's/^config_//' | sed 's/\.sh$//' )
+#export DGXSYSTEM=$(basename $(readlink -f ${BASH_SOURCE[0]}) | sed 's/^config_//' | sed 's/\.sh$//' )
+export DGXSYSTEM="A40_1x2x224x14"
 export WALLTIME=04:00:00
 
 ## System config params
@@ -25,3 +26,12 @@ export DGXNGPU=2
 export DGXSOCKETCORES=16
 export DGXNSOCKET=2
 export DGXHT=2         # HT is on is 2, HT off is 1
+
+export CONT=swsok/mlperf-nvidia:language_model
+export DATADIR="/data/mlperf/bert/hdf5/training-4320/hdf5_4320_shards_varlength"
+export DATADIR_PHASE2="/data/mlperf/bert/hdf5/training-4320/hdf5_4320_shards_varlength"
+export EVALDIR="/data/mlperf/bert/hdf5/eval_varlength"
+export CHECKPOINTDIR_PHASE1="/data/mlperf/bert/phase1"
+export CHECKPOINTDIR="/data/mlperf/bert/checkpoints"
+export CUDA_VISIBLE_DEVICES="0,1"
+export NEXP=1
