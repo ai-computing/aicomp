@@ -68,8 +68,8 @@ logging.basicConfig(level=logging.ERROR)
 
 torch.manual_seed(42)
 
-#use_wrapper = False
-use_wrapper = True
+use_wrapper = False
+#use_wrapper = True
 
 #
 # Total process count
@@ -78,6 +78,7 @@ use_wrapper = True
 num_rank=int(os.environ["WORLD_SIZE"])
 
 batch_size = 64
+#batch_size = 128
 
 micro_batch_size = num_rank // 2 # TODO
 
@@ -192,6 +193,8 @@ class Simple_split_test(object):
 
         logging.info(f" ------------------------------------------------------------")
         logging.info(self.range_metadata)
+        print(f"   range_metadata: {self.range_metadata}")
+        #logging.info(f"   range_metadata: {self.range_metadata}")
         logging.info(f" ------------------------------------------------------------")
 
 
@@ -202,8 +205,9 @@ class Simple_split_test(object):
         global gm
 
         if use_wrapper == True:
-            #config = GPT2Config(vocab_size=ntokens, embed_dim=4096, use_cache=False)
-            config = GPT2Config(vocab_size=50257, embed_dim=4096, use_cache=False)
+            # DEBUG
+            #config = GPT2Config(vocab_size=50257, embed_dim=4096, use_cache=False)
+            config = GPT2Config(use_cache=False)
 
             criterion = nn.CrossEntropyLoss()
             wrapper = SimpleLossWrapper(config, model, criterion)
@@ -252,6 +256,7 @@ class Simple_split_test(object):
         
             logging.info(f" worker: {self.rank} <==  range metadata:{self.range_metadata} transferred")
             logging.info(f" -----------------------------------------------------")
+
 
 
 
@@ -394,8 +399,10 @@ class FXRun2:
             self.special_nodes = special_nodes_obj[0]
 
         logging.info(f" *********** rank:{self.rank} ==> cross-referenced nodes *****************")
-        logging.info(f" special_nodes: {self.special_nodes}")
+        print(f" special_nodes: {self.special_nodes}")
+        #logging.info(f" special_nodes: {self.special_nodes}")
         logging.info(f" *************************************************************************")
+
 
 
     # analyze IR graph and find the cross-layer referenced nodes
@@ -413,7 +420,11 @@ class FXRun2:
 
             # in process check - backward direction
 
-            for _, target_ in enumerate(cur.all_input_nodes):
+            #for _, target_ in enumerate(cur.all_input_nodes):
+            for i, target_ in enumerate(cur.all_input_nodes):
+                # DEBUG
+                if ((use_wrapper == False and cur.op == 'output') or (use_wrapper == True and cur.name == "loss_fn")) and i > 0:
+                    break
                 referenced_in = False
                 referenced_out = False
 
@@ -446,6 +457,7 @@ class FXRun2:
 
                     outer = first_node
                     while outer != from_: 
+                        # DEBUG
                         if outer.name == target_.name:
                             logging.info(f" [cross_reference_analyze] ({target_.name}) referenced in outer rank:{rank_} !!")
 
@@ -1061,7 +1073,6 @@ class FXRun2:
                 output1 = self.env2[mb_idx][str(key_)]
                 target1 = self.env2[mb_idx]["labels"]
 
-                logging.debug(f" output1: {output1.size()}, target1:{target1.size()}, ntokens:{ntokens}")
                 logging.debug(f" ########## output1: {output1}, ######### target1:{target1}")
 
                 output1 = output1.view(-1, output1.size(-1))
@@ -1172,6 +1183,7 @@ class FXRun2:
                     (use_wrapper == False and node.op == 'output'):
 
                 logging.debug(f" >>>>> fx_micro_backward[{mb_idx}] - node.name:{node.name}")
+
     
                 def extract_tensor_args(b):
                     a = self.env2[mb_idx][b.name]
@@ -1250,12 +1262,16 @@ class FXRun2:
                 next_ = []
                 for i, m in enumerate(node.all_input_nodes):
                     next_.append(m)
+                    if (use_wrapper == False and node.op == 'output') \
+                            or (use_wrapper == True and node.target == 'loss_fn'):
+                        break
     
                 cnt = len(result[0])
 
                 #logging.debug(f" >>>>>>>>>>>> node.name:{node.name}, get_desti ->{next_}, cnt={cnt}, stage_bacward --> result:{result}")
                 logging.debug(f" >>>>>>>>>>>> node.name:{node.name}, get_desti ->{next_}, cnt={cnt}")
-    
+
+
                 for m in next_:
                     if cnt > 1:
                         self.grads2[mb_idx][m.name] = tuple(result[0])
@@ -1310,13 +1326,16 @@ device = torch.device("cpu")
 
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token
+tokenizer.pad_token_id = tokenizer.eos_token_id
 
 
-#model = GPT2LMHeadModel(GPT2Config(vocab_size=ntokens, embed_dim=4096, use_cache=False))
-config = GPT2Config(vocab_size=50257, embed_dim=4096, use_cache=False)
+
+#config = GPT2Config(vocab_size=50257, embed_dim=4096, use_cache=False)
+config = GPT2Config(use_cache=False)
+
 #model = GPT2LMHeadModel.from_pretrained("gpt2", config=config, ignore_mismatched_sizes=True)
 model = GPT2LMHeadModel(config)
-model.from_pretrained("gpt2")
+model = model.from_pretrained("gpt2")
 
 
 sim_split = Simple_split_test()
@@ -1427,7 +1446,6 @@ def train():
 if sim_split.rank == 0:
     tick = time.time()
 
-# TEST ONLY
 for epoch in range(1, epochs + 1):
     epoch_start_time = time.time()
     train()
