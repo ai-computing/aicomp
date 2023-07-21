@@ -72,8 +72,9 @@ def single_file_write(i):
     h5_writer.close()
 
 from multiprocessing import Pool
+import multiprocessing
 
-with Pool(processes=32) as pool:
+with Pool(processes=multiprocessing.cpu_count()) as pool:
     pool.map(single_file_write, range(num_shards))
 
 

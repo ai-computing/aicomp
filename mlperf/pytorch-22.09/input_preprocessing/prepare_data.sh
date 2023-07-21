@@ -23,6 +23,7 @@ function usage()
      -h, --help            show this help message and exit
      -o, --outputdir PATH  pass in a localization of resulting dataset
      -s, --skip-download   skip downloading raw files from GDrive (assuming it already has been done)
+     -w, --write-shuffle   skip generaing shuffle strategies (assuming it already has been done)
      -p, --shards          number of resulting shards. For small scales (less than 256 nodes) use 2048. For sacles >256 4320 is recommended (default 4320)
 
 HEREDOC
