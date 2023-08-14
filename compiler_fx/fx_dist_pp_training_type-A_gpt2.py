@@ -68,8 +68,8 @@ logging.basicConfig(level=logging.ERROR)
 
 torch.manual_seed(42)
 
-use_wrapper = False
-#use_wrapper = True
+#use_wrapper = False
+use_wrapper = True
 
 #
 # Total process count
@@ -77,7 +77,8 @@ use_wrapper = False
 #num_rank=N
 num_rank=int(os.environ["WORLD_SIZE"])
 
-batch_size = 64
+#batch_size = 64
+batch_size = 32
 #batch_size = 128
 
 micro_batch_size = num_rank // 2 # TODO
@@ -1365,7 +1366,8 @@ print(f"data_size={data_size}")
 nbatches = len(dataloader)      # total count of data / batch size
 print(f"nbatches={nbatches}")    
 
-epochs = 2 # The number of epochs
+#epochs = 2 # The number of epochs
+epochs = 1 # The number of epochs
 
 def train():
 
@@ -1383,7 +1385,6 @@ def train():
             # move data to first host
             # move labels to last host
 
-            #data, labels = get_batch(train_data, i)
             tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
             data, labels = tokens.input_ids, tokens.input_ids
 
