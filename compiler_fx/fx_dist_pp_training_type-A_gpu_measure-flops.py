@@ -14,10 +14,10 @@
 #  Sample Usage:
 #      <machine #0>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_training_type-A_gpu.py
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_training_type-A_gpu_measure-flops.py
 #      <machine #1>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_training_type-A_gpu.py
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_training_type-A_gpu_measure-flops.py
 #
 
 import torch
