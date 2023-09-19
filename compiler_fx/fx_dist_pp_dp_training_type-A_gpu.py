@@ -1436,14 +1436,13 @@ if sim_split.rank == 0:
     print('Total parameters in model: {:,}'.format(get_total_params(fx_run2.mod)))
     tick = time.time()
 
-for i in range(0, dp_size):
-    start_rank = (local_rank % dp_size) * dp_size
-    end_rank = ((local_rank % dp_size) + 1) * dp_size - 1
-    dp_group = list(range(start_rank, end_rank))
+start_rank = (fx_run2.local_rank // dp_size) * dp_size
+end_rank = ((fx_run2.local_rank // dp_size) + 1) * dp_size
+dp_group = list(range(start_rank, end_rank))
 
-print("kkd", dp_group)
+print("kkd", fx_run2.local_rank , dp_group)
 
-fx_run2.mod = DDP(fx_run2.mod, process_group=dp_group, device_ids=[fx_run2.local_rank])
+fx_run2.mod = DDP(fx_run2.mod, process_group=dp_group, device_ids=[fx_run2.local_rank], output_device=fx_run2.device)
 
 fx_run2.mod.train()
 optimizer1 = Adam(fx_run2.mod.parameters(), lr=3e-5)
