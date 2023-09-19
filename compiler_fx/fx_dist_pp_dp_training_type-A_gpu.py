@@ -446,7 +446,7 @@ class FXRun2:
 
         from_, to_ = self.get_range(stage, g)
 
-        logging.debug(f" ***** rank:{rank} >>  from_:{from_.name}, to_:{to_.name}")
+        logging.debug(f" ***** stage:{stage} >>  from_:{from_.name}, to_:{to_.name}")
 
         cur = to_
         while (cur != from_) or (stage > 0 and cur == from_):
