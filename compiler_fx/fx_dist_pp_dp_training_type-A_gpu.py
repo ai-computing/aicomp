@@ -56,21 +56,22 @@ torch.manual_seed(42)
 use_wrapper = False
 #use_wrapper = True
 
-#use_gpu = False
-use_gpu = True
+use_gpu = False
+#use_gpu = True
 
 #
 # Total process count
 #
 #num_rank=N
 num_rank=int(os.environ["WORLD_SIZE"])
-pp_size = 4
+pp_size = 2
 dp_size = num_rank // pp_size
 
 #micro_batch_size = num_rank // 2 # TODO
 micro_batch_size = 2 # TODO
 
 batch_size = 64
+batch_size = batch_size // dp_size
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {num_rank}")
@@ -79,8 +80,8 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
-in_features = 5120
-out_features = 5120
+in_features = 4
+out_features = 4
 hidden = 5120
 
 class TestModel(nn.Module):
@@ -375,7 +376,7 @@ class FXRun2:
 
         self.mod = split_info.model_ir[0]
         self.graph = self.mod.graph
-        self.modules = dict(self.mod.named_modules())
+        #self.modules = dict(self.mod.named_modules())
         self.mbsize = mbsize  
         self.env2: List[Dict[str, Node]] = [{} for _ in range(mbsize)]
         self.range_metadata = split_info.range_metadata
@@ -436,7 +437,35 @@ class FXRun2:
         #logging.info(f" special_nodes: {self.special_nodes}")
         logging.info(f" *************************************************************************")
 
+        if dp_size > 1:
+            #dp_group = []
+            #for i in range(pp_size):
+            #    dp_group.append(list(range(i*dp_size, (i+1)*dp_size)))
+            #dp_group = [[0,1],[2,3]]
 
+            start_rank = (self.rank // dp_size) * dp_size
+            end_rank = ((self.rank // dp_size) + 1) * dp_size
+            dp_group = list(range(start_rank, end_rank))
+
+            #dp_group = [0,1,2,3]
+            print("kkd", self.local_rank, dp_group)
+            dp_group = dist.new_group(ranks=dp_group)
+
+            self.mod = DDP(self.mod, process_group=dp_group)
+            if isinstance(self.mod, torch.nn.parallel.DistributedDataParallel):
+                self.mod = self.mod.module
+                self.graph = self.mod.graph
+            print("kkkkkddddd")
+
+    def get_prev_rank(self):
+        assert self.stage == 0, f"no prev rank"
+        prev_rank = (self.stage - 1) * dp_size + self.rank
+        return prev_rank
+
+    def get_next_rank(self):
+        assert self.stage == pp_size-1, f"no next rank"
+        next_rank = (self.stage + 1) * dp_size + self.rank
+        return next_rank
 
     # analyze IR graph and find the cross-layer referenced nodes
     def cross_reference_analyze(self, stage, g:fx.Graph):
@@ -575,7 +604,7 @@ class FXRun2:
             logging.info(f" ---- node:{node.name}")
             if node.op == 'call_module':
                 target_atoms = node.target.split('.')
-                attr_itr = self.mod
+                attr_itr = self.mod.module
                 for i , atom in enumerate(target_atoms):
                     if not hasattr(attr_itr, atom):
                         raise RuntimeError(\
@@ -592,7 +621,7 @@ class FXRun2:
         logging.info(f" ---- node:{node.name}")  # last node assigned to the process#{rank} in range_metadata
         if node.op == 'call_module':
             target_atoms = node.target.split('.')
-            attr_itr = self.mod
+            attr_itr = self.mod.module
             for i , atom in enumerate(target_atoms):
                 if not hasattr(attr_itr, atom):
                     raise RuntimeError(\
@@ -775,7 +804,7 @@ class FXRun2:
         #logging.debug(f" -----> rank{self.rank}: in fx_forward4, args[0]:{args[0]}")
         self.args_iter = iter(args)
 
-        if self.rank == 0:
+        if self.stage == 0:
             for n in self.mod.graph.nodes:
                 if (use_wrapper == True and n.op == 'placeholder' and self.stage == 0 and n.name == 'x') or \
                         (use_wrapper == False and n.op == 'placeholder' and self.stage == 0 and n.name == 'x'):
@@ -852,11 +881,11 @@ class FXRun2:
 
     def fx_micro_forward(self, mb_idx):
 
-        from_, to_ = self.get_range(self.rank, self.graph)
+        from_, to_ = self.get_range(self.stage, self.graph)
         logging.info(f"## rank:{self.rank}, mb_idx:{mb_idx} world_size:{self.world_size}, from_:{from_.name}, to_:{to_.name}")
 
-        if self.rank > 0:
-            pre_split_rank = self.rank - 1
+        if self.stage > 0:
+            pre_split_rank = (self.stage - 1) * dp_size + self.rank
 
             cur = from_._prev
 
@@ -870,7 +899,7 @@ class FXRun2:
             #    cur = cur._next
 
             for node_name, range_ in self.special_nodes.items():
-                src_rank, needed_by_rank = range_
+                src_stage, needed_by_stage = range_
                 if self.rank > src_rank and self.rank <= needed_by_rank:
                     logging.info(f"### rank:{self.rank}, receive cross_ref activation from {pre_split_rank}, node_name:{node_name}")
                     self.env2[mb_idx][node_name] = self.receive_data(pre_split_rank)
@@ -1429,6 +1458,7 @@ fx_run2.print_range()
 if use_gpu == True:
     fx_run2.prepare_module()
 
+
 print(f">>> micro batch size = {fx_run2.mbsize}")
 
 
@@ -1436,19 +1466,12 @@ if sim_split.rank == 0:
     print('Total parameters in model: {:,}'.format(get_total_params(fx_run2.mod)))
     tick = time.time()
 
-start_rank = (fx_run2.local_rank // dp_size) * dp_size
-end_rank = ((fx_run2.local_rank // dp_size) + 1) * dp_size
-dp_group = list(range(start_rank, end_rank))
-
-print("kkd", fx_run2.local_rank , dp_group)
-
-fx_run2.mod = DDP(fx_run2.mod, process_group=dp_group, device_ids=[fx_run2.local_rank], output_device=fx_run2.device)
 
 fx_run2.mod.train()
 optimizer1 = Adam(fx_run2.mod.parameters(), lr=3e-5)
 
 
-if fx_run2.rank == 0:
+if fx_run2.stage == 0:
     #
     # move sample_input to first host
     #
@@ -1459,10 +1482,12 @@ else:
     sample_output = None
 
 
+print(sample_input)
+
 #
 # move sample_output to last host
 #
-if fx_run2.rank == 0:
+if fx_run2.stage == 0:
     target_node_name = "labels"
     mbatches = torch.chunk(sample_output, fx_run2.mbsize)
     for j in range(fx_run2.mbsize):
@@ -1470,14 +1495,14 @@ if fx_run2.rank == 0:
 
     for j in range(fx_run2.mbsize):
         obj = fx_run2.env2[j][target_node_name]
-        fx_run2.send_data(obj, fx_run2.world_size - 1)
+        fx_run2.send_data(obj, fx_run2.rank + ((pp_size - 1)*dp_size))
     #
     print(f"sent ====> {sample_output}")
 
-if fx_run2.rank == fx_run2.world_size - 1:
+if fx_run2.stage == pp_size - 1:
     target_node_name = "labels"
     for j in range(fx_run2.mbsize):
-        fx_run2.env2[j][target_node_name] = fx_run2.receive_data(0)
+        fx_run2.env2[j][target_node_name] = fx_run2.receive_data(fx_run2.rank - ((pp_size - 1)*dp_size))
 
     outputs = tuple(mb["labels"] for mb in fx_run2.env2)
     sample_output = torch.cat(outputs)
