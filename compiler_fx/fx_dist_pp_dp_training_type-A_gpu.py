@@ -70,7 +70,7 @@ dp_size = num_rank // pp_size
 #micro_batch_size = num_rank // 2 # TODO
 micro_batch_size = 2 # TODO
 
-batch_size = 64
+batch_size = 128
 batch_size = batch_size // dp_size
 
 if int(os.environ["RANK"]) == 0:
@@ -375,6 +375,7 @@ class FXRun2:
     def __init__(self, split_info: Simple_split_test, device, mbsize): # TODO
 
         self.mod = split_info.model_ir[0]
+        self.ddp_mod = self.mod
         self.graph = self.mod.graph
         #self.modules = dict(self.mod.named_modules())
         self.mbsize = mbsize  
@@ -438,34 +439,42 @@ class FXRun2:
         logging.info(f" *************************************************************************")
 
         if dp_size > 1:
-            #dp_group = []
-            #for i in range(pp_size):
-            #    dp_group.append(list(range(i*dp_size, (i+1)*dp_size)))
-            #dp_group = [[0,1],[2,3]]
+            ddp_group = []
 
-            start_rank = (self.rank // dp_size) * dp_size
-            end_rank = ((self.rank // dp_size) + 1) * dp_size
-            dp_group = list(range(start_rank, end_rank))
+            for i in range(0, pp_size):
+                start_rank = i * dp_size
+                end_rank = (i+1) * dp_size
+                dp_group = list(range(start_rank, end_rank))
+                if self.rank in dp_group:
+                    print(self.rank, dp_group)
+                    ddp_group = dist.new_group(dp_group)
+                else:
+                    dist.new_group(dp_group)
 
-            #dp_group = [0,1,2,3]
-            print("kkd", self.local_rank, dp_group)
-            dp_group = dist.new_group(ranks=dp_group)
-
-            self.mod = DDP(self.mod, process_group=dp_group)
-            if isinstance(self.mod, torch.nn.parallel.DistributedDataParallel):
-                self.mod = self.mod.module
+            self.ddp_mod = DDP(self.mod, process_group=ddp_group, find_unused_parameters=True)
+            if isinstance(self.ddp_mod, torch.nn.parallel.DistributedDataParallel):
+                self.mod = self.ddp_mod.module
                 self.graph = self.mod.graph
-            print("kkkkkddddd")
 
-    def get_prev_rank(self):
-        assert self.stage == 0, f"no prev rank"
-        prev_rank = (self.stage - 1) * dp_size + self.rank
+    def get_prev_rank(self, rank, stage):
+        # TODO: for TP, need update for rank/stage (e.g., list)
+        assert stage != 0, f"no prev rank {rank}, {stage}"
+        prev_rank = (stage - 1) * dp_size + self.get_first_rank(rank)
         return prev_rank
 
-    def get_next_rank(self):
-        assert self.stage == pp_size-1, f"no next rank"
-        next_rank = (self.stage + 1) * dp_size + self.rank
+    def get_next_rank(self, rank, stage):
+        # TODO: for TP, need update for rank/stage (e.g., list)
+        assert stage != pp_size-1, f"no next rank {rank}, {stage}"
+        next_rank = (stage + 1) * dp_size + self.get_first_rank(rank)
         return next_rank
+
+    def get_first_rank(self, rank):
+        first_rank = rank % dp_size
+        return first_rank
+
+    def get_last_rank(self, rank):
+        last_rank = (pp_size-1)*dp_size + rank % dp_size
+        return last_rank
 
     # analyze IR graph and find the cross-layer referenced nodes
     def cross_reference_analyze(self, stage, g:fx.Graph):
@@ -545,11 +554,11 @@ class FXRun2:
 
 
 
-    def get_range(self, rank, g:fx.Graph) -> (Node, Node):
+    def get_range(self, stage, g:fx.Graph) -> (Node, Node):
 
-        logging.info(f"rank:{rank} range_metadata: {self.range_metadata}")
+        logging.info(f"stage:{stage} range_metadata: {self.range_metadata}")
 
-        if rank == 0:
+        if stage == 0:
             from_node_name = "-1"
             for n in g.nodes:
                 if n.op == 'placeholder':
@@ -557,9 +566,9 @@ class FXRun2:
                     logging.debug(f">>>> get_range: n.op == 'placeholder' --> from_node_name:{from_node_name}")
                 break
         else:
-            from_node_name = self.range_metadata[rank-1][1]
+            from_node_name = self.range_metadata[stage-1][1]
 
-        to_node_name = self.range_metadata[rank][1]
+        to_node_name = self.range_metadata[stage][1]
 
         for n in g.nodes:
             if from_node_name == "-1":
@@ -575,7 +584,7 @@ class FXRun2:
                 to_node = n
                 break
 
-        if rank == 0:
+        if stage == 0:
             return (from_node, to_node)
         else:
             return (from_node._next, to_node)
@@ -829,14 +838,20 @@ class FXRun2:
                     break
 
         #logging.debug(f" * rank:{self.rank}, in run_micro_batch_forward() ..")
+
+        result = None
         for i in range(self.mbsize):
-            result = self.fx_micro_forward(i)
+            if dp_size > 1:
+                with self.ddp_mod.no_sync():
+                    result = self.fx_micro_forward(i)
+            else:
+                result = self.fx_micro_forward(i)
             next(result)
 
 
     def get_last_module(self):
         if self.rank == self.world_size - 1:
-            from_, to_ = self.get_range(self.rank, self.graph)
+            from_, to_ = self.get_range(self.stage, self.graph)
 
             cur = to_
             while cur != from_:
@@ -885,7 +900,7 @@ class FXRun2:
         logging.info(f"## rank:{self.rank}, mb_idx:{mb_idx} world_size:{self.world_size}, from_:{from_.name}, to_:{to_.name}")
 
         if self.stage > 0:
-            pre_split_rank = (self.stage - 1) * dp_size + self.rank
+            pre_split_rank = self.get_prev_rank(self.rank, self.stage)
 
             cur = from_._prev
 
@@ -900,8 +915,8 @@ class FXRun2:
 
             for node_name, range_ in self.special_nodes.items():
                 src_stage, needed_by_stage = range_
-                if self.rank > src_rank and self.rank <= needed_by_rank:
-                    logging.info(f"### rank:{self.rank}, receive cross_ref activation from {pre_split_rank}, node_name:{node_name}")
+                if self.stage > src_stage and self.stage <= needed_by_stage:
+                    logging.info(f"### stage:{self.stage}, receive cross_ref activation from {pre_split_rank}, node_name:{node_name}")
                     self.env2[mb_idx][node_name] = self.receive_data(pre_split_rank)
                     if isinstance(self.env2[mb_idx][node_name], torch.Tensor):
                         if not self.env2[mb_idx][node_name].requires_grad or self.env2[mb_idx][node_name].grad_fn is None:
@@ -912,7 +927,7 @@ class FXRun2:
                 node_name = cur.name     # cur = from_._prev
                 #pre_split_rank = self.rank - 1
                 if node_name not in self.special_nodes:
-                    logging.info(f"## rank:{self.rank}, receive activation from {pre_split_rank}, node_name:{node_name}")
+                    logging.info(f"## stage:{self.stage}, receive activation from {pre_split_rank}, node_name:{node_name}")
                     self.env2[mb_idx][node_name] = self.receive_data(pre_split_rank)
                     if isinstance(self.env2[mb_idx][node_name], torch.Tensor):
                         if not self.env2[mb_idx][node_name].requires_grad or self.env2[mb_idx][node_name].grad_fn is None:
@@ -931,18 +946,18 @@ class FXRun2:
             cur = cur._next
         result = self.fx_ir_run_node2(cur, mb_idx)
 
-        logging.info(f" rank:{self.rank}, cur.node name:{cur.name}, split_node_name:{to_.name}")
+        logging.info(f" stage:{self.stage}, cur.node name:{cur.name}, split_node_name:{to_.name}")
 
-        if self.rank < self.world_size - 1:
-            next_split_rank = self.rank + 1
+        if self.rank < self.get_last_rank(self.rank):
+            next_split_rank = self.get_next_rank(self.rank, self.stage)
             begin_ = cur
 
             for node_name, range_ in self.special_nodes.items():
-                src_rank, needed_by_rank = range_
-                if self.rank >= src_rank and self.rank < needed_by_rank:
+                src_stage, needed_by_stage = range_
+                if self.stage >= src_stage and self.stage < needed_by_stage:
                     obj = self.env2[mb_idx][node_name]
                     self.send_data(obj, next_split_rank)
-                    logging.info(f"### rank:{self.rank} send cross_ref activation to {next_split_rank}, node_name:{node_name}")
+                    logging.info(f"### stage:{self.stage} send cross_ref activation to {next_split_rank}, node_name:{node_name}")
 
             #cur = self.rewind(cur, self.window_size)
             #while cur != begin_:           # rewind case
@@ -1261,22 +1276,22 @@ class FXRun2:
 
 
     def fx_micro_backward(self, mb_idx):
-        from_, to_ = self.get_range(self.rank, self.graph)
+        from_, to_ = self.get_range(self.stage, self.graph)
 
-        self.init_grad(mb_idx, from_,to_)
+        self.init_grad(mb_idx, from_, to_)
 
-        if self.rank < self.world_size - 1:
-            pre_split_rank = self.rank + 1
+        if self.rank < self.get_last_rank(self.rank):
+            pre_split_rank = self.get_next_rank(self.rank, self.stage)
 
             #cur = to_._next
             cur = to_
             begin_ = cur
 
             for node_name, range_ in self.special_nodes.items():
-                src_rank, needed_by_rank = range_
-                if self.rank >= src_rank and self.rank < needed_by_rank:
+                src_stage, needed_by_stage = range_
+                if self.stage >= src_stage and self.stage < needed_by_stage:
                     self.grads2[mb_idx][node_name] = self.receive_data(pre_split_rank)
-                    logging.debug(f"### rank:{self.rank}, receive cross_ref gradient from {pre_split_rank}, node_name:{node_name}")
+                    logging.debug(f"### stage:{self.stage}, receive cross_ref gradient from {pre_split_rank}, node_name:{node_name}")
 
             #cur = self.fastfwd(cur, self.window_size)
             #while cur != begin_:         # fastfwd case
@@ -1290,7 +1305,7 @@ class FXRun2:
                 node_name = cur.name     # cur = from_._prev
                 #ipre_split_rank = self.rank + 1
                 if node_name not in self.special_nodes:
-                    logging.debug(f"## rank:{self.rank}, receive grads from {pre_split_rank}, node_name:{node_name}")
+                    logging.debug(f"## rank:{self.rank}, stage:{self.stage} receive grads from {pre_split_rank}, node_name:{node_name}")
                     self.grads2[mb_idx][node_name] = self.receive_data(pre_split_rank)
 
         node = to_
@@ -1377,7 +1392,23 @@ class FXRun2:
                     node = node._prev
                     continue
 
-                result = stage_backward(*args, **kwargs)
+                # prepare_for_backward position.
+                if isinstance(self.ddp_mod, torch.nn.parallel.distributed.DistributedDataParallel):
+                    if mb_idx == self.mbsize - 1:
+                        self.ddp_mod.reducer.prepare_for_backward(
+                                list(
+                                    torch.nn.parallel.distributed._find_tensors(
+                                        kwargs['stage_output']
+                                        )
+                                    )
+                                )
+                        result = stage_backward(*args, **kwargs)
+                    else:
+                        with self.ddp_mod.no_sync():
+                            result = stage_backward(*args, **kwargs)
+                else:
+                    result = stage_backward(*args, **kwargs)
+
 
                 #if result[0] == (None,):
                 #    node = node._prev
@@ -1412,16 +1443,16 @@ class FXRun2:
 
             node = node._prev
 
-        if self.rank > 0:
-            next_split_rank = self.rank - 1
+        if self.stage > 0:
+            next_split_rank = self.get_prev_rank(self.rank, self.stage)
 
             cur = node
 
             begin_ = cur
 
             for node_name, range_ in self.special_nodes.items():
-                src_rank, needed_by_rank = range_
-                if self.rank > src_rank and self.rank <= needed_by_rank:
+                src_stage, needed_by_stage = range_
+                if self.stage > src_stage and self.stage <= needed_by_stage:
                     obj = self.grads2[mb_idx][node_name]
                     self.send_data(obj, next_split_rank)
                     logging.debug(f"### rank:{self.rank} send cross_ref gradient to {next_split_rank}, node_name:{node_name}")
@@ -1462,7 +1493,7 @@ if use_gpu == True:
 print(f">>> micro batch size = {fx_run2.mbsize}")
 
 
-if sim_split.rank == 0:
+if fx_run2.rank == 0:
     print('Total parameters in model: {:,}'.format(get_total_params(fx_run2.mod)))
     tick = time.time()
 
@@ -1470,6 +1501,10 @@ if sim_split.rank == 0:
 fx_run2.mod.train()
 optimizer1 = Adam(fx_run2.mod.parameters(), lr=3e-5)
 
+if fx_run2.rank % 2 == 0:
+    torch.manual_seed(42)
+else:
+    torch.manual_seed(42)
 
 if fx_run2.stage == 0:
     #
@@ -1495,50 +1530,49 @@ if fx_run2.stage == 0:
 
     for j in range(fx_run2.mbsize):
         obj = fx_run2.env2[j][target_node_name]
-        fx_run2.send_data(obj, fx_run2.rank + ((pp_size - 1)*dp_size))
+        fx_run2.send_data(obj, fx_run2.get_last_rank(fx_run2.rank))
     #
     print(f"sent ====> {sample_output}")
 
 if fx_run2.stage == pp_size - 1:
     target_node_name = "labels"
     for j in range(fx_run2.mbsize):
-        fx_run2.env2[j][target_node_name] = fx_run2.receive_data(fx_run2.rank - ((pp_size - 1)*dp_size))
+        fx_run2.env2[j][target_node_name] = fx_run2.receive_data(fx_run2.get_first_rank(fx_run2.rank))
 
     outputs = tuple(mb["labels"] for mb in fx_run2.env2)
     sample_output = torch.cat(outputs)
     #
     print(f"received <==== env2[{fx_run2.mbsize-1}][{target_node_name}]: {fx_run2.env2[fx_run2.mbsize-1][target_node_name]}")
 
-
-#for i in range(20):
-for i in range(50):
+for i in range(20):
+#for i in range(50):
 
     optimizer1.zero_grad()
 
     output1 = fx_run2.fx_forward4(sample_input, sample_output)
     loss1 = fx_run2.loss
 
-    if sim_split.rank == sim_split.world_size - 1:
-        print(f'Step {i}, Loss1:{sum(loss1) / fx_run2.mbsize}')
+    if fx_run2.rank == fx_run2.get_last_rank(fx_run2.rank):
+        print(f'Step {i}, {fx_run2.rank} Loss1:{sum(loss1) / fx_run2.mbsize}')
 
     fx_run2.fx_backward4(loss1)
 
     optimizer1.step()
 
 
-if sim_split.rank == 0:
+if fx_run2.rank == 0:
     tock=time.time()
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-if sim_split.rank == sim_split.world_size - 1:
+if fx_run2.rank == fx_run2.get_last_rank(fx_run2.rank):
     print(f"RANK:{sim_split.rank} ###################### output #############")
     output1 = fx_run2.make_output()
     print(output1)
     print(f"###################################")
 
-print(f"[rank:{sim_split.rank}, run completed ...")
+print(f"[rank:{fx_run2.rank}, run completed ...")
 
 #rpc.shutdown()
 
