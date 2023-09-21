@@ -70,7 +70,7 @@ dp_size = num_rank // pp_size
 #micro_batch_size = num_rank // 2 # TODO
 micro_batch_size = 2 # TODO
 
-batch_size = 128
+batch_size = 64
 batch_size = batch_size // dp_size
 
 if int(os.environ["RANK"]) == 0:
@@ -1500,11 +1500,6 @@ if fx_run2.rank == 0:
 
 fx_run2.mod.train()
 optimizer1 = Adam(fx_run2.mod.parameters(), lr=3e-5)
-
-if fx_run2.rank % 2 == 0:
-    torch.manual_seed(42)
-else:
-    torch.manual_seed(42)
 
 if fx_run2.stage == 0:
     #
