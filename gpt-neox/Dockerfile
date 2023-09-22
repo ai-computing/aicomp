@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM nvidia/cuda:11.7.1-runtime-ubuntu20.04
+#swsok, change runtime to devel image to include nvcc and cuda libs.
+#FROM nvidia/cuda:11.7.1-runtime-ubuntu20.04
+FROM nvidia/cuda:11.7.1-devel-ubuntu20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -101,7 +103,7 @@ RUN pip install -r requirements.txt && pip install -r requirements-onebitadam.tx
     pip install protobuf==3.20.* && \
     pip cache purge
 
-## Install APEX
+# Install APEX
 RUN pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" git+https://github.com/NVIDIA/apex.git@a651e2c24ecf97cbf367fd3f330df36760e1c597
 
 COPY megatron/ megatron
