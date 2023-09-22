@@ -109,6 +109,9 @@ RUN pip install -v --disable-pip-version-check --no-cache-dir --global-option="-
 COPY megatron/ megatron
 RUN python megatron/fused_kernels/setup.py install
 
+#swsok, fix compatibility issue
+RUN sed -i "s/from requests.packages.urllib3.util.retry/from urllib3.util.retry/g" /usr/local/lib/python3.8/dist-packages/best_download/__init__.py
+
 # Clear staging
 RUN mkdir -p /tmp && chmod 0777 /tmp
 
