@@ -14,10 +14,14 @@ print(f">> Process ID: {pid}")
 #use_reset_parameters = False
 use_reset_parameters = True
 
-def print_memory_usage():
-    my_process = psutil.Process(pid)
-    usage =  my_process.memory_info().rss / (1024 ** 2)   # BB unit
-    print(f" Memory Usage: {usage:.3f} MB")
+print_flag = True
+
+def print_memory_usage(str, print_flag):
+    if print_flag == True:
+        print(" =========", str, "=========")
+        my_process = psutil.Process(pid)
+        usage =  my_process.memory_info().rss / (1024 ** 3)   # GB unit
+        print(f" Memory Usage: {usage:.3f} GB")
 
 
 class Linear2(nn.Module):
@@ -47,25 +51,16 @@ class Linear2(nn.Module):
         bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
         init.uniform_(self.bias, -bound, bound)
 
-print(f"--- Before: m = Linear2(10000, 20000) ----------------------------")
-print_memory_usage()
-print(f"-----------------------------------------------------------")
+print_memory_usage("Before: m = Linear2(10000, 20000)", print_flag)
 
 m = Linear2(10000, 20000)
 
-print(f"--- After: m = Linear2(10000, 20000) ----------------------------")
 print(f" ***** use reset_parameters() : {use_reset_parameters} *****")
-print_memory_usage()
-print(f"-----------------------------------------------------------")
+print_memory_usage("After: m = Linear2(10000, 20000)", print_flag)
 print(f"{m.weight}")
-print(f"-----------------------------------------------------------")
 input = torch.randn(20000, 10000)
-print(f"--- After: input = torch.randn(20000, 10000) ----------------------------")
-print_memory_usage()
-print(f"-----------------------------------------------------------")
+print_memory_usage("After: input = torch.randn(20000, 10000)", print_flag)
 output = m(input)
-print(f"--- After: output = m(input) ----------------------------")
-print_memory_usage()
-print(f"-----------------------------------------------------------")
+print_memory_usage("After: output = m(input)", print_flag)
 print(f"{output.size()}")
 
