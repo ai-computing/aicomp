@@ -55,6 +55,9 @@ torch.manual_seed(42)
 #use_wrapper = False
 use_wrapper = True
 
+print_mem=True
+#print_mem=False
+
 #
 # Total process count
 #
@@ -140,10 +143,12 @@ def get_total_params(module: torch.nn.Module):
     return total_params
 
 pid = os.getpid()
-def print_memory_usage():
-    my_process = psutil.Process(pid)
-    usage = my_process.memory_info().rss / (1024 ** 3) # GB unit
-    print(f"--- rank:[{int(os.environ['RANK'])}] >>  Memory Usage: {usage:.3f} GB")
+def print_memory_usage(str, print_flag):
+    if print_flag == True:
+        print(" =========", str, "=========")
+        my_process = psutil.Process(pid)
+        usage = my_process.memory_info().rss / (1024 ** 3) # GB unit
+        print(f"--- rank:[{int(os.environ['RANK'])}] >>  Memory Usage: {usage:.3f} GB")
 
 
 class Simple_split_test(object):
@@ -235,13 +240,11 @@ class Simple_split_test(object):
 
         global gm
 
-        print(f" ---- Before model instancing -----")
-        print_memory_usage()
+        print_memory_usage("Before model instancing", print_mem)
 
         if use_wrapper == True:
             t1 = TestModel()
-            print(f" ---- After model instancing -----")
-            print_memory_usage()
+            print_memory_usage("After model instancing", print_mem)
 
             loss_fn = torch.nn.MSELoss()
             wrapper = SimpleLossWrapper(t1, loss_fn)
@@ -249,12 +252,10 @@ class Simple_split_test(object):
 
         else:
             t1 = TestModel()
-            print(f" ---- After model instancing -----")
-            print_memory_usage()
+            print_memory_usage("After model instancing", print_mem)
             gm = fx.symbolic_trace(t1)
 
-        print(f" ---- After fx symbolic_trace -----")
-        print_memory_usage()
+        print_memory_usage("After fx symbolic_trace", print_mem)
 
         logging.info(f"------------------ FX graph --------------------------------")
         for n in gm.graph.nodes:
@@ -431,8 +432,7 @@ class FXRun2:
         # remove unused modules
         self.clean_unused_modules()
 
-        print(f" ---- After clean_unusd_modules -----")
-        print_memory_usage()
+        print_memory_usage("After clean_unusd_modules", print_mem)
 
 
     # 
