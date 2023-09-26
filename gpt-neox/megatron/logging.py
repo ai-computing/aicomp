@@ -24,6 +24,8 @@ except ModuleNotFoundError:
 from megatron import mpu, print_rank_0
 from megatron.utils import report_memory
 
+#swsok, add time stamp on logs
+import time
 
 class Tee:
     """Duplicate output to both stdout/err and file"""
@@ -277,7 +279,11 @@ def training_log(
         elapsed_time = timers("interval time").elapsed()
         iteration_time = elapsed_time / neox_args.log_interval
         samples_per_sec = neox_args.train_batch_size / iteration_time
-        log_string = " samples/sec: {:.3f} |".format(samples_per_sec)
+
+        #swsok, add time stamp on logs
+        log_string = "time: %d |" % time.time()
+
+        log_string += " samples/sec: {:.3f} |".format(samples_per_sec)
         tb_wandb_log(
             "runtime/samples_per_sec",
             samples_per_sec,
@@ -328,6 +334,12 @@ def training_log(
             tensorboard_writer=neox_args.tensorboard_writer,
         )
 
+        #swsok, if lm_loss reaches target value, exit the process
+        exit = 0
+        #print("total_loss_dict[\"lm_loss\"]= %f" % (total_loss_dict["lm_loss"]/float(num_iterations)))
+        if (total_loss_dict["lm_loss"]/float(num_iterations)) < neox_args.target_lm_loss:
+            exit = 1
+
         for key in total_loss_dict:
             if key not in [skipped_iters_key, got_nan_key]:
                 v = (
@@ -354,6 +366,11 @@ def training_log(
             report_memory_flag = False
 
         timers.log(timers_to_log, normalizer=neox_args.log_interval)
+
+        #swsok, if lm_loss reaches target value, exit the process
+        if exit == 1:
+            print("lm_loss reaches target value = %f " % (neox_args.target_lm_loss))
+            sys.exit(0)
 
     return report_memory_flag
 
