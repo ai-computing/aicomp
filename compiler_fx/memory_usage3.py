@@ -19,6 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import time
 
 import psutil
+from torchdistx.deferred_init import deferred_init, materialize_module
 
 import os
 import sys
@@ -40,6 +41,13 @@ print(f">> Process ID: {pid}")
 
 print_flag = True
 
+def materialize(gm: fx.GraphModule):
+    for n in gm.graph.nodes:
+        if n.op == "call_module" and "module_linear" in n.name:
+            print(f" materialize --> {n.name}")
+            materialize_module(gm.get_submodule(n.target))
+
+
 def print_memory_usage(str, print_flag):
     if print_flag == True:
         print(" =========", str, "=========")
@@ -58,23 +66,29 @@ class TestModel(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.linear1 = nn.Linear(in_features, hidden)
+        #self.linear1 = nn.Linear(in_features, hidden)
+        self.linear1 = deferred_init(nn.Linear, in_features, hidden)
         self.linear2 = nn.ModuleList()
         for i in range(2):
-            self.linear2.append(nn.Linear(hidden, hidden))
+            #self.linear2.append(nn.Linear(hidden, hidden))
+            self.linear2.append(deferred_init(nn.Linear, hidden, hidden))
 
         self.linear3 = nn.ModuleList()
         for i in range(2):
-            self.linear3.append(nn.Linear(hidden, hidden))
+            #self.linear3.append(nn.Linear(hidden, hidden))
+            self.linear3.append(deferred_init(nn.Linear, hidden, hidden))
 
         self.linear4 = nn.ModuleList()
         for i in range(2):
-            self.linear4.append(nn.Linear(hidden, hidden))
+            #self.linear4.append(nn.Linear(hidden, hidden))
+            self.linear4.append(deferred_init(nn.Linear,hidden, hidden))
 
         self.linear5 = nn.ModuleList()
         for i in range(2):
-            self.linear5.append(nn.Linear(hidden, hidden))
-        self.linear6 = nn.Linear(hidden, out_features)
+            #self.linear5.append(nn.Linear(hidden, hidden))
+            self.linear5.append(deferred_init(nn.Linear, hidden, hidden))
+        #self.linear6 = nn.Linear(hidden, out_features)
+        self.linear6 = deferred_init(nn.Linear, hidden, out_features)
         self.relu = nn.ReLU(inplace = False)
 
     def forward(self, x):
@@ -121,6 +135,10 @@ wrapper = SimpleLossWrapper(t1, loss_fn)
 gm1 = fx.symbolic_trace(wrapper)
 
 print_memory_usage("After symbolic tracing: gm = fx.symbolic_trace(model)", print_flag)
+
+materialize(gm1)
+
+print_memory_usage("After materialize model", print_flag)
 
 #for node in gm1.graph.nodes:
 #    print(f"node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.all_input_nodes:{node.all_input_nodes}")
