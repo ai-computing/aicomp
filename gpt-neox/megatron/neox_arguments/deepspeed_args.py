@@ -151,6 +151,11 @@ class NeoXArgsDeepspeedConfig(NeoXArgsTemplate):
     Print out state information of DeepSpeed object after initialization.
     """
 
+    target_lm_loss: float = 0
+    """
+    swsok, if lm_loss reaches this value, then exit.
+    """
+
     # ---FLOPS Profiler Options---
 
     flops_profiler: dict = None

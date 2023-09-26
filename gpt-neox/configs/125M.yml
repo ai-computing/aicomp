@@ -88,6 +88,8 @@
    "steps_per_print": 10,
    "keep_last_n_checkpoints": 4,
    "wall_clock_breakdown": true,
+   #swsok
+   "target_lm_loss": 5,
 
   #  networking
   "hostfile": "/mock_path"

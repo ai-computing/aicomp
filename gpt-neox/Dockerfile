@@ -110,7 +110,9 @@ COPY megatron/ megatron
 RUN python megatron/fused_kernels/setup.py install
 
 #swsok, fix compatibility issue
-RUN sed -i "s/from requests.packages.urllib3.util.retry/from urllib3.util.retry/g" /usr/local/lib/python3.8/dist-packages/best_download/__init__.py
+#RUN sed -i "s/from requests.packages.urllib3.util.retry/from urllib3.util.retry/g" /usr/local/lib/python3.8/dist-packages/best_download/__init__.py
+RUN pip uninstall urllib3 -y && \
+	pip install urllib3==1.26.16
 
 # Clear staging
 RUN mkdir -p /tmp && chmod 0777 /tmp
