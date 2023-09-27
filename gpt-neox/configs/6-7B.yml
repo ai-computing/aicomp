@@ -48,7 +48,8 @@
    "min_lr": 0.000012,
 
    # batch / data settings
-   "train_micro_batch_size_per_gpu": 4,
+   #   "train_micro_batch_size_per_gpu": 4,
+   "train_micro_batch_size_per_gpu": 2,
    "data_impl": "mmap",
 
    # activation checkpointing
@@ -82,6 +83,9 @@
    "checkpoint_factor": 10000,
    "eval_interval": 1000,
    "eval_iters": 10,
+
+   #swsok
+   "target_lm_loss": 1,
 
    # logging
    "log_interval": 100,
