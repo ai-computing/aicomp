@@ -785,6 +785,9 @@ def train(
     timers("interval time").start()
     report_memory_flag = True
 
+    #swsok, total elapsed time
+    timers("total time").start()
+
     # get noise scale logger (if neox_args.log_gradient_noise_scale is True)
     noise_scale_logger = get_noise_scale_logger(neox_args)
 

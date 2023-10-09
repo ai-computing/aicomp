@@ -281,7 +281,8 @@ def training_log(
         samples_per_sec = neox_args.train_batch_size / iteration_time
 
         #swsok, add time stamp on logs
-        log_string = "time: %d |" % time.time()
+        #log_string = "time: %d |" % time.time()
+        log_string = "time: %d |" % timers("total time").elapsed(False)
 
         log_string += " samples/sec: {:.3f} |".format(samples_per_sec)
         tb_wandb_log(
