@@ -145,10 +145,10 @@ def get_total_params(module: torch.nn.Module):
 pid = os.getpid()
 def print_memory_usage(str, print_flag):
     if print_flag == True:
-        print(" =========", str, "=========")
+        #print(" =========", str, "=========")
         my_process = psutil.Process(pid)
         usage = my_process.memory_info().rss / (1024 ** 3) # GB unit
-        print(f"--- rank:[{int(os.environ['RANK'])}] >>  Memory Usage: {usage:.3f} GB")
+        print(f"=== {str} === rank:[{int(os.environ['RANK'])}] >>  Memory Usage: {usage:.3f} GB")
 
 
 class Simple_split_test(object):
@@ -362,6 +362,7 @@ def stage_backward(
     return grad_inputs, barrier_token
 
 
+import gc
 
 class FXRun2:
 
@@ -432,14 +433,17 @@ class FXRun2:
         # remove unused modules
         self.clean_unused_modules()
 
+        gc.collect()
         print_memory_usage("After clean_unusd_modules", print_mem)
 
 
     # 
     def delete_param(self, mod, name):
         for param_name, param in mod.named_parameters():
+            t = getattr(mod, param_name)
             setattr(mod, param_name, None)
-            #print(f">>> delete_param , mod:{mod}, param_name:{param_name}") ##
+            del t
+            #print(f" ----- del param : {mod} --> {param_name}")
 
     # 
     def has_child(self, mod):
@@ -454,40 +458,49 @@ class FXRun2:
     def partially_matched(self, name):
         for string in self.reference:
             if name in string:
-                print(f" >>>>> partially matched [{name}] in [{string}]")
+                #print(f" >>>>> partially matched [{name}] in [{string}]")
                 return True
         return False
 
     # 
-    def delete_module(self, module_node):
+    #def delete_module(self, module_node):
+    def delete_module(self, root, module_node):
         module_name = module_node.name
         module_target_name = str(module_node.target)
         if len(module_name) > len(module_target_name):
             self.reference.append(module_target_name)
-            #print(f" $$$$$$$$ self.reference <== {module_target_name} when {module_name}")
 
+        get_attr_flag = False
         if len(module_name) == len(module_target_name) and not self.partially_matched(module_target_name):
             target_atoms = module_target_name.split('.')
             #print(f"---- rank:{self.rank}, target_atoms: {target_atoms}")  ##
-            attr_itr = self.mod 
-            #print(f"---- rank:{self.rank}, attr_itr: {attr_itr}")
+            #attr_itr = self.mod 
+            attr_itr = root
+            if module_node.op == 'get_attr':
+                if target_atoms[-1] == "weight" or target_atoms[-1] == "bias":
+                    #print(f"> [{target_atoms}]")
+                    target_atoms = target_atoms[:-1]
+                    #print(f">  >  [{target_atoms}]")
+                    get_attr_flag = True
+                    if self.partially_matched(str('.'.join(target_atoms))):
+                        return
+                else:
+                    return
+
             for i , atom in enumerate(target_atoms):
-                #print(f"i:{i}, atom:{atom}")
                 if not hasattr(attr_itr, atom):
                     raise RuntimeError(\
-                        f"Node referenced nonexistant target {'.'.join(target_atoms[:i])}")
+                        f"Node referenced nonexistant target {'.'.join(target_atoms[:i])} ... [{target_atoms}]")
+
                 parent_ = attr_itr
                 attr_itr = getattr(attr_itr, atom)
 
-            #print(f" parent:{parent_}, atom:{atom}")
-            #print(f" .. atom:{atom}")
-            if self.has_child(attr_itr) == 0:
+            #if self.has_child(attr_itr) == 0:
+            if get_attr_flag == True or self.has_child(attr_itr) == 0:
                 self.delete_param(attr_itr, atom)
                 delattr(parent_, atom)
                 del attr_itr
-                #print(f">>> delattr parent_:{parent_}, atom:{atom}")
-                #print(f">>> delattr, atom:{atom}")
-                print(f">>>  rank:{self.rank}, delete module:{module_name} ")
+                #print(f">>> rank:{self.rank}, delete module:target:{module_target_name} ## atom:{atom},op:{module_node.op}")
                 self.reference.append(module_target_name)
                 #print(f"## reference: {self.reference} ")
             #else:
@@ -507,12 +520,15 @@ class FXRun2:
 
                 cur = to_
                 while cur != from_:
-                    if cur.op == 'call_module':
-                        self.delete_module(cur)
+                    #if cur.op == 'call_module':
+                    if cur.op == 'call_module' or cur.op == 'get_attr':
+                        #self.delete_module(cur)
+                        self.delete_module(self.mod, cur)
                     cur = cur._prev
-                if cur.op == 'call_module':
-                    self.delete_module(cur)
-                #print(f"      rank [{rank}]'s modules cleaned!!")
+                #if cur.op == 'call_module':
+                if cur.op == 'call_module' or cur.op == 'get_attr':
+                    #self.delete_module(cur)
+                    self.delete_module(self.mod, cur)
 
         print(f"**********************************")
         self.reference = None
