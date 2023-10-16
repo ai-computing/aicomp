@@ -10,4 +10,4 @@ if [ ! -f $1 ]; then
 	exit 0
 fi
 
-grep lm_loss $1 | awk '{printf "%s,%s,%s,%f\n",$2,substr($8, 1, length($8)-1),substr($26,1,length($26)-6),$29}' | tee $1.csv
+grep -a lm_loss $1 | awk '{printf "%s,%s,%s,%f\n",substr($8, 1, length($8)-1),$2,substr($26,1,length($26)-6),$29}' | tee $1.csv

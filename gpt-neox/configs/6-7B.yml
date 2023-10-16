@@ -48,8 +48,8 @@
    "min_lr": 0.000012,
 
    # batch / data settings
-   #   "train_micro_batch_size_per_gpu": 4,
-   "train_micro_batch_size_per_gpu": 1,
+   "train_micro_batch_size_per_gpu": 128,
+   "train_micro_batch_size_per_gpu": 128,
    "data_impl": "mmap",
 
    # activation checkpointing
