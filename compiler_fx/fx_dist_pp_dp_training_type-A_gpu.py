@@ -14,10 +14,10 @@
 #  Sample Usage:
 #      <machine #0>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py --pp_size=2 --dp_size=2
 #      <machine #1>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py --pp_size=2 --dp_size=2
 #
 
 import torch
@@ -38,6 +38,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import logging
 
+import argparse
 import psutil
 import os
 import sys
@@ -68,21 +69,16 @@ print_mem = True
 #
 #num_rank=N
 num_rank=int(os.environ["WORLD_SIZE"])
-pp_size = 2
-dp_size = num_rank // pp_size
+#pp_size = 2
+pp_size = None
+#dp_size = num_rank // pp_size
+dp_size = None
 
 #micro_batch_size = num_rank // 2 # TODO
 micro_batch_size = 2 # TODO
 
 batch_size = 64
-batch_size = batch_size // dp_size
-
-if int(os.environ["RANK"]) == 0:
-    print(f"total process count: {num_rank}")
-    print(f"pipeline parallel size: {pp_size}")
-    print(f"data parallel size: {dp_size}")
-    print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
+#batch_size = batch_size // dp_size
 
 in_features = 4
 out_features = 4
@@ -1606,7 +1602,25 @@ class FXRun2:
 
         yield 0
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--pp_size', default=1, type=int)
+parser.add_argument('--dp_size', default=1, type=int)
+args = parser.parse_args()
 
+pp_size = args.pp_size
+dp_size = args.dp_size
+
+if dp_size > 1:
+    batch_size = batch_size // dp_size
+
+assert pp_size * dp_size == num_rank, f"There are unused GPUs"
+
+if int(os.environ["RANK"]) == 0:
+    print(f"total process count: {num_rank}")
+    print(f"pipeline parallel size: {pp_size}")
+    print(f"data parallel size: {dp_size}")
+    print(f"batch size: {batch_size}")
+    print(f"micro batch size: {micro_batch_size}")
 
 sim_split = Simple_split_test()
 sim_split.metadata_transfer()
