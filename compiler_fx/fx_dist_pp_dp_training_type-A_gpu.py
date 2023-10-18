@@ -14,10 +14,10 @@
 #  Sample Usage:
 #      <machine #0>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_training_type-A_gpu.py
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py
 #      <machine #1>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_training_type-A_gpu.py
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py
 #
 
 import torch
@@ -38,6 +38,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import logging
 
+import psutil
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -56,8 +57,11 @@ torch.manual_seed(42)
 use_wrapper = False
 #use_wrapper = True
 
-use_gpu = False
-#use_gpu = True
+#use_gpu = False
+use_gpu = True
+
+print_mem = True
+#print_mem = False
 
 #
 # Total process count
@@ -149,6 +153,13 @@ def get_total_params(module: torch.nn.Module):
         total_params += param.numel()
     return total_params
 
+pid = os.getpid()
+def print_memory_usage(str, print_flag):
+    if print_flag == True:
+        #print(" =========", str, "=========")
+        my_process = psutil.Process(pid)
+        usage = my_process.memory_info().rss / (1024 ** 3) # GB unit
+        print(f" === {str} === rank:[{int(os.environ['RANK'])}] >> Memory Usage: {usage:.3f} GB")
 
 class Simple_split_test(object):
     def __init__(self):
@@ -249,15 +260,22 @@ class Simple_split_test(object):
 
         global gm
 
+        print_memory_usage("Before model instancing", print_mem)
+
         if use_wrapper == True:
             t1 = TestModel()
+            print_memory_usage("After model instancing", print_mem)
+
             loss_fn = torch.nn.MSELoss()
             wrapper = SimpleLossWrapper(t1, loss_fn)
             gm = fx.symbolic_trace(wrapper)
 
         else:
             t1 = TestModel()
+            print_memory_usage("After model instancing", print_mem)
             gm = fx.symbolic_trace(t1)
+
+        print_memory_usage("After fx symbolic_trace", print_mem)
 
         logging.info(f"------------------ FX graph --------------------------------")
         for n in gm.graph.nodes:
@@ -369,6 +387,7 @@ def stage_backward(
     return grad_inputs, barrier_token
 
 
+import gc
 
 class FXRun2:
 
@@ -438,23 +457,132 @@ class FXRun2:
         #logging.info(f" special_nodes: {self.special_nodes}")
         logging.info(f" *************************************************************************")
 
+        print_memory_usage("Before clean_unused_modules", print_mem)
+
+        # remove unused modules
+        self.clean_unused_modules()
+
+        gc.collect()
+        print_memory_usage("After clean_unusd_modules", print_mem)
+
+        if use_gpu == True:
+            #fx_run2.prepare_module()
+            self.mod.to(self.device) # move memory cleaned modules to GPU
+
         if dp_size > 1:
-            ddp_group = []
+            self.activate_dp()
 
-            for i in range(0, pp_size):
-                start_rank = i * dp_size
-                end_rank = (i+1) * dp_size
-                dp_group = list(range(start_rank, end_rank))
-                if self.rank in dp_group:
-                    print(self.rank, dp_group)
-                    ddp_group = dist.new_group(dp_group)
+
+    def activate_dp(self):
+        ddp_group = []
+
+        for i in range(0, pp_size):
+            start_rank = i * dp_size
+            end_rank = (i+1) * dp_size
+            dp_group = list(range(start_rank, end_rank))
+            if self.rank in dp_group:
+                print(self.rank, dp_group)
+                ddp_group = dist.new_group(dp_group)
+            else:
+                dist.new_group(dp_group)
+
+        self.ddp_mod = DDP(self.mod, process_group=ddp_group, find_unused_parameters=True)
+        if isinstance(self.ddp_mod, torch.nn.parallel.DistributedDataParallel):
+            self.mod = self.ddp_mod.module
+            self.graph = self.mod.graph
+
+    #
+    def delete_param(self, mod, name):
+        for param_name, param in mod.named_parameters():
+            t = getattr(mod, param_name)
+            setattr(mod, param_name, None)
+            del t
+            #print(f" ----- del param : {mod} --> {param_name}")
+
+    #
+    def has_child(self, mod):
+        num_children = 0
+        if mod is not None:
+            num_children = len(list(mod.children()))
+        return num_children
+
+    #
+    def partially_matched(self, name):
+        for string in self.reference:
+            if name in string:
+                #print(f" >>>>> partially matched [{name}] in [{string}]")
+                return True
+        return False
+
+    #
+    #def delete_module(self, module_node):
+    def delete_module(self, root, module_node):
+        module_name = module_node.name
+        module_target_name = str(module_node.target)
+        if len(module_name) > len(module_target_name):
+            self.reference.append(module_target_name)
+
+        get_attr_flag = False
+        if len(module_name) == len(module_target_name) and not self.partially_matched(module_target_name):
+            target_atoms = module_target_name.split('.')
+            #attr_itr = self.mod
+            attr_itr = root
+            if module_node.op == 'get_attr':
+                if target_atoms[-1] == "weight" or target_atoms[-1] == "bias":
+                    #print(f"> [{target_atoms}]")
+                    target_atoms = target_atoms[:-1]
+                    #print(f">  >  [{target_atoms}]")
+                    get_attr_flag = True
+                    if self.partially_matched(str('.'.join(target_atoms))):
+                        return
                 else:
-                    dist.new_group(dp_group)
+                    return
 
-            self.ddp_mod = DDP(self.mod, process_group=ddp_group, find_unused_parameters=True)
-            if isinstance(self.ddp_mod, torch.nn.parallel.DistributedDataParallel):
-                self.mod = self.ddp_mod.module
-                self.graph = self.mod.graph
+            for i , atom in enumerate(target_atoms):
+                if not hasattr(attr_itr, atom):
+                    raise RuntimeError(\
+                            f"Node referenced nonexistant target {'.'.join(target_atoms[:i])} ... [{target_atoms}]")
+                parent_ = attr_itr
+                attr_itr = getattr(attr_itr, atom)
+
+            #if self.has_child(attr_itr) == 0:
+            if get_attr_flag == True or self.has_child(attr_itr) == 0:
+                self.delete_param(attr_itr, atom)
+                delattr(parent_, atom)
+                del attr_itr
+                #print(f">>> rank:{self.rank}, delete module:target:{module_target_name} ## atom:{atom},op:{module_node.op}")
+                self.reference.append(module_target_name)
+                #print(f"## reference: {self.reference} ")
+            #else:
+            #    print(f">>> delete_module:{module_name} requested, but {module_name} has child")
+
+    #
+    def clean_unused_modules(self):
+
+        self.reference = []
+
+        print(f"*** [rank:{self.rank}] clean_unused_modules *******")
+
+        #for rank in reversed(range(self.world_size)):
+        for stage in reversed(range(pp_size)):
+
+             if stage != self.stage:
+                 from_, to_ = self.get_range(stage, self.graph)
+
+                 cur = to_
+                 while cur != from_:
+                     #if cur.op == 'call_module':
+                     if cur.op == 'call_module' or cur.op == 'get_attr':
+                         #self.delete_module(cur)
+                         self.delete_module(self.mod, cur)
+                     cur = cur._prev
+                 #if cur.op == 'call_module':
+                 if cur.op == 'call_module' or cur.op == 'get_attr':
+                     #self.delete_module(cur)
+                     self.delete_module(self.mod, cur)
+
+        print(f"**********************************")
+        self.reference = None
 
     def get_prev_rank(self, rank, stage):
         # TODO: for TP, need update for rank/stage (e.g., list)
@@ -814,7 +942,8 @@ class FXRun2:
         self.args_iter = iter(args)
 
         if self.stage == 0:
-            for n in self.mod.graph.nodes:
+            #for n in self.mod.graph.nodes:
+            for n in self.graph.nodes:
                 if (use_wrapper == True and n.op == 'placeholder' and self.stage == 0 and n.name == 'x') or \
                         (use_wrapper == False and n.op == 'placeholder' and self.stage == 0 and n.name == 'x'):
                     input = next(self.args_iter)
@@ -1486,10 +1615,6 @@ fx_run2 = FXRun2(sim_split, sim_split.device, mbsize=micro_batch_size)
 
 fx_run2.print_range()
 
-if use_gpu == True:
-    fx_run2.prepare_module()
-
-
 print(f">>> micro batch size = {fx_run2.mbsize}")
 
 
@@ -1539,8 +1664,8 @@ if fx_run2.stage == pp_size - 1:
     #
     print(f"received <==== env2[{fx_run2.mbsize-1}][{target_node_name}]: {fx_run2.env2[fx_run2.mbsize-1][target_node_name]}")
 
-for i in range(20):
-#for i in range(50):
+#for i in range(20):
+for i in range(50):
 
     optimizer1.zero_grad()
 
