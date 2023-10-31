@@ -70,9 +70,9 @@ print_mem = True
 #num_rank=N
 num_rank=int(os.environ["WORLD_SIZE"])
 #pp_size = 2
-pp_size = None
+pp_size = 1
 #dp_size = num_rank // pp_size
-dp_size = None
+dp_size = 1
 
 #micro_batch_size = num_rank // 2 # TODO
 micro_batch_size = 2 # TODO
@@ -280,7 +280,6 @@ class Simple_split_test(object):
 
         if use_gpu == True:
             self.device = torch.device(f"cuda:{self.local_rank}")
-            # TO DELETE
             print(f"Using GPU ... cuda:{self.local_rank}")
         else:
             self.device = torch.device("cpu")
@@ -482,7 +481,7 @@ class FXRun2:
             else:
                 dist.new_group(dp_group)
 
-        self.ddp_mod = DDP(self.mod, process_group=ddp_group, find_unused_parameters=True)
+        self.ddp_mod = DDP(self.mod, process_group=ddp_group, find_unused_parameters=False)
         if isinstance(self.ddp_mod, torch.nn.parallel.DistributedDataParallel):
             self.mod = self.ddp_mod.module
             self.graph = self.mod.graph
@@ -975,7 +974,8 @@ class FXRun2:
 
 
     def get_last_module(self):
-        if self.rank == self.world_size - 1:
+        #if self.rank == self.world_size - 1:
+        if self.rank == self.get_last_rank(self.rank):
             from_, to_ = self.get_range(self.stage, self.graph)
 
             cur = to_
@@ -989,7 +989,8 @@ class FXRun2:
 
     def make_output(self):
         output = None
-        if self.rank ==  self.world_size - 1:
+        #if self.rank ==  self.world_size - 1:
+        if self.rank == self.get_last_rank(self.rank):
             #target = "output"
             target = self.get_last_module()
             outputs = tuple(mb[target] for mb in self.env2) 
@@ -1518,8 +1519,8 @@ class FXRun2:
                     continue
 
                 # prepare_for_backward position.
-                if isinstance(self.ddp_mod, torch.nn.parallel.distributed.DistributedDataParallel):
-                    if mb_idx == self.mbsize - 1:
+                if isinstance(self.ddp_mod, DDP):
+                    if mb_idx == self.mbsize - 1 and node == from_:
                         self.ddp_mod.reducer.prepare_for_backward(
                                 list(
                                     torch.nn.parallel.distributed._find_tensors(
@@ -1613,7 +1614,7 @@ dp_size = args.dp_size
 if dp_size > 1:
     batch_size = batch_size // dp_size
 
-assert pp_size * dp_size == num_rank, f"There are unused GPUs"
+assert pp_size * dp_size == num_rank, f"For PP+DP, pp_size[{pp_size}] x dp_size[{dp_size}] must be equal to world_size[{num_rank}]"
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {num_rank}")
