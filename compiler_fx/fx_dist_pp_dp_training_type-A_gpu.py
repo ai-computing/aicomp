@@ -1520,7 +1520,8 @@ class FXRun2:
 
                 # prepare_for_backward position.
                 if isinstance(self.ddp_mod, DDP):
-                    if mb_idx == self.mbsize - 1 and node == from_:
+                    #if mb_idx == self.mbsize - 1 and node == from_:
+                    if mb_idx == 0 and node == from_:
                         self.ddp_mod.reducer.prepare_for_backward(
                                 list(
                                     torch.nn.parallel.distributed._find_tensors(
