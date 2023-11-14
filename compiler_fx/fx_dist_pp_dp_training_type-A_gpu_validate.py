@@ -14,10 +14,10 @@
 #  Sample Usage:
 #      <machine #0>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py --pp_size=2 --dp_size=2
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu_validate.py --pp_size=2 --dp_size=2
 #      <machine #1>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py --pp_size=2 --dp_size=2
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu_validate.py --pp_size=2 --dp_size=2
 #
 
 import torch
@@ -80,9 +80,10 @@ micro_batch_size = 2 # TODO
 batch_size = 64
 #batch_size = batch_size // dp_size
 
+# reduced size for print
 in_features = 4
 out_features = 4
-hidden = 5120
+hidden = 2
 
 class TestModel(nn.Module):
     def __init__(self):
@@ -990,7 +991,7 @@ class FXRun2:
     def make_output(self):
         output = None
         #if self.rank ==  self.world_size - 1:
-        if self.rank == self.get_last_rank(self.rank):
+        if self.rank ==  self.get_last_rank(self.rank):
             #target = "output"
             target = self.get_last_module()
             outputs = tuple(mb[target] for mb in self.env2) 
@@ -1522,6 +1523,7 @@ class FXRun2:
                 if isinstance(self.ddp_mod, DDP):
                     #if mb_idx == self.mbsize - 1 and node == from_:
                     if mb_idx == 0 and node == from_:
+                        #print("prepare_for_backward rank:", self.rank)
                         self.ddp_mod.reducer.prepare_for_backward(
                                 list(
                                     torch.nn.parallel.distributed._find_tensors(
@@ -1533,6 +1535,7 @@ class FXRun2:
                     else:
                         with self.ddp_mod.no_sync():
                             result = stage_backward(*args, **kwargs)
+                        #result = stage_backward(*args, **kwargs)
                 else:
                     result = stage_backward(*args, **kwargs)
 
@@ -1642,6 +1645,8 @@ if fx_run2.rank == 0:
 fx_run2.mod.train()
 optimizer1 = Adam(fx_run2.mod.parameters(), lr=3e-5)
 
+torch.manual_seed(42 + fx_run2.rank)
+
 if fx_run2.stage == 0:
     #
     # move sample_input to first host
@@ -1658,7 +1663,7 @@ print(sample_input)
 #
 # move sample_output to last host
 #
-if fx_run2.stage == 0:
+if fx_run2.stage == 0 and pp_size > 1:
     target_node_name = "labels"
     mbatches = torch.chunk(sample_output, fx_run2.mbsize)
     for j in range(fx_run2.mbsize):
@@ -1670,7 +1675,7 @@ if fx_run2.stage == 0:
     #
     print(f"sent ====> {sample_output}")
 
-if fx_run2.stage == pp_size - 1:
+if fx_run2.stage == pp_size - 1 and pp_size > 1:
     target_node_name = "labels"
     for j in range(fx_run2.mbsize):
         fx_run2.env2[j][target_node_name] = fx_run2.receive_data(fx_run2.get_first_rank(fx_run2.rank))
@@ -1679,6 +1684,8 @@ if fx_run2.stage == pp_size - 1:
     sample_output = torch.cat(outputs)
     #
     print(f"received <==== env2[{fx_run2.mbsize-1}][{target_node_name}]: {fx_run2.env2[fx_run2.mbsize-1][target_node_name]}")
+
+logFile = open('rank'+str(fx_run2.rank)+'_parameters.txt', 'w')
 
 #for i in range(20):
 for i in range(50):
@@ -1695,6 +1702,12 @@ for i in range(50):
 
     optimizer1.step()
 
+    print('step', i, file = logFile)
+    for param in fx_run2.mod.parameters():
+        print(param.data.tolist(), file = logFile)
+    print('\n', file = logFile)
+
+logFile.close()
 
 if fx_run2.rank == 0:
     tock=time.time()
