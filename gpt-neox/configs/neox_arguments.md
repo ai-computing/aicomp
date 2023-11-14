@@ -111,7 +111,7 @@ Logging Arguments
 
 - **git_hash**: str
 
-    Default = 06a2534
+    Default = c0fd5d9
 
     current git hash of repository
 
@@ -601,11 +601,11 @@ Optimizer Arguments
 
 
 
-- **optimizer_type**: typing.Literal['adam', 'onebitadam', 'cpu_adam', 'cpu_torch_adam', 'sm3', 'madgrad_wd', 'sgd']
+- **optimizer_type**: typing.Literal['adam', 'onebitadam', 'cpu_adam', 'cpu_torch_adam', 'sm3', 'madgrad_wd', 'sgd', 'lion']
 
     Default = adam
 
-    Type of optimizer to use. Choose from ['adam', 'onebitadam', 'cpu_adam', 'cpu_torch_adam', 'sm3', 'madgrad_wd', 'sgd']
+    Type of optimizer to use. Choose from ['adam', 'onebitadam', 'cpu_adam', 'cpu_torch_adam', 'sm3', 'madgrad_wd', 'sgd', 'lion']
     NOTE: sgd will use MuSGD from Mup. Mup must be enabled for this optimizer.
 
 
@@ -1145,11 +1145,11 @@ Training Arguments
 
 
 
-- **data_impl**: str
+- **data_impl**: typing.Literal['infer', 'mmap', 'cached']
 
     Default = infer
 
-    Implementation of indexed datasets.
+    Implementation of indexed datasets, can be one of "infer", "cached", or "mmap"
 
 
 
@@ -1166,6 +1166,22 @@ Training Arguments
     Default = None
 
     Output directory to save checkpoints to.
+
+
+
+- **s3_path**: str
+
+    Default = None
+
+    Path to s3 bucket for saving checkpoints.
+
+
+
+- **s3_chunk_size**: int
+
+    Default = 104857600
+
+    The number of bytes in each file chunk when uploading to s3. Defaults to 100MiB.
 
 
 

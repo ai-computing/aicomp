@@ -184,6 +184,7 @@ class Pile(DataDownloader):
     name = "pile"
     urls = [
         f"https://the-eye.eu/public/AI/pile/train/{i:02}.jsonl.zst" for i in range(30)
+#        f"/home/etri/pile-uncopyrighted/train/{i:02}.jsonl.zst" for i in range(30)
     ]
 
 

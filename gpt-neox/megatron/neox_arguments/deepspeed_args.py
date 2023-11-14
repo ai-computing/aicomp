@@ -156,6 +156,11 @@ class NeoXArgsDeepspeedConfig(NeoXArgsTemplate):
     swsok, if lm_loss reaches this value, then exit.
     """
 
+    target_time_in_sec: int = 0
+    """
+    swsok, if time reaches this value, then exit.
+    """
+
     # ---FLOPS Profiler Options---
 
     flops_profiler: dict = None

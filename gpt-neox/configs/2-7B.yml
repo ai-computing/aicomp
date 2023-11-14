@@ -2,7 +2,7 @@
 {
    # parallelism settings ( you will want to change these based on your cluster setup, ideally scheduling pipeline stages
    # across the node boundaries )
-   "pipe_parallel_size": 1,
+   "pipe_parallel_size": 2,
    "model_parallel_size": 1,
 
    # model settings
@@ -48,7 +48,7 @@
   },
 
    # batch / data settings
-   "train_micro_batch_size_per_gpu": 4,
+   "train_micro_batch_size_per_gpu": 32,
    "data_impl": "mmap",
 
    # activation checkpointing
@@ -65,7 +65,7 @@
 
    # precision settings
    "fp16": {
-     "fp16": true,
+     #"fp16": true,
      "enabled": true,
      "loss_scale": 0,
      "loss_scale_window": 1000,
@@ -74,8 +74,10 @@
    },
 
    # misc. training settings
-   "train_iters": 320000,
-   "lr_decay_iters": 320000,
+   #"train_iters": 320000,
+   #"lr_decay_iters": 320000,
+   "train_iters": 200,
+   "lr_decay_iters": 200,
    "distributed_backend": "nccl",
    "lr_decay_style": "cosine",
    "warmup": 0.01,
@@ -88,4 +90,9 @@
    "steps_per_print": 10,
    "keep_last_n_checkpoints": 4,
    "wall_clock_breakdown": true,
+
+    #swsok
+   "target_lm_loss": 0,
+   "target_time_in_sec": 120000,
+   "attention_config": [[["flash"], "all"]],
 }
