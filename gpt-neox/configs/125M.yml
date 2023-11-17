@@ -49,7 +49,7 @@
   },
 
    # batch / data settings
-   "train_micro_batch_size_per_gpu": 16,
+   "train_micro_batch_size_per_gpu": 8,
    "data_impl": "mmap",
 
    # activation checkpointing
@@ -92,7 +92,7 @@
    #swsok
    "target_lm_loss": 0,
    "target_time_in_sec": 1000,
-   #"attention_config": [[["flash"], "all"]],
+   "attention_config": [[["flash"], "all"]],
 
   #  networking
   "hostfile": "/mock_path"
