@@ -55,8 +55,8 @@ logging.basicConfig(level=logging.ERROR)
 
 torch.manual_seed(42)
 
-use_wrapper = False
-#use_wrapper = True
+#use_wrapper = False
+use_wrapper = True
 
 #use_gpu = False
 use_gpu = True
@@ -1521,7 +1521,8 @@ class FXRun2:
                 # prepare_for_backward position.
                 if isinstance(self.ddp_mod, DDP):
                     #if mb_idx == self.mbsize - 1 and node == from_:
-                    if mb_idx == 0 and node == from_:
+                    #if mb_idx == 0 and node == from_:
+                    if mb_idx == 0:
                         self.ddp_mod.reducer.prepare_for_backward(
                                 list(
                                     torch.nn.parallel.distributed._find_tensors(
