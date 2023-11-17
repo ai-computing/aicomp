@@ -732,7 +732,8 @@ class NeoXArgs(*BASE_CLASSES):
         if self.deepspeed_slurm:
             os.environ["LOCAL_RANK"] = os.environ["SLURM_LOCALID"]
             os.environ["RANK"] = os.environ["SLURM_PROCID"]
-            os.environ["WORLD_SIZE"] = os.environ["SLURM_NTASKS"]
+            os.environ["WORLD_SIZE"] = os.environ["SLURM_NTASKS"] if os.environ.get("SLURM_NTASKS") is not None \
+                                        else str(int(os.environ["SLURM_NNODES"]) * int(os.environ["SLURM_NTASKS_PER_NODE"]))
 
         self.update_value("local_rank", int(os.getenv("LOCAL_RANK", "0")))
         self.update_value("rank", int(os.getenv("RANK", "0")))
@@ -930,12 +931,25 @@ class NeoXArgs(*BASE_CLASSES):
             self.update_value("fp16", fp16_args)
         elif self.precision == "bfloat16":
             bf_config = {"bf16": {"enabled": True}}
+            # dt_config = {"grad_accum_dtype": "fp32"}
             if self.deepspeed_extra_args is None:
                 self.update_value("deepspeed_extra_args", bf_config)
             else:
                 extra_args = copy.deepcopy(self.deepspeed_extra_args)
                 extra_args.update(bf_config)
                 self.update_value("deepspeed_extra_args", extra_args)
+
+            zero_stage = self.zero_optimization["stage"]
+            if self.data_types is None:
+                fp32_grad_accum = False
+            else:
+                fp32_grad_accum = self.data_types.get("grad_accum_dtype") == "fp32"
+            if (zero_stage > 0) and (pp_size > 0) and not fp32_grad_accum:
+                # Remove this code when this issue is resolved
+                # https://github.com/microsoft/DeepSpeed/issues/1835
+                logging.warn(
+                    "Outstanding DeepSpeed issue means that pp>0, zero1, and bf16 will break without fp32 grads"
+                )
         else:
             self.update_value("precision", "fp32")
 
@@ -1040,6 +1054,12 @@ class NeoXArgs(*BASE_CLASSES):
             self.valid_data_weights = [1.0] * len(self.valid_data_paths)
         if self.test_data_paths and (self.test_data_weights is None):
             self.test_data_weights = [1.0] * len(self.test_data_paths)
+
+        if self.label_data_paths:
+            err_str = (
+                "Must use `label_data_paths` with `train_data_paths`, not `data_path`"
+            )
+            assert self.train_data_paths and not self.data_path, err_str
 
         # if a sample input file is provided, default text_gen_type type to input-file
         if self.text_gen_type is None:

@@ -1469,8 +1469,8 @@ if fx_run2.rank == fx_run2.world_size - 1:
     print(f"received <==== env2[{fx_run2.mbsize-1}][{target_node_name}]: {fx_run2.env2[fx_run2.mbsize-1][target_node_name]}")
 
 
-#for i in range(20):
-for i in range(50):
+#for i in range(50):
+for i in range(100):
 
     optimizer1.zero_grad()
 

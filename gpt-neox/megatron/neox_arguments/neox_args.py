@@ -387,10 +387,10 @@ class NeoXArgsOptimizer(NeoXArgsTemplate):
     """
 
     optimizer_type: Literal[
-        "adam", "onebitadam", "cpu_adam", "cpu_torch_adam", "sm3", "madgrad_wd", "sgd"
+        "adam", "onebitadam", "cpu_adam", "cpu_torch_adam", "sm3", "madgrad_wd", "sgd", "lion"
     ] = "adam"
     """
-    Type of optimizer to use. Choose from ['adam', 'onebitadam', 'cpu_adam', 'cpu_torch_adam', 'sm3', 'madgrad_wd', 'sgd']
+    Type of optimizer to use. Choose from ['adam', 'onebitadam', 'cpu_adam', 'cpu_torch_adam', 'sm3', 'madgrad_wd', 'sgd', 'lion']
     NOTE: sgd will use MuSGD from Mup. Mup must be enabled for this optimizer.
     """
 
@@ -778,9 +778,9 @@ class NeoXArgsTraining(NeoXArgsTemplate):
     as alpha -> inf, the probability of sampling from the groups with *the most samples* -> 1
     """
 
-    data_impl: str = "infer"
+    data_impl: Literal["infer", "mmap", "cached"] = "infer"
     """
-    Implementation of indexed datasets.
+    Implementation of indexed datasets, can be one of "infer", "cached", or "mmap"
     """
 
     mmap_warmup: bool = False
@@ -792,6 +792,16 @@ class NeoXArgsTraining(NeoXArgsTemplate):
     """
     Output directory to save checkpoints to.
     """
+
+    s3_path: str = None
+    """
+    Path to s3 bucket for saving checkpoints.
+    """
+
+    s3_chunk_size: int = 104_857_600
+    """
+    The number of bytes in each file chunk when uploading to s3. Defaults to 100MiB.
+    """ 
 
     config_files: dict = None
     """

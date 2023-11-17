@@ -103,7 +103,7 @@ RUN pip install -r requirements.txt && pip install -r requirements-onebitadam.tx
     pip install protobuf==3.20.* && \
     pip cache purge
 
-# Install APEX
+## Install APEX
 RUN pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" git+https://github.com/NVIDIA/apex.git@a651e2c24ecf97cbf367fd3f330df36760e1c597
 
 COPY megatron/ megatron
@@ -112,11 +112,22 @@ RUN python megatron/fused_kernels/setup.py install
 #swsok, fix compatibility issue
 #RUN sed -i "s/from requests.packages.urllib3.util.retry/from urllib3.util.retry/g" /usr/local/lib/python3.8/dist-packages/best_download/__init__.py
 RUN pip uninstall urllib3 -y && \
-	pip install urllib3==1.26.16
+        pip install urllib3==1.26.16
+
+#swsok, install and setup ssh
+#RUN sed -i "/#Port/cPort 10022" /etc/ssh/sshd_config
+RUN chown -R mchorse:mchorse /home/mchorse/.ssh
+#EXPOSE 22
 
 # Clear staging
 RUN mkdir -p /tmp && chmod 0777 /tmp
 
 #### SWITCH TO mchorse USER
 USER mchorse
-WORKDIR /home/mchorse
+RUN ssh-keygen -q -t rsa -N '' -f /home/mchorse/.ssh/id_rsa
+
+RUN cat /home/mchorse/.ssh/id_rsa.pub >> /home/mchorse/.ssh/authorized_keys
+COPY scripts_swsok/run_sshd.sh /home/mchorse/run_sshd.sh
+WORKDIR /gpt-neox
+
+CMD ["/home/mchorse/run_sshd.sh"]
