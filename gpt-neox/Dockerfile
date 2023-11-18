@@ -115,8 +115,10 @@ RUN pip uninstall urllib3 -y && \
         pip install urllib3==1.26.16
 
 #swsok, install and setup ssh
-#RUN sed -i "/#Port/cPort 10022" /etc/ssh/sshd_config
+RUN sed -i "/#Port/cPort 60022" /etc/ssh/sshd_config
 RUN chown -R mchorse:mchorse /home/mchorse/.ssh
+RUN echo 'Host *' >> /home/mchorse/.ssh/config && \
+    echo 'Port 60022' >> /home/mchorse/.ssh/config
 #EXPOSE 22
 
 # Clear staging

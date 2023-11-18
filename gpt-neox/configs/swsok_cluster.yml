@@ -15,5 +15,9 @@
   # "data_path": "/mnt/ssd-1/data/enwik8/enwik8_text_document",
 
   "launcher": "pdsh",
-  "gradient_accumulation_steps": 16,
+  #"launcher": "openmpi",
+  #"deepspeed_mpi": true,
+  "gradient_accumulation_steps": 8,
+  "global_num_gpus": 2,
+  "hostfile": "./hostfile",
 }

@@ -1,6 +1,6 @@
 # Suggested data paths when using GPT-NeoX locally
 {
-  "data_path": "data/enwik8/enwik8_text_document",
+  "data_path": "/var/nfs/data/enwik8/enwik8_text_document",
 
   # or for weighted datasets:
   # "train-data-paths": ["data/enwik8/enwik8_text_document", "data/enwik8/enwik8_text_document"],
@@ -15,8 +15,8 @@
   # "weight_by_num_documents": false,
   # "weighted_sampler_alpha": 0.3,
 
-  "vocab_file": "data/gpt2-vocab.json",
-  "merge_file": "data/gpt2-merges.txt",
+  "vocab_file": "/var/nfs/data/gpt2-vocab.json",
+  "merge_file": "/var/nfs/data/gpt2-merges.txt",
 
   "save": "checkpoints",
   "load": "checkpoints",
