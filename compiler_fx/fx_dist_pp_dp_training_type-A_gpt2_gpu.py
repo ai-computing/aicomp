@@ -8,16 +8,16 @@
 #       and each process is responsible for a subset of the entire FX IR,
 #       and pipeline parallel training is executed across N processes.
 #
-#   Micro-batch is supported in this PoC, and applied to a synthetic model (GPU version)
+#   Micro-batch is supported in this PoC, and applied to the GPT2 model (GPU version)
 #
 #
 #  Sample Usage:
 #      <machine #0>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py --pp_size=2 --dp_size=2
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpt2_gpu.py --pp_size=2 --dp_size=2
 #      <machine #1>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1
-#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpu.py --pp_size=2 --dp_size=2
+#                  --master_addr="X.X.X.X" --master_port=29500 fx_dist_pp_dp_training_type-A_gpt2_gpu.py --pp_size=2 --dp_size=2
 #
 
 import torch
@@ -34,7 +34,7 @@ import torch.distributed as dist
 import datetime
 #import torch.distributed.rpc as rpc
 
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import logging
 
@@ -47,6 +47,20 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from torch.fx.graph_module import GraphModule
 
 from torch.nn.parallel import DistributedDataParallel as DDP
+
+import math
+from transformers import GPT2LMHeadModel, GPT2Config
+from transformers import PreTrainedModel
+from transformers.models.gpt2 import GPT2PreTrainedModel
+import transformers.utils.fx as hf_fx
+import inspect
+import copy
+
+from datasets import load_dataset
+from torch.utils.data import DataLoader
+from transformers import GPT2Tokenizer
+
+from torch.utils.data.distributed import DistributedSampler
 
 #logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -77,55 +91,13 @@ dp_size = 1
 #micro_batch_size = num_rank // 2 # TODO
 micro_batch_size = 2 # TODO
 
-batch_size = 64
+batch_size = 32
 #batch_size = batch_size // dp_size
 
-in_features = 4
-out_features = 4
-hidden = 5120
-
-class TestModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-        self.linear1 = nn.Linear(in_features, hidden)
-        self.linear2 = nn.ModuleList()
-        for i in range(2):
-            self.linear2.append(nn.Linear(hidden, hidden))
-
-        self.linear3 = nn.ModuleList()
-        for i in range(2):
-            self.linear3.append(nn.Linear(hidden, hidden))
-
-        self.linear4 = nn.ModuleList()
-        for i in range(2):
-            self.linear4.append(nn.Linear(hidden, hidden))
-
-        self.linear5 = nn.ModuleList()
-        for i in range(2):
-            self.linear5.append(nn.Linear(hidden, hidden))
-        self.linear6 = nn.Linear(hidden, out_features)
-        self.relu = nn.ReLU(inplace = False)
-
-    def forward(self, x):
-        x = self.relu(self.linear1(x))
-        for m in self.linear2:
-            x = self.relu(m(x))
-        for m in self.linear3:
-            x = self.relu(m(x))
-        for m in self.linear4:
-            x = self.relu(m(x))
-        for m in self.linear5:
-            x = self.relu(m(x))
-        x = self.linear6(x)
-        x = self.relu(x)
-        return x
-
-
 # LossWrapper: cited from PiPPy
-class LossWrapper(torch.nn.Module):
-    def __init__(self, module, loss_fn):
-        super().__init__()
+class LossWrapper(GPT2PreTrainedModel):
+    def __init__(self, config, module, loss_fn):
+        super().__init__(config)
         self.module = module
         self.loss_fn = loss_fn
 
@@ -133,7 +105,7 @@ class LossWrapper(torch.nn.Module):
         raise NotImplementedError("LossWrapper: no forward implementation")
 
 # SimpleLossWrapper: cited from PiPPy
-class SimpleLossWrapper(LossWrapper):
+class SimpleLossWrapper(LossWrapper, torch.nn.Module):
     def forward(self, x, labels):
         out1 = self.module(x)
         return self.loss_fn(out1, labels)
@@ -258,18 +230,43 @@ class Simple_split_test(object):
 
         print_memory_usage("Before model instancing", print_mem)
 
-        if use_wrapper == True:
-            t1 = TestModel()
-            print_memory_usage("After model instancing", print_mem)
-
-            loss_fn = torch.nn.MSELoss()
-            wrapper = SimpleLossWrapper(t1, loss_fn)
-            gm = fx.symbolic_trace(wrapper)
-
+        if use_gpu == True:
+            self.device = torch.device(f"cuda:{self.local_rank}")
+            # TO DELETE
+            print(f"Using GPU ... cuda:{self.local_rank}")
         else:
-            t1 = TestModel()
+            self.device = torch.device("cpu")
+
+        if use_wrapper == True:
+            # DEBUG
+            #config = GPT2Config(vocab_size=50257, embed_dim=4096, use_cache=False)
+            config = GPT2Config(use_cache=False)
+
             print_memory_usage("After model instancing", print_mem)
-            gm = fx.symbolic_trace(t1)
+
+            criterion = nn.CrossEntropyLoss()
+            criterion = criterion.to(self.device)
+            wrapper = SimpleLossWrapper(config, model, criterion)
+
+        bs = 20
+        seq_length = 32
+
+        input_names = model.dummy_inputs.keys()
+        sig = inspect.signature(model.forward)
+        concrete_args = {
+                p.name: p.default
+                for p in sig.parameters.values()
+                if p.name not in input_names
+        }
+
+        tracer = hf_fx.HFTracer()
+
+        if use_wrapper == True:
+            traced_graph = tracer.trace(wrapper, concrete_args=concrete_args)
+            gm = torch.fx.GraphModule(wrapper, traced_graph)
+        else:
+            traced_graph = tracer.trace(model, concrete_args=concrete_args)
+            gm = torch.fx.GraphModule(model, traced_graph)
 
         print_memory_usage("After fx symbolic_trace", print_mem)
 
@@ -278,11 +275,6 @@ class Simple_split_test(object):
             logging.info(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
         logging.info(f"------------------------------------------------------------")
 
-        if use_gpu == True:
-            self.device = torch.device(f"cuda:{self.local_rank}")
-            print(f"Using GPU ... cuda:{self.local_rank}")
-        else:
-            self.device = torch.device("cpu")
 
         self.model_ir.append(gm)
         #self.stage = self.rank # TODO
@@ -467,6 +459,10 @@ class FXRun2:
         if dp_size > 1:
             self.activate_dp()
 
+    def free_mem(self):
+        self.env2 = [{} for _ in range(self.mbsize)]
+        self.fwd_cache2 = [{} for _ in range(self.mbsize)]
+        self.grads2 = [{} for _ in range(self.mbsize)]
 
     def activate_dp(self):
         ddp_group = []
@@ -940,7 +936,7 @@ class FXRun2:
             #for n in self.mod.graph.nodes:
             for n in self.graph.nodes:
                 if (use_wrapper == True and n.op == 'placeholder' and self.stage == 0 and n.name == 'x') or \
-                        (use_wrapper == False and n.op == 'placeholder' and self.stage == 0 and n.name == 'x'):
+                        (use_wrapper == False and n.op == 'placeholder' and self.stage == 0 and n.name == 'input_ids'):
                     input = next(self.args_iter)
 
                     #logging.debug(f">>>>> input:{input}, mbsize:{self.mbsize}")
@@ -1127,7 +1123,7 @@ class FXRun2:
         result = Any
 
         if (use_wrapper == True and node.op == 'placeholder' and self.stage == 0 and node.name == 'x') or \
-                (use_wrapper == False and node.op == 'placeholder' and self.stage == 0 and node.name == 'x'):
+                (use_wrapper == False and node.op == 'placeholder' and self.stage == 0 and node.name == 'input_ids'):
             logging.debug(f" ------- [{node.op}] node.name:{node.name}, node.target:{node.target}")
             #result = next(self.args_iter)
             result = self.env2[mb_idx]["placeholder"]
@@ -1250,49 +1246,48 @@ class FXRun2:
             submod = attr_itr
 
             if use_wrapper == True and node.target == 'loss_fn':
-                #key_ = node.args[0]['logits']
-                #output1 = self.env2[mb_idx][str(key_)]
-                #target1 = self.env2[mb_idx]["labels"]
-                #
-                #output1 = output1.view(-1, output1.size(-1))
-                #target1 = target1.view(-1)
-                #
-                #kwargs = {}
-                #
-                #if isinstance(output1, torch.Tensor) and output1.is_floating_point():
-                #    output1 = output1.detach().requires_grad_(output1.requires_grad)
-                #    flat_args.append(output1)
-                #    output1.grad = None 
-                #
-                #    #if not output1.is_leaf:
-                #    #    output1.retain_grad()
-                #
-                #    logging.debug(f" >>> output1:{output1} ")
-                #else:
-                #    flat_args.append(output1)
-                #    logging.debug(f" >>>> output1:{output1} ")
-                #
-                #if isinstance(target1, torch.Tensor) and target1.is_floating_point():
-                #    target1 = target1.detach().requires_grad_(target1.requires_grad)
-                #    flat_args.append(target1)
-                #else:
-                #    flat_args.append(target1)
-                #
-                #myargs = [None, None]
-                #myargs[0] = output1
-                #myargs[1] = target1
-                #myargs = tuple(myargs)
-                #
-                #result = submod(*myargs, **kwargs)
-                args = fx.graph.map_arg(node.args, extract_tensor_args)
-                kwargs = fx.graph.map_arg(node.kwargs, extract_tensor_args)
-                result = submod(*args, **kwargs)
-
-
+                key_ = node.args[0]['logits']
+                output1_ = self.env2[mb_idx][str(key_)]
+                target1_ = self.env2[mb_idx]["labels"]
+                
+                output1_ = output1_.view(-1, output1_.size(-1))
+                target1_ = target1_.view(-1)
+                
+                kwargs = {}
+                
+                if isinstance(output1_, torch.Tensor) and output1_.is_floating_point():
+                    output1 = output1_.detach().to(self.device)
+                    output1.requires_grad_(output1_.requires_grad)
+                    flat_args.append(output1)
+                    output1.grad = None
+                
+                    #if not output1.is_leaf:
+                    #    output1.retain_grad()
+                
+                    logging.debug(f" >>> output1:{output1} ")
+                else:
+                    output1 = output1_
+                    flat_args.append(output1)
+                    logging.debug(f" >>>> output1:{output1} ")
+                
+                if isinstance(target1_, torch.Tensor) and target1_.is_floating_point():
+                    target1 = target1_.detach().to(self.device)
+                    target1.requires_grad_(target1.requires_grad)
+                    flat_args.append(target1)
+                else:
+                    target1 = target1_
+                    flat_args.append(target1)
+                
+                myargs = [None, None]
+                myargs[0] = output1
+                myargs[1] = target1
+                myargs = tuple(myargs)
+                
+                result = submod(*myargs, **kwargs)
                 #logging.debug(f" In forward --> node.target=='loss_fn' ==> result:{result}")
                 logging.debug(f" ------- [{node.op}] node.name:{node.name}, node.target:{node.target}, *** shape:{result.shape}")
 
-                if not str(node.all_input_nodes[0]).startswith("labels"):
+                if not str(node.all_input_nodes[0]).startswith("target"):
                     self.output = self.env2[mb_idx][str(node.all_input_nodes[0])]
                 self.grads2[mb_idx][node.name] = (None,)
                 self.loss[mb_idx] = result
@@ -1322,19 +1317,17 @@ class FXRun2:
             # TODO: Experimental
             elif use_wrapper == False:  #  loss_fn (output nodes's args[0],  mbsize-considered "labels")
                 logging.info(f" ************ use_wrapper == False *****************")
-                #logging.debug(f"node.args[0]['logits']: {node.args[0]['logits']}")
-                #logging.debug(f">>>> p:{node.op}, name:{node.name}, target:{node.target}, args:{node.args}, all_input_nodes:{node.all_input_nodes}")
+                logging.debug(f"node.args[0]['logits']: {node.args[0]['logits']}")
+                logging.debug(f">>>> p:{node.op}, name:{node.name}, target:{node.target}, args:{node.args}, all_input_nodes:{node.all_input_nodes}")
         
-                #key_ = node.args[0]['logits']
-                #output1 = self.env2[mb_idx][str(key_)]
-
-                output1_ = self.env2[mb_idx][str(node.args[0])]
+                key_ = node.args[0]['logits']
+                output1_ = self.env2[mb_idx][str(key_)]
                 target1_ = self.env2[mb_idx]["labels"]
 
                 logging.debug(f" ########## output1: {output1_}, ######### target1:{target1_}")
 
-                #output1 = output1_.view(-1, output1_.size(-1))
-                #target1 = target1_.view(-1)
+                output1 = output1_.view(-1, output1_.size(-1))
+                target1 = target1_.view(-1)
 
                 kwargs = {}
 
@@ -1355,11 +1348,11 @@ class FXRun2:
                     target1 = target1_
                     flat_args.append(target1)
 
-                loss_fn = torch.nn.MSELoss()
+                criterion = nn.CrossEntropyLoss()
 
-                loss_fn = loss_fn.to(self.device)
+                criterion = criterion.to(self.device)
 
-                result = loss_fn(output1, target1)
+                result = criterion(output1, target1)
 
                 logging.debug(f" >>>> loss : {result}, result.shape:{result.shape}, flat_args:{flat_args} ")
 
@@ -1523,6 +1516,7 @@ class FXRun2:
                     #if mb_idx == self.mbsize - 1 and node == from_:
                     #if mb_idx == 0 and node == from_:
                     if mb_idx == 0:
+                        #print("prepare_for_backward rank:", self.rank)
                         self.ddp_mod.reducer.prepare_for_backward(
                                 list(
                                     torch.nn.parallel.distributed._find_tensors(
@@ -1625,6 +1619,24 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
+if use_gpu == True:
+    device = torch.device(f"cuda:{int(os.environ['LOCAL_RANK'])}")
+else:
+    device = torch.device("cpu")
+
+tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.pad_token_id = tokenizer.eos_token_id
+
+
+#config = GPT2Config(vocab_size=50257, embed_dim=4096, use_cache=False)
+config = GPT2Config(use_cache=False)
+
+#model = GPT2LMHeadModel.from_pretrained("gpt2", config=config, ignore_mismatched_sizes=True)
+model = GPT2LMHeadModel(config)
+model = model.from_pretrained("gpt2")
+
+
 sim_split = Simple_split_test()
 sim_split.metadata_transfer()
 
@@ -1636,66 +1648,115 @@ print(f">>> micro batch size = {fx_run2.mbsize}")
 
 
 if fx_run2.rank == 0:
-    print('Total parameters in model: {:,}'.format(get_total_params(fx_run2.mod)))
+    print('Total parameters in model: {:,}'.format(get_total_params(model)))
+
+
+lr = 5.0
+optimizer1 = torch.optim.SGD(fx_run2.mod.parameters(), lr=lr)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer1, 1.0, gamma=0.95)
+
+
+datasets = load_dataset("squad").data["train"]["context"]
+datasets = [str(record) for record in datasets if len(str(record)) < 500]
+#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=1)
+dataloader = DataLoader(dataset=datasets,
+                        batch_size=batch_size,
+                        pin_memory=True,
+                        shuffle=False,
+                        sampler=DistributedSampler(datasets, shuffle=True))
+data_size=len(dataloader.dataset)   # total count of data
+print(f"data_size={data_size}")
+nbatches = len(dataloader)      # total count of data / batch size
+print(f"nbatches={nbatches}")
+
+#epochs = 2 # The number of epochs
+epochs = 1 # The number of epochs
+
+def train():
+    fx_run2.mod.train() # Turn on the train mode
+    total_loss = 0.
+    start_time = time.time()
+
+    for i, batch in enumerate(dataloader):
+        data = None
+        labels = None
+
+        #fx_run2.free_mem()
+
+        if fx_run2.rank == fx_run2.get_first_rank(fx_run2.rank):
+            # move data to first host
+
+            tokens = tokenizer(batch, padding=True, truncation=True, max_length=1024, return_tensors="pt")
+            data, labels = tokens.input_ids, tokens.input_ids
+
+            target_node_name = "labels"
+            mbatches = torch.chunk(labels, fx_run2.mbsize)
+            if fx_run2.mbsize == 1:
+                fx_run2.env2[0][target_node_name] = labels
+            else:
+                for j in range(fx_run2.mbsize):
+                    fx_run2.env2[j][target_node_name] = mbatches[j]
+
+            data, labels = tokens.input_ids, tokens.input_ids
+            for j in range(fx_run2.mbsize):
+                obj = fx_run2.env2[j][target_node_name]
+                #fx_run2.send_data(obj, fx_run2.world_size - 1)
+                fx_run2.send_data(obj, fx_run2.get_last_rank(fx_run2.rank))
+                #logging.debug(f">>>> [rank:0] sent [j:{j}] ==> {labels}")
+
+
+        if fx_run2.rank == fx_run2.get_last_rank(fx_run2.rank):
+            # move labels to last host
+
+            #logging.debug(f" << RANK:{fx_run2.rank},  WORLD_SIZE:{fx_run2.world_size}, mbsize:{fx_run2.mbsize}")
+            target_node_name = "labels"
+            for j in range(fx_run2.mbsize):
+                fx_run2.env2[j][target_node_name] = fx_run2.receive_data(fx_run2.get_first_rank(fx_run2.rank))
+                #logging.debug(f">>>> received <==== env2[{j}][{target_node_name}]: {fx_run2.env2[j][target_node_name]}")
+            if fx_run2.mbsize == 1:
+                labels = fx_run2.env2[0][target_node_name]
+            else:
+                outputs = tuple(mb["labels"] for mb in fx_run2.env2)
+                labels = torch.cat(outputs)
+
+
+        optimizer1.zero_grad()
+
+        output1 = fx_run2.fx_forward4(data, labels)
+        loss1 = fx_run2.loss
+
+        fx_run2.fx_backward4(loss1)
+
+        torch.nn.utils.clip_grad_norm_(fx_run2.mod.parameters(), 0.5)
+        optimizer1.step()
+
+        if fx_run2.rank == fx_run2.get_last_rank(fx_run2.rank):
+            #total_loss += loss1.item()
+            loss =  sum(loss1) / fx_run2.mbsize
+            total_loss += loss
+            log_interval = 10
+            if i % log_interval == 0 and i > 0:
+                cur_loss = total_loss / log_interval
+                elapsed = time.time() - start_time
+                print('| epoch {:3d} | {:5d}/{:5d} batches | '
+                    'lr {:02.2f} | ms/batch {:5.2f} | '
+                    'loss {:5.2f} | ppl {:8.2f}'.format(
+                        epoch, i, nbatches, scheduler.get_lr()[0],
+                        elapsed * 1000 / log_interval,
+                        cur_loss, math.exp(cur_loss)))
+
+                total_loss = 0
+                start_time = time.time()
+
+
+if fx_run2.rank == 0:
     tick = time.time()
 
-
-fx_run2.mod.train()
-optimizer1 = Adam(fx_run2.mod.parameters(), lr=3e-5)
-
-if fx_run2.stage == 0:
-    #
-    # move sample_input to first host
-    #
-    sample_output = torch.rand(batch_size, out_features)
-    sample_input = torch.rand(batch_size, in_features)
-else:
-    sample_input = None
-    sample_output = None
-
-
-print(sample_input)
-
-#
-# move sample_output to last host
-#
-if fx_run2.stage == 0:
-    target_node_name = "labels"
-    mbatches = torch.chunk(sample_output, fx_run2.mbsize)
-    for j in range(fx_run2.mbsize):
-        fx_run2.env2[j][target_node_name] = mbatches[j]
-
-    for j in range(fx_run2.mbsize):
-        obj = fx_run2.env2[j][target_node_name]
-        fx_run2.send_data(obj, fx_run2.get_last_rank(fx_run2.rank))
-    #
-    print(f"sent ====> {sample_output}")
-
-if fx_run2.stage == pp_size - 1:
-    target_node_name = "labels"
-    for j in range(fx_run2.mbsize):
-        fx_run2.env2[j][target_node_name] = fx_run2.receive_data(fx_run2.get_first_rank(fx_run2.rank))
-
-    outputs = tuple(mb["labels"] for mb in fx_run2.env2)
-    sample_output = torch.cat(outputs)
-    #
-    print(f"received <==== env2[{fx_run2.mbsize-1}][{target_node_name}]: {fx_run2.env2[fx_run2.mbsize-1][target_node_name]}")
-
-#for i in range(20):
-for i in range(50):
-
-    optimizer1.zero_grad()
-
-    output1 = fx_run2.fx_forward4(sample_input, sample_output)
-    loss1 = fx_run2.loss
-
-    if fx_run2.rank == fx_run2.get_last_rank(fx_run2.rank):
-        print(f'Step {i}, {fx_run2.rank} Loss1:{sum(loss1) / fx_run2.mbsize}')
-
-    fx_run2.fx_backward4(loss1)
-
-    optimizer1.step()
-
+for epoch in range(1, epochs + 1):
+    epoch_start_time = time.time()
+    train()
+    scheduler.step()
 
 if fx_run2.rank == 0:
     tock=time.time()
