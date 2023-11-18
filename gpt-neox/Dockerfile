@@ -114,6 +114,10 @@ RUN python megatron/fused_kernels/setup.py install
 RUN pip uninstall urllib3 -y && \
         pip install urllib3==1.26.16
 
+#swsok, fix train_batch miscalculation error.
+RUN sed -e "899 i\\        #swsok, fix train_batch calculation error." -i /usr/local/lib/python3.8/dist-packages/deepspeed/runtime/config.py
+RUN sed -e "900 i\\        train_batch = None" -i /usr/local/lib/python3.8/dist-packages/deepspeed/runtime/config.py
+
 #swsok, install and setup ssh
 RUN sed -i "/#Port/cPort 60022" /etc/ssh/sshd_config
 RUN chown -R mchorse:mchorse /home/mchorse/.ssh
