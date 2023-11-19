@@ -49,7 +49,7 @@
   },
 
    # batch / data settings
-   "train_micro_batch_size_per_gpu": 8,
+   "train_micro_batch_size_per_gpu": 32,
    "data_impl": "mmap",
 
    # activation checkpointing

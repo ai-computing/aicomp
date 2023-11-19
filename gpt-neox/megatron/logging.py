@@ -367,7 +367,7 @@ def training_log(
         if (total_loss_dict["lm_loss"]/float(num_iterations)) < neox_args.target_lm_loss:
             print("lm_loss reaches target value = %f " % (neox_args.target_lm_loss))
             exit = 1
-        if timers("total time").elapsed(False) >  neox_args.target_time_in_sec:
+        if neox_args.target_time_in_sec != 0 && timers("total time").elapsed(False) >  neox_args.target_time_in_sec:
             print("training time reaches target value = %d " % (neox_args.target_time_in_sec))
             exit = 1
 

@@ -17,7 +17,7 @@
   "launcher": "pdsh",
   #"launcher": "openmpi",
   #"deepspeed_mpi": true,
-  "gradient_accumulation_steps": 8,
-  "global_num_gpus": 2,
-  "hostfile": "./hostfile",
+  #"gradient_accumulation_steps": 8,
+  #"global_num_gpus": 16,
+  "hostfile": "./scripts_swsok/hostfile",
 }

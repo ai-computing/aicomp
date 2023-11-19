@@ -30,5 +30,5 @@ sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 
 sudo usermod -aG docker $USER
-
+sudo service docker restart
 #logout and login to run docker without sudo
