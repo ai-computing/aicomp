@@ -1659,12 +1659,14 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer1, 1.0, gamma=0.95)
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
 #dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
-#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=1)
-dataloader = DataLoader(dataset=datasets,
-                        batch_size=batch_size,
-                        pin_memory=True,
-                        shuffle=False,
-                        sampler=DistributedSampler(datasets, shuffle=True))
+if dp_size == 1:
+    dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=1)
+else:
+    dataloader = DataLoader(dataset=datasets,
+                            batch_size=batch_size,
+                            pin_memory=True,
+                            shuffle=False,
+                            sampler=DistributedSampler(datasets, shuffle=True, num_replicas=dp_size, rank=fx_run2.get_first_rank(fx_run2.rank)))
 data_size=len(dataloader.dataset)   # total count of data
 print(f"data_size={data_size}")
 nbatches = len(dataloader)      # total count of data / batch size
