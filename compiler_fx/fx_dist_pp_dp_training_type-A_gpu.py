@@ -55,8 +55,8 @@ logging.basicConfig(level=logging.ERROR)
 
 torch.manual_seed(42)
 
-#use_wrapper = False
-use_wrapper = True
+use_wrapper = False
+#use_wrapper = True
 
 #use_gpu = False
 use_gpu = True
@@ -80,8 +80,8 @@ micro_batch_size = 2 # TODO
 batch_size = 64
 #batch_size = batch_size // dp_size
 
-in_features = 4
-out_features = 4
+in_features = 5120
+out_features = 5120
 hidden = 5120
 
 class TestModel(nn.Module):
@@ -1682,7 +1682,8 @@ if fx_run2.stage == pp_size - 1:
     print(f"received <==== env2[{fx_run2.mbsize-1}][{target_node_name}]: {fx_run2.env2[fx_run2.mbsize-1][target_node_name]}")
 
 #for i in range(20):
-for i in range(50):
+#for i in range(50):
+for i in range(100):
 
     optimizer1.zero_grad()
 
