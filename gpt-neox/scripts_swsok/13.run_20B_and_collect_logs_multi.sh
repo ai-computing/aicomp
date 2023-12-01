@@ -1,20 +1,21 @@
 #!/bin/bash
 
 #CONFIGS=(125M.yml 6-7B.yml)
-CONFIG=6-7B.yml
+CONFIG=20B.yml
 CONT_NAME="gpt-neox-container"
 #BATCHS=(1 2 4 8 16 32 64 128)
-BATCHS=(1 2 4 8 16 32)
+BATCHS=(1 2 4 8 16 32 64)
 #GPUS=(1 2 3 4 5 6 7 8)
 #gpus per node
-GPUS=4
-NODES=(s1 s8)
+GPUS=8
+NODES=(s1 s8 s2 s3)
+#NODES=(s1 s8)
 #Pipeline Parallel
-PP=(1 2 4 8)
-#PP=(8)
-TRAIN_ITERS=500
+PP=(1 2 4 8 16 32)
+MP=(1 2 4 8 16 32)
+TRAIN_ITERS=10
 TARGET_LM_LOSS=0
-TRAIN_TIME=600
+TRAIN_TIME=60000
 HOSTFILE=./scripts_swsok/hostfile
 
 if [ ! -z "$1" ]; then
@@ -22,9 +23,9 @@ if [ ! -z "$1" ]; then
 fi
 
 rm logs/*
-rm checkpoints/* -rf
+rm 20B_checkpoints/* -rf
 mkdir swsok-results/
-mkdir checkpoints/
+mkdir 20B_checkpoints/
 
 rm $HOSTFILE
 for i in ${NODES[@]}; do
@@ -42,24 +43,26 @@ for i in ${NODES[@]}; do
 done
 
 for p in ${PP[@]}; do
-	for b in ${BATCHS[@]}; do
-		echo "$CONFIG Nodes ${#NODES[@]} GPUS $GPUS BATCH $b Pipeline $p" > logs/current_test_setting.txt
+	sed -i "/\"pipe_parallel_size\"/c\   \"pipe_parallel_size\": \\$p," configs/$CONFIG
+	for m in ${MP[@]}; do
+		sed -i "/\"model_parallel_size\"/c\   \"model_parallel_size\": \\$m," configs/$CONFIG
+		for b in ${BATCHS[@]}; do
+			echo "$CONFIG Nodes ${#NODES[@]} GPUS $GPUS BATCH $b Pipeline $p Modelparallel $m" > logs/current_test_setting.txt
 			
-		sed -i "/\"train_micro_batch_size_per_gpu\"/c\   \"train_micro_batch_size_per_gpu\": \\$b," configs/$CONFIG
-		sed -i "/\"pipe_parallel_size\"/c\   \"pipe_parallel_size\": \\$p," configs/$CONFIG
+			sed -i "/\"train_micro_batch_size_per_gpu\"/c\   \"train_micro_batch_size_per_gpu\": \\$b," configs/$CONFIG
 
-		docker exec -it -w /gpt-neox $CONT_NAME ./deepy.py train.py configs/$CONFIG configs/local_setup.yml configs/etri_cluster.yml
+			docker exec -it -w /gpt-neox $CONT_NAME ./deepy.py train.py configs/$CONFIG configs/etri_cluster.yml
 
-		mv logs/*stdout.txt swsok-results/conf-$CONFIG-gpus-$GPUS-pp-$p-microbatch-$b-$(date '+%Y-%m-%d').txt
-		rm logs/*
-		rm checkpoints/* -rf
+			mv logs/*stdout.txt swsok-results/conf-$CONFIG-nodes-${#NODES[@]}-gpus-$GPUS-pp-$p-mp-$m-microbatch-$b-$(date '+%Y-%m-%d').txt
+			rm logs/*
+			rm 20B_checkpoints/* -rf
 
-		sleep 1
+			sleep 1
+		done
 	done
 done
 
 for i in ${NODES[@]}; do
 	ssh $i docker stop $CONT_NAME
 done
-
 

@@ -15,10 +15,8 @@
 
   # parallelism settings ( you will want to change these based on your cluster setup, ideally scheduling pipeline stages
   # across the node boundaries )
-  #"pipe_parallel_size": 4,
-  "pipe_parallel_size": 4,
-  #"model_parallel_size": 2,
-  "model_parallel_size": 2,
+   "pipe_parallel_size": 1,
+   "model_parallel_size": 1,
 
   # model settings
   "num_layers": 44,
@@ -63,7 +61,7 @@
   },
 
   # batch / data settings (assuming 96 GPUs)
-  "train_micro_batch_size_per_gpu": 2,
+   "train_micro_batch_size_per_gpu": 1,
   "gradient_accumulation_steps": 32,
   "data_impl": "mmap",
   "split": "995,4,1",
@@ -92,8 +90,8 @@
     },
 
   # misc. training settings
-  "train_iters": 150000,
-  "lr_decay_iters": 150000,
+   "train_iters": 10,
+   "lr_decay_iters": 10,
 
   "distributed_backend": "nccl",
   "lr_decay_style": "cosine",
@@ -114,6 +112,6 @@
 
    #swsok
    "target_lm_loss": 0,
-   "target_time_in_sec": 1000,
+   "target_time_in_sec": 60000,
    "attention_config": [[["flash"], "all"]],
 }
