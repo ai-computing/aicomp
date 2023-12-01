@@ -2,10 +2,10 @@
 # Copyright (c) 2023-present, ETRI, All rights reserved.
 #
 #
-#  This is a test program for running PiPPy with pipeline-parallel training.
+#  This is a test program for running PiPPy with pipeline-parallel and data-parallel training.
 #
 #
-#  Sample Usage:
+#  Sample Usage for PP and DP:
 #      <machine #0>
 #            torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0
 #                  --master_addr="X.X.X.X" --master_port=29501 pippy_pp_dp_training_gpt2.py
