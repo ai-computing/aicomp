@@ -2,7 +2,7 @@
 {
    # parallelism settings ( you will want to change these based on your cluster setup, ideally scheduling pipeline stages
    # across the node boundaries )
-   "pipe_parallel_size": 1,
+   "pipe_parallel_size": 4,
    "model_parallel_size": 1,
 
    # model settings
@@ -47,7 +47,7 @@
     "contiguous_gradients": True,
   },
    # batch / data settings
-   "train_micro_batch_size_per_gpu": 4,
+   "train_micro_batch_size_per_gpu": 64,
    "data_impl": "mmap",
 
    # activation checkpointing
@@ -73,8 +73,8 @@
    },
 
    # misc. training settings
-   "train_iters": 320000,
-   "lr_decay_iters": 320000,
+   "train_iters": 500,
+   "lr_decay_iters": 500,
    "distributed_backend": "nccl",
    "lr_decay_style": "cosine",
    "warmup": 0.01,
