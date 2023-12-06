@@ -348,7 +348,7 @@ def training_log(
 #swsok
         flops_per_s_per_gpu = get_flops(neox_args, iteration_time)
         flops_per_s_per_gpu_old = get_flops_old(neox_args, model, iteration_time)
-        print("!!!!!!!!!!!!!!!!!!!!Model parameters2 = %d\n" % model.total_params)
+#        print("!!!!!!!!!!!!!!!!!!!!Model parameters2 = %d\n" % model.total_params)
 
         log_string += (
             f" approx flops per GPU: {human_readable_flops(flops_per_s_per_gpu)} |"

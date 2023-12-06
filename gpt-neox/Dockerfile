@@ -125,6 +125,14 @@ RUN echo 'Host *' >> /home/mchorse/.ssh/config && \
     echo 'Port 60022' >> /home/mchorse/.ssh/config
 #EXPOSE 22
 
+#swsok, install nsight systems
+RUN apt-get install -y --no-install-recommends apt-transport-https ca-certificates gnupg wget && \
+    rm -rf /var/lib/apt/lists/*
+RUN wget -qO - https://developer.download.nvidia.com/devtools/repos/ubuntu2004/amd64/nvidia.pub | apt-key add -
+RUN echo "deb https://developer.download.nvidia.com/devtools/repos/ubuntu2004/amd64/ /" >> /etc/apt/sources.list.d/nsight.list && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends nsight-systems-2023.4.1
+
 # Clear staging
 RUN mkdir -p /tmp && chmod 0777 /tmp
 
@@ -136,4 +144,5 @@ RUN cat /home/mchorse/.ssh/id_rsa.pub >> /home/mchorse/.ssh/authorized_keys
 COPY scripts_swsok/run_sshd.sh /home/mchorse/run_sshd.sh
 WORKDIR /gpt-neox
 
+CMD ["nsys", "status", "-e"]
 CMD ["/home/mchorse/run_sshd.sh"]

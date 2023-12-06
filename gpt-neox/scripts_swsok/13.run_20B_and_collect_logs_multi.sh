@@ -13,7 +13,7 @@ NODES=(s1 s8 s2 s3)
 #Pipeline Parallel
 PP=(1 2 4 8 16 32)
 MP=(1 2 4 8 16 32)
-TRAIN_ITERS=10
+TRAIN_ITERS=4
 TARGET_LM_LOSS=0
 TRAIN_TIME=60000
 HOSTFILE=./scripts_swsok/hostfile
@@ -52,11 +52,17 @@ for p in ${PP[@]}; do
 			sed -i "/\"train_micro_batch_size_per_gpu\"/c\   \"train_micro_batch_size_per_gpu\": \\$b," configs/$CONFIG
 
 			docker exec -it -w /gpt-neox $CONT_NAME ./deepy.py train.py configs/$CONFIG configs/etri_cluster.yml
-
-			mv logs/*stdout.txt swsok-results/conf-$CONFIG-nodes-${#NODES[@]}-gpus-$GPUS-pp-$p-mp-$m-microbatch-$b-$(date '+%Y-%m-%d').txt
+			SAVELOG=swsok-results/conf-$CONFIG-nodes-${#NODES[@]}-gpus-$GPUS-pp-$p-mp-$m-microbatch-$b-$(date '+%Y-%m-%d').txt
+			mv logs/*stdout.txt $SAVELOG
 			rm logs/*
 			rm 20B_checkpoints/* -rf
 
+			LINE=`grep lm_loss $SAVELOG|wc -l`
+			if [ "$LINE" = "0" ]; then
+				echo "lm_loss not found in log file $SAVELOG. - deleted it"
+				rm $SAVELOG
+				break
+			fi 
 			sleep 1
 		done
 	done
