@@ -1,4 +1,2 @@
-s1 slots=8
-s8 slots=8
-s2 slots=8
-s3 slots=8
+node01 slots=1
+node02 slots=1
