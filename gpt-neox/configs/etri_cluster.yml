@@ -1,0 +1,9 @@
+# Configurations for using ETRI GPU cluster
+{
+  "launcher": "pdsh",
+  #"launcher": "openmpi",
+  #"deepspeed_mpi": true,
+  #"gradient_accumulation_steps": 8,
+  #"global_num_gpus": 16,
+  "hostfile": "./hostfile",
+}

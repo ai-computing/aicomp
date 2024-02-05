@@ -16,16 +16,20 @@
   # "weight_by_num_documents": false,
   # "weighted_sampler_alpha": 0.3,
 
+  #  "save": "checkpoints",
+  #  "load": "checkpoints",
+  
   "vocab_file": "/data/enwik8/gpt2-vocab.json",
   "merge_file": "/data/enwik8/gpt2-merges.txt",
 
-  "save": "checkpoints",
-  "load": "checkpoints",
+  #  "save": "checkpoints",
+  #  "load": "checkpoints",
   "checkpoint_validation_with_forward_pass": False,
 
   "tensorboard_dir": "tensorboard",
-  "log_dir": "logs",
+  "log_dir": "./logs",
   "use_wandb": True,
   "wandb_host": "https://api.wandb.ai",
   "wandb_project": "neox"
+
 }
