@@ -98,13 +98,17 @@ def build_train_valid_test_datasets(
     seq_length,
     seed,
     skip_warmup,
+    neox_args,
 ):
     """Build train, valid, and test datasets."""
 
     # Indexed dataset.
     indexed_dataset = make_indexed_dataset(data_prefix, data_impl, skip_warmup)
+    #swsok, test
+    print("len(indexed_dataset)=%d\n" % len(indexed_dataset))
 
     total_num_of_documents = indexed_dataset.sizes.shape[0]
+
     splits = get_train_valid_test_split_(splits_string, total_num_of_documents)
 
     # Print stats about the splits.
@@ -129,6 +133,8 @@ def build_train_valid_test_datasets(
             documents = np.arange(
                 start=splits[index], stop=splits[index + 1], step=1, dtype=np.int32
             )
+            #swsok, test
+            #print_rank_0("np.sum(sizes[documents])/seq_length = %d\n" % (np.sum(indexed_dataset[documents])/seq_length))
 
             dataset = GPT2Dataset(
                 name,
@@ -139,7 +145,11 @@ def build_train_valid_test_datasets(
                 seq_length,
                 seed,
                 use_shared_fs=use_shared_fs,
+                neox_args=neox_args,
             )
+
+            #swsok, test
+            print_rank_0("len(dataset)=%d\n" % len(dataset))
         return dataset
 
     train_dataset = build_dataset(0, "train")
@@ -414,12 +424,17 @@ def build_train_valid_test_data_iterators(neox_args):
                 seq_length=neox_args.seq_length,
                 seed=neox_args.seed,
                 skip_warmup=(not neox_args.mmap_warmup),
+                neox_args=neox_args,
             )
 
         # Build dataloders.
         train_dataloader = make_data_loader(train_ds, neox_args=neox_args)
         valid_dataloader = make_data_loader(valid_ds, neox_args=neox_args)
         test_dataloader = make_data_loader(test_ds, neox_args=neox_args)
+
+	# swsok, for checking
+        print("len(train_ds)=%d train_val_test_num_samples[0]=%d\n" % (len(train_ds),train_val_test_num_samples[0]))
+        neox_args.train_data_length = len(train_ds);
 
         # Flags to know if we need to do training/validation/testing.
         do_train = train_dataloader is not None and neox_args.train_iters > 0

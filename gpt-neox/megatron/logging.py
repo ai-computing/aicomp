@@ -23,8 +23,10 @@ except ModuleNotFoundError:
 
 from megatron import mpu, print_rank_0
 from megatron.utils import report_memory
+
 #swsok, to get num of parameters of model
 from megatron.utils import get_total_params
+from megatron import mpu
 
 
 class Tee:
@@ -305,7 +307,11 @@ def training_log(
         samples_per_sec = neox_args.train_batch_size / iteration_time
 
         #swsok, add time stamp on logs
-        log_string = "time: %d |" % timers("total time").elapsed(False)
+        data_parallel_world_size = mpu.get_data_parallel_world_size()
+        #print_rank_0("train_data_length=%d data_parallel_world_size=%d neox_args.batch_size=%d iteration=%d epochs=%d\n" % (neox_args.train_data_length,data_parallel_world_size,neox_args.batch_size,iteration,neox_args.train_data_num_epochs))
+        total_iteration = neox_args.batch_size * data_parallel_world_size * iteration
+        estimated_time_per_epoch = timers("total time").elapsed(False)*neox_args.train_data_length/neox_args.train_data_num_epochs/total_iteration
+        log_string = "time: %d sec (estimate time/epoch: %d sec) |" % (timers("total time").elapsed(False), estimated_time_per_epoch)
         log_string += " samples/sec: {:.3f} |".format(samples_per_sec)
 
         #log_string = " samples/sec: {:.3f} |".format(samples_per_sec)
@@ -347,15 +353,17 @@ def training_log(
         # log tflop / gpu
 #swsok
         flops_per_s_per_gpu = get_flops(neox_args, iteration_time)
-        flops_per_s_per_gpu_old = get_flops_old(neox_args, model, iteration_time)
 #        print("!!!!!!!!!!!!!!!!!!!!Model parameters2 = %d\n" % model.total_params)
 
         log_string += (
             f" approx flops per GPU: {human_readable_flops(flops_per_s_per_gpu)} |"
         )
-        log_string += (
-            f" OLD approxflops per GPU: {human_readable_flops(flops_per_s_per_gpu_old)} |"
-        )
+
+#        flops_per_s_per_gpu_old = get_flops_old(neox_args, model, iteration_time)
+#        log_string += (
+#            f" OLD approxflops per GPU: {human_readable_flops(flops_per_s_per_gpu_old)} |"
+#        )
+
         tb_wandb_log(
             "runtime/flops_per_sec_per_gpu",
             flops_per_s_per_gpu,

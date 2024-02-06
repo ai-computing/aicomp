@@ -16,9 +16,6 @@
   # "weight_by_num_documents": false,
   # "weighted_sampler_alpha": 0.3,
 
-  #  "save": "checkpoints",
-  #  "load": "checkpoints",
-  
   "vocab_file": "/data/enwik8/gpt2-vocab.json",
   "merge_file": "/data/enwik8/gpt2-merges.txt",
 

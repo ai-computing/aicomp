@@ -719,6 +719,16 @@ class NeoXArgsTraining(NeoXArgsTemplate):
     List of paths to train datasets.
     """
 
+    train_data_length: int = 0
+    """
+    length of train datasets.	//swsok
+    """
+
+    train_data_num_epochs: int = 0
+    """
+    number of epochs in train datasets.	//swsok
+    """
+
     label_data_paths: list = None
     """
     List of paths to label datasets (not shifted by 1 yet!).

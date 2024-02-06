@@ -39,6 +39,7 @@ class GPT2Dataset(torch.utils.data.Dataset):
         build_index_mappings=True,
         use_shared_fs=True,
         label_dataset=None,
+        neox_args=None,
     ):
 
         self.name = name
@@ -60,6 +61,7 @@ class GPT2Dataset(torch.utils.data.Dataset):
                 seq_length,
                 seed,
                 use_shared_fs=use_shared_fs,
+                neox_args=neox_args,
             )
             self.shuffle_idx_len = self.shuffle_idx.shape[0] - 1
             self.sample_idx_len = self.sample_idx.shape[0] - 1
@@ -129,6 +131,7 @@ def _build_index_mappings(
     seq_length,
     seed,
     use_shared_fs=True,
+    neox_args=None,
 ):
     """Build doc-idx, sample-idx, and shuffle-idx.
     doc-idx: is an array (ordered) of documents to be used in training.
@@ -139,6 +142,9 @@ def _build_index_mappings(
     # Number of tokens in each epoch and number of required epochs.
     tokens_per_epoch = _num_tokens(documents, sizes)
     num_epochs = _num_epochs(tokens_per_epoch, seq_length, num_samples)
+    #swsok, save num_epoch
+    neox_args.train_data_num_epochs = num_epochs
+
     # rng state
     np_rng = np.random.RandomState(seed=seed)
 
