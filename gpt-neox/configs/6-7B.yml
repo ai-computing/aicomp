@@ -74,8 +74,8 @@
    },
 
    # misc. training settings
-   "train_iters": 500,
-   "lr_decay_iters": 500,
+   "train_iters": 200,
+   "lr_decay_iters": 200,
    "distributed_backend": "nccl",
    "lr_decay_style": "cosine",
    "warmup": 0.01,
@@ -91,6 +91,6 @@
 
     #swsok
    "target_lm_loss": 0,
-   "target_time_in_sec": 600,
+   "target_time_in_sec": 1000,
    "attention_config": [[["flash"], "all"]],
 }

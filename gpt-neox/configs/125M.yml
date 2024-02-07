@@ -53,7 +53,7 @@
    "data_impl": "mmap",
 
    # activation checkpointing
-   "checkpoint_activations": true,
+   "checkpoint_activations": false,
    "checkpoint_num_layers": 1,
    "partition_activations": true,
    "synchronize_each_layer": true,
@@ -74,8 +74,8 @@
    },
 
    # misc. training settings
-   "train_iters": 200,
-   "lr_decay_iters": 200,
+   "train_iters": 100,
+   "lr_decay_iters": 100,
    "distributed_backend": "nccl",
    "lr_decay_style": "cosine",
    "warmup": 0.01,
@@ -92,7 +92,7 @@
    #swsok
    "target_lm_loss": 0,
    "target_time_in_sec": 1000,
-#   "attention_config": [[["flash"], "all"]],
+   "attention_config": [[["flash"], "all"]],
 
   #  networking
   #"hostfile": "/mock_path"

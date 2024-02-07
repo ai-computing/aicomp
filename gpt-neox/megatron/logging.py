@@ -312,6 +312,13 @@ def training_log(
         total_iteration = neox_args.batch_size * data_parallel_world_size * iteration
         estimated_time_per_epoch = timers("total time").elapsed(False)*neox_args.train_data_length/neox_args.train_data_num_epochs/total_iteration
         log_string = "time: %d sec (estimate time/epoch: %d sec) |" % (timers("total time").elapsed(False), estimated_time_per_epoch)
+
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
+        nvmlInit()
+        h = nvmlDeviceGetHandleByIndex(0)
+        info = nvmlDeviceGetMemoryInfo(h)
+        log_string += " GPU 0 MEM(GB) TOTAL %.2f USED %.2f FREE %.2f |" % (info.total/1073741824, info.used/1073741824, info.free/1073741824)
+
         log_string += " samples/sec: {:.3f} |".format(samples_per_sec)
 
         #log_string = " samples/sec: {:.3f} |".format(samples_per_sec)
