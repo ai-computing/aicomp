@@ -106,6 +106,13 @@ class SimpleLossWrapper(LossWrapper, torch.nn.Module):
         return self.loss_fn(out1, labels)
 '''
 
+total_parameters = 0
+def get_total_params(module: torch.nn.Module):
+    total_params = 0
+    for param in module.parameters():
+        total_params += param.numel()
+    return total_params
+
 
 if rank == 0:
     config = GPT2Config(use_cache=False)
@@ -115,6 +122,10 @@ if rank == 0:
 
     #loss_fn = torch.nn.CrossEntropyLoss().to(device)
     #wrapper = SimpleLossWrapper(config, model, loss_fn)
+
+    #total_parameters = get_total_params(wrapper)
+    total_parameters = get_total_params(model)
+    print('Total parameters in model: {:,}'.format(total_parameters))
 
     split_policy = split_into_equal_size(world_size)
 
@@ -165,13 +176,6 @@ if rank == 0:
     lr_scheduler = driver.instantiate_lr_scheduler(torch.optim.lr_scheduler.LinearLR, total_iters=100)
 
 
-def get_total_params(module: torch.nn.Module):
-    total_params = 0
-    for param in module.parameters():
-        total_params += param.numel()
-    return total_params
-
-
 if rank == 0:
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
@@ -205,7 +209,8 @@ if rank == 0:
 
         #pipe_loss = driver(data, labels)
         pipe_loss = driver(**gpt2_input_dict)
-        print(f'Step {i}, Loss: {pipe_loss}')
+        #print(f'Step {i}, Loss: {pipe_loss}')
+        print(f"Step {i}, Loss: {pipe_loss['loss']}")
 
         optimizer1.step()
         lr_scheduler.step()
@@ -215,6 +220,7 @@ if rank == 0:
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
+    print('Total parameters in model: {:,}'.format(total_parameters))
 
 
 
