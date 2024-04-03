@@ -1260,6 +1260,8 @@ print(f">>> micro batch size = {fx_run3.mbsize}")
 fx_run3.submod.train()
 lr = 5.0
 optimizer1 = torch.optim.SGD(fx_run3.submod.parameters(), lr=lr)
+#lr = 3e-5
+#optimizer1 = torch.optim.Adam(fx_run3.submod.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer1, 1.0, gamma=0.95)
 
 
