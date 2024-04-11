@@ -631,7 +631,8 @@ class FXRun3:
                         if outer.name == target_.name:
                             logging.info(f" [cross_reference_analyze] ({target_.name}) referenced in outer rank:{rank_} !!")
     
-                            self.special_nodes[target_.name] = (rank_, rank)  # { node_name : {rank#, needed-by-rank#),}
+                            if target_.name not in self.special_nodes:
+                                self.special_nodes[target_.name] = (rank_, rank)  # { node_name : {rank#, needed-by-rank#),}
                             referenced_out = True
                             break
     
