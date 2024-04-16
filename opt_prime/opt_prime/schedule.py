@@ -32,17 +32,14 @@ class ScheduleGPipe:
         self.comm = comm
 
     
-    # TODO
     def run(self, data, labels):
         self.fx_forward(data, labels)
 
         if self.run_info.rank == self.run_info.world_size - 1:
-            self.run_loss()
-            loss = self.run_info.loss
-        else:
-            loss = None
+            for i in range(self.run_info.mbsize):
+                self.run_loss(i)
 
-        self.fx_backward(loss)
+        self.fx_backward()
 
 
 
@@ -107,63 +104,63 @@ class ScheduleGPipe:
         return next_node_name
 
 
-    def run_loss(self):
+    def run_loss(self, mb_idx):
         # TODO: last stage processing
         assert self.run_info.rank == self.run_info.world_size - 1
+
+        assert mb_idx < self.run_info.mbsize
 
         node = self.get_output_node()
         key_ = node.args[0]['logits']
 
-        for mb_idx in range(self.run_info.mbsize):
-            if str(key_) in self.run_info.getitem_dic:
-                a_submod = self.run_info.getitem_dic[str(key_)][0]
-                a_idx = self.run_info.getitem_dic[str(key_)][1]
-                output1_ = self.run_info.env[mb_idx][a_submod][a_idx]
-            else:
-                output1_ = self.run_info.env[mb_idx][str(key_)]
+        if str(key_) in self.run_info.getitem_dic:
+            a_submod = self.run_info.getitem_dic[str(key_)][0]
+            a_idx = self.run_info.getitem_dic[str(key_)][1]
+            output1_ = self.run_info.env[mb_idx][a_submod][a_idx]
+        else:
+            output1_ = self.run_info.env[mb_idx][str(key_)]
 
-            target1_ = self.run_info.env[mb_idx]["labels"]
+        target1_ = self.run_info.env[mb_idx]["labels"]
 
-            output1_ = output1_.view(-1, output1_.size(-1))
-            target1_ = target1_.view(-1)
+        output1_ = output1_.view(-1, output1_.size(-1))
+        target1_ = target1_.view(-1)
 
 
-            flat_args = []
-            if isinstance(output1_, torch.Tensor) and output1_.is_floating_point():
-                output1 = output1_.detach().to(self.run_info.device)
-                output1.requires_grad_(output1_.requires_grad)
-                #output1.requires_grad_(True)
-                flat_args.append(output1)
-                output1.grad = None
-            else:
-                output1 = output1_
-                flat_args.append(output1)
+        flat_args = []
+        if isinstance(output1_, torch.Tensor) and output1_.is_floating_point():
+            output1 = output1_.detach().to(self.run_info.device)
+            output1.requires_grad_(output1_.requires_grad)
+            #output1.requires_grad_(True)
+            flat_args.append(output1)
+            output1.grad = None
+        else:
+            output1 = output1_
+            flat_args.append(output1)
 
-            if isinstance(target1_, torch.Tensor) and target1_.is_floating_point():
-                target1 = target1_.detach().to(self.run_info.device)
-                target1.requires_grad_(True)
-                #flat_args.append(target1)
-                flat_args.append(target1)
-            else:
-                target1 = target1_
-                flat_args.append(target1)
+        if isinstance(target1_, torch.Tensor) and target1_.is_floating_point():
+            target1 = target1_.detach().to(self.run_info.device)
+            target1.requires_grad_(True)
+            #flat_args.append(target1)
+            flat_args.append(target1)
+        else:
+            target1 = target1_
+            flat_args.append(target1)
 
-            criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss()
 
-            criterion = criterion.to(self.run_info.device)
+        criterion = criterion.to(self.run_info.device)
 
-            result = criterion(output1, target1)
+        result = criterion(output1, target1)
 
-            #print(f" >>>> loss: {result}, result.shape:{result.shape}")
+        #print(f" >>>> loss: {result}, result.shape:{result.shape}")
 
-            self.run_info.grads[mb_idx][node.name] = (None,)
-            self.run_info.loss[mb_idx] = result
-            #self.fwd_cache2[mb_idx][node.name] = \
-            #        ( result if isinstance(result, tuple) else (result,), \
-            #        flat_args, )
-            self.run_info.env[mb_idx][node.name] = result
-            self.run_info.flat_args[mb_idx][node.name] = flat_args
-
+        self.run_info.grads[mb_idx][node.name] = (None,)
+        self.run_info.loss[mb_idx] = result
+        #self.fwd_cache2[mb_idx][node.name] = \
+        #        ( result if isinstance(result, tuple) else (result,), \
+        #        flat_args, )
+        self.run_info.env[mb_idx][node.name] = result
+        self.run_info.flat_args[mb_idx][node.name] = flat_args
 
 
     def init_env_mark(self, mb_idx):
@@ -297,7 +294,7 @@ class ScheduleGPipe:
         #self.run_info.grads = [{} for _ in range(self.run_info.mbsize)]
         torch.cuda.empty_cache()
 
-    def fx_backward(self, *args):
+    def fx_backward(self):
         for i in range(self.run_info.mbsize):
             result = self.fx_micro_backward(i)
             next(result)
