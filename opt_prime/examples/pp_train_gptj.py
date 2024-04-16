@@ -15,7 +15,7 @@ import sys
 import math
 import time
 
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
+from transformers import GPT2Tokenizer, GPTJForCausalLM, GPTJConfig
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 
@@ -26,13 +26,15 @@ logging.basicConfig(level=logging.ERROR)
 
 device = torch.device("cpu")
 
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2-medium")
+#tokenizer = GPT2Tokenizer.from_pretrained("anton-l/gpt-j-tiny-random")
+tokenizer = GPT2Tokenizer.from_pretrained("anton-l/gpt-j-tiny-random")
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-config = GPT2Config(use_cache=False)
-model = GPT2LMHeadModel(config)
-model = model.from_pretrained("gpt2-medium")
+config = GPTJConfig(use_cache=False)
+model = GPTJForCausalLM(config)
+#model = model.from_pretrained("EleutherAI/gpt-j-6b")
+model = model.from_pretrained("anton-l/gpt-j-tiny-random")
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0

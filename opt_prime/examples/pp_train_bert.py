@@ -20,10 +20,7 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
 from opt_prime.opti_pri import Optimus_p
-
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 logging.basicConfig(level=logging.ERROR)
 
