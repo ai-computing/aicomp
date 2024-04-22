@@ -47,6 +47,9 @@ if int(os.environ["RANK"]) == 0:
 
 batch_size = 32
 micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+#micro_batch_size = 8 # TODO
+#micro_batch_size = 16 # TODO
+#micro_batch_size = 4 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
@@ -95,7 +98,9 @@ def train():
 
         optimizer.zero_grad()
 
-        optimus_p.run(data, labels)
+        #optimus_p.run(data, labels)
+        optimus_p.run(data, labels, mode="gpipe")
+        #optimus_p.run(data, labels, mode="1f1b")
 
         if optimus_p.rank == optimus_p.world_size - 1:
             loss = optimus_p.get_loss() 

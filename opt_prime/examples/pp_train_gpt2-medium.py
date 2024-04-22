@@ -96,6 +96,7 @@ def train():
         optimizer.zero_grad()
 
         optimus_p.run(data, labels)
+        #optimus_p.run(data, labels, mode="1f1b")
 
         if optimus_p.rank == optimus_p.world_size - 1:
             loss = optimus_p.get_loss() 

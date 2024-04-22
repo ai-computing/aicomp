@@ -8,7 +8,8 @@ import torch.nn as nn
 
 from opt_prime.comm import Comm
 from opt_prime.IR import IR
-from opt_prime.schedule import ScheduleGPipe
+from opt_prime.schedule import ScheduleGPipe 
+from opt_prime.schedule import Schedule1F1B 
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -21,7 +22,7 @@ logging.basicConfig(level=logging.ERROR)
 
 SCHEDULE = {
     "gpipe": ScheduleGPipe,
-    # TODO
+    "1f1b": Schedule1F1B, # TODO
     }
 
 class Run_Info:
