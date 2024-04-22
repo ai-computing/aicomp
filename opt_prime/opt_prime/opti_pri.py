@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.ERROR)
 
 SCHEDULE = {
     "gpipe": ScheduleGPipe,
-    "1f1b": Schedule1F1B, # TODO
+    "1f1b": Schedule1F1B, 
     }
 
 class Run_Info:
