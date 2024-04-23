@@ -42,6 +42,9 @@ class IR(object):
 
         self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {rank#, needed-by-rank#),}
 
+        self.model2type = { "hf" : 50, "sy" : 51,}
+        self.model_type = -1
+
     def retrieve_IR(self, model: nn.Module):
 
         # TODO: Huggingface model
@@ -58,9 +61,11 @@ class IR(object):
 
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
             self.gm = torch.fx.GraphModule(model, traced_graph)
+            self.model_type = self.model2type["hf"]
 
-        elif model.__class__ in [ nn.Module ]: # synthetic model
+        elif isinstance(model, nn.Module):
             self.gm = fx.symbolic_trace(model)
+            self.model_type = self.model2type["sy"]
 
         else:
             print(f"Not supported model!")

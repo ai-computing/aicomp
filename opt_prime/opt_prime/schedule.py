@@ -88,7 +88,10 @@ class Schedule:
         assert mb_idx < self.run_info.mbsize
 
         node = self.get_output_node()
-        key_ = node.args[0]['logits']
+        if self.ir.model_type == self.ir.model2type["hf"]:
+            key_ = node.args[0]['logits']
+        elif self.ir.model_type == self.ir.model2type["sy"]:
+            key_ = node.args[0]
 
         if str(key_) in self.run_info.getitem_dic:
             a_submod = self.run_info.getitem_dic[str(key_)][0]
@@ -99,8 +102,9 @@ class Schedule:
 
         target1_ = self.run_info.env[mb_idx]["labels"]
 
-        output1_ = output1_.view(-1, output1_.size(-1))
-        target1_ = target1_.view(-1)
+        if self.ir.model_type == self.ir.model2type["hf"]:
+            output1_ = output1_.view(-1, output1_.size(-1))
+            target1_ = target1_.view(-1)
 
 
         flat_args = []
@@ -123,7 +127,10 @@ class Schedule:
             target1 = target1_
             flat_args.append(target1)
 
-        criterion = nn.CrossEntropyLoss()
+        if self.ir.model_type == self.ir.model2type["hf"]:
+            criterion = nn.CrossEntropyLoss()
+        elif self.ir.model_type == self.ir.model2type["sy"]:
+            criterion = nn.MSELoss()
 
         criterion = criterion.to(self.run_info.device)
 
@@ -147,8 +154,13 @@ class Schedule:
 
         if self.run_info.rank == 0:
             target_node_name = "placeholder"
-            #self.run_info.env[mb_idx]["x"] = self.run_info.env[mb_idx][target_node_name]
-            self.run_info.env[mb_idx]["input_ids"] = self.run_info.env[mb_idx][target_node_name]
+            if self.ir.model_type == self.ir.model2type["hf"]:
+                self.run_info.env[mb_idx]["input_ids"] = self.run_info.env[mb_idx][target_node_name]
+            elif self.ir.model_type == self.ir.model2type["sy"]:
+                self.run_info.env[mb_idx]["x"] = self.run_info.env[mb_idx][target_node_name]
+            else:
+                print(f"Not supported model type!")
+                sys.exit(1)
 
         if self.run_info.rank > 0:
             pre_split_rank = self.run_info.rank - 1
