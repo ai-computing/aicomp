@@ -111,10 +111,7 @@ for i in range(100):
         data = torch.rand(batch_size, out_features)
         labels = torch.rand(batch_size, out_features)
 
-        optimus_p.prepare_labels(labels)
-
-    if optimus_p.rank == optimus_p.world_size - 1:
-        labels = optimus_p.ready_labels()
+    labels = optimus_p.move_labels2last_stage(labels)
 
     optimizer.zero_grad()
 

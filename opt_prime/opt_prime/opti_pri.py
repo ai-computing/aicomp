@@ -173,40 +173,40 @@ class Optimus_p:
     def prepare_labels(self, labels):
 
         # TODO
-        if self.rank != 0:
-            print(f"[rank:{self.rank}] This function must be used in first rank!")
-            sys.exit(1)
+        if self.rank == 0:
+            target_node_name = "labels"
+            mbatches = torch.chunk(labels, self.mbsize)
+            if self.mbsize == 1:
+                self.run_info.env[0][target_node_name] = labels
+            else:
+                for j in range(self.mbsize):
+                    self.run_info.env[j][target_node_name] = mbatches[j]
 
-        target_node_name = "labels"
-        mbatches = torch.chunk(labels, self.mbsize)
-        if self.mbsize == 1:
-            self.run_info.env[0][target_node_name] = labels
-        else:
             for j in range(self.mbsize):
-                self.run_info.env[j][target_node_name] = mbatches[j]
-
-        for j in range(self.mbsize):
-            obj = self.run_info.env[j][target_node_name]
-            self.comm.send_data(obj, self.world_size - 1, self.device)
+                obj = self.run_info.env[j][target_node_name]
+                self.comm.send_data(obj, self.world_size - 1, self.device)
 
 
     def ready_labels(self):
 
         # TODO
-        if self.rank != self.world_size - 1:
-            print(f"[rank:{self.rank}] This function must be used in last rank!")
-            sys.exit(1)
+        if self.rank == self.world_size - 1:
+            target_node_name = "labels"
+            for j in range(self.mbsize):
+                self.run_info.env[j][target_node_name] = self.comm.receive_data(0, self.device)
+            if self.mbsize == 1:
+                labels = self.run_info.env[0][target_node_name]
+            else:
+                outputs = tuple(mb["labels"] for mb in self.run_info.env)
+                labels = torch.cat(outputs)
+            return labels
 
-        target_node_name = "labels"
-        for j in range(self.mbsize):
-            self.run_info.env[j][target_node_name] = self.comm.receive_data(0, self.device)
-        if self.mbsize == 1:
-            labels = self.run_info.env[0][target_node_name]
-        else:
-            outputs = tuple(mb["labels"] for mb in self.run_info.env)
-            labels = torch.cat(outputs)
 
-        return labels
+    def move_labels2last_stage(self, labels):
+        self.prepare_labels(labels)
+
+        return self.ready_labels()
+
 
     def run(self, data, labels, mode="gpipe"):
         schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm)

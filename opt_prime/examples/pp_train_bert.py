@@ -89,10 +89,7 @@ def train():
             tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
             data, labels = tokens.input_ids, tokens.input_ids
 
-            optimus_p.prepare_labels(labels)
-
-        if optimus_p.rank == optimus_p.world_size - 1:
-            labels = optimus_p.ready_labels()
+        labels = optimus_p.move_labels2last_stage(labels)
 
         optimizer.zero_grad()
 
