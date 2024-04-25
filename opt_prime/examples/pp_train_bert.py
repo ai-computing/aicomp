@@ -85,7 +85,7 @@ def train():
         data, labels = None, None
 
         # prepare input and label
-        if optimus_p.rank == 0:
+        if optimus_p.is_first_stage():
             tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
             data, labels = tokens.input_ids, tokens.input_ids
 
@@ -95,7 +95,7 @@ def train():
 
         optimus_p.run(data, labels)
 
-        if optimus_p.rank == optimus_p.world_size - 1:
+        if optimus_p.is_last_stage():
             loss = optimus_p.get_loss() 
         else:
             loss = None
@@ -103,7 +103,7 @@ def train():
         torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
         optimizer.step()
 
-        if optimus_p.rank == optimus_p.world_size - 1:
+        if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.mbsize
             total_loss += loss
             log_interval = 10

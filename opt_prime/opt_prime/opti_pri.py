@@ -25,14 +25,92 @@ SCHEDULE = {
     "1f1b": Schedule1F1B, 
     }
 
+class Topology:
+
+    def __init__(self, rank, world_size, pp_size, dp_size):
+        self.rank = rank
+        self.world_size = world_size
+        self.pp_size = pp_size
+        self.dp_size = dp_size
+        self.set_stage() # TODO: DP + PP, however, not yet supported
+
+
+    def set_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    self.stage = self.rank
+        self.stage = self.rank // self.dp_size # PP + DP
+
+    def get_stage(self):
+        return self.stage
+
+    def get_num_stage(self):
+        return self.pp_size
+
+    def is_first_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    return self.rank == 0:
+        return self.stage == 0
+
+    def is_last_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    return self.rank == self.world_size - 1
+        return self.stage == self.pp_size - 1
+
+
+    def get_first_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    return 0
+        return 0
+            
+    def get_last_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    return self.world_size - 1
+        return self.pp_size - 1
+
+    def get_next_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    assert self.stage < self.pp_size - 1
+        #    return self.stage + 1
+        assert self.stage < self.get_last_stage()
+        return self.stage + 1
+
+    def get_prev_stage(self):
+        #if self.dp_size == 1: # PP only
+        #    assert self.stage > 0
+        #    return self.stage - 1
+        assert self.stage > self.get_first_stage()
+        return self.stage - 1
+
+
+    def get_first_rank(self):
+        return self.rank % self.dp_size
+
+    def get_last_rank(self):
+        return (self.pp_size - 1)*self.dp_size + self.rank % self.dp_size
+
+    def get_prev_rank(self):
+        assert self.stage > self.get_first_stage()
+        return (self.stage - 1) * self.dp_size + self.get_first_rank()
+
+    def get_next_rank(self):
+        assert self.stage < self.get_last_stage()
+        return (self.stage + 1)*self.dp_size + self.get_first_rank()
+
+    def print_stage_info(self):
+        print(f"get_stage: {self.get_stage()}")
+        print(f"get_first_stage: {self.get_first_stage()}")
+        print(f"get_last_stage: {self.get_last_stage()}")
+        print(f"get_first_rank: {self.get_first_rank()}")
+        print(f"get_last_rank: {self.get_last_rank()}")
+
+
 class Run_Info:
 
-    def __init__(self, ir, device, mbsize, rank, world_size):
+    def __init__(self, ir, device, mbsize, rank, world_size, stage):
         self.mod = ir.model_ir[0] # TODO: beautify
         self.graph = self.mod.graph
         self.name = None
         self.node = None
-        self.stage = rank # TODO
         self.submod = None
         self.env: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.env_recv_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
@@ -51,6 +129,9 @@ class Run_Info:
         self.rank = rank
         self.world_size = world_size
         self.metadata_range = ir.metadata_range
+
+        self.stage = stage
+
 
 
     def setup_special_nodes(self, ir):
@@ -111,22 +192,25 @@ class Optimus_p:
     def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1):
 
         #self.model_ir = []
-        #self.pp_size=pp_size
-        self.dp_size=dp_size # TODO
         self.mbsize = mbsize
 
-        
-        #self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {rank#, needed-by-rank#),}
+        #self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
         self.use_gpu = use_gpu
-
-        #use_gpu = True
 
         self.comm = Comm(use_gpu=use_gpu)
 
         self.rank = self.comm.rank
         self.world_size = self.comm.world_size
         self.local_rank = self.comm.local_rank
+
+        #self.dp_size=dp_size # TODO: DP is not supported yet.
+        #self.pp_size = self.world_size // self.dp_size
+        #print(f"Pipeline Parallel Size: {self.pp_size}")  # TODO
+        pp_size = self.world_size // dp_size
+        print(f"Pipeline Parallel Size: {pp_size}")  # TODO
+
+        self.tpl = Topology(self.rank, self.world_size, pp_size, dp_size)
 
         if use_gpu == True:
             self.device = torch.device(f"cuda:{self.local_rank}")
@@ -138,13 +222,11 @@ class Optimus_p:
 
         self.ir = IR(module)
         #self.model_ir.append(IR(module))
-        self.stage = self.rank # TODO
 
         self.ir.retrieve_IR(module)
-        self.ir.split_IR(module, "simple", num_rank=self.world_size) # TODO: num_rank <-- Now, total process count 
+        self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
 
-        # TODO:
-        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size) # TODO: rank, world_size
+        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size, self.tpl.stage) # TODO: rank, world_size
         self.run_info.setup_submod() 
         self.run_info.build_getitem_dic()
 
@@ -152,9 +234,11 @@ class Optimus_p:
             self.run_info.print_graph(self.ir)
             self.run_info.print_getitem_dic()
 
+        #self.run_info.print_stage_info() # TODO: DEBUG
+
         if self.rank == 0:
-            for rank in reversed(range(1, self.world_size)):
-                self.ir.cross_reference_analyze(rank, self.run_info.graph)
+            for stage in reversed(range(1, self.tpl.get_num_stage())):
+                self.ir.cross_reference_analyze(stage, self.run_info.graph)
 
             special_nodes_obj = [self.ir.special_nodes]
             dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
@@ -172,8 +256,8 @@ class Optimus_p:
 
     def prepare_labels(self, labels):
 
-        # TODO
-        if self.rank == 0:
+        if self.tpl.is_first_stage():
+
             target_node_name = "labels"
             mbatches = torch.chunk(labels, self.mbsize)
             if self.mbsize == 1:
@@ -184,16 +268,15 @@ class Optimus_p:
 
             for j in range(self.mbsize):
                 obj = self.run_info.env[j][target_node_name]
-                self.comm.send_data(obj, self.world_size - 1, self.device)
+                self.comm.send_data(obj, self.tpl.get_last_rank(), self.device)
 
 
     def ready_labels(self):
 
-        # TODO
-        if self.rank == self.world_size - 1:
+        if self.tpl.is_last_stage():
             target_node_name = "labels"
             for j in range(self.mbsize):
-                self.run_info.env[j][target_node_name] = self.comm.receive_data(0, self.device)
+                self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
             if self.mbsize == 1:
                 labels = self.run_info.env[0][target_node_name]
             else:
@@ -209,7 +292,7 @@ class Optimus_p:
 
 
     def run(self, data, labels, mode="gpipe"):
-        schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm)
+        schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
 
         schedule.run(data, labels)
         
@@ -222,3 +305,9 @@ class Optimus_p:
 
     def get_loss(self):
         return self.run_info.loss
+
+    def is_first_stage(self):
+        return self.tpl.is_first_stage()
+
+    def is_last_stage(self):
+        return self.tpl.is_last_stage()

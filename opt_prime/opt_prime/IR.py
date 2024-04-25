@@ -40,7 +40,7 @@ class IR(object):
         self.model_ir = []
         self.metadata_range = []
 
-        self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {rank#, needed-by-rank#),}
+        self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
         self.model2type = { "hf" : 50, "sy" : 51,}
         self.model_type = -1
@@ -72,27 +72,20 @@ class IR(object):
             sys.exit(1)
 
 
-    def split_IR(self, model: nn.Module, method, num_rank):
+    def split_IR(self, model: nn.Module, method, num_stage):
 
         if method not in [ "simple", ]:
             print(f"Not supported split method!")
             sys.exit(1)
 
         if method == "simple":
-            #submods = self.simple_split(gm, model)
-            submods = self.simple_split(model, num_rank)
+            submods = self.simple_split(model, num_stage)
 
         # TODO: add new split method
         #elif method == ...
         #
             
-        self.check_last_submods(submods, num_rank)
-
-        #if self.rank == 0:
-        #    print(f"------------------ FX graph --------------------------------")
-        #    for n in submods.graph.nodes:
-        #        print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
-        #    print(f"------------------------------------------------------------")
+        self.check_last_submods(submods, num_stage)
 
         self.model_ir.append(submods)
 
@@ -105,7 +98,7 @@ class IR(object):
 
 
     #def simple_split(self, gm, module):
-    def simple_split(self, module, num_rank):
+    def simple_split(self, module, num_stage):
         length = self.gm.graph.nodes.__len__()
 
         modcnt = 0
@@ -113,12 +106,12 @@ class IR(object):
             if n.op == 'call_module':
                 modcnt = modcnt + 1
         
-        segment = modcnt // num_rank
-        print(f"length:{length}, modcnt:{modcnt}, num_rank:{num_rank}, segment:{segment}")
+        segment = modcnt // num_stage
+        print(f"length:{length}, modcnt:{modcnt}, num_stage:{num_stage}, segment:{segment}")
 
 
         ## simple assert
-        assert length >= num_rank, f"Model length:{length} is smaller than # of workers:{num_rank}"
+        assert length >= num_stage, f"Model length:{length} is smaller than # of workers:{num_stage}"
         
         self.last_flag = False
 
@@ -160,10 +153,10 @@ class IR(object):
                 k = k + 1
                 cnt = 0
         
-            if k > num_rank - 1:
+            if k > num_stage - 1:
                 break
         
-        if len(self.metadata_range) <  num_rank:
+        if len(self.metadata_range) <  num_stage:
             self.metadata_range.append((k, n.name))
 
         if int(os.environ["RANK"]) == 0:
@@ -252,12 +245,12 @@ class IR(object):
         print(f"  rank:{os.environ['RANK']},  second metadata_range: {self.metadata_range}")
         print(f" ------------------------------------------------------------")
 
-        assert len(self.metadata_range) == num_rank
+        assert len(self.metadata_range) == num_stage
 
         return submodules
 
         
-    def check_last_submods(self, submods, num_rank):
+    def check_last_submods(self, submods, num_stage):
         gmodule_cnt = 0
         mod_cnt = 0
         for submod in submods.modules():
@@ -266,9 +259,8 @@ class IR(object):
                 last_submod = submod
                 continue
 
-        #print(f">> check_last_submods: gmodule_cnt:{gmodule_cnt}, num_rank:{num_rank}")
 
-        assert gmodule_cnt > num_rank, f"GraphModule #:[{gmodule_cnt}] must have more than the number of processes #:[{num_rank}]"
+        assert gmodule_cnt > num_stage, f"GraphModule #:[{gmodule_cnt}] must have more than the number of stages #:[{num_stage}]"
 
         for node in last_submod.graph.nodes:
             #print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.all_input_nodes:{node.all_input_nodes}")
@@ -282,18 +274,18 @@ class IR(object):
 
 
     # analyze IR graph and find the cross-layer referenced nodes
-    def cross_reference_analyze(self, rank, g:fx.Graph):
+    def cross_reference_analyze(self, stage, g:fx.Graph):
     
-        if rank == 0:
+        if stage == 0:
             return
     
-        from_, to_ = self.get_range(rank, g)
+        from_, to_ = self.get_range(stage, g)
     
-        #logging.debug(f" ***** rank:{rank} >>  from_:{from_.name}, to_:{to_.name}")
-        print(f" ***** rank:{rank} >>  from_:{from_.name}, to_:{to_.name}")
+        #logging.debug(f" ***** stage:{stage} >>  from_:{from_.name}, to_:{to_.name}")
+        print(f" ***** stage:{stage} >>  from_:{from_.name}, to_:{to_.name}")
     
         cur = to_
-        while (cur != from_) or (rank > 0 and cur == from_):
+        while (cur != from_) or (stage > 0 and cur == from_):
     
             # in process check - backward direction
     
@@ -306,9 +298,9 @@ class IR(object):
     
                 inner = cur._prev
                 if inner != from_._prev:
-                    while (inner != from_) or (rank > 0 and inner == from_):
+                    while (inner != from_) or (stage > 0 and inner == from_):
                         if inner.name == target_.name:
-                            #logging.debug(f" [cross_reference_analyze] ({target_.name}) referenced in current rank:{rank} !")
+                            #logging.debug(f" [cross_reference_analyze] ({target_.name}) referenced in current stage:{stage} !")
                             referenced_in = True
                             break
     
@@ -324,8 +316,8 @@ class IR(object):
     
                     # output process check - forward direction
     
-                    rank_ = 0
-                    split_node_name = self.metadata_range[rank_][1]
+                    stage_ = 0
+                    split_node_name = self.metadata_range[stage_][1]
     
                     for k in g.nodes:
                         first_node = k
@@ -335,16 +327,16 @@ class IR(object):
                     while outer != from_: 
                         # DEBUG
                         if outer.name == target_.name:
-                            logging.info(f" [cross_reference_analyze] ({target_.name}) referenced in outer rank:{rank_} !!")
+                            logging.info(f" [cross_reference_analyze] ({target_.name}) referenced in outer stage:{stage_} !!")
     
                             if target_.name not in self.special_nodes:
-                                self.special_nodes[target_.name] = (rank_, rank)  # { node_name : {rank#, needed-by-rank#),}
+                                self.special_nodes[target_.name] = (stage_, stage)  # { node_name : {stage#, needed-by-stage#),}
                             referenced_out = True
                             break
     
                         if outer.name == split_node_name:
-                            rank_ = rank_ + 1
-                            split_node_name = self.metadata_range[rank_][1]
+                            stage_ = stage_ + 1
+                            split_node_name = self.metadata_range[stage_][1]
     
                         outer = outer._next
     
@@ -360,16 +352,9 @@ class IR(object):
 
 
 
-    def get_prev_nodename(self, rank):
-        if rank > 0:
-            return self.metadata_range[rank-1][1]
-        elif rank == 0:
-            return None
-
-
-    def get_range(self, rank, g:fx.Graph) -> (Node, Node):
+    def get_range(self, stage, g:fx.Graph) -> (Node, Node):
      
-        if rank == 0:
+        if stage == 0:
             from_node_name = "-1"
             for n in g.nodes:
                 if n.op == 'placeholder':
@@ -377,9 +362,9 @@ class IR(object):
                     logging.debug(f">>>> get_range: n.op == 'placeholder' --> from_node_name:{from_node_name}")
                 break
         else:
-            from_node_name = self.metadata_range[rank-1][1]
+            from_node_name = self.metadata_range[stage-1][1]
      
-        to_node_name = self.metadata_range[rank][1]
+        to_node_name = self.metadata_range[stage][1]
     
         for n in g.nodes:
             if from_node_name == "-1":
@@ -395,7 +380,7 @@ class IR(object):
                 to_node = n
                 break
      
-        if rank == 0:
+        if stage == 0:
             return (from_node, to_node)
         else:
             return (from_node._next, to_node)

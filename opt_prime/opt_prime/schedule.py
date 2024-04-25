@@ -23,10 +23,11 @@ logging.basicConfig(level=logging.ERROR)
 
 class Schedule:
 
-    def __init__(self, rinfo, ir, comm): 
+    def __init__(self, rinfo, ir, comm, topology): 
         self.run_info = rinfo
         self.ir = ir
         self.comm = comm
+        self.tpl = topology
 
 
     def init_env_mark(self, mb_idx):
@@ -46,10 +47,10 @@ class Schedule:
     def get_input(self, *args):
         self.args_iter = iter(args)
 
-        if self.run_info.rank == 0: # TODO
+        if self.tpl.is_first_stage():
             for n in self.run_info.mod.graph.nodes:
-                if (n.op == 'placeholder' and self.run_info.stage == 0 and n.name == 'x') or \
-                        (n.op == 'placeholder' and self.run_info.stage == 0 and n.name == 'input_ids'):
+                if (n.op == 'placeholder' and self.tpl.is_first_stage() and n.name == 'x') or \
+                        (n.op == 'placeholder' and self.tpl.is_first_stage() and n.name == 'input_ids'):
                     input = next(self.args_iter)
 
                     if isinstance(input, torch.Tensor):
@@ -73,17 +74,15 @@ class Schedule:
                 return n
 
 
-    def get_next_node_name(self, rank):
-        # TODO: last stage processing
-        assert rank < self.run_info.world_size - 1
+    def get_next_node_name(self):
+        assert self.tpl.get_stage() < self.tpl.get_last_stage()
 
-        next_node_name = self.run_info.metadata_range[rank+1][1]
+        next_node_name = self.run_info.metadata_range[self.tpl.get_next_stage()][1]
         return next_node_name
 
 
     def run_loss(self, mb_idx):
-        # TODO: last stage processing
-        assert self.run_info.rank == self.run_info.world_size - 1
+        assert self.tpl.is_last_stage() == True
 
         assert mb_idx < self.run_info.mbsize
 
@@ -121,7 +120,6 @@ class Schedule:
         if isinstance(target1_, torch.Tensor) and target1_.is_floating_point():
             target1 = target1_.detach().to(self.run_info.device)
             target1.requires_grad_(True)
-            #flat_args.append(target1)
             flat_args.append(target1)
         else:
             target1 = target1_
@@ -150,9 +148,9 @@ class Schedule:
 
 
     def pre_fx_micro_forward_core(self, mb_idx):
-        from_, to_ = self.ir.get_range(self.run_info.rank, self.run_info.graph)
+        from_, to_ = self.ir.get_range(self.tpl.get_stage(), self.run_info.graph)
 
-        if self.run_info.rank == 0:
+        if self.tpl.is_first_stage():
             target_node_name = "placeholder"
             if self.ir.model_type == self.ir.model2type["hf"]:
                 self.run_info.env[mb_idx]["input_ids"] = self.run_info.env[mb_idx][target_node_name]
@@ -162,12 +160,12 @@ class Schedule:
                 print(f"Not supported model type!")
                 sys.exit(1)
 
-        if self.run_info.rank > 0:
-            pre_split_rank = self.run_info.rank - 1
+        if self.tpl.get_stage() > self.tpl.get_first_stage():
+            pre_split_rank = self.tpl.get_prev_rank()
         
             for node_name, range_ in self.run_info.special_nodes.items():
-                src_rank, needed_by_rank = range_
-                if self.run_info.rank > src_rank and self.run_info.rank <= needed_by_rank:
+                src_stage, needed_by_stage = range_
+                if self.tpl.stage > src_stage and self.tpl.stage <= needed_by_stage:
                     if node_name in self.run_info.getitem_dic:
                         submod_name = self.run_info.getitem_dic[node_name][0]
                         if self.run_info.env_recv_mark[mb_idx][submod_name] is None:
@@ -236,13 +234,12 @@ class Schedule:
 
     def post_fx_micro_forward_core(self, mb_idx):
 
-        if self.run_info.rank < self.run_info.world_size - 1:
-            next_split_rank = self.run_info.rank + 1
-            #begin_ = cur
+        if self.tpl.stage < self.tpl.get_last_stage():
+            next_split_rank = self.tpl.get_next_rank()
         
             for node_name, range_ in self.run_info.special_nodes.items():
-                src_rank, needed_by_rank = range_
-                if self.run_info.rank >= src_rank and self.run_info.rank < needed_by_rank:
+                src_stage, needed_by_stage = range_
+                if self.tpl.stage >= src_stage and self.tpl.stage < needed_by_stage:
                     if node_name in self.run_info.getitem_dic:
                         submod_name = self.run_info.getitem_dic[node_name][0]
                         if self.run_info.env_send_mark[mb_idx][submod_name] is None:
@@ -355,10 +352,10 @@ class Schedule:
 
     def pre_fx_micro_backward_core(self, mb_idx):
         grads = None
-        if self.run_info.rank < self.run_info.world_size - 1:
-            pre_split_rank = self.run_info.rank + 1
+        if self.tpl.stage < self.tpl.get_last_stage():
+            pre_split_rank = self.tpl.get_next_rank()
 
-            node_name = self.get_next_node_name(self.run_info.rank)
+            node_name = self.get_next_node_name()
             if self.run_info.env_grad_recv_mark[mb_idx][node_name] is None:
                 self.run_info.grads[mb_idx][node_name] = self.comm.receive_data(pre_split_rank, self.run_info.device)
                 grads = self.run_info.grads[mb_idx][node_name]
@@ -372,7 +369,8 @@ class Schedule:
         #self.init_env_grad_mark(mb_idx)
 
         # TODO: last stage ?
-        if self.run_info.rank == self.run_info.world_size - 1:
+        #if self.run_info.rank == self.run_info.world_size - 1:
+        if self.tpl.is_last_stage():
             node = self.get_output_node()
             grads = self.run_info.grads[mb_idx][node.name]
             result = self.run_core_backward(mb_idx, node, grads)
@@ -392,8 +390,8 @@ class Schedule:
 
     def post_fx_micro_backward_core(self, mb_idx):
 
-        if self.run_info.rank > 0:
-            next_split_rank = self.run_info.rank - 1
+        if self.tpl.get_stage() > 0:
+            next_split_rank = self.tpl.get_prev_rank()
 
             node_name = self.run_info.name
             if self.run_info.env_grad_send_mark[mb_idx][node_name] is None:
@@ -408,14 +406,14 @@ class Schedule:
 
 class ScheduleGPipe(Schedule):
 
-    def __init__(self, rinfo, ir, comm): 
-        super().__init__(rinfo, ir, comm)
+    def __init__(self, rinfo, ir, comm, topology): 
+        super().__init__(rinfo, ir, comm, topology)
 
     
     # run GPipe schedule
     def run(self, data, labels):
 
-        if self.run_info.rank == 0:
+        if self.tpl.is_first_stage():
             self.get_input(data, labels)
 
         for i in range(self.run_info.mbsize):
@@ -429,7 +427,7 @@ class ScheduleGPipe(Schedule):
             next(result)
 
         for i in range(self.run_info.mbsize):
-            if self.run_info.rank == self.run_info.world_size - 1:
+            if self.tpl.is_last_stage():
                 self.run_loss(i)
             grads = self.pre_fx_micro_backward_core(i)
             self.fx_micro_backward_core(i, grads)
@@ -450,19 +448,18 @@ class ScheduleGPipe(Schedule):
 
 class Schedule1F1B(Schedule):
 
-    def __init__(self, rinfo, ir, comm): 
-        super().__init__(rinfo, ir, comm)
+    def __init__(self, rinfo, ir, comm, topology): 
+        super().__init__(rinfo, ir, comm, topology)
 
     
     # run 1F1B schedule
     def run(self, data, labels):
-        # TODO: nstages(currently, world_size), stage(currently, rank)
-
-        num_warmup_microbatches = self.run_info.world_size - self.run_info.stage - 1
+        #num_warmup_microbatches = self.run_info.world_size - self.run_info.stage - 1
+        num_warmup_microbatches = self.tpl.get_last_stage() - self.tpl.stage
         num_warmup_microbatches = min(num_warmup_microbatches, self.run_info.mbsize)
         remaining = self.run_info.mbsize - num_warmup_microbatches
 
-        if self.run_info.rank == 0:
+        if self.tpl.is_first_stage():
             self.get_input(data, labels)
 
         for i in range(self.run_info.mbsize):
@@ -490,7 +487,7 @@ class Schedule1F1B(Schedule):
             result = self.post_fx_micro_forward_core(forward_i)
             next(result)
 
-            if self.run_info.rank == self.run_info.world_size - 1:
+            if self.tpl.is_last_stage():
                 self.run_loss(backward_i)
 
 
@@ -507,7 +504,7 @@ class Schedule1F1B(Schedule):
         for i in range(num_warmup_microbatches):
             backward_i = i + remaining
 
-            if self.run_info.rank == self.run_info.world_size - 1:
+            if self.tpl.is_last_stage():
                 self.run_loss(backward_i)
 
             if reorder_mbi >= 0:

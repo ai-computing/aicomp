@@ -107,7 +107,7 @@ for i in range(100):
     data, labels = None, None
 
     # prepare input and label
-    if optimus_p.rank == 0:
+    if optimus_p.is_first_stage():
         data = torch.rand(batch_size, out_features)
         labels = torch.rand(batch_size, out_features)
 
@@ -116,10 +116,10 @@ for i in range(100):
     optimizer.zero_grad()
 
     #optimus_p.run(data, labels)
-    optimus_p.run(data, labels, mode="gpipe")
-    #optimus_p.run(data, labels, mode="1f1b")
+    #optimus_p.run(data, labels, mode="gpipe")
+    optimus_p.run(data, labels, mode="1f1b")
 
-    if optimus_p.rank == optimus_p.world_size - 1:
+    if optimus_p.is_last_stage():
         loss = optimus_p.get_loss() 
         print(f'Step {i}, Loss1:{sum(loss) / micro_batch_size}')
     else:
