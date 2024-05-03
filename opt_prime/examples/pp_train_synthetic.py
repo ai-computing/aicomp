@@ -91,6 +91,8 @@ if int(os.environ["RANK"]) == 0:
     print(f"micro batch size: {micro_batch_size}")
 
 optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, preserve_output=True)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2)
 print(f" rank={optimus_p.rank} ...")
 
 optimus_p.train()
@@ -134,6 +136,9 @@ if optimus_p.rank == 0:
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-if optimus_p.rank == optimus_p.world_size - 1:
-    print(f"###################################")
+#if optimus_p.rank == optimus_p.world_size - 1: 
+if optimus_p.is_last_stage(): 
+    output = optimus_p.get_output()
+    if output != None:
+        print(f">> [RANK:{optimus_p.rank} ###################### output: {output} #############")
 print(f"[rank:{optimus_p.rank}, run completed ...")
