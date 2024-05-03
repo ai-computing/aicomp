@@ -11,6 +11,11 @@ from transformers import GPT2LMHeadModel
 from transformers import GPTNeoForCausalLM
 from transformers import BertLMHeadModel
 from transformers import GPTJForCausalLM
+from transformers import GPT2ForSequenceClassification
+from transformers import GPTNeoForSequenceClassification
+from transformers import GPTJForSequenceClassification
+from transformers import BartForCausalLM
+from transformers import MBartForCausalLM
 from transformers import GPT2Config
 
 import transformers.utils.fx as hf_fx
@@ -33,6 +38,19 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 logging.basicConfig(level=logging.ERROR)
 
+huggingface_model_class = [
+        GPT2LMHeadModel, 
+        GPTNeoForCausalLM, 
+        BertLMHeadModel, 
+        GPTJForCausalLM, 
+        GPT2ForSequenceClassification, 
+        GPTNeoForSequenceClassification, 
+        GPTJForSequenceClassification, 
+        BartForCausalLM,
+        MBartForCausalLM, 
+        # TODO
+        ]
+
 
 class IR(object):
     def __init__(self, model: nn.Module):
@@ -47,8 +65,7 @@ class IR(object):
 
     def retrieve_IR(self, model: nn.Module):
 
-        # TODO: Huggingface model
-        if model.__class__ in [ GPT2LMHeadModel, GPTNeoForCausalLM, BertLMHeadModel, GPTJForCausalLM, ]:
+        if model.__class__ in huggingface_model_class:
             input_names = model.dummy_inputs.keys()
             sig = inspect.signature(model.forward)
             concrete_args = {

@@ -6,6 +6,8 @@ import sys
 
 import torch.nn as nn
 
+from torch.nn.parallel import DistributedDataParallel
+
 from opt_prime.comm import Comm
 from opt_prime.IR import IR
 from opt_prime.schedule import ScheduleGPipe 
@@ -32,7 +34,7 @@ class Topology:
         self.world_size = world_size
         self.pp_size = pp_size
         self.dp_size = dp_size
-        self.set_stage() # TODO: DP + PP, however, not yet supported
+        self.set_stage() 
 
 
     def set_stage(self):
@@ -97,17 +99,19 @@ class Topology:
         return (self.stage + 1)*self.dp_size + self.get_first_rank()
 
     def print_stage_info(self):
-        print(f"get_stage: {self.get_stage()}")
-        print(f"get_first_stage: {self.get_first_stage()}")
-        print(f"get_last_stage: {self.get_last_stage()}")
-        print(f"get_first_rank: {self.get_first_rank()}")
-        print(f"get_last_rank: {self.get_last_rank()}")
+        print(f"rank:{self.rank}, get_stage: {self.get_stage()}")
+        print(f"rank:{self.rank}, get_first_stage: {self.get_first_stage()}")
+        print(f"rank:{self.rank}, get_last_stage: {self.get_last_stage()}")
+        print(f"rank:{self.rank}, get_first_rank: {self.get_first_rank()}")
+        print(f"rank:{self.rank}, get_last_rank: {self.get_last_rank()}")
+
+
 
 
 class Run_Info:
 
-    def __init__(self, ir, device, mbsize, rank, world_size, stage):
-        self.mod = ir.model_ir[0] # TODO: beautify
+    def __init__(self, ir, device, mbsize, rank, world_size, stage, preserve_output):
+        self.mod = ir.model_ir[0] # TODO
         self.graph = self.mod.graph
         self.name = None
         self.node = None
@@ -119,6 +123,7 @@ class Run_Info:
         self.env_grad_send_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.device = device
         self.loss: List[Any] = [None for _ in range(mbsize)]
+        self.output: List[Any] = [None for _ in range(mbsize)]
         self.flat_args: List[Dict[str, List[torch.Tensor]]] = [{} for _ in range(mbsize)]
         self.grads: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.getitem_dic : Dict[str, Any] = {}
@@ -131,6 +136,7 @@ class Run_Info:
         self.metadata_range = ir.metadata_range
 
         self.stage = stage
+        self.preserve_output = preserve_output
 
 
 
@@ -164,7 +170,7 @@ class Run_Info:
 
         self.submod.to(self.device)
 
-        # TODO:
+        # TODO
         print(f" ## Rank:{self.rank}, name:{self.node.name}, move {self.name} to {self.device}")
 
 
@@ -187,9 +193,11 @@ class Run_Info:
 
 
 
+
+
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -204,11 +212,17 @@ class Optimus_p:
         self.world_size = self.comm.world_size
         self.local_rank = self.comm.local_rank
 
-        #self.dp_size=dp_size # TODO: DP is not supported yet.
-        #self.pp_size = self.world_size // self.dp_size
-        #print(f"Pipeline Parallel Size: {self.pp_size}")  # TODO
+        if dp_size < 1 or self.world_size % dp_size != 0:
+            print(f"Data Parallel Size(dp_size option) is not valid")
+            sys.exit(1)
+
         pp_size = self.world_size // dp_size
-        print(f"Pipeline Parallel Size: {pp_size}")  # TODO
+
+        if self.rank == 0:
+            print(f"> Pipeline Parallel Size: {pp_size}")  
+            if dp_size > 1:
+                print(f"> Data Parallel Size: {dp_size}")
+
 
         self.tpl = Topology(self.rank, self.world_size, pp_size, dp_size)
 
@@ -226,15 +240,18 @@ class Optimus_p:
         self.ir.retrieve_IR(module)
         self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
 
-        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size, self.tpl.stage) # TODO: rank, world_size
+        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size, self.tpl.stage, preserve_output) 
         self.run_info.setup_submod() 
         self.run_info.build_getitem_dic()
+
+        if dp_size > 1:
+            self.prepare_dp_group()
 
         if self.rank == 0:
             self.run_info.print_graph(self.ir)
             self.run_info.print_getitem_dic()
 
-        #self.run_info.print_stage_info() # TODO: DEBUG
+        #self.tpl.print_stage_info() # TODO: DEBUG
 
         if self.rank == 0:
             for stage in reversed(range(1, self.tpl.get_num_stage())):
@@ -292,9 +309,12 @@ class Optimus_p:
 
 
     def run(self, data, labels, mode="gpipe"):
-        schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
+        #schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
+        #
+        #schedule.run(data, labels)
+        self.schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
 
-        schedule.run(data, labels)
+        self.schedule.run(data, labels)
         
 
     def parameters(self):
@@ -311,3 +331,24 @@ class Optimus_p:
 
     def is_last_stage(self):
         return self.tpl.is_last_stage()
+
+
+    def prepare_dp_group(self):
+
+        for i in range(0, self.tpl.pp_size):
+            start_rank = i * self.tpl.dp_size
+            end_rank = (i+1) * self.tpl.dp_size
+            dp_group = list(range(start_rank, end_rank))
+            if self.rank in dp_group:
+                ddp_group = dist.new_group(dp_group)
+                self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=False)
+                print(f"Preparing DP group: {dp_group}")
+            else:
+                dist.new_group(dp_group)
+
+
+    def get_output(self):
+        if self.run_info.preserve_output == True and self.tpl.is_last_stage() == True:
+            return self.run_info.output
+        else:
+            return None

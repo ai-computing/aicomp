@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from torch.nn.parallel import DistributedDataParallel
 
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -146,7 +147,6 @@ class Schedule:
 
 
 
-
     def pre_fx_micro_forward_core(self, mb_idx):
         from_, to_ = self.ir.get_range(self.tpl.get_stage(), self.run_info.graph)
 
@@ -222,13 +222,19 @@ class Schedule:
         args = fx.graph.map_arg(self.run_info.node.args, extract_tensor_args)
         kwargs = fx.graph.map_arg(self.run_info.node.kwargs, extract_tensor_args)
 
-        result = self.run_info.submod(*args, **kwargs)
+        if isinstance(self.run_info.submod, DistributedDataParallel):
+            with self.run_info.submod.no_sync():
+                #logging.info(f" [FWD] DDP no_sync ... rank:{self.run_info.rank}, mb_idx:{mb_idx}")
+                result = self.run_info.submod(*args, **kwargs)
+        else:
+            result = self.run_info.submod(*args, **kwargs)
 
         #self.fwd_cache2[mb_idx][self.run_info.name] = \
         #        ( result if isinstance(result, tuple) else (result,), \
         #        flat_args, )
         self.run_info.flat_args[mb_idx][self.run_info.name] = flat_args
         self.run_info.env[mb_idx][self.run_info.name] = result
+
 
 
 
@@ -311,6 +317,7 @@ class Schedule:
         if forward_output_list[0] != None and forward_output_gradient_list[0] != None and forward_output_list[0].shape != forward_output_gradient_list[0].shape:
             forward_output_list[0] = forward_output_list[0].view(-1, forward_output_list[0].size(-1))
 
+
         torch.autograd.backward(forward_output_list, grad_tensors=forward_output_gradient_list)
         #inputs_with_grad = []
         #for val in forward_input:
@@ -338,6 +345,9 @@ class Schedule:
         k1 = ((k1,) if not isinstance(k1, tuple) else k1)
         k2 = self.run_info.flat_args[mb_idx].pop(node.name)
 
+        if self.run_info.preserve_output == True:
+            self.run_info.output[mb_idx] = k1
+
         kwargs["forward_output"] = k1
         kwargs["forward_input"] = k2
         kwargs["forward_output_gradient"] = grads 
@@ -345,9 +355,17 @@ class Schedule:
         num_nodes = self.get_num_nodes(node.name) 
         kwargs["valid_index"] = [i for i in range(num_nodes)]
 
-        result = self.core_backward(*args, **kwargs)
+        if isinstance(self.run_info.submod, DistributedDataParallel):
+            if mb_idx == 0:
+                #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
+                self.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
+                result = self.core_backward(*args, **kwargs)
+                return result
+        else:
+            result = self.core_backward(*args, **kwargs)
+            return result
 
-        return result
+        #return result
 
 
     def pre_fx_micro_backward_core(self, mb_idx):
@@ -385,6 +403,9 @@ class Schedule:
         result = ((result,) if not isinstance(result, tuple) else result)
 
         self.run_info.grads[mb_idx][node.name] = result
+
+        # TODO: TEST
+        #self.run_info.env[mb_idx][node.name] = None
 
 
 
