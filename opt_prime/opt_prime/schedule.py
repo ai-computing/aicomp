@@ -13,6 +13,8 @@ import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from torch.nn.parallel import DistributedDataParallel
 
+import gc
+
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -24,11 +26,16 @@ logging.basicConfig(level=logging.ERROR)
 
 class Schedule:
 
-    def __init__(self, rinfo, ir, comm, topology): 
+    def __init__(self, rinfo, ir, comm, topology, activation_ckpt): 
         self.run_info = rinfo
         self.ir = ir
         self.comm = comm
         self.tpl = topology
+        self.activation_ckpt = activation_ckpt
+
+        if self.run_info.display_mem == True:
+            self.total_mem = torch.cuda.get_device_properties(self.tpl.local_rank).total_memory / (1024 ** 3) # GB
+
 
 
     def init_env_mark(self, mb_idx):
@@ -93,6 +100,7 @@ class Schedule:
         elif self.ir.model_type == self.ir.model2type["sy"]:
             key_ = node.args[0]
 
+
         if str(key_) in self.run_info.getitem_dic:
             a_submod = self.run_info.getitem_dic[str(key_)][0]
             a_idx = self.run_info.getitem_dic[str(key_)][1]
@@ -126,6 +134,8 @@ class Schedule:
             target1 = target1_
             flat_args.append(target1)
 
+        self.run_info.env[mb_idx]["labels"] = None 
+
         if self.ir.model_type == self.ir.model2type["hf"]:
             criterion = nn.CrossEntropyLoss()
         elif self.ir.model_type == self.ir.model2type["sy"]:
@@ -137,11 +147,10 @@ class Schedule:
 
         #print(f" >>>> loss: {result}, result.shape:{result.shape}")
 
+
         self.run_info.grads[mb_idx][node.name] = (None,)
-        self.run_info.loss[mb_idx] = result
-        #self.fwd_cache2[mb_idx][node.name] = \
-        #        ( result if isinstance(result, tuple) else (result,), \
-        #        flat_args, )
+        self.run_info.loss[mb_idx] = result 
+
         self.run_info.env[mb_idx][node.name] = result
         self.run_info.flat_args[mb_idx][node.name] = flat_args
 
@@ -229,12 +238,51 @@ class Schedule:
         else:
             result = self.run_info.submod(*args, **kwargs)
 
-        #self.fwd_cache2[mb_idx][self.run_info.name] = \
-        #        ( result if isinstance(result, tuple) else (result,), \
-        #        flat_args, )
         self.run_info.flat_args[mb_idx][self.run_info.name] = flat_args
         self.run_info.env[mb_idx][self.run_info.name] = result
 
+
+    # For Act ckpt
+    def produce_forward_output(self, mb_idx, node_name):
+
+        flat_args = []
+        def extract_tensor_args(b):
+            # TODO
+            if b.name in self.run_info.getitem_dic:
+                a_submod = self.run_info.getitem_dic[b.name][0]
+                a_idx = self.run_info.getitem_dic[b.name][1]
+                a = self.run_info.env[mb_idx][a_submod][a_idx]
+            else:
+                a = self.run_info.env[mb_idx][b.name]
+            #a = self.run_info.env[mb_idx][b.name]
+
+            nonlocal flat_args
+            if isinstance(a, torch.Tensor) and a.is_floating_point():
+                val = a.detach().to(self.run_info.device)
+                #val.requires_grad_(a.requires_grad)
+                val.requires_grad_(True) # TODO
+                flat_args.append(val)
+                return val
+            else:
+                flat_args.append(a)
+                return a
+            return a
+
+
+        #print(f" [rank:{self.run_info.rank}] fx_micro_forward({mb_idx}), node.args:{self.run_info.node.args} .....")
+
+        args = fx.graph.map_arg(self.run_info.node.args, extract_tensor_args)
+        kwargs = fx.graph.map_arg(self.run_info.node.kwargs, extract_tensor_args)
+
+        result = self.run_info.submod(*args, **kwargs)
+        #with torch.no_grad():
+        #    result = self.run_info.submod(*args, **kwargs)
+
+        #print(f" [ACT CKPT] rank:{self.run_info.rank}, mb_idx:{mb_idx}, node name:{node_name}")
+
+        self.run_info.flat_args[mb_idx][self.run_info.name] = flat_args
+        #self.run_info.env[mb_idx][self.run_info.name] = result
+        return result
 
 
 
@@ -252,11 +300,19 @@ class Schedule:
                             obj = self.run_info.env[mb_idx][submod_name]
                             self.comm.send_data(obj, next_split_rank, self.run_info.device)
                             self.run_info.env_send_mark[mb_idx][submod_name] = 1
+                            if self.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
+                                self.run_info.env[mb_idx][submod_name] = None  
+                                self.run_info.flat_args[mb_idx][submod_name] = None 
+                                #print(f".. [Act ckpt] rank:{self.run_info.rank}, mb_idx:{mb_idx}, node name:{submod_name} <- None") 
                     else:
                         if self.run_info.env_send_mark[mb_idx][node_name] is None:
                             obj = self.run_info.env[mb_idx][node_name]
                             self.comm.send_data(obj, next_split_rank, self.run_info.device)
                             self.run_info.env_send_mark[mb_idx][node_name] = 1
+                            if self.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
+                                self.run_info.env[mb_idx][node_name] = None 
+                                self.run_info.flat_args[mb_idx][node_name] = None
+                                #print(f"... [Act ckpt] rank:{self.run_info.rank}, mb_idx:{mb_idx}, node name:{node_name} <- None") 
 
         yield 0
 
@@ -333,6 +389,9 @@ class Schedule:
             else:
                 forward_input_gradient.append(None)
 
+        #if self.activation_ckpt == True:
+        #    forward_output_list, forward_output_gradient_list = None, None
+
         return forward_input_gradient, None
 
 
@@ -340,8 +399,16 @@ class Schedule:
 
         args = ()
         kwargs = dict()
-        #k1, k2 = self.fwd_cache2[mb_idx].pop(node.name)
-        k1 = self.run_info.env[mb_idx].pop(node.name)
+        #if self.activation_ckpt == True and node.name != "output":
+        if self.activation_ckpt == True and node.name != "output" and not self.tpl.is_last_stage(): # For Act ckpt
+            src, needed_by_stage = self.run_info.special_nodes[node.name]
+            if needed_by_stage - src > 1:
+                k1 = self.run_info.env[mb_idx].pop(node.name)
+            else:
+                k1 = self.produce_forward_output(mb_idx, node.name)
+        else:
+            k1 = self.run_info.env[mb_idx].pop(node.name)
+            
         k1 = ((k1,) if not isinstance(k1, tuple) else k1)
         k2 = self.run_info.flat_args[mb_idx].pop(node.name)
 
@@ -360,9 +427,14 @@ class Schedule:
                 #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
                 self.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
                 result = self.core_backward(*args, **kwargs)
+
+                #if self.activation_ckpt == True:
+                #    del args, kwargs, k1, k2, grads
                 return result
         else:
             result = self.core_backward(*args, **kwargs)
+            #if self.activation_ckpt == True:
+            #    del args, kwargs, k1, k2, grads
             return result
 
         #return result
@@ -393,9 +465,9 @@ class Schedule:
             grads = self.run_info.grads[mb_idx][node.name]
             result = self.run_core_backward(mb_idx, node, grads)
             result = ((result,) if not isinstance(result, tuple) else result)
-            self.run_info.grads[mb_idx][node.name] = result
-
-            grads = self.run_info.grads[mb_idx][node.name]
+            #self.run_info.grads[mb_idx][node.name] = result 
+            #grads = self.run_info.grads[mb_idx][node.name] 
+            grads = result
 
         node = self.run_info.node
         result = self.run_core_backward(mb_idx, node, grads)
@@ -403,9 +475,6 @@ class Schedule:
         result = ((result,) if not isinstance(result, tuple) else result)
 
         self.run_info.grads[mb_idx][node.name] = result
-
-        # TODO: TEST
-        #self.run_info.env[mb_idx][node.name] = None
 
 
 
@@ -419,23 +488,40 @@ class Schedule:
                 obj = self.run_info.grads[mb_idx][node_name]
                 self.comm.send_data(obj, next_split_rank, self.run_info.device)
                 self.run_info.env_grad_send_mark[mb_idx][node_name] = 1
+                if self.activation_ckpt == True:
+                    self.run_info.grads[mb_idx][node_name] = None
 
         yield 0
 
 
+    def free_mem(self):
+        self.run_info.env = [{} for _ in range(self.run_info.mbsize)] 
+        self.run_info.flat_args = [{} for _ in range(self.run_info.mbsize)] 
+        self.run_info.grads = [{} for _ in range(self.run_info.mbsize)] 
+
+        if self.run_info.display_mem == True:
+            allocated_mem = torch.cuda.memory_allocated(self.tpl.local_rank) / (1024 ** 3)
+            cached_mem = torch.cuda.memory_reserved(self.tpl.local_rank) / (1024 ** 3)
+            free_mem = self.total_mem - allocated_mem
+            print(f"[rank: {self.tpl.rank}] ## free:{free_mem}GB, alloc:{allocated_mem}GB, cached:{cached_mem}GB, total:{self.total_mem}GB ######")
+
+        gc.collect()
+
+        torch.cuda.empty_cache()
 
 
 class ScheduleGPipe(Schedule):
 
-    def __init__(self, rinfo, ir, comm, topology): 
-        super().__init__(rinfo, ir, comm, topology)
+    def __init__(self, rinfo, ir, comm, topology, activation_ckpt): 
+        super().__init__(rinfo, ir, comm, topology, activation_ckpt)
 
     
     # run GPipe schedule
     def run(self, data, labels):
 
         if self.tpl.is_first_stage():
-            self.get_input(data, labels)
+            #self.get_input(data, labels)
+            self.get_input(data)
 
         for i in range(self.run_info.mbsize):
             self.init_env_mark(i)
@@ -458,19 +544,14 @@ class ScheduleGPipe(Schedule):
         self.free_mem()
 
 
-    def free_mem(self):
-        #self.run_info.env = [{} for _ in range(self.run_info.mbsize)]
-        #self.run_info.flat_args = [{} for _ in range(self.run_info.mbsize)]
-        #self.run_info.grads = [{} for _ in range(self.run_info.mbsize)]
-        torch.cuda.empty_cache()
 
 
 
 
 class Schedule1F1B(Schedule):
 
-    def __init__(self, rinfo, ir, comm, topology): 
-        super().__init__(rinfo, ir, comm, topology)
+    def __init__(self, rinfo, ir, comm, topology, activation_ckpt): 
+        super().__init__(rinfo, ir, comm, topology, activation_ckpt)
 
     
     # run 1F1B schedule
@@ -481,7 +562,8 @@ class Schedule1F1B(Schedule):
         remaining = self.run_info.mbsize - num_warmup_microbatches
 
         if self.tpl.is_first_stage():
-            self.get_input(data, labels)
+            #self.get_input(data, labels)
+            self.get_input(data)
 
         for i in range(self.run_info.mbsize):
             self.init_env_mark(i)
@@ -541,8 +623,4 @@ class Schedule1F1B(Schedule):
 
 
         self.free_mem()
-
-
-    def free_mem(self):
-        torch.cuda.empty_cache()
 

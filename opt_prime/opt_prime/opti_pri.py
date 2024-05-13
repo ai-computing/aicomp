@@ -29,8 +29,9 @@ SCHEDULE = {
 
 class Topology:
 
-    def __init__(self, rank, world_size, pp_size, dp_size):
+    def __init__(self, rank, local_rank, world_size, pp_size, dp_size):
         self.rank = rank
+        self.local_rank = local_rank
         self.world_size = world_size
         self.pp_size = pp_size
         self.dp_size = dp_size
@@ -110,7 +111,7 @@ class Topology:
 
 class Run_Info:
 
-    def __init__(self, ir, device, mbsize, rank, world_size, stage, preserve_output):
+    def __init__(self, ir, device, mbsize, rank, world_size, stage, preserve_output, display_mem):
         self.mod = ir.model_ir[0] # TODO
         self.graph = self.mod.graph
         self.name = None
@@ -137,6 +138,7 @@ class Run_Info:
 
         self.stage = stage
         self.preserve_output = preserve_output
+        self.display_mem = display_mem
 
 
 
@@ -197,7 +199,7 @@ class Run_Info:
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, display_mem=False):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -207,6 +209,8 @@ class Optimus_p:
         self.use_gpu = use_gpu
 
         self.comm = Comm(use_gpu=use_gpu)
+
+        self.activation_ckpt = activation_ckpt
 
         self.rank = self.comm.rank
         self.world_size = self.comm.world_size
@@ -224,7 +228,7 @@ class Optimus_p:
                 print(f"> Data Parallel Size: {dp_size}")
 
 
-        self.tpl = Topology(self.rank, self.world_size, pp_size, dp_size)
+        self.tpl = Topology(self.rank, self.local_rank, self.world_size, pp_size, dp_size)
 
         if use_gpu == True:
             self.device = torch.device(f"cuda:{self.local_rank}")
@@ -240,7 +244,7 @@ class Optimus_p:
         self.ir.retrieve_IR(module)
         self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
 
-        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size, self.tpl.stage, preserve_output) 
+        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size, self.tpl.stage, preserve_output, display_mem) 
         self.run_info.setup_submod() 
         self.run_info.build_getitem_dic()
 
@@ -300,6 +304,7 @@ class Optimus_p:
                 outputs = tuple(mb["labels"] for mb in self.run_info.env)
                 labels = torch.cat(outputs)
             return labels
+        return None
 
 
     def move_labels2last_stage(self, labels):
@@ -312,7 +317,7 @@ class Optimus_p:
         #schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
         #
         #schedule.run(data, labels)
-        self.schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
+        self.schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl, self.activation_ckpt)
 
         self.schedule.run(data, labels)
         
@@ -324,7 +329,7 @@ class Optimus_p:
         return self.run_info.submod.train()
 
     def get_loss(self):
-        return self.run_info.loss
+        return self.schedule.run_info.loss
 
     def is_first_stage(self):
         return self.tpl.is_first_stage()
