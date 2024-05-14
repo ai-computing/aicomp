@@ -63,6 +63,10 @@ Use the option dp_size in optimus_pto specify the degree of data parallelism:
 
 Example) 8-GPU single-node environment: setting dp_size=2 automatically makes pp_size=4
 
+<p align="center">
+  <img src="https://github.com/ai-computing/aicomp/assets/42994087/ddf27f33-637b-4a62-bfb5-ea80802b9396">
+</p>
+
 ## License
 
 The results of the AIcomp project are distributed under the 3-clause BSD license.
