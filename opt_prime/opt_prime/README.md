@@ -28,18 +28,31 @@ OptimusPrime supports the following major models from HuggingFace:
 ## Installation
 
 To install OptimusPrime:
+
     # Make sure PyTorch >= 1.8.0 is installed, as well as compatible CUDA and cuDNN libraries
     git clone https://github.com/ai-computing/aicomp.git
 
-## Running
+## Running (Example: gpt2)
 
 ### Single-node environment
+
     cd opt_prime/examples
     torchrun --nproc_per_node=<# of GPUs per node> --nnodes=<# of nodes> --node_rank=0 --master_addr=127.0.0.1 --master_port=29500 pp_train_gpt2.py
 
 ### Multi-node environment
 
-Run the following command 
+Run the following command for every node:
+
+    cd opt_prime/examples
+    torchrun --nproc_per_node=<# of GPUs per node> --nnodes=<# of nodes> --node_rank=<current node rank> --master_addr=<IP of rank 0> --master_port=29500 pp_train_gpt2.py
+
+### Changing scheduling policy for pipeline parallelism
+
+1. Open the training script file for corresponding DNN model in opt_prime/examples. (e.g. gpt2, bert)
+2. Edit the line beginning with optimus_p.run in train() function.
+   * optimus_p.run(data, labels): use the default scheduler (GPipe)
+   * optimus_p.run(data, labels, mode="gpipe"): specify the GPipe scheduler explicitly
+   * optimus_p.run(data, labels, mode="1f1b"): use the 1F1B scheduler
 
 ## License
 
