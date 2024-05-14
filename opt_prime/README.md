@@ -59,7 +59,7 @@ Run the following command for every node:
 
 Use the option 'dp_size' when instantiating Optimus_p class to specify the degree of data parallelism:
 
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, **dp_size=2**)
+    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2)
 
 Example) 8-GPU single-node environment: setting dp_size=2 automatically makes pp_size=4
 
