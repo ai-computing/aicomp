@@ -20,16 +20,17 @@ OptimusPrime supports the following major models from HuggingFace:
 ## Features
 
 * Currently supported
-  * **Pipeline parallelism**: GPipe/1F1B scheduling algorithms are supported 
+  * **Pipeline parallelism**: GPipe/1F1B scheduling algorithms are supported
+  * **Data Parallelism** 
 * Future enhancements
-  * **Data Parallelism**: will be added soon
   * **Tensor Parallelism**: planned to support for complete 3D parallelization
 
 ## Installation
 
 To install OptimusPrime:
 
-    # Make sure PyTorch >= 1.8.0 is installed, as well as compatible CUDA and cuDNN libraries
+    # Make sure PyTorch >= 1.8.0 is installed (Officially tested with version 2.0.1)
+    # CUDA and cuDNN libraries compatible with the PyTorch version must be installed as well 
     git clone https://github.com/ai-computing/aicomp.git
 
 ## Running (Example: gpt2)
@@ -53,6 +54,14 @@ Run the following command for every node:
    * optimus_p.run(data, labels): use the default scheduler (GPipe)
    * optimus_p.run(data, labels, mode="gpipe"): specify the GPipe scheduler explicitly
    * optimus_p.run(data, labels, mode="1f1b"): use the 1F1B scheduler
+
+### Configuring data parallelism
+
+Use the option dp_size in optimus_pto specify the degree of data parallelism:
+
+    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, **dp_size=2**)
+
+Example) 8-GPU single-node environment: setting dp_size=2 automatically makes pp_size=4
 
 ## License
 
