@@ -57,7 +57,7 @@ Run the following command for every node:
 
 ### Configuring data parallelism
 
-Use the option dp_size in optimus_pto specify the degree of data parallelism:
+Use the option 'dp_size' when instantiating Optimus_p class to specify the degree of data parallelism:
 
     optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, **dp_size=2**)
 
