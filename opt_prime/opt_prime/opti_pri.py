@@ -111,12 +111,13 @@ class Topology:
 
 class Run_Info:
 
-    def __init__(self, ir, device, mbsize, rank, world_size, stage, preserve_output, display_mem):
+    def __init__(self, ir, device, mbsize):
         self.mod = ir.model_ir[0] # TODO
         self.graph = self.mod.graph
         self.name = None
         self.node = None
         self.submod = None
+        self.output_node = None
         self.env: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.env_recv_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.env_send_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
@@ -129,36 +130,27 @@ class Run_Info:
         self.grads: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.getitem_dic : Dict[str, Any] = {}
 
-        self.mbsize = mbsize
         #self.special_nodes: Dict[str, Tuple[int, int]] = ir.special_nodes
         #self.special_nodes = ir.special_nodes
-        self.rank = rank
-        self.world_size = world_size
-        self.metadata_range = ir.metadata_range
-
-        self.stage = stage
-        self.preserve_output = preserve_output
-        self.display_mem = display_mem
-
 
 
     def setup_special_nodes(self, ir):
         self.special_nodes = ir.special_nodes
 
-    def setup_submod(self):
+    def setup_submod(self, stage, rank):
 
         #for n, m in self.ir.model_ir[0].named_children():
         for n, m in self.mod.named_children():
-             if n == f"submod_{self.stage}" and isinstance(m, GraphModule):
+             if n == f"submod_{stage}" and isinstance(m, GraphModule):
                  self.name = n
                  self.submod = m
                  break
 
         if self.name is None:
-            print(f"ERROR: Not found name(submod_{self.stage})")
+            print(f"ERROR: Not found name(submod_{stage})")
             sys.exit(0)
 
-        #print(f" ## Rank:{self.rank}, name:{self.name}")
+        #print(f" ## Rank:{rank}, name:{self.name}")
 
         for n in self.graph.nodes:
             if n.name == self.name:
@@ -173,7 +165,7 @@ class Run_Info:
         self.submod.to(self.device)
 
         # TODO
-        print(f" ## Rank:{self.rank}, name:{self.node.name}, move {self.name} to {self.device}")
+        print(f" ## Rank:{rank}, name:{self.node.name}, move {self.name} to {self.device}")
 
 
     def build_getitem_dic(self):
@@ -182,8 +174,8 @@ class Run_Info:
                 self.getitem_dic[node.name] = (node.args[0].name, node.args[1])
 
 
-    def print_graph(self, ir):
-        print(f" # rank = {self.rank}, metadata_range:{ir.metadata_range}")
+    def print_graph(self, ir, rank):
+        print(f" # rank = {rank}, metadata_range:{ir.metadata_range}")
         for node in self.mod.graph.nodes:
             print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
 
@@ -194,12 +186,16 @@ class Run_Info:
         print(f" ===============================")
 
 
+    def clean_run_info(self, mbsize):
+        self.env = [{} for _ in range(mbsize)]
+        self.flat_args = [{} for _ in range(mbsize)]
+        self.grads = [{} for _ in range(mbsize)]
 
 
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, display_mem=False):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, optimizer_offload=False):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -212,27 +208,27 @@ class Optimus_p:
 
         self.activation_ckpt = activation_ckpt
 
-        self.rank = self.comm.rank
-        self.world_size = self.comm.world_size
-        self.local_rank = self.comm.local_rank
+        rank = self.comm.rank
+        world_size = self.comm.world_size
+        local_rank = self.comm.local_rank
 
-        if dp_size < 1 or self.world_size % dp_size != 0:
+        if dp_size < 1 or world_size % dp_size != 0:
             print(f"Data Parallel Size(dp_size option) is not valid")
             sys.exit(1)
 
-        pp_size = self.world_size // dp_size
+        pp_size = world_size // dp_size
 
-        if self.rank == 0:
+        if rank == 0:
             print(f"> Pipeline Parallel Size: {pp_size}")  
             if dp_size > 1:
                 print(f"> Data Parallel Size: {dp_size}")
 
 
-        self.tpl = Topology(self.rank, self.local_rank, self.world_size, pp_size, dp_size)
+        self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size)
 
         if use_gpu == True:
-            self.device = torch.device(f"cuda:{self.local_rank}")
-            print(f">>> Using GPU ... cuda:{self.local_rank}")
+            self.device = torch.device(f"cuda:{local_rank}")
+            print(f">>> Using GPU ... cuda:{local_rank}")
         else:
             self.device = torch.device("cpu")
             print(f">>> Using CPU ...")
@@ -244,20 +240,29 @@ class Optimus_p:
         self.ir.retrieve_IR(module)
         self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
 
-        self.run_info = Run_Info(self.ir, self.device, mbsize, self.rank, self.world_size, self.tpl.stage, preserve_output, display_mem) 
-        self.run_info.setup_submod() 
+        self.run_info = Run_Info(self.ir, self.device, mbsize) 
+
+        self.preserve_output = preserve_output
+
+        self.force_free_mem = force_free_mem
+        self.free_threshold = 4294967296 # 4GB # For forcefully garbage collection/cache cleaning
+        self.free_threshold2 = 5368709120 # 5GB # For forcefully optimizer offloading
+
+        self.display_mem = display_mem
+
+        self.run_info.setup_submod(self.tpl.stage, rank) 
         self.run_info.build_getitem_dic()
 
         if dp_size > 1:
             self.prepare_dp_group()
 
-        if self.rank == 0:
-            self.run_info.print_graph(self.ir)
+        if rank == 0:
+            self.run_info.print_graph(self.ir, rank)
             self.run_info.print_getitem_dic()
 
         #self.tpl.print_stage_info() # TODO: DEBUG
 
-        if self.rank == 0:
+        if rank == 0:
             for stage in reversed(range(1, self.tpl.get_num_stage())):
                 self.ir.cross_reference_analyze(stage, self.run_info.graph)
 
@@ -268,11 +273,23 @@ class Optimus_p:
             dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
             self.ir.special_nodes = special_nodes_obj[0]
 
-        print(f" *********** rank:{self.rank} ==> cross-referenced nodes *****************")
+        print(f" *********** rank:{rank} ==> cross-referenced nodes *****************")
         print(f"   special_nodes: {self.ir.special_nodes}")
         print(f" *************************************************************************")
 
+        if self.tpl.is_last_stage():
+            self.run_info.output_node = self.get_output_node()
+
         self.run_info.setup_special_nodes(self.ir)
+
+        self.optimizer = None  # TODO
+        self.optimizer_offload = optimizer_offload
+
+
+    def get_output_node(self):
+        for n in reversed(self.run_info.graph.nodes):
+            if n.op == 'output':
+                return n
 
 
     def prepare_labels(self, labels):
@@ -317,7 +334,8 @@ class Optimus_p:
         #schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl)
         #
         #schedule.run(data, labels)
-        self.schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl, self.activation_ckpt)
+        #self.schedule = SCHEDULE[mode](self.run_info, self.ir, self.comm, self.tpl, self.activation_ckpt)
+        self.schedule = SCHEDULE[mode](self)
 
         self.schedule.run(data, labels)
         
@@ -329,7 +347,12 @@ class Optimus_p:
         return self.run_info.submod.train()
 
     def get_loss(self):
-        return self.schedule.run_info.loss
+        return self.run_info.loss
+
+    #def get_loss2(self):
+    #    loss = sum(self.run_info.loss) / self.mbsize
+    #    return loss.item()
+
 
     def is_first_stage(self):
         return self.tpl.is_first_stage()
@@ -344,7 +367,7 @@ class Optimus_p:
             start_rank = i * self.tpl.dp_size
             end_rank = (i+1) * self.tpl.dp_size
             dp_group = list(range(start_rank, end_rank))
-            if self.rank in dp_group:
+            if self.tpl.rank in dp_group:
                 ddp_group = dist.new_group(dp_group)
                 self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=False)
                 print(f"Preparing DP group: {dp_group}")
@@ -353,7 +376,13 @@ class Optimus_p:
 
 
     def get_output(self):
-        if self.run_info.preserve_output == True and self.tpl.is_last_stage() == True:
+        if self.preserve_output == True and self.tpl.is_last_stage() == True:
             return self.run_info.output
         else:
             return None
+
+    def get_rank(self):
+        return self.tpl.rank
+
+    def get_world_size(self):
+        return self.tpl.world_size

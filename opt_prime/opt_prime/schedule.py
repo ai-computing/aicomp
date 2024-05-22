@@ -26,98 +26,129 @@ logging.basicConfig(level=logging.ERROR)
 
 class Schedule:
 
-    def __init__(self, rinfo, ir, comm, topology, activation_ckpt): 
-        self.run_info = rinfo
-        self.ir = ir
-        self.comm = comm
-        self.tpl = topology
-        self.activation_ckpt = activation_ckpt
+    def __init__(self, optimus): 
+        self.optimus = optimus
 
-        if self.run_info.display_mem == True:
-            self.total_mem = torch.cuda.get_device_properties(self.tpl.local_rank).total_memory / (1024 ** 3) # GB
+        if self.optimus.force_free_mem == True:
+            self.total_mem = torch.cuda.get_device_properties(self.optimus.tpl.local_rank).total_memory 
+            self.allocated_mem = torch.cuda.memory_allocated(self.optimus.tpl.local_rank) 
+            self.cached_mem = torch.cuda.memory_reserved(self.optimus.tpl.local_rank) 
 
+        self.save_opt = False
 
 
     def init_env_mark(self, mb_idx):
-        for i in range(len(self.run_info.metadata_range)):
-            self.run_info.env_recv_mark[mb_idx][self.run_info.metadata_range[i][1]] = None
-            self.run_info.env_send_mark[mb_idx][self.run_info.metadata_range[i][1]] = None
+        for i in range(len(self.optimus.ir.metadata_range)):
+            self.optimus.run_info.env_recv_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
+            self.optimus.run_info.env_send_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
 
 
     def init_env_grad_mark(self, mb_idx):
-        for i in range(len(self.run_info.metadata_range)):
-            self.run_info.env_grad_recv_mark[mb_idx][self.run_info.metadata_range[i][1]] = None
-            self.run_info.env_grad_send_mark[mb_idx][self.run_info.metadata_range[i][1]] = None
+        for i in range(len(self.optimus.ir.metadata_range)):
+            self.optimus.run_info.env_grad_recv_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
+            self.optimus.run_info.env_grad_send_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
 
-            self.run_info.grads[mb_idx][self.run_info.metadata_range[i][1]] = None
+            self.optimus.run_info.grads[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
 
 
     def get_input(self, *args):
         self.args_iter = iter(args)
 
-        if self.tpl.is_first_stage():
-            for n in self.run_info.mod.graph.nodes:
-                if (n.op == 'placeholder' and self.tpl.is_first_stage() and n.name == 'x') or \
-                        (n.op == 'placeholder' and self.tpl.is_first_stage() and n.name == 'input_ids'):
+        if self.optimus.tpl.is_first_stage():
+            for n in self.optimus.run_info.mod.graph.nodes:
+                if (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'x') or \
+                        (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'input_ids'):
                     input = next(self.args_iter)
 
                     if isinstance(input, torch.Tensor):
-                        mbatches = torch.chunk(input, self.run_info.mbsize)
-                        if self.run_info.mbsize == 1:
-                            input = input.to(self.run_info.device)
-                            self.run_info.env[0]["placeholder"] = input
+                        mbatches = torch.chunk(input, self.optimus.mbsize)
+                        if self.optimus.mbsize == 1:
+                            input = input.to(self.optimus.run_info.device)
+                            self.optimus.run_info.env[0]["placeholder"] = input
                         else:
-                            for j in range(self.run_info.mbsize):
-                                mbatch = mbatches[j].to(self.run_info.device)
-                                self.run_info.env[j]["placeholder"] = mbatch
+                            for j in range(self.optimus.mbsize):
+                                mbatch = mbatches[j].to(self.optimus.run_info.device)
+                                self.optimus.run_info.env[j]["placeholder"] = mbatch
                     else:
                         logging.critical(f"### input:{input} not Tensor --> currently not supported!!")
                         sys.exit(1)
                     break
 
 
-    def get_output_node(self):
-        for n in reversed(self.run_info.graph.nodes):
-            if n.op == 'output':
-                return n
+    #def et_output_node(self):
+    #    for n in reversed(self.optimus.run_info.graph.nodes):
+    #        if n.op == 'output':
+    #            return n
 
 
     def get_next_node_name(self):
-        assert self.tpl.get_stage() < self.tpl.get_last_stage()
+        assert self.optimus.tpl.get_stage() < self.optimus.tpl.get_last_stage()
 
-        next_node_name = self.run_info.metadata_range[self.tpl.get_next_stage()][1]
+        next_node_name = self.optimus.ir.metadata_range[self.optimus.tpl.get_next_stage()][1]
         return next_node_name
+
+    def save_optimizer(self):
+        if self.optimus.optimizer_offload == False:
+            print(f"save_optimizer() should be used when optimizer_offload == True")
+            return
+
+        if self.optimus.optimizer == None:
+            print(f"optimus.optimizer not set when optimizer_offloaded == True")
+            return
+
+        state_dict = self.optimus.optimizer.state_dict()
+        for state in state_dict['state'].values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.cpu()
+
+
+    def load_optimizer(self):
+        if self.optimus.optimizer_offload == False:
+            print(f"load_optimizer() should be used when optimizer_offload == True")
+            return
+
+        if self.optimus.optimizer == None:
+            print(f"optimus.optimizer not set when optimizer_offloaded == True")
+            return
+
+        state_dict = self.optimus.optimizer.state_dict()
+        for state in state_dict['state'].values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(self.optimus.run_info.device)
 
 
     def run_loss(self, mb_idx):
-        assert self.tpl.is_last_stage() == True
+        assert self.optimus.tpl.is_last_stage() == True
 
-        assert mb_idx < self.run_info.mbsize
+        assert mb_idx < self.optimus.mbsize
 
-        node = self.get_output_node()
-        if self.ir.model_type == self.ir.model2type["hf"]:
+        #node = self.get_output_node()
+        node = self.optimus.run_info.output_node
+        if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
             key_ = node.args[0]['logits']
-        elif self.ir.model_type == self.ir.model2type["sy"]:
+        elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
             key_ = node.args[0]
 
 
-        if str(key_) in self.run_info.getitem_dic:
-            a_submod = self.run_info.getitem_dic[str(key_)][0]
-            a_idx = self.run_info.getitem_dic[str(key_)][1]
-            output1_ = self.run_info.env[mb_idx][a_submod][a_idx]
+        if str(key_) in self.optimus.run_info.getitem_dic:
+            a_submod = self.optimus.run_info.getitem_dic[str(key_)][0]
+            a_idx = self.optimus.run_info.getitem_dic[str(key_)][1]
+            output1_ = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
         else:
-            output1_ = self.run_info.env[mb_idx][str(key_)]
+            output1_ = self.optimus.run_info.env[mb_idx][str(key_)]
 
-        target1_ = self.run_info.env[mb_idx]["labels"]
+        target1_ = self.optimus.run_info.env[mb_idx]["labels"]
 
-        if self.ir.model_type == self.ir.model2type["hf"]:
+        if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
             output1_ = output1_.view(-1, output1_.size(-1))
             target1_ = target1_.view(-1)
 
 
         flat_args = []
         if isinstance(output1_, torch.Tensor) and output1_.is_floating_point():
-            output1 = output1_.detach().to(self.run_info.device)
+            output1 = output1_.detach().to(self.optimus.run_info.device)
             output1.requires_grad_(output1_.requires_grad)
             #output1.requires_grad_(True)
             flat_args.append(output1)
@@ -127,71 +158,77 @@ class Schedule:
             flat_args.append(output1)
 
         if isinstance(target1_, torch.Tensor) and target1_.is_floating_point():
-            target1 = target1_.detach().to(self.run_info.device)
+            target1 = target1_.detach().to(self.optimus.run_info.device)
             target1.requires_grad_(True)
-            flat_args.append(target1)
+            #flat_args.append(target1)
         else:
             target1 = target1_
-            flat_args.append(target1)
+            #flat_args.append(target1)
 
-        self.run_info.env[mb_idx]["labels"] = None 
+        self.optimus.run_info.env[mb_idx]["labels"] = None 
 
-        if self.ir.model_type == self.ir.model2type["hf"]:
+        if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
             criterion = nn.CrossEntropyLoss()
-        elif self.ir.model_type == self.ir.model2type["sy"]:
+        elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
             criterion = nn.MSELoss()
 
-        criterion = criterion.to(self.run_info.device)
+        criterion = criterion.to(self.optimus.run_info.device)
 
         result = criterion(output1, target1)
 
         #print(f" >>>> loss: {result}, result.shape:{result.shape}")
 
 
-        self.run_info.grads[mb_idx][node.name] = (None,)
-        self.run_info.loss[mb_idx] = result 
+        self.optimus.run_info.grads[mb_idx][node.name] = (None,)
 
-        self.run_info.env[mb_idx][node.name] = result
-        self.run_info.flat_args[mb_idx][node.name] = flat_args
+        #self.optimus.run_info.loss[mb_idx] = result 
+        if isinstance(result, torch.Tensor):
+            self.optimus.run_info.loss[mb_idx] = result.item()
+        else:
+            self.optimus.run_info.loss[mb_idx] = result 
+
+        self.optimus.run_info.env[mb_idx][node.name] = result
+        self.optimus.run_info.flat_args[mb_idx][node.name] = flat_args
+
 
 
 
     def pre_fx_micro_forward_core(self, mb_idx):
-        from_, to_ = self.ir.get_range(self.tpl.get_stage(), self.run_info.graph)
+        #from_, to_ = self.optimus.ir.get_range(self.optimus.tpl.get_stage(), self.optimus.run_info.graph)
 
-        if self.tpl.is_first_stage():
+        if self.optimus.tpl.is_first_stage():
             target_node_name = "placeholder"
-            if self.ir.model_type == self.ir.model2type["hf"]:
-                self.run_info.env[mb_idx]["input_ids"] = self.run_info.env[mb_idx][target_node_name]
-            elif self.ir.model_type == self.ir.model2type["sy"]:
-                self.run_info.env[mb_idx]["x"] = self.run_info.env[mb_idx][target_node_name]
+            if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+                self.optimus.run_info.env[mb_idx]["input_ids"] = self.optimus.run_info.env[mb_idx][target_node_name]
+            elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+                self.optimus.run_info.env[mb_idx]["x"] = self.optimus.run_info.env[mb_idx][target_node_name]
             else:
                 print(f"Not supported model type!")
                 sys.exit(1)
 
-        if self.tpl.get_stage() > self.tpl.get_first_stage():
-            pre_split_rank = self.tpl.get_prev_rank()
+        if self.optimus.tpl.get_stage() > self.optimus.tpl.get_first_stage():
+            pre_split_rank = self.optimus.tpl.get_prev_rank()
         
-            for node_name, range_ in self.run_info.special_nodes.items():
+            for node_name, range_ in self.optimus.run_info.special_nodes.items():
                 src_stage, needed_by_stage = range_
-                if self.tpl.stage > src_stage and self.tpl.stage <= needed_by_stage:
-                    if node_name in self.run_info.getitem_dic:
-                        submod_name = self.run_info.getitem_dic[node_name][0]
-                        if self.run_info.env_recv_mark[mb_idx][submod_name] is None:
-                            self.run_info.env[mb_idx][submod_name] = self.comm.receive_data(pre_split_rank, self.run_info.device)
-                            self.run_info.env_recv_mark[mb_idx][submod_name] = 1
+                if self.optimus.tpl.stage > src_stage and self.optimus.tpl.stage <= needed_by_stage:
+                    if node_name in self.optimus.run_info.getitem_dic:
+                        submod_name = self.optimus.run_info.getitem_dic[node_name][0]
+                        if self.optimus.run_info.env_recv_mark[mb_idx][submod_name] is None:
+                            self.optimus.run_info.env[mb_idx][submod_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                            self.optimus.run_info.env_recv_mark[mb_idx][submod_name] = 1
 
-                        if isinstance(self.run_info.env[mb_idx][submod_name], torch.Tensor):
-                            if not self.run_info.env[mb_idx][submod_name].requires_grad or self.run_info.env[mb_idx][submod_name].grad_fn is None:
-                                self.run_info.env[mb_idx][submod_name].requires_grad_(True)
+                        if isinstance(self.optimus.run_info.env[mb_idx][submod_name], torch.Tensor):
+                            if not self.optimus.run_info.env[mb_idx][submod_name].requires_grad or self.optimus.run_info.env[mb_idx][submod_name].grad_fn is None:
+                                self.optimus.run_info.env[mb_idx][submod_name].requires_grad_(True)
                                 logging.info(f" ###### node name:{submod_name} requires_grad(True) #####") 
                     else:
-                        if self.run_info.env_recv_mark[mb_idx][node_name] is None:
-                            self.run_info.env[mb_idx][node_name] = self.comm.receive_data(pre_split_rank, self.run_info.device)
-                            self.run_info.env_recv_mark[mb_idx][node_name] = 1
-                        if isinstance(self.run_info.env[mb_idx][node_name], torch.Tensor):
-                            if not self.run_info.env[mb_idx][node_name].requires_grad or self.run_info.env[mb_idx][node_name].grad_fn is None:
-                                self.run_info.env[mb_idx][node_name].requires_grad_(True)
+                        if self.optimus.run_info.env_recv_mark[mb_idx][node_name] is None:
+                            self.optimus.run_info.env[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                            self.optimus.run_info.env_recv_mark[mb_idx][node_name] = 1
+                        if isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
+                            if not self.optimus.run_info.env[mb_idx][node_name].requires_grad or self.optimus.run_info.env[mb_idx][node_name].grad_fn is None:
+                                self.optimus.run_info.env[mb_idx][node_name].requires_grad_(True)
                                 logging.info(f" ###### node name:{node_name} requires_grad(True) #####") 
 
 
@@ -205,17 +242,17 @@ class Schedule:
         flat_args = []
         def extract_tensor_args(b):
             # TODO
-            if b.name in self.run_info.getitem_dic:
-                a_submod = self.run_info.getitem_dic[b.name][0]
-                a_idx = self.run_info.getitem_dic[b.name][1]
-                a = self.run_info.env[mb_idx][a_submod][a_idx]
+            if b.name in self.optimus.run_info.getitem_dic:
+                a_submod = self.optimus.run_info.getitem_dic[b.name][0]
+                a_idx = self.optimus.run_info.getitem_dic[b.name][1]
+                a = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
             else:
-                a = self.run_info.env[mb_idx][b.name]
-            #a = self.run_info.env[mb_idx][b.name]
+                a = self.optimus.run_info.env[mb_idx][b.name]
+            #a = self.optimus.run_info.env[mb_idx][b.name]
 
             nonlocal flat_args
             if isinstance(a, torch.Tensor) and a.is_floating_point():
-                val = a.detach().to(self.run_info.device)
+                val = a.detach().to(self.optimus.run_info.device)
                 #val.requires_grad_(a.requires_grad)
                 val.requires_grad_(True)
                 flat_args.append(val)
@@ -226,20 +263,22 @@ class Schedule:
             return a
 
 
-        #print(f" [rank:{self.run_info.rank}] fx_micro_forward({mb_idx}), node.args:{self.run_info.node.args} .....")
+        #print(f" [rank:{self.optimus.tpl.rank}] fx_micro_forward({mb_idx}), node.args:{self.optimus.run_info.node.args} .....")
 
-        args = fx.graph.map_arg(self.run_info.node.args, extract_tensor_args)
-        kwargs = fx.graph.map_arg(self.run_info.node.kwargs, extract_tensor_args)
+        args = fx.graph.map_arg(self.optimus.run_info.node.args, extract_tensor_args)
+        kwargs = fx.graph.map_arg(self.optimus.run_info.node.kwargs, extract_tensor_args)
 
-        if isinstance(self.run_info.submod, DistributedDataParallel):
-            with self.run_info.submod.no_sync():
-                #logging.info(f" [FWD] DDP no_sync ... rank:{self.run_info.rank}, mb_idx:{mb_idx}")
-                result = self.run_info.submod(*args, **kwargs)
+        if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
+            with self.optimus.run_info.submod.no_sync():
+                #logging.info(f" [FWD] DDP no_sync ... rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}")
+                #result = self.optimus.run_info.submod(*args, **kwargs)
+                result = self.optimus.run_info.submod(*args, **kwargs)
+            #result = self.optimus.run_info.submod(*args, **kwargs)
         else:
-            result = self.run_info.submod(*args, **kwargs)
+            result = self.optimus.run_info.submod(*args, **kwargs)
 
-        self.run_info.flat_args[mb_idx][self.run_info.name] = flat_args
-        self.run_info.env[mb_idx][self.run_info.name] = result
+        self.optimus.run_info.flat_args[mb_idx][self.optimus.run_info.name] = flat_args
+        self.optimus.run_info.env[mb_idx][self.optimus.run_info.name] = result
 
 
     # For Act ckpt
@@ -248,17 +287,17 @@ class Schedule:
         flat_args = []
         def extract_tensor_args(b):
             # TODO
-            if b.name in self.run_info.getitem_dic:
-                a_submod = self.run_info.getitem_dic[b.name][0]
-                a_idx = self.run_info.getitem_dic[b.name][1]
-                a = self.run_info.env[mb_idx][a_submod][a_idx]
+            if b.name in self.optimus.run_info.getitem_dic:
+                a_submod = self.optimus.run_info.getitem_dic[b.name][0]
+                a_idx = self.optimus.run_info.getitem_dic[b.name][1]
+                a = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
             else:
-                a = self.run_info.env[mb_idx][b.name]
-            #a = self.run_info.env[mb_idx][b.name]
+                a = self.optimus.run_info.env[mb_idx][b.name]
+            #a = self.optimus.run_info.env[mb_idx][b.name]
 
             nonlocal flat_args
             if isinstance(a, torch.Tensor) and a.is_floating_point():
-                val = a.detach().to(self.run_info.device)
+                val = a.detach().to(self.optimus.run_info.device)
                 #val.requires_grad_(a.requires_grad)
                 val.requires_grad_(True) # TODO
                 flat_args.append(val)
@@ -269,57 +308,57 @@ class Schedule:
             return a
 
 
-        #print(f" [rank:{self.run_info.rank}] fx_micro_forward({mb_idx}), node.args:{self.run_info.node.args} .....")
+        #print(f" [rank:{self.optimus.tpl.rank}] fx_micro_forward({mb_idx}), node.args:{self.optimus.run_info.node.args} .....")
 
-        args = fx.graph.map_arg(self.run_info.node.args, extract_tensor_args)
-        kwargs = fx.graph.map_arg(self.run_info.node.kwargs, extract_tensor_args)
+        args = fx.graph.map_arg(self.optimus.run_info.node.args, extract_tensor_args)
+        kwargs = fx.graph.map_arg(self.optimus.run_info.node.kwargs, extract_tensor_args)
 
-        result = self.run_info.submod(*args, **kwargs)
+        result = self.optimus.run_info.submod(*args, **kwargs)
         #with torch.no_grad():
-        #    result = self.run_info.submod(*args, **kwargs)
+        #    result = self.optimus.run_info.submod(*args, **kwargs)
 
-        #print(f" [ACT CKPT] rank:{self.run_info.rank}, mb_idx:{mb_idx}, node name:{node_name}")
+        #print(f" [ACT CKPT] rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}, node name:{node_name}")
 
-        self.run_info.flat_args[mb_idx][self.run_info.name] = flat_args
-        #self.run_info.env[mb_idx][self.run_info.name] = result
+        self.optimus.run_info.flat_args[mb_idx][self.optimus.run_info.name] = flat_args
+        #self.optimus.run_info.env[mb_idx][self.optimus.run_info.name] = result
         return result
 
 
 
     def post_fx_micro_forward_core(self, mb_idx):
 
-        if self.tpl.stage < self.tpl.get_last_stage():
-            next_split_rank = self.tpl.get_next_rank()
+        if self.optimus.tpl.stage < self.optimus.tpl.get_last_stage():
+            next_split_rank = self.optimus.tpl.get_next_rank()
         
-            for node_name, range_ in self.run_info.special_nodes.items():
+            for node_name, range_ in self.optimus.run_info.special_nodes.items():
                 src_stage, needed_by_stage = range_
-                if self.tpl.stage >= src_stage and self.tpl.stage < needed_by_stage:
-                    if node_name in self.run_info.getitem_dic:
-                        submod_name = self.run_info.getitem_dic[node_name][0]
-                        if self.run_info.env_send_mark[mb_idx][submod_name] is None:
-                            obj = self.run_info.env[mb_idx][submod_name]
-                            self.comm.send_data(obj, next_split_rank, self.run_info.device)
-                            self.run_info.env_send_mark[mb_idx][submod_name] = 1
-                            if self.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
-                                self.run_info.env[mb_idx][submod_name] = None  
-                                self.run_info.flat_args[mb_idx][submod_name] = None 
-                                #print(f".. [Act ckpt] rank:{self.run_info.rank}, mb_idx:{mb_idx}, node name:{submod_name} <- None") 
+                if self.optimus.tpl.stage >= src_stage and self.optimus.tpl.stage < needed_by_stage:
+                    if node_name in self.optimus.run_info.getitem_dic:
+                        submod_name = self.optimus.run_info.getitem_dic[node_name][0]
+                        if self.optimus.run_info.env_send_mark[mb_idx][submod_name] is None:
+                            obj = self.optimus.run_info.env[mb_idx][submod_name]
+                            self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                            self.optimus.run_info.env_send_mark[mb_idx][submod_name] = 1
+                            if self.optimus.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
+                                self.optimus.run_info.env[mb_idx][submod_name] = None  
+                                self.optimus.run_info.flat_args[mb_idx][submod_name] = None 
+                                #print(f".. [Act ckpt] rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}, node name:{submod_name} <- None") 
                     else:
-                        if self.run_info.env_send_mark[mb_idx][node_name] is None:
-                            obj = self.run_info.env[mb_idx][node_name]
-                            self.comm.send_data(obj, next_split_rank, self.run_info.device)
-                            self.run_info.env_send_mark[mb_idx][node_name] = 1
-                            if self.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
-                                self.run_info.env[mb_idx][node_name] = None 
-                                self.run_info.flat_args[mb_idx][node_name] = None
-                                #print(f"... [Act ckpt] rank:{self.run_info.rank}, mb_idx:{mb_idx}, node name:{node_name} <- None") 
+                        if self.optimus.run_info.env_send_mark[mb_idx][node_name] is None:
+                            obj = self.optimus.run_info.env[mb_idx][node_name]
+                            self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                            self.optimus.run_info.env_send_mark[mb_idx][node_name] = 1
+                            if self.optimus.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
+                                self.optimus.run_info.env[mb_idx][node_name] = None 
+                                self.optimus.run_info.flat_args[mb_idx][node_name] = None
+                                #print(f"... [Act ckpt] rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}, node name:{node_name} <- None") 
 
         yield 0
 
 
     def get_num_nodes(self, name):
         cnt = 0
-        for k, v in self.run_info.getitem_dic.items():
+        for k, v in self.optimus.run_info.getitem_dic.items():
             if k == name:
                 cnt = cnt +  1
 
@@ -389,31 +428,32 @@ class Schedule:
             else:
                 forward_input_gradient.append(None)
 
-        #if self.activation_ckpt == True:
-        #    forward_output_list, forward_output_gradient_list = None, None
 
         return forward_input_gradient, None
 
 
     def run_core_backward(self, mb_idx, node, grads):
 
+        if self.optimus.force_free_mem == True:
+            self.cond_free_mem_()
+
         args = ()
         kwargs = dict()
-        #if self.activation_ckpt == True and node.name != "output":
-        if self.activation_ckpt == True and node.name != "output" and not self.tpl.is_last_stage(): # For Act ckpt
-            src, needed_by_stage = self.run_info.special_nodes[node.name]
+        #if self.optimus.activation_ckpt == True and node.name != "output":
+        if self.optimus.activation_ckpt == True and node.name != "output" and not self.optimus.tpl.is_last_stage():
+            src, needed_by_stage = self.optimus.run_info.special_nodes[node.name]
             if needed_by_stage - src > 1:
-                k1 = self.run_info.env[mb_idx].pop(node.name)
+                k1 = self.optimus.run_info.env[mb_idx].pop(node.name)
             else:
                 k1 = self.produce_forward_output(mb_idx, node.name)
         else:
-            k1 = self.run_info.env[mb_idx].pop(node.name)
+            k1 = self.optimus.run_info.env[mb_idx].pop(node.name)
             
         k1 = ((k1,) if not isinstance(k1, tuple) else k1)
-        k2 = self.run_info.flat_args[mb_idx].pop(node.name)
+        k2 = self.optimus.run_info.flat_args[mb_idx].pop(node.name)
 
-        if self.run_info.preserve_output == True:
-            self.run_info.output[mb_idx] = k1
+        if self.optimus.preserve_output == True:
+            self.optimus.run_info.output[mb_idx] = k1
 
         kwargs["forward_output"] = k1
         kwargs["forward_input"] = k2
@@ -422,34 +462,35 @@ class Schedule:
         num_nodes = self.get_num_nodes(node.name) 
         kwargs["valid_index"] = [i for i in range(num_nodes)]
 
-        if isinstance(self.run_info.submod, DistributedDataParallel):
-            if mb_idx == 0:
+        if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
+            if mb_idx == self.optimus.mbsize - 1:
                 #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
-                self.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
+                self.optimus.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
                 result = self.core_backward(*args, **kwargs)
-
-                #if self.activation_ckpt == True:
-                #    del args, kwargs, k1, k2, grads
-                return result
+            
+            else:
+                with self.optimus.run_info.submod.no_sync():
+                    result = self.core_backward(*args, **kwargs)
         else:
             result = self.core_backward(*args, **kwargs)
-            #if self.activation_ckpt == True:
-            #    del args, kwargs, k1, k2, grads
-            return result
 
-        #return result
+
+        if self.optimus.force_free_mem == True:
+            self.cond_free_mem_()
+
+        return result
 
 
     def pre_fx_micro_backward_core(self, mb_idx):
         grads = None
-        if self.tpl.stage < self.tpl.get_last_stage():
-            pre_split_rank = self.tpl.get_next_rank()
+        if self.optimus.tpl.stage < self.optimus.tpl.get_last_stage():
+            pre_split_rank = self.optimus.tpl.get_next_rank()
 
             node_name = self.get_next_node_name()
-            if self.run_info.env_grad_recv_mark[mb_idx][node_name] is None:
-                self.run_info.grads[mb_idx][node_name] = self.comm.receive_data(pre_split_rank, self.run_info.device)
-                grads = self.run_info.grads[mb_idx][node_name]
-                self.run_info.env_grad_recv_mark[mb_idx][node_name] = 1
+            if self.optimus.run_info.env_grad_recv_mark[mb_idx][node_name] is None:
+                self.optimus.run_info.grads[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                grads = self.optimus.run_info.grads[mb_idx][node_name]
+                self.optimus.run_info.env_grad_recv_mark[mb_idx][node_name] = 1
 
         return grads
 
@@ -458,114 +499,129 @@ class Schedule:
 
         #self.init_env_grad_mark(mb_idx)
 
-        # TODO: last stage ?
-        #if self.run_info.rank == self.run_info.world_size - 1:
-        if self.tpl.is_last_stage():
-            node = self.get_output_node()
-            grads = self.run_info.grads[mb_idx][node.name]
+        #if self.optimus.tpl.rank == self.optimus.tpl.world_size - 1:
+        if self.optimus.tpl.is_last_stage():
+            #node = self.get_output_node()
+            node = self.optimus.run_info.output_node
+            grads = self.optimus.run_info.grads[mb_idx][node.name]
             result = self.run_core_backward(mb_idx, node, grads)
             result = ((result,) if not isinstance(result, tuple) else result)
-            #self.run_info.grads[mb_idx][node.name] = result 
-            #grads = self.run_info.grads[mb_idx][node.name] 
+            #self.optimus.run_info.grads[mb_idx][node.name] = result 
+            #grads = self.optimus.run_info.grads[mb_idx][node.name] 
             grads = result
 
-        node = self.run_info.node
+        node = self.optimus.run_info.node
         result = self.run_core_backward(mb_idx, node, grads)
 
         result = ((result,) if not isinstance(result, tuple) else result)
 
-        self.run_info.grads[mb_idx][node.name] = result
+        self.optimus.run_info.grads[mb_idx][node.name] = result
 
 
 
     def post_fx_micro_backward_core(self, mb_idx):
 
-        if self.tpl.get_stage() > 0:
-            next_split_rank = self.tpl.get_prev_rank()
+        if self.optimus.tpl.get_stage() > 0:
+            next_split_rank = self.optimus.tpl.get_prev_rank()
 
-            node_name = self.run_info.name
-            if self.run_info.env_grad_send_mark[mb_idx][node_name] is None:
-                obj = self.run_info.grads[mb_idx][node_name]
-                self.comm.send_data(obj, next_split_rank, self.run_info.device)
-                self.run_info.env_grad_send_mark[mb_idx][node_name] = 1
-                if self.activation_ckpt == True:
-                    self.run_info.grads[mb_idx][node_name] = None
+            node_name = self.optimus.run_info.name
+            if self.optimus.run_info.env_grad_send_mark[mb_idx][node_name] is None:
+                obj = self.optimus.run_info.grads[mb_idx][node_name]
+                self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                self.optimus.run_info.env_grad_send_mark[mb_idx][node_name] = 1
+                if self.optimus.activation_ckpt == True:
+                    self.optimus.run_info.grads[mb_idx][node_name] = None
 
         yield 0
 
 
-    def free_mem(self):
-        self.run_info.env = [{} for _ in range(self.run_info.mbsize)] 
-        self.run_info.flat_args = [{} for _ in range(self.run_info.mbsize)] 
-        self.run_info.grads = [{} for _ in range(self.run_info.mbsize)] 
-
-        if self.run_info.display_mem == True:
-            allocated_mem = torch.cuda.memory_allocated(self.tpl.local_rank) / (1024 ** 3)
-            cached_mem = torch.cuda.memory_reserved(self.tpl.local_rank) / (1024 ** 3)
-            free_mem = self.total_mem - allocated_mem
-            print(f"[rank: {self.tpl.rank}] ## free:{free_mem}GB, alloc:{allocated_mem}GB, cached:{cached_mem}GB, total:{self.total_mem}GB ######")
-
+    def force_free_mem(self):
         gc.collect()
-
         torch.cuda.empty_cache()
+
+
+    def cond_free_mem_(self):
+        self.allocated_mem = torch.cuda.memory_allocated(self.optimus.tpl.local_rank) 
+        self.cached_mem = torch.cuda.memory_reserved(self.optimus.tpl.local_rank)
+        remain_mem = self.total_mem - self.cached_mem
+        if remain_mem < self.optimus.free_threshold:
+            if self.optimus.display_mem == True:
+                print(f"###[rank:{self.optimus.tpl.rank}], remain[:{remain_mem}], total[:{self.total_mem}], cached[:{self.cached_mem}] ... forcefully free memory")
+
+            gc.collect()
+            torch.cuda.empty_cache()
+
+        if remain_mem < self.optimus.free_threshold2:
+            if self.save_opt == False:
+                if self.optimus.optimizer_offload == True:
+                    self.save_optimizer()
+                if self.optimus.display_mem == True:
+                    print(f" >>> [rank:{self.optimus.tpl.rank}], save optimizer [remain:{remain_mem}]...")
+                self.save_opt = True
 
 
 class ScheduleGPipe(Schedule):
 
-    def __init__(self, rinfo, ir, comm, topology, activation_ckpt): 
-        super().__init__(rinfo, ir, comm, topology, activation_ckpt)
+    def __init__(self, optimus): 
+        super().__init__(optimus)
 
     
     # run GPipe schedule
     def run(self, data, labels):
 
-        if self.tpl.is_first_stage():
+        if self.optimus.tpl.is_first_stage():
             #self.get_input(data, labels)
             self.get_input(data)
 
-        for i in range(self.run_info.mbsize):
+        for i in range(self.optimus.mbsize):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
 
-        for i in range(self.run_info.mbsize):
+        for i in range(self.optimus.mbsize):
             self.pre_fx_micro_forward_core(i)
             self.fx_micro_forward_core(i)
             result = self.post_fx_micro_forward_core(i)
             next(result)
 
-        for i in range(self.run_info.mbsize):
-            if self.tpl.is_last_stage():
+        for i in range(self.optimus.mbsize):
+            if self.optimus.tpl.is_last_stage():
                 self.run_loss(i)
             grads = self.pre_fx_micro_backward_core(i)
             self.fx_micro_backward_core(i, grads)
             result = self.post_fx_micro_backward_core(i)
             next(result)
 
-        self.free_mem()
-
-
+        if self.optimus.force_free_mem == True:
+            self.optimus.run_info.clean_run_info(self.optimus.mbsize)
+            self.force_free_mem()
+            if self.save_opt == True:
+                if self.optimus.display_mem == True:
+                    print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
+                if self.optimus.optimizer_offload == True:
+                    self.load_optimizer()
+                self.save_opt = False
 
 
 
 
 class Schedule1F1B(Schedule):
 
-    def __init__(self, rinfo, ir, comm, topology, activation_ckpt): 
-        super().__init__(rinfo, ir, comm, topology, activation_ckpt)
+    def __init__(self, optimus): 
+        super().__init__(optimus)
 
     
     # run 1F1B schedule
     def run(self, data, labels):
-        #num_warmup_microbatches = self.run_info.world_size - self.run_info.stage - 1
-        num_warmup_microbatches = self.tpl.get_last_stage() - self.tpl.stage
-        num_warmup_microbatches = min(num_warmup_microbatches, self.run_info.mbsize)
-        remaining = self.run_info.mbsize - num_warmup_microbatches
+        #num_warmup_microbatches = self.optimus.tpl.world_size - self.optimus.tpl.stage - 1
+        num_warmup_microbatches = self.optimus.tpl.get_last_stage() - self.optimus.tpl.stage
+        num_warmup_microbatches = min(num_warmup_microbatches, self.optimus.mbsize)
+        remaining = self.optimus.mbsize - num_warmup_microbatches
 
-        if self.tpl.is_first_stage():
+        if self.optimus.tpl.is_first_stage():
             #self.get_input(data, labels)
             self.get_input(data)
 
-        for i in range(self.run_info.mbsize):
+        for i in range(self.optimus.mbsize):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
 
@@ -590,7 +646,7 @@ class Schedule1F1B(Schedule):
             result = self.post_fx_micro_forward_core(forward_i)
             next(result)
 
-            if self.tpl.is_last_stage():
+            if self.optimus.tpl.is_last_stage():
                 self.run_loss(backward_i)
 
 
@@ -607,7 +663,7 @@ class Schedule1F1B(Schedule):
         for i in range(num_warmup_microbatches):
             backward_i = i + remaining
 
-            if self.tpl.is_last_stage():
+            if self.optimus.tpl.is_last_stage():
                 self.run_loss(backward_i)
 
             if reorder_mbi >= 0:
@@ -622,5 +678,10 @@ class Schedule1F1B(Schedule):
             next(result)
 
 
-        self.free_mem()
+        if self.optimus.force_free_mem == True:
+            self.optimus.run_info.clean_run_info(self.optimus.mbsize)
+            self.force_free_mem()
+            if self.optimus.optimizer_offload == True and self.save_opt == True:
+                self.load_optimizer()
+                self.save_opt = False
 
