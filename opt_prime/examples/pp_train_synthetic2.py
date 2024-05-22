@@ -97,21 +97,21 @@ if int(os.environ["RANK"]) == 0:
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
 optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, preserve_output=True)
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2)
-print(f" rank={optimus_p.rank} ...")
+print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
 optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 
-logFile = open('rank'+str(optimus_p.rank)+'_parameters.txt', 'w')
+logFile = open('rank'+str(optimus_p.get_rank())+'_parameters.txt', 'w')
 
 if optimus_p.is_first_stage():
-    print(f" rank:{optimus_p.rank} --> First stage!")
+    print(f" rank:{optimus_p.get_rank()} --> First stage!")
 if optimus_p.is_last_stage():
-    print(f" rank:{optimus_p.rank} ==> Last stage!")
+    print(f" rank:{optimus_p.get_rank()} ==> Last stage!")
 
 optimus_p.train() # turn on the train mode
 
-if optimus_p.rank == 0:
+if optimus_p.get_rank() == 0:
     tick = time.time()
 
 #for i in range(50):
@@ -124,7 +124,7 @@ for i in range(100):
         data = torch.rand(batch_size, out_features)
         labels = torch.rand(batch_size, out_features)
 
-        if optimus_p.rank == 1:
+        if optimus_p.get_rank() == 1:
             data = torch.rand(batch_size, out_features)
 
     labels = optimus_p.move_labels2last_stage(labels)
@@ -147,19 +147,20 @@ for i in range(100):
 
     for param in optimus_p.parameters():
         print(param.data.tolist(), file = logFile)
+        #print(param.grad.tolist(), file = logFile)
     print('\n', file = logFile)
 
 logFile.close()
 
-if optimus_p.rank == 0:
+if optimus_p.get_rank() == 0:
     tock = time.time()
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-#if optimus_p.rank == optimus_p.world_size - 1: 
+#if optimus_p.get_rank() == optimus_p.get_world_size() - 1: 
 if optimus_p.is_last_stage(): 
     output = optimus_p.get_output()
     if output != None:
-        print(f">> [RANK:{optimus_p.rank} ###################### output: {output} #############")
-print(f"[rank:{optimus_p.rank}, run completed ...")
+        print(f">> [RANK:{optimus_p.get_rank()} ###################### output: {output} #############")
+print(f"[rank:{optimus_p.get_rank()}, run completed ...")

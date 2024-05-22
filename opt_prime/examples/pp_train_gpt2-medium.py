@@ -54,7 +54,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"micro batch size: {micro_batch_size}")
 
 optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-print(f" rank={optimus_p.rank} ...")
+print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
 optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
@@ -120,7 +120,7 @@ def train():
                 total_loss = 0
                 start_time = time.time()
 
-if optimus_p.rank == 0:
+if optimus_p.get_rank() == 0:
     tick = time.time()
 
 for epoch in range(1, epochs + 1):
@@ -128,12 +128,12 @@ for epoch in range(1, epochs + 1):
     train()
     scheduler.step()
 
-if optimus_p.rank == 0:
+if optimus_p.get_rank() == 0:
     tock = time.time()
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-if optimus_p.rank == optimus_p.world_size - 1:
+if optimus_p.get_rank() == optimus_p.get_world_size() - 1:
     print(f"###################################")
-print(f"[rank:{optimus_p.rank}, run completed ...")
+print(f"[rank:{optimus_p.get_rank()}, run completed ...")

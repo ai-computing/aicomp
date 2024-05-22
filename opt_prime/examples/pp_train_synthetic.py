@@ -93,7 +93,7 @@ if int(os.environ["RANK"]) == 0:
 optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, preserve_output=True)
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2)
-print(f" rank={optimus_p.rank} ...")
+print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
 optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
@@ -101,7 +101,7 @@ optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 
 optimus_p.train() # turn on the train mode
 
-if optimus_p.rank == 0:
+if optimus_p.get_rank() == 0:
     tick = time.time()
 
 for i in range(100):
@@ -130,15 +130,15 @@ for i in range(100):
     optimizer.step()
 
 
-if optimus_p.rank == 0:
+if optimus_p.get_rank() == 0:
     tock = time.time()
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-#if optimus_p.rank == optimus_p.world_size - 1: 
+#if optimus_p.get_rank() == optimus_p.get_world_size() - 1: 
 if optimus_p.is_last_stage(): 
     output = optimus_p.get_output()
     if output != None:
-        print(f">> [RANK:{optimus_p.rank} ###################### output: {output} #############")
-print(f"[rank:{optimus_p.rank}, run completed ...")
+        print(f">> [RANK:{optimus_p.get_rank()} ###################### output: {output} #############")
+print(f"[rank:{optimus_p.get_rank()}, run completed ...")
