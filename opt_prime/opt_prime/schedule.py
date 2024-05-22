@@ -555,8 +555,8 @@ class Schedule:
             if self.save_opt == False:
                 if self.optimus.optimizer_offload == True:
                     self.save_optimizer()
-                if self.optimus.display_mem == True:
-                    print(f" >>> [rank:{self.optimus.tpl.rank}], save optimizer [remain:{remain_mem}]...")
+                    if self.optimus.display_mem == True:
+                        print(f" >>> [rank:{self.optimus.tpl.rank}], save optimizer [remain:{remain_mem}]...")
                 self.save_opt = True
 
 
@@ -595,10 +595,10 @@ class ScheduleGPipe(Schedule):
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
             self.force_free_mem()
             if self.save_opt == True:
-                if self.optimus.display_mem == True:
-                    print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
                 if self.optimus.optimizer_offload == True:
                     self.load_optimizer()
+                    if self.optimus.display_mem == True:
+                        print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
                 self.save_opt = False
 
 
