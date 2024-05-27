@@ -9,8 +9,8 @@
    "num_layers": 12,
    "hidden_size": 768,
    "num_attention_heads": 12,
-   "seq_length": 2048,
-   "max_position_embeddings": 2048,
+   "seq_length": 32768,
+   "max_position_embeddings": 32768,
    "norm": "layernorm",
    "pos_emb": "rotary",
    "no_weight_tying": true,
@@ -49,11 +49,11 @@
   },
 
    # batch / data settings
-   "train_micro_batch_size_per_gpu": 16,
+   "train_micro_batch_size_per_gpu": 1,
    "data_impl": "mmap",
 
    # activation checkpointing
-   "checkpoint_activations": false,
+   "checkpoint_activations": true,
    "checkpoint_num_layers": 1,
    "partition_activations": true,
    "synchronize_each_layer": true,

@@ -1,0 +1,89 @@
+{
+   "model_parallel_size": 1,
+   "make_vocab_size_divisible_by": 1,
+
+   "num_layers": 24,
+   "hidden_size": 2048,
+   "num_attention_heads": 16,
+   "seq_length": 32768,
+   "max_position_embeddings": 32768,
+   "pos_emb": "rotary",
+   "rotary_pct": 1,
+   "rotary_emb_base": 10000,
+   "no_weight_tying": true,
+   "gpt_j_residual": false,
+   "output_layer_parallelism": "column",
+
+   "attention_config": [[["flash"], all]],
+
+   "scaled_upper_triang_masked_softmax_fusion": true,
+   "bias_gelu_fusion": false,
+   "use_bias_in_norms": false,
+   "use_bias_in_attn_linear": false,
+
+   "init_method": "small_init",
+   "output_layer_init_method": "wang_init",
+
+   "optimizer": {
+     "type": "adam",
+     "params": {
+       "lr": 0.0001,
+       "betas": [0.9, 0.95],
+       "eps":  1.0e-6,
+     }
+   },
+   "min_lr": 0.00001,
+
+   "zero_optimization": {
+    "stage": 0,
+    "offload_param": {
+        "device": "cpu"
+    },
+    "allgather_partitions": True,
+    "allgather_bucket_size": 500000000,
+    "overlap_comm": True,
+    "reduce_scatter": True,
+    "reduce_bucket_size": 500000000,
+    "contiguous_gradients": True,
+  },
+
+#   "train_batch_size": 128,
+#   "train_batch_size": 32,
+   "gradient_accumulation_steps": 64,
+   "split": "960,35,5",
+   "train_micro_batch_size_per_gpu": 1,
+   "data_impl": "mmap",
+
+   "checkpoint_activations": true,
+   "checkpoint_num_layers": 1,
+   "partition_activations": true,
+   "synchronize_each_layer": true,
+
+   "gradient_clipping": 1.0,
+   "weight_decay": 0.1,
+   "hidden_dropout": 0,
+   "attention_dropout": 0,
+
+   "fp16": {
+     "fp16": true,
+     "enabled": true,
+     "loss_scale": 0,
+     "loss_scale_window": 1000,
+     "hysteresis": 2,
+     "min_loss_scale": 1
+   },
+
+   "train_iters": 20,
+   "lr_decay_iters": 20,
+   "distributed_backend": "nccl",
+   "lr_decay_style": "cosine",
+   "warmup": 0.05,
+   "checkpoint_factor": 450,
+   "eval_interval": 1800,
+   "eval_iters": 10,
+
+   "log_interval": 10,
+   "steps_per_print": 1,
+   "keep_last_n_checkpoints": 10,
+   "wall_clock_breakdown": true,
+}
