@@ -343,6 +343,8 @@ class Optimus_p:
         self.model2type = { "hf" : 50, "sy" : 51,}
         self.model_type = None
 
+        self.clean_module_memory = True
+
 
         if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
             # IR effective at #0 process when IR_Anal.SINGLE
@@ -454,11 +456,12 @@ class Optimus_p:
         print(f"   special_nodes: {self.run_info.special_nodes}")
         print(f" *************************************************************************")
 
-        if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.PARALLEL and rank == 0):
-            print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
-            self.ir.clean_module_memory()
-            print(f" ### Rank:{rank}, clean_module_memory ...")
-            print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
+        if self.clean_module_memory == True:
+            if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.SINGLE and rank == 0):
+                print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
+                self.ir.clean_module_memory()
+                print(f" ### Rank:{rank}, clean_module_memory ...")
+                print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
 
         self.optimizer = None  # TODO
         self.optimizer_offload = optimizer_offload
