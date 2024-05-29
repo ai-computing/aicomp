@@ -9,13 +9,16 @@ import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel
 
 from opt_prime.comm import Comm
-from opt_prime.IR import IR
+from opt_prime.IR import IR, IR_Anal
 from opt_prime.schedule import ScheduleGPipe 
 from opt_prime.schedule import Schedule1F1B 
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch.fx.graph_module import GraphModule
+
+import psutil
+import os
 
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -27,6 +30,8 @@ SCHEDULE = {
     "1f1b": Schedule1F1B, 
     }
 
+
+
 class Topology:
 
     def __init__(self, rank, local_rank, world_size, pp_size, dp_size):
@@ -35,69 +40,145 @@ class Topology:
         self.world_size = world_size
         self.pp_size = pp_size
         self.dp_size = dp_size
-        self.set_stage() 
 
+        #
+        self.stage2rank = {}
+        self.set_stage2rank()
+
+        self.set_stage()
+        self.num_stage = self.get_num_stage()
+        self.setup_rank_topology()
+
+
+    def set_stage2rank(self):
+        for i in range(self.pp_size):
+            self.stage2rank[i] = [i*self.dp_size + j for j in range(self.dp_size)]
+
+    def get_rank2stage(self, rank):
+        for stage, ranks in self.stage2rank.items():
+            if rank in ranks:
+                return stage
+        return None
 
     def set_stage(self):
-        #if self.dp_size == 1: # PP only
-        #    self.stage = self.rank
-        self.stage = self.rank // self.dp_size # PP + DP
+        ## PP only
+        ##if self.dp_size == 1: 
+        ##    self.stage = self.rank
+
+        # PP + DP: using calculation
+        #self.stage = self.rank // self.dp_size
+
+        # PP + DP: using data structure
+        self.stage = self.get_rank2stage(self.rank)
 
     def get_stage(self):
         return self.stage
 
     def get_num_stage(self):
-        return self.pp_size
+        # PP, PP + DP
+        #return self.pp_size
+        return len(self.stage2rank)
 
     def is_first_stage(self):
-        #if self.dp_size == 1: # PP only
+        # PP only
+        #if self.dp_size == 1:
         #    return self.rank == 0:
+
         return self.stage == 0
 
     def is_last_stage(self):
-        #if self.dp_size == 1: # PP only
-        #    return self.rank == self.world_size - 1
-        return self.stage == self.pp_size - 1
+        ## PP only
+        ##if self.dp_size == 1:
+        ##    return self.rank == self.world_size - 1
+
+        # PP + DP
+        #return self.stage == self.pp_size - 1
+        return self.stage == self.num_stage - 1
 
 
     def get_first_stage(self):
-        #if self.dp_size == 1: # PP only
+        # PP only
+        #if self.dp_size == 1:
         #    return 0
+
         return 0
             
     def get_last_stage(self):
-        #if self.dp_size == 1: # PP only
-        #    return self.world_size - 1
-        return self.pp_size - 1
+        ## PP only
+        ##if self.dp_size == 1: 
+        ##    return self.world_size - 1
+
+        # PP + DP
+        #return self.pp_size - 1
+        return self.num_stage - 1
 
     def get_next_stage(self):
-        #if self.dp_size == 1: # PP only
+        # PP only
+        #if self.dp_size == 1: 
         #    assert self.stage < self.pp_size - 1
         #    return self.stage + 1
+
+        # PP + DP
         assert self.stage < self.get_last_stage()
         return self.stage + 1
 
     def get_prev_stage(self):
-        #if self.dp_size == 1: # PP only
+        # PP only
+        #if self.dp_size == 1:
         #    assert self.stage > 0
         #    return self.stage - 1
+
+        # PP + DP
         assert self.stage > self.get_first_stage()
         return self.stage - 1
 
 
+    def setup_rank_topology(self):
+        stage = self.get_rank2stage(self.rank)
+        tlist = self.stage2rank[stage]
+        index = tlist.index(self.rank)
+
+        self.first_rank = self.stage2rank[0][index]
+        self.last_rank = self.stage2rank[self.get_last_stage()][index]
+        if self.stage < self.get_last_stage():
+            self.next_rank = self.stage2rank[self.get_next_stage()][index]
+        if self.stage > self.get_first_stage():
+            self.prev_rank = self.stage2rank[self.get_prev_stage()][index]
+
+
     def get_first_rank(self):
-        return self.rank % self.dp_size
+        # PP + DP: using calculation
+        #return self.rank % self.dp_size
+
+        # PP + DP: using data structure
+        return self.first_rank
 
     def get_last_rank(self):
-        return (self.pp_size - 1)*self.dp_size + self.rank % self.dp_size
+        # PP + DP: using calculation
+        #return (self.pp_size - 1)*self.dp_size + self.rank % self.dp_size
+
+        # PP + DP: using data structure
+        return self.last_rank
+
 
     def get_prev_rank(self):
         assert self.stage > self.get_first_stage()
-        return (self.stage - 1) * self.dp_size + self.get_first_rank()
+
+        # PP + DP: using calculation
+        #return (self.stage - 1) * self.dp_size + self.get_first_rank()
+
+        # PP + DP: using data structure
+        return self.prev_rank
+
 
     def get_next_rank(self):
         assert self.stage < self.get_last_stage()
-        return (self.stage + 1)*self.dp_size + self.get_first_rank()
+        # PP + DP: using calculation
+        #return (self.stage + 1)*self.dp_size + self.get_first_rank()
+
+        # PP + DP: using data structure
+        return self.next_rank
+
 
     def print_stage_info(self):
         print(f"rank:{self.rank}, get_stage: {self.get_stage()}")
@@ -111,12 +192,14 @@ class Topology:
 
 class Run_Info:
 
-    def __init__(self, ir, device, mbsize):
-        self.mod = ir.model_ir[0] # TODO
-        self.graph = self.mod.graph
+    #def __init__(self, ir, device, mbsize):
+    def __init__(self, device, mbsize):
+        #self.mod = ir.model_ir[0] # TODO
+        #self.graph = self.mod.graph
         self.name = None
         self.node = None
         self.submod = None
+
         self.output_node = None
         self.env: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
         self.env_recv_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
@@ -131,53 +214,68 @@ class Run_Info:
         self.getitem_dic : Dict[str, Any] = {}
 
         #self.special_nodes: Dict[str, Tuple[int, int]] = ir.special_nodes
-        #self.special_nodes = ir.special_nodes
+        self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
+        self.metadata_range = []
 
 
-    def setup_special_nodes(self, ir):
-        self.special_nodes = ir.special_nodes
-
-    def setup_submod(self, stage, rank):
-
-        #for n, m in self.ir.model_ir[0].named_children():
-        for n, m in self.mod.named_children():
-             if n == f"submod_{stage}" and isinstance(m, GraphModule):
-                 self.name = n
-                 self.submod = m
-                 break
-
-        if self.name is None:
-            print(f"ERROR: Not found name(submod_{stage})")
-            sys.exit(0)
-
-        #print(f" ## Rank:{rank}, name:{self.name}")
-
-        for n in self.graph.nodes:
-            if n.name == self.name:
-               self.node = n
-               break
-
-        if self.node is None:
-            print(f"ERROR: Not found node({self.name})")
-            sys.exit(0)
+    #def setup_special_nodes(self, ir):
+    #    self.special_nodes = ir.special_nodes
 
 
-        self.submod.to(self.device)
+    # TODO: delele ??
+    #def setup_submod(self, stage, rank):
+    #
+    #    name, submod, node = None, None, None
+    #
+    #    for n, m in self.ir.model_ir[0].named_children():
+    #    #for n, m in self.mod.named_children():
+    #         if n == f"submod_{stage}" and isinstance(m, GraphModule):
+    #             #self.name = n
+    #             #self.submod = m
+    #             name = n
+    #             submod = m
+    #             break
+    #
+    #    #if self.name is None:
+    #    if name is None:
+    #        print(f"ERROR: Not found name(submod_{stage})")
+    #        sys.exit(0)
+    #
+    #    #print(f" ## Rank:{rank}, name:{self.name}")
+    #
+    #    for n in self.graph.nodes:
+    #        #if n.name == self.name:
+    #        if n.name == name:
+    #           #self.node = n
+    #           node = n
+    #           break
+    #
+    #    #if self.node is None:
+    #    if node is None:
+    #        print(f"ERROR: Not found node({self.name})")
+    #        sys.exit(0)
+    #
+    #
+    #    #self.submod.to(self.device)
+    #    #submod.to(self.device)
+    #
+    #    # TODO
+    #    print(f" ## Rank:{rank}, name:{self.node.name}, move {self.name} to {self.device}")
+    #
+    #    return name, submod, node
 
-        # TODO
-        print(f" ## Rank:{rank}, name:{self.node.name}, move {self.name} to {self.device}")
+
+    # TODO: move to IR, then broadcast the result
+    #def build_getitem_dic(self):
+    #    for node in self.mod.graph.nodes:
+    #        if node.op == 'call_function' and node.name.startswith("getitem"):
+    #            self.getitem_dic[node.name] = (node.args[0].name, node.args[1])
 
 
-    def build_getitem_dic(self):
-        for node in self.mod.graph.nodes:
-            if node.op == 'call_function' and node.name.startswith("getitem"):
-                self.getitem_dic[node.name] = (node.args[0].name, node.args[1])
-
-
-    def print_graph(self, ir, rank):
-        print(f" # rank = {rank}, metadata_range:{ir.metadata_range}")
-        for node in self.mod.graph.nodes:
-            print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
+    #def print_graph(self, ir, rank):
+    #    print(f" # rank = {rank}, metadata_range:{ir.metadata_range}")
+    #    for node in self.mod.graph.nodes:
+    #        print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
 
     def print_getitem_dic(self):
         print(f" ========= getitem_dic =========")
@@ -192,10 +290,17 @@ class Run_Info:
         self.grads = [{} for _ in range(mbsize)]
 
 
+pid = os.getpid()
+def print_cpu_memory_usage(str, print_flag = False):
+    if print_flag == True:
+        my_process = psutil.Process(pid)
+        usage = my_process.memory_info().rss / (1024 ** 3) # GB unit
+        print(f" === {str} === rank:[{int(os.environ['RANK'])}] >> Memory Usage: {usage:.3f} GB")
+
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, optimizer_offload=False):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, optimizer_offload=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -204,7 +309,7 @@ class Optimus_p:
 
         self.use_gpu = use_gpu
 
-        self.comm = Comm(use_gpu=use_gpu)
+        self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
 
         self.activation_ckpt = activation_ckpt
 
@@ -234,13 +339,84 @@ class Optimus_p:
             print(f">>> Using CPU ...")
 
 
-        self.ir = IR(module)
-        #self.model_ir.append(IR(module))
+        self.run_info = Run_Info(self.device, mbsize) 
+        self.model2type = { "hf" : 50, "sy" : 51,}
+        self.model_type = None
 
-        self.ir.retrieve_IR(module)
-        self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
 
-        self.run_info = Run_Info(self.ir, self.device, mbsize) 
+        if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
+            # IR effective at #0 process when IR_Anal.SINGLE
+
+            self.ir = IR(module, self)
+            #self.model_ir.append(IR(module))
+
+            self.model_type = self.ir.retrieve_IR(module)
+            self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
+
+            self.ir.setup_submod(self.tpl.stage, rank) # setup name, submod, node
+            self.ir.build_getitem_dic()
+
+            if ir_analyze == IR_Anal.SINGLE and rank == 0:
+
+                to_name, to_submod, to_node = None, None, None
+
+                for stage in range(self.tpl.num_stage):
+                    #for n, m in self.ir.model_ir[0].named_children():
+                    #    if n == f"submod_{stage}" and isinstance(m, GraphModule):
+                    #        to_name = n
+                    #        to_submod = m
+                    #        break
+                    to_name = f"submod_{stage}"
+                    to_submod = self.ir.model_ir[0].get_submodule(to_name)
+
+                    for nd in self.ir.model_ir[0].graph.nodes:
+                        if nd.name == to_name:
+                            to_node = nd
+                            break
+
+                    object_list = [to_name, to_submod, to_node]
+
+                    for to_rank in self.tpl.stage2rank[stage]:
+
+                        if to_rank == 0:
+                            continue
+                        else:
+                            print(f"[Rank:0] >> Send IR partition to rank:{to_rank} ...")
+                            dist.broadcast_object_list(object_list, src=0, group=self.comm.ctrl_group[to_rank], device=self.run_info.device)
+                    to_name, to_submod, to_node = None, None, None
+                    object_list = []
+
+
+        elif ir_analyze == IR_Anal.SINGLE and rank != 0:
+            object_list = [None, None, None]
+            dist.broadcast_object_list(object_list, src=0, group=self.comm.ctrl_group[rank], device=self.run_info.device)
+            self.run_info.name = object_list[0]
+            print(f"<< [Rank:{rank}, Stage:{self.tpl.stage}] <== Received {self.run_info.name} ...")
+            self.run_info.submod = object_list[1]
+            self.run_info.node = object_list[2]
+
+        self.run_info.submod.to(self.run_info.device)
+        print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
+
+        if ir_analyze == IR_Anal.SINGLE:
+            if rank == 0:
+                #self.run_info.output_node = self.ir.get_output_node()
+                object_list2 = [self.ir.get_output_node()]
+                for to_rank in self.tpl.stage2rank[self.tpl.get_last_stage()]:
+                    if to_rank == 0:
+                        continue
+                    dist.broadcast_object_list(object_list2, src=0, group=self.comm.ctrl_group[to_rank], device=self.run_info.device)
+                    print(f" [Rank:0] >>>> Send output node[:{self.run_info.output_node}] to rank:{to_rank} ...")
+                self.run_info.output_node = object_list2[0]
+                #print(f" >>>> Send output node to rank:{to_rank} ...")
+            elif rank in self.tpl.stage2rank[self.tpl.get_last_stage()]:
+                if rank != 0:
+                    object_list2 = [None]
+                    dist.broadcast_object_list(object_list2, src=0, group=self.comm.ctrl_group[rank], device=self.run_info.device)
+                    self.run_info.output_node = object_list2[0]
+                    print(f"[Rank:{rank}, Stage:{self.tpl.stage}] <<<< Received output node[{self.run_info.output_node}] ...")
+        else:
+            self.run_info.output_node = self.ir.get_output_node()
 
         self.preserve_output = preserve_output
 
@@ -250,46 +426,42 @@ class Optimus_p:
 
         self.display_mem = display_mem
 
-        self.run_info.setup_submod(self.tpl.stage, rank) 
-        self.run_info.build_getitem_dic()
-
         if dp_size > 1:
             self.prepare_dp_group()
 
         if rank == 0:
-            self.run_info.print_graph(self.ir, rank)
+            self.ir.print_graph(rank)
             self.run_info.print_getitem_dic()
-
-        #self.tpl.print_stage_info() # TODO: DEBUG
 
         if rank == 0:
             for stage in reversed(range(1, self.tpl.get_num_stage())):
-                self.ir.cross_reference_analyze(stage, self.run_info.graph)
+                self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
 
-            special_nodes_obj = [self.ir.special_nodes]
+            special_nodes_obj = [self.ir.special_nodes, self.ir.metadata_range, self.run_info.getitem_dic, self.model_type]
             dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
+            self.run_info.special_nodes = special_nodes_obj[0]
+            self.run_info.metadata_range = special_nodes_obj[1]
+            self.run_info.getitem_dic = special_nodes_obj[2]
         else:
-            special_nodes_obj = [None]
+            special_nodes_obj = [None, None, None, None]
             dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
-            self.ir.special_nodes = special_nodes_obj[0]
+            self.run_info.special_nodes = special_nodes_obj[0]
+            self.run_info.metadata_range = special_nodes_obj[1]
+            self.run_info.getitem_dic = special_nodes_obj[2]
+            self.model_type = special_nodes_obj[3]
 
         print(f" *********** rank:{rank} ==> cross-referenced nodes *****************")
-        print(f"   special_nodes: {self.ir.special_nodes}")
+        print(f"   special_nodes: {self.run_info.special_nodes}")
         print(f" *************************************************************************")
 
-        if self.tpl.is_last_stage():
-            self.run_info.output_node = self.get_output_node()
-
-        self.run_info.setup_special_nodes(self.ir)
+        if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.PARALLEL and rank == 0):
+            print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
+            self.ir.clean_module_memory()
+            print(f" ### Rank:{rank}, clean_module_memory ...")
+            print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
 
         self.optimizer = None  # TODO
         self.optimizer_offload = optimizer_offload
-
-
-    def get_output_node(self):
-        for n in reversed(self.run_info.graph.nodes):
-            if n.op == 'output':
-                return n
 
 
     def prepare_labels(self, labels):
@@ -383,6 +555,9 @@ class Optimus_p:
 
     def get_rank(self):
         return self.tpl.rank
+
+    def get_local_rank(self):
+        return self.tpl.local_rank
 
     def get_world_size(self):
         return self.tpl.world_size

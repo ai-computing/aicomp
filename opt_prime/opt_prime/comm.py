@@ -4,14 +4,18 @@ import logging
 import os
 from torch import Tensor, Size
 
+from opt_prime.IR import IR_Anal
+
+
 
 logging.basicConfig(level=logging.ERROR)
 
 NoneType=type(None)
 
+
 class Comm:
 
-    def __init__(self, use_gpu=False):
+    def __init__(self, use_gpu=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
 
         self.ds_type2id = {
             Tensor: 100,
@@ -42,6 +46,8 @@ class Comm:
 
         self.init_comm(use_gpu)
 
+        if ir_analyze == IR_Anal.SINGLE:
+            self.setup_ctrl_group()
 
 
     def init_comm(self, use_gpu):
@@ -240,3 +246,22 @@ class Comm:
         for n in obj:
             self.send_data(n, to_rank, device)
 
+
+    def setup_ctrl_group(self):
+        print(f"[rank:{self.rank}] ir_analyze=IR_Anal.SINGLE")
+        self.ctrl_group: Dict[int, Any] = {}
+        rank_pair: Dict[int, List[int]] = {}
+
+        for rank in range(self.world_size):
+            if rank == 0:
+                continue
+            rank_pair.setdefault(rank, [0, rank])
+
+
+        for rank in range(self.world_size):
+            if rank == 0:
+                continue
+            pair_ranks = rank_pair[rank]
+            self.ctrl_group[rank] = dist.new_group(pair_ranks)
+
+        print(f"[rank:{self.rank}], setup_ctrl_group completed")

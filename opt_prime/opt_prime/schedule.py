@@ -16,6 +16,7 @@ from torch.nn.parallel import DistributedDataParallel
 import gc
 
 
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 
@@ -38,44 +39,59 @@ class Schedule:
 
 
     def init_env_mark(self, mb_idx):
-        for i in range(len(self.optimus.ir.metadata_range)):
-            self.optimus.run_info.env_recv_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
-            self.optimus.run_info.env_send_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
+        for i in range(len(self.optimus.run_info.metadata_range)):
+            self.optimus.run_info.env_recv_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
+            self.optimus.run_info.env_send_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
 
 
     def init_env_grad_mark(self, mb_idx):
-        for i in range(len(self.optimus.ir.metadata_range)):
-            self.optimus.run_info.env_grad_recv_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
-            self.optimus.run_info.env_grad_send_mark[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
+        for i in range(len(self.optimus.run_info.metadata_range)):
+            self.optimus.run_info.env_grad_recv_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
+            self.optimus.run_info.env_grad_send_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
 
-            self.optimus.run_info.grads[mb_idx][self.optimus.ir.metadata_range[i][1]] = None
+            self.optimus.run_info.grads[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
 
 
     def get_input(self, *args):
         self.args_iter = iter(args)
 
         if self.optimus.tpl.is_first_stage():
-            for n in self.optimus.run_info.mod.graph.nodes:
-                if (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'x') or \
-                        (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'input_ids'):
-                    input = next(self.args_iter)
+            #for n in self.optimus.run_info.mod.graph.nodes:
+                #if (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'x') or \
+                #        (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'input_ids'):
+                #    input = next(self.args_iter)
+                #
+                #    if isinstance(input, torch.Tensor):
+                #        mbatches = torch.chunk(input, self.optimus.mbsize)
+                #        if self.optimus.mbsize == 1:
+                #            input = input.to(self.optimus.run_info.device)
+                #            self.optimus.run_info.env[0]["placeholder"] = input
+                #        else:
+                #            for j in range(self.optimus.mbsize):
+                #                mbatch = mbatches[j].to(self.optimus.run_info.device)
+                #                self.optimus.run_info.env[j]["placeholder"] = mbatch
+                #    else:
+                #        logging.critical(f"### input:{input} not Tensor --> currently not supported!!")
+                #        sys.exit(1)
+                #    break
 
-                    if isinstance(input, torch.Tensor):
-                        mbatches = torch.chunk(input, self.optimus.mbsize)
-                        if self.optimus.mbsize == 1:
-                            input = input.to(self.optimus.run_info.device)
-                            self.optimus.run_info.env[0]["placeholder"] = input
-                        else:
-                            for j in range(self.optimus.mbsize):
-                                mbatch = mbatches[j].to(self.optimus.run_info.device)
-                                self.optimus.run_info.env[j]["placeholder"] = mbatch
-                    else:
-                        logging.critical(f"### input:{input} not Tensor --> currently not supported!!")
-                        sys.exit(1)
-                    break
+
+            input = next(self.args_iter)
+            if isinstance(input, torch.Tensor):
+                mbatches = torch.chunk(input, self.optimus.mbsize)
+                if self.optimus.mbsize == 1:
+                    input = input.to(self.optimus.run_info.device)
+                    self.optimus.run_info.env[0]["placeholder"] = input
+                else:
+                    for j in range(self.optimus.mbsize):
+                        mbatch = mbatches[j].to(self.optimus.run_info.device)
+                        self.optimus.run_info.env[j]["placeholder"] = mbatch
+            else:
+                logging.critical(f"### input:{input} not Tensor --> currently not supported!!")
+                sys.exit(1)
 
 
-    #def et_output_node(self):
+    #def get_output_node(self):
     #    for n in reversed(self.optimus.run_info.graph.nodes):
     #        if n.op == 'output':
     #            return n
@@ -84,7 +100,7 @@ class Schedule:
     def get_next_node_name(self):
         assert self.optimus.tpl.get_stage() < self.optimus.tpl.get_last_stage()
 
-        next_node_name = self.optimus.ir.metadata_range[self.optimus.tpl.get_next_stage()][1]
+        next_node_name = self.optimus.run_info.metadata_range[self.optimus.tpl.get_next_stage()][1]
         return next_node_name
 
     def save_optimizer(self):
@@ -126,9 +142,11 @@ class Schedule:
 
         #node = self.get_output_node()
         node = self.optimus.run_info.output_node
-        if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+        #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+        if self.optimus.model_type == self.optimus.model2type["hf"]:
             key_ = node.args[0]['logits']
-        elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+        #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+        elif self.optimus.model_type == self.optimus.model2type["sy"]:
             key_ = node.args[0]
 
 
@@ -141,7 +159,8 @@ class Schedule:
 
         target1_ = self.optimus.run_info.env[mb_idx]["labels"]
 
-        if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+        #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+        if self.optimus.model_type == self.optimus.model2type["hf"]:
             output1_ = output1_.view(-1, output1_.size(-1))
             target1_ = target1_.view(-1)
 
@@ -167,9 +186,11 @@ class Schedule:
 
         self.optimus.run_info.env[mb_idx]["labels"] = None 
 
-        if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+        #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+        if self.optimus.model_type == self.optimus.model2type["hf"]:
             criterion = nn.CrossEntropyLoss()
-        elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+        #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+        elif self.optimus.model_type == self.optimus.model2type["sy"]:
             criterion = nn.MSELoss()
 
         criterion = criterion.to(self.optimus.run_info.device)
@@ -198,9 +219,11 @@ class Schedule:
 
         if self.optimus.tpl.is_first_stage():
             target_node_name = "placeholder"
-            if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+            #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
+            if self.optimus.model_type == self.optimus.model2type["hf"]:
                 self.optimus.run_info.env[mb_idx]["input_ids"] = self.optimus.run_info.env[mb_idx][target_node_name]
-            elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+            #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
+            elif self.optimus.model_type == self.optimus.model2type["sy"]:
                 self.optimus.run_info.env[mb_idx]["x"] = self.optimus.run_info.env[mb_idx][target_node_name]
             else:
                 print(f"Not supported model type!")
@@ -555,8 +578,8 @@ class Schedule:
             if self.save_opt == False:
                 if self.optimus.optimizer_offload == True:
                     self.save_optimizer()
-                    if self.optimus.display_mem == True:
-                        print(f" >>> [rank:{self.optimus.tpl.rank}], save optimizer [remain:{remain_mem}]...")
+                if self.optimus.display_mem == True:
+                    print(f" >>> [rank:{self.optimus.tpl.rank}], save optimizer [remain:{remain_mem}]...")
                 self.save_opt = True
 
 
@@ -595,10 +618,10 @@ class ScheduleGPipe(Schedule):
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
             self.force_free_mem()
             if self.save_opt == True:
+                if self.optimus.display_mem == True:
+                    print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
                 if self.optimus.optimizer_offload == True:
                     self.load_optimizer()
-                    if self.optimus.display_mem == True:
-                        print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
                 self.save_opt = False
 
 

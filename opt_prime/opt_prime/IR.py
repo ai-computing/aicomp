@@ -33,10 +33,19 @@ import torch.distributed as dist
 import datetime
 import logging
 import os
+import gc
+from enum import Enum
+
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 logging.basicConfig(level=logging.ERROR)
+
+class IR_Anal(Enum):
+    SINGLE = 1
+    PARALLEL = 2
+    SEQUENTIAL = 3      # SEQUENTIAL: TODO
+
 
 huggingface_model_class = [
         GPT2LMHeadModel, 
@@ -53,15 +62,16 @@ huggingface_model_class = [
 
 
 class IR(object):
-    def __init__(self, model: nn.Module):
+    def __init__(self, model: nn.Module, optimus):
+
         self.gm = None
         self.model_ir = []
         self.metadata_range = []
 
+        self.optimus = optimus
+
         self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
-        self.model2type = { "hf" : 50, "sy" : 51,}
-        self.model_type = -1
 
     def retrieve_IR(self, model: nn.Module):
 
@@ -78,11 +88,11 @@ class IR(object):
 
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
             self.gm = torch.fx.GraphModule(model, traced_graph)
-            self.model_type = self.model2type["hf"]
+            return self.optimus.model2type["hf"]
 
         elif isinstance(model, nn.Module):
             self.gm = fx.symbolic_trace(model)
-            self.model_type = self.model2type["sy"]
+            return self.optimus.model2type["sy"]
 
         else:
             print(f"Not supported model!")
@@ -108,13 +118,11 @@ class IR(object):
 
         if int(os.environ["RANK"]) == 0:
             print(f">> ------------------ FX graph --------------------------------")
-            #for n in submods.graph.nodes:
             for n in self.model_ir[0].graph.nodes:
                 print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
             print(f">> ------------------------------------------------------------")
 
 
-    #def simple_split(self, gm, module):
     def simple_split(self, module, num_stage):
         length = self.gm.graph.nodes.__len__()
 
@@ -178,7 +186,7 @@ class IR(object):
 
         if int(os.environ["RANK"]) == 0:
             print(f" ------------------------------------------------------------")
-            print(f"  rank:{os.environ['RANK']},  first metadata_range: {self.metadata_range}")
+            print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
             print(f" ------------------------------------------------------------")
 
         submodules = split_module(self.gm, module, part_fn, keep_original_order=True)
@@ -259,7 +267,7 @@ class IR(object):
                 cnt = cnt + 1
 
         print(f" ------------------------------------------------------------")
-        print(f"  rank:{os.environ['RANK']},  second metadata_range: {self.metadata_range}")
+        print(f"  rank:{self.optimus.tpl.rank},  second metadata_range: {self.metadata_range}")
         print(f" ------------------------------------------------------------")
 
         assert len(self.metadata_range) == num_stage
@@ -401,4 +409,134 @@ class IR(object):
             return (from_node, to_node)
         else:
             return (from_node._next, to_node)
+
+
+    def setup_submod(self, stage, rank):
+
+        for n, m in self.model_ir[0].named_children():
+            if n == f"submod_{stage}" and isinstance(m, GraphModule):
+                self.optimus.run_info.name = n
+                self.optimus.run_info.submod = m
+                break
+        
+        if self.optimus.run_info.name is None:
+            print(f"ERROR: Not found name(submod_{stage})")
+            sys.exit(0)
+
+        #print(f" ## Rank:{rank}, name:{self.name}")
+
+        for n in self.model_ir[0].graph.nodes:
+            if n.name == self.optimus.run_info.name:
+                self.optimus.run_info.node = n
+                break
+
+        if self.optimus.run_info.node is None:
+            print(f"ERROR: Not found node({self.name})")
+            sys.exit(0)
+
+
+        #self.submod.to(self.run_info.device)
+        #print(f" ## Rank:{rank}, name:{self.optimus.run_info.node.name}, move {self.optimus.run_info.name} to {self.optimus.run_info.device}")
+
+
+    def build_getitem_dic(self):
+        for node in self.model_ir[0].graph.nodes:
+            if node.op == 'call_function' and node.name.startswith("getitem"):
+                self.optimus.run_info.getitem_dic[node.name] = (node.args[0].name, node.args[1])
+
+    #def print_graph(self, ir, rank):
+    def print_graph(self, rank):
+        print(f" # rank = {rank}, metadata_range:{self.metadata_range}")
+        for node in self.model_ir[0].graph.nodes:
+            print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
+
+
+    def get_output_node(self):
+        for n in reversed(self.model_ir[0].graph.nodes):
+            if n.op == 'output':
+                return n
+
+
+    def delete_param(self, mod, name):
+        for param_name, param in mod.named_parameters():
+            t = getattr(mod, param_name)
+            setattr(mod, param_name, None)
+            del t
+
+    def has_child(self, mod):
+        num_children = 0
+        if mod is not None:
+            num_children = len(list(mod.children()))
+        return num_children
+
+    def partially_matched(self, name):
+        for string in self.reference:
+            if name in string:
+                return True
+        return False
+
+    def delete_module(self, root, module_node):
+
+        module_name = module_node.name
+        module_target_name = str(module_node.target)
+        if len(module_name) > len(module_target_name):
+            self.reference.append(module_target_name)
+
+        get_attr_flag = False
+        if len(module_name) == len(module_target_name) and not self.partially_matched(module_target_name):
+            target_atoms = module_target_name.split('.')
+            attr_itr = root
+            if module_node.op == 'get_attr':
+                if target_atoms[-1] == "weight" or target_atoms[-1] == "bias":
+                    target_atoms = target_atoms[:-1]
+                    get_attr_flag = True
+                    if self.partially_matched(str('.'.join(target_atoms))):
+                        return
+                else:
+                    return
+
+            for i , atom in enumerate(target_atoms):
+                if not hasattr(attr_itr, atom):
+                    raise RuntimeError(\
+                        f"Node referenced nonexistant target {'.'.join(target_atoms[:i])} ... [{target_atoms}]")
+                parent_ = attr_itr
+                attr_itr = getattr(attr_itr, atom)
+
+            #if self.has_child(attr_itr) == 0:
+            #if get_attr_flag == True or self.has_child(attr_itr) == 0:
+            if True:
+                self.delete_param(attr_itr, atom)
+                delattr(parent_, atom)
+                del attr_itr
+                #print(f">>> rank:{self.optimus.tpl.rank}, delete module:target:{module_target_name} ## atom:{atom},op:{module_node.op}")
+                self.reference.append(module_target_name)
+            else:
+                print(f">>> delete_module:{module_name} requested, but {module_name} has child")
+
+
+
+    def delete_intermediate_module(self, module_name):
+        del_submod = self.model_ir[0].get_submodule(module_name)
+
+        for n in del_submod.graph.nodes:
+            if n.op == 'call_module':
+                self.delete_module(del_submod, n)
+
+
+    def clean_module_memory(self):
+        self.reference = []
+
+        for stage in reversed(range(self.optimus.tpl.num_stage)):
+            if stage != self.optimus.tpl.get_stage():
+                del_name = f"submod_{stage}"
+                self.delete_intermediate_module(del_name)
+
+        #print(f"[rank:{self.optimus.tpl.rank}] reference:{self.reference}")
+        self.reference = None
+
+        self.model_ir = []
+        self.gm = None
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
