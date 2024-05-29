@@ -24,7 +24,6 @@ from opt_prime.opti_pri import Optimus_p
 
 logging.basicConfig(level=logging.ERROR)
 
-device = torch.device("cpu")
 
 tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-j-6b")
 #tokenizer = GPT2Tokenizer.from_pretrained("anton-l/gpt-j-tiny-random")
@@ -46,7 +45,6 @@ def get_total_params(module: torch.nn.Module):
 if int(os.environ["RANK"]) == 0:
     print ('Total parameters in model: {:,}'.format(get_total_params(model)))
 
-
 batch_size = 32
 micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
 
@@ -58,6 +56,7 @@ if int(os.environ["RANK"]) == 0:
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
 optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, optimizer_offload=True)
 print(f" rank={optimus_p.get_rank()} ...")
+
 
 optimus_p.train()
 #optimus_p.optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)

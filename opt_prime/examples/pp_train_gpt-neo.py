@@ -24,7 +24,6 @@ from opt_prime.opti_pri import Optimus_p
 
 logging.basicConfig(level=logging.ERROR)
 
-device = torch.device("cpu")
 
 tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-neo-2.7B")
 tokenizer.pad_token = tokenizer.eos_token

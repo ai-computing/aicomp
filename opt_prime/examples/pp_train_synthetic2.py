@@ -25,7 +25,6 @@ from opt_prime.opti_pri import Optimus_p
 
 logging.basicConfig(level=logging.ERROR)
 
-device = torch.device("cpu")
 
 
 batch_size = 64
@@ -104,10 +103,10 @@ optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 
 logFile = open('rank'+str(optimus_p.get_rank())+'_parameters.txt', 'w')
 
-if optimus_p.is_first_stage():
-    print(f" rank:{optimus_p.get_rank()} --> First stage!")
-if optimus_p.is_last_stage():
-    print(f" rank:{optimus_p.get_rank()} ==> Last stage!")
+#if optimus_p.is_first_stage():
+#    print(f" rank:{optimus_p.get_rank()} --> First stage!")
+#if optimus_p.is_last_stage():
+#    print(f" rank:{optimus_p.get_rank()} ==> Last stage!")
 
 optimus_p.train() # turn on the train mode
 

@@ -21,7 +21,6 @@ from opt_prime.opti_pri import Optimus_p
 
 logging.basicConfig(level=logging.ERROR)
 
-device = torch.device("cpu")
 
 
 batch_size = 64

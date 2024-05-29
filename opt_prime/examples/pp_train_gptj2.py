@@ -15,7 +15,7 @@ import sys
 import math
 import time
 
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
+from transformers import GPT2Tokenizer, GPTJForCausalLM, GPTJConfig
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 
@@ -24,14 +24,34 @@ from opt_prime.opti_pri import Optimus_p
 
 logging.basicConfig(level=logging.ERROR)
 
+#
+rank = int(os.environ['RANK'])
+local_rank = int(os.environ['LOCAL_RANK'])
+world_size = int(os.environ['WORLD_SIZE'])
+cache_dir="mycache_dir1"
 
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2-xl")
+dist.init_process_group("nccl", rank=rank, world_size=world_size)
+        
+
+#tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-j-6b")
+tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-j-6b", cache_dir=cache_dir) 
+#tokenizer = GPT2Tokenizer.from_pretrained("anton-l/gpt-j-tiny-random")
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-config = GPT2Config(use_cache=False)
-model = GPT2LMHeadModel(config)
-model = model.from_pretrained("gpt2-xl")
+config = GPTJConfig(use_cache=False)
+model = GPTJForCausalLM(config)
+
+#model = model.from_pretrained("EleutherAI/gpt-j-6b")
+if local_rank == 0:
+    model = model.from_pretrained("EleutherAI/gpt-j-6b", cache_dir=cache_dir)
+    dist.barrier()
+else:
+    dist.barrier()
+    model = model.from_pretrained("EleutherAI/gpt-j-6b", cache_dir=cache_dir)
+
+#model = model.from_pretrained("anton-l/gpt-j-tiny-random")
+
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0
@@ -43,6 +63,7 @@ def get_total_params(module: torch.nn.Module):
 if int(os.environ["RANK"]) == 0:
     print ('Total parameters in model: {:,}'.format(get_total_params(model)))
 
+print(f"Begin [{local_rank}]: optimus_p ..")
 
 batch_size = 32
 micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
@@ -52,13 +73,14 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-print(f" rank={optimus_p.get_rank()} ...")
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, optimizer_offload=True)
+print(f" local_rank={optimus_p.get_local_rank()} ...")
 
 optimus_p.train()
-optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
-#optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
+#optimus_p.optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
+optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
@@ -89,17 +111,17 @@ def train():
 
         labels = optimus_p.move_labels2last_stage(labels)
 
-        optimizer.zero_grad()
+        optimus_p.optimizer.zero_grad()
 
         optimus_p.run(data, labels)
 
         if optimus_p.is_last_stage():
-            loss = optimus_p.get_loss() 
+            loss = optimus_p.get_loss()
         else:
             loss = None
 
         torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
-        optimizer.step()
+        optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.mbsize
@@ -132,6 +154,6 @@ if optimus_p.get_rank() == 0:
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-if optimus_p.get_rank() == optimus_p.get_world_size() - 1:
+if optimus_p.get_rank == optimus_p.get_world_size() - 1:
     print(f"###################################")
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")

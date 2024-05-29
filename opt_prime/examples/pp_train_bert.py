@@ -24,8 +24,6 @@ from opt_prime.opti_pri import Optimus_p
 
 logging.basicConfig(level=logging.ERROR)
 
-device = torch.device("cpu")
-
 tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
 #tokenizer.pad_token = tokenizer.eos_token
 #tokenizer.pad_token_id = tokenizer.eos_token_id
