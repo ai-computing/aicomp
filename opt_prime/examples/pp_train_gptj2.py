@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.opti_pri import Optimus_p
+from opt_prime.IR import IR_Anal
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -80,7 +81,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"micro batch size: {micro_batch_size}")
 
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, optimizer_offload=True)
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, optimizer_offload=True, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" local_rank={optimus_p.get_local_rank()} ...")
 
 optimus_p.train()
