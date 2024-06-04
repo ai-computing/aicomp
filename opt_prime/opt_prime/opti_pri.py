@@ -328,6 +328,8 @@ class Optimus_p:
             if dp_size > 1:
                 print(f"> Data Parallel Size: {dp_size}")
 
+            print(f">> ir_analyze: {ir_analyze}")
+
 
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size)
 
@@ -344,6 +346,46 @@ class Optimus_p:
         self.model_type = None
 
         self.clean_module_memory = True
+
+        if ir_analyze == IR_Anal.SEQUENTIAL:
+            print(f"SEQUENTIAL mode >> [rank:{rank}, local_world_size:{self.comm.local_world_size}]")
+
+            for i in range(self.comm.local_world_size):
+                if local_rank == i:
+                    self.ir = IR(module, self)
+
+                    self.model_type = self.ir.retrieve_IR(module)
+                    self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
+
+                    self.ir.setup_submod(self.tpl.stage, rank) # setup name, submod, node
+                    self.ir.build_getitem_dic()
+
+                    self.run_info.submod.to(self.run_info.device)
+                    print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
+
+                    self.run_info.output_node = self.ir.get_output_node()
+
+                    if rank == 0:
+                        self.ir.print_graph(rank)
+                        self.run_info.print_getitem_dic()
+
+                    #    for stage in reversed(range(1, self.tpl.get_num_stage())):
+                    #        self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
+
+                    for stage in reversed(range(1, self.tpl.get_num_stage())):
+                         self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
+                    self.run_info.special_nodes = self.ir.special_nodes
+                    self.run_info.metadata_range = self.ir.metadata_range
+                    self.run_info.getitem_dic = self.run_info.getitem_dic
+
+                    if self.clean_module_memory == True:
+                        print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
+                        self.ir.clean_module_memory()
+                        print(f" ### Rank:{rank}, clean_module_memory ...")
+                        print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
+                    print(f"[rank:{rank}, local_rank:{local_rank}] SEQUENTIAL MODE PROCESSING ...")
+
+                dist.barrier()
 
 
         if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
@@ -388,6 +430,25 @@ class Optimus_p:
                     to_name, to_submod, to_node = None, None, None
                     object_list = []
 
+            elif ir_analyze == IR_Anal.PARALLEL:
+                self.run_info.submod.to(self.run_info.device)
+                print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
+
+                self.run_info.output_node = self.ir.get_output_node()
+
+                for stage in reversed(range(1, self.tpl.get_num_stage())):
+                    self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
+                self.run_info.special_nodes = self.ir.special_nodes
+                self.run_info.metadata_range = self.ir.metadata_range
+                self.run_info.getitem_dic = self.run_info.getitem_dic
+
+                if self.clean_module_memory == True:
+                    print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
+                    self.ir.clean_module_memory()
+                    print(f" ### Rank:{rank}, clean_module_memory ...")
+                    print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
+                print(f"[rank:{rank}, local_rank:{local_rank}] PARALLEL MODE PROCESSING ...")
+
 
         elif ir_analyze == IR_Anal.SINGLE and rank != 0:
             object_list = [None, None, None]
@@ -397,10 +458,10 @@ class Optimus_p:
             self.run_info.submod = object_list[1]
             self.run_info.node = object_list[2]
 
-        self.run_info.submod.to(self.run_info.device)
-        print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
-
         if ir_analyze == IR_Anal.SINGLE:
+            self.run_info.submod.to(self.run_info.device)
+            print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
+
             if rank == 0:
                 #self.run_info.output_node = self.ir.get_output_node()
                 object_list2 = [self.ir.get_output_node()]
@@ -417,8 +478,21 @@ class Optimus_p:
                     dist.broadcast_object_list(object_list2, src=0, group=self.comm.ctrl_group[rank], device=self.run_info.device)
                     self.run_info.output_node = object_list2[0]
                     print(f"[Rank:{rank}, Stage:{self.tpl.stage}] <<<< Received output node[{self.run_info.output_node}] ...")
-        else:
-            self.run_info.output_node = self.ir.get_output_node()
+
+        if ir_analyze == IR_Anal.SINGLE:
+            if rank == 0:
+                self.ir.print_graph(rank)
+                self.run_info.print_getitem_dic()
+
+                for stage in reversed(range(1, self.tpl.get_num_stage())):
+                    self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
+
+                if self.clean_module_memory == True:
+                    print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
+                    self.ir.clean_module_memory()
+                    print(f" ### Rank:{rank}, clean_module_memory ...")
+                    print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
+                print(f"[rank:{rank}, local_rank:{local_rank}] SINGLE MODE PROCESSING ...")
 
         self.preserve_output = preserve_output
 
@@ -431,37 +505,43 @@ class Optimus_p:
         if dp_size > 1:
             self.prepare_dp_group()
 
-        if rank == 0:
-            self.ir.print_graph(rank)
-            self.run_info.print_getitem_dic()
+        #if rank == 0:
+        #    self.ir.print_graph(rank)
+        #    self.run_info.print_getitem_dic()
 
-        if rank == 0:
-            for stage in reversed(range(1, self.tpl.get_num_stage())):
-                self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
+        if ir_analyze == IR_Anal.SINGLE:
+            if rank == 0:
+                #for stage in reversed(range(1, self.tpl.get_num_stage())):
+                #    self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
 
-            special_nodes_obj = [self.ir.special_nodes, self.ir.metadata_range, self.run_info.getitem_dic, self.model_type]
-            dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
-            self.run_info.special_nodes = special_nodes_obj[0]
-            self.run_info.metadata_range = special_nodes_obj[1]
-            self.run_info.getitem_dic = special_nodes_obj[2]
-        else:
-            special_nodes_obj = [None, None, None, None]
-            dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
-            self.run_info.special_nodes = special_nodes_obj[0]
-            self.run_info.metadata_range = special_nodes_obj[1]
-            self.run_info.getitem_dic = special_nodes_obj[2]
-            self.model_type = special_nodes_obj[3]
+                special_nodes_obj = [self.ir.special_nodes, self.ir.metadata_range, self.run_info.getitem_dic, self.model_type]
+                print(f" ### Rank:{rank}, local_rank:{local_rank} - before broadcast_object_list.. ")
+                dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
+                print(f" ### Rank:{rank}, local_rank:{local_rank} - after broadcast_object_list.. ")
+                self.run_info.special_nodes = special_nodes_obj[0]
+                self.run_info.metadata_range = special_nodes_obj[1]
+                self.run_info.getitem_dic = special_nodes_obj[2]
+            else:
+                special_nodes_obj = [None, None, None, None]
+                print(f" ### Rank:{rank}, local_rank:{local_rank} - before broadcast_object_list.. ")
+                dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
+                print(f" ### Rank:{rank}, local_rank:{local_rank} - after broadcast_object_list.. ")
+                self.run_info.special_nodes = special_nodes_obj[0]
+                self.run_info.metadata_range = special_nodes_obj[1]
+                self.run_info.getitem_dic = special_nodes_obj[2]
+                self.model_type = special_nodes_obj[3]
 
-        print(f" *********** rank:{rank} ==> cross-referenced nodes *****************")
+
+        print(f" *********** rank:{rank} cross-referenced nodes *****************")
         print(f"   special_nodes: {self.run_info.special_nodes}")
         print(f" *************************************************************************")
 
-        if self.clean_module_memory == True:
-            if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.SINGLE and rank == 0):
-                print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
-                self.ir.clean_module_memory()
-                print(f" ### Rank:{rank}, clean_module_memory ...")
-                print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
+        #if self.clean_module_memory == True:
+        #    if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.SINGLE and rank == 0):
+        #        print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
+        #        self.ir.clean_module_memory()
+        #        print(f" ### Rank:{rank}, clean_module_memory ...")
+        #        print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
 
         self.optimizer = None  # TODO
         self.optimizer_offload = optimizer_offload
@@ -544,7 +624,8 @@ class Optimus_p:
             dp_group = list(range(start_rank, end_rank))
             if self.tpl.rank in dp_group:
                 ddp_group = dist.new_group(dp_group)
-                self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=False)
+                #self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=False)
+                self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=True)
                 print(f"Preparing DP group: {dp_group}")
             else:
                 dist.new_group(dp_group)

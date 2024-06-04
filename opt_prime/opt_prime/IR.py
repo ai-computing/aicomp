@@ -42,9 +42,9 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 logging.basicConfig(level=logging.ERROR)
 
 class IR_Anal(Enum):
-    SINGLE = 1
+    SINGLE = 1      # Experimental
     PARALLEL = 2
-    SEQUENTIAL = 3      # SEQUENTIAL: TODO
+    SEQUENTIAL = 3
 
 
 huggingface_model_class = [

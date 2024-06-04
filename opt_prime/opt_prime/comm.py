@@ -58,6 +58,7 @@ class Comm:
         self.master_addr = os.getenv("MASTER_ADDR")
         self.master_port = os.getenv("MASTER_PORT")
         self.local_rank = int(os.environ["LOCAL_RANK"])
+        self.local_world_size = int(os.environ["LOCAL_WORLD_SIZE"])
 
         if use_gpu == True:
             gpu_cnt = torch.cuda.device_count()
