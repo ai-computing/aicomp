@@ -28,9 +28,15 @@ logging.basicConfig(level=logging.ERROR)
 rank = int(os.environ['RANK'])
 local_rank = int(os.environ['LOCAL_RANK'])
 world_size = int(os.environ['WORLD_SIZE'])
+master_addr = os.getenv("MASTER_ADDR")
+master_port = os.getenv("MASTER_PORT")
+
 cache_dir="mycache_dir1"
 
-dist.init_process_group("nccl", rank=rank, world_size=world_size)
+init_method = "tcp://" + str(master_addr) + ":" + str(master_port)
+print(f"rank:{rank}, world_size:{world_size}, init_method:{init_method}")
+
+dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=init_method)
         
 
 #tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-j-6b")
