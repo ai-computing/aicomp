@@ -600,6 +600,9 @@ class ScheduleGPipe(Schedule):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
 
+        if self.optimus.force_free_mem == True:
+            self.cond_free_mem_()
+
         for i in range(self.optimus.mbsize):
             self.pre_fx_micro_forward_core(i)
             self.fx_micro_forward_core(i)
@@ -647,6 +650,9 @@ class Schedule1F1B(Schedule):
         for i in range(self.optimus.mbsize):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
+
+        if self.optimus.force_free_mem == True:
+            self.cond_free_mem_()
 
         for i in range(num_warmup_microbatches):
             self.pre_fx_micro_forward_core(i)
