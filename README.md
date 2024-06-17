@@ -13,7 +13,7 @@ In addition, we want to apply 3D to the model based on the compiler. In this reg
 
 ## Features
 
-An open-source AI training framework that provides automatic parallelization without model modifications (./opt_prime)
+An open-source AI training framework that provides automatic parallelization without model modifications ( [opt_prime](./opt_prime) )
 
 * Enabling general model application for parallelization by removing constraints on model representation (compatible with Hugging Face models and PyTorch nn.Module)
 * Automatic parallelization (model split) without user intervention
