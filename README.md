@@ -1,28 +1,26 @@
-## High-efficiency AI computing SW core technology project (AIcomp)
+# High-efficiency AI computing SW core technology project (AIcomp)
 
-This project is for the development of low-cost and high-efficiency AI computing platform technology to overcome the inefficiency of using excessive computing resources required for learning a large model and the dependency on a specific high-cost hypercluster when training a large learning model.
+This project is for the development of low-cost and high-efficiency AI computing platform technology to overcome the inefficiency of excessive computing resource usage required for training large models and the dependency on specific high-cost hyperclusters for training such models.
 
-For now, we present the result of developing PoC that applies out of order technology (https://dl.acm.org/doi/pdf/10.1145/3492321.3519563) to pipeline parallelization in torchgpipe_OOO_PP folder.
+We are developing a parallelization framework software called OptimusPrime, which now provides two-dimensional parallelization of pipeline parallel/data parallel and memory-efficient optimization features (./opt_prime).
+
+
+Additionally, we have developed multiple PoCs related to this: In the early stages of this project, we presented the results of developing training PoCs that integrated Out Of Order technology (https://dl.acm.org/doi/pdf/10.1145/3492321.3519563) on top of torchgpipe(./torchgpipe_OOO_PP). In the next stage, we developed multiple PoCs that extract IR from the model and perform distributed training by partitioning it across multiple GPUs (./compiler_fx).
+
 
 In addition, we want to apply 3D to the model based on the compiler. In this regard, related PoCs are being developed preemptively, and the ETRI framework SW will be developed in earnest in the second half of the year.
 
-As part of the related project, tunib, a joint research and development organization, is separately carrying out the OSLO project(https://github.com/EleutherAI/oslo).
 
-## Usage
+## Features
 
-This SW requires:
-1. torchgpipe_OOO_PP
-* Python3.7
-* Pytorch 1.12+ 
-* torchgpipe 0.0.7
+An open-source AI training framework that provides automatic parallelization without model modifications (./opt_prime)
 
-2. compiler_FX
-* Python 3.8
-* Pytorch 1.13.1+ (compiler_fx)
+* Enabling general model application for parallelization by removing constraints on model representation (compatible with Hugging Face models and PyTorch nn.Module)
+* Automatic parallelization (model split) without user intervention
+* Distributed parallel runtime supporting both Intra/Inter hosts concurrently (currently supports PP + DP)
+* An IR-based system aiming for flexible optimization at a global level
+* Memory optimization technology for CPU/GPU memory OOM avoidance
 
-## RUN
-
-python3 source.py
 
 ## License
 
