@@ -17,6 +17,8 @@ from transformers import GPTJForSequenceClassification
 from transformers import BartForCausalLM
 from transformers import MBartForCausalLM
 from transformers import GPT2Config
+from transformers import OPTConfig
+from transformers import OPTForCausalLM
 
 import transformers.utils.fx as hf_fx
 import inspect
@@ -57,6 +59,7 @@ huggingface_model_class = [
         GPTJForSequenceClassification, 
         BartForCausalLM,
         MBartForCausalLM, 
+        OPTForCausalLM,
         # TODO
         ]
 
