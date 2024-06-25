@@ -7,17 +7,14 @@ import math
 import torch
 import torch.nn as nn
 
+from transformers import GPT2Config
+from transformers import OPTConfig
 from transformers import GPT2LMHeadModel
 from transformers import GPTNeoForCausalLM
 from transformers import BertLMHeadModel
 from transformers import GPTJForCausalLM
-from transformers import GPT2ForSequenceClassification
-from transformers import GPTNeoForSequenceClassification
-from transformers import GPTJForSequenceClassification
 from transformers import BartForCausalLM
 from transformers import MBartForCausalLM
-from transformers import GPT2Config
-from transformers import OPTConfig
 from transformers import OPTForCausalLM
 
 import transformers.utils.fx as hf_fx
@@ -54,9 +51,6 @@ huggingface_model_class = [
         GPTNeoForCausalLM, 
         BertLMHeadModel, 
         GPTJForCausalLM, 
-        GPT2ForSequenceClassification, 
-        GPTNeoForSequenceClassification, 
-        GPTJForSequenceClassification, 
         BartForCausalLM,
         MBartForCausalLM, 
         OPTForCausalLM,

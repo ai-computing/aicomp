@@ -217,6 +217,8 @@ class Run_Info:
         self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
         self.metadata_range = []
 
+        self.state_dict_cpu = {}
+
 
     #def setup_special_nodes(self, ir):
     #    self.special_nodes = ir.special_nodes
@@ -300,7 +302,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, optimizer_offload=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, optimizer_offload=False, model_offload=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -316,6 +318,10 @@ class Optimus_p:
         rank = self.comm.rank
         world_size = self.comm.world_size
         local_rank = self.comm.local_rank
+
+        if optimizer_offload == True and model_offload == True:
+            print(f"Either optimizer_offload or model_offload must be True, but not both!")
+            sys.exit(1)
 
         if dp_size < 1 or world_size % dp_size != 0:
             print(f"Data Parallel Size(dp_size option) is not valid")
@@ -498,7 +504,8 @@ class Optimus_p:
 
         self.force_free_mem = force_free_mem
         self.free_threshold = 4294967296 # 4GB # For forcefully garbage collection/cache cleaning
-        self.free_threshold2 = 5368709120 # 5GB # For forcefully optimizer offloading
+        self.free_threshold2 = 5368709120 # 5GB # For optimizer offloading
+        self.free_threshold3 = 22548578304 # 21GB # For model offloading
 
         self.display_mem = display_mem
 
@@ -545,6 +552,7 @@ class Optimus_p:
 
         self.optimizer = None  # TODO
         self.optimizer_offload = optimizer_offload
+        self.model_offload = model_offload
 
 
     def prepare_labels(self, labels):
