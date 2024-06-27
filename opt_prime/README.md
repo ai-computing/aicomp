@@ -16,6 +16,7 @@ OptimusPrime supports the following major models from HuggingFace:
 * EleutherAI/gpt-neo-2.7B
 * EleutherAI/gpt-j-6B
 * bert-base-cased
+* facebook/opt-6.7b
 
 ## Features
 
