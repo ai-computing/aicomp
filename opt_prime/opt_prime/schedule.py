@@ -24,6 +24,8 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 #logging.basicConfig(level=logging.INFO)
 logging.basicConfig(level=logging.ERROR)
 
+# CMH: TODO: IMSI
+optimizer_offloaded = False
 model_offloaded = False
 
 class Schedule:
@@ -36,7 +38,10 @@ class Schedule:
             self.allocated_mem = torch.cuda.memory_allocated(self.optimus.tpl.local_rank) 
             self.cached_mem = torch.cuda.memory_reserved(self.optimus.tpl.local_rank) 
 
-        self.optimizer_offloaded = False
+        # CMH: TODO: IMSI
+        #self.optimizer_offloaded = False
+        global optimizer_offloaded
+
         global model_offloaded
 
 
@@ -111,7 +116,7 @@ class Schedule:
             return
 
         if self.optimus.optimizer == None:
-            print(f"optimus.optimizer not set when optimizer_offloaded == True")
+            print(f"optimus.optimizer not set when optimizer_offload == True")
             return
 
         state_dict = self.optimus.optimizer.state_dict()
@@ -127,7 +132,7 @@ class Schedule:
             return
 
         if self.optimus.optimizer == None:
-            print(f"optimus.optimizer not set when optimizer_offloaded == True")
+            print(f"optimus.optimizer not set when optimizer_offload == True")
             return
 
         state_dict = self.optimus.optimizer.state_dict()
@@ -160,6 +165,7 @@ class Schedule:
 
     def check_model_offload(self):
         global model_offloaded
+        global optimizer_offloaded # TODO: CMH: IMSI
 
         if self.optimus.model_offload == False:
             print(f"load_model() should be used when model_offload == True")
@@ -176,6 +182,13 @@ class Schedule:
                 model_offloaded = True
                 #if self.optimus.display_mem == True:
                 #    print(f" >>> >>> [rank:{self.optimus.tpl.rank}], offload model [remain:{remain_mem}]...")
+
+                # TODO: CMH: IMSI
+                if optimizer_offloaded == False:
+                    self.offload_optimizer()
+                    optimizer_offloaded = True
+                    if self.optimus.display_mem == True:
+                        print(f" >>> [rank:{self.optimus.tpl.rank}], offload optimizer ...")
 
 
     def run_loss(self, mb_idx):
@@ -604,10 +617,13 @@ class Schedule:
     def force_free_mem(self):
         gc.collect()
         torch.cuda.empty_cache()
+        #print(f"###[rank:{self.optimus.tpl.rank}], .. forcefully free memory")
 
             
 
     def cond_free_mem_(self):
+        global optimizer_offloaded # TODO: CMH: IMSI
+
         self.allocated_mem = torch.cuda.memory_allocated(self.optimus.tpl.local_rank) 
         self.cached_mem = torch.cuda.memory_reserved(self.optimus.tpl.local_rank)
         remain_mem = self.total_mem - self.cached_mem
@@ -619,12 +635,14 @@ class Schedule:
             torch.cuda.empty_cache()
 
         if remain_mem < self.optimus.free_threshold2:
-            if self.optimizer_offloaded == False:
+            #if self.optimizer_offloaded == False:
+            if optimizer_offloaded == False:
                 if self.optimus.optimizer_offload == True:
                     self.offload_optimizer()
                     if self.optimus.display_mem == True:
                         print(f" >>> [rank:{self.optimus.tpl.rank}], offload optimizer [remain:{remain_mem}]...")
-                    self.optimizer_offloaded = True
+                    #self.optimizer_offloaded = True
+                    optimizer_offloaded = True
 
 
 class ScheduleGPipe(Schedule):
@@ -637,6 +655,7 @@ class ScheduleGPipe(Schedule):
     def run(self, data, labels):
 
         global model_offloaded
+        global optimizer_offloaded # TODO: CMH: IMSI
 
         if self.optimus.tpl.is_first_stage():
             #self.get_input(data, labels)
@@ -650,6 +669,16 @@ class ScheduleGPipe(Schedule):
             self.cond_free_mem_()
             if self.optimus.model_offload == True and model_offloaded == True:
                 self.load_model()
+                #model_offloaded = False
+
+                # TODO: CMH: IMSI
+                #if optimizer_offloaded == True:
+                if optimizer_offloaded == True and model_offloaded == False:
+                    self.load_optimizer()
+                    optimizer_offloaded = False
+                    if self.optimus.display_mem == True:
+                        print(f" >>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
+
                 model_offloaded = False
 
         for i in range(self.optimus.mbsize):
@@ -668,15 +697,19 @@ class ScheduleGPipe(Schedule):
 
         if self.optimus.force_free_mem == True:
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
-            self.force_free_mem()
+            #self.force_free_mem() # TODO: CMH: IMSI2
             if self.optimus.model_offload == True:
                 self.check_model_offload()
-            if self.optimizer_offloaded == True:
+            self.force_free_mem() # TODO: CMH: IMSI2
+            #if self.optimizer_offloaded == True:
+            #if optimizer_offloaded == True:
+            if optimizer_offloaded == True and model_offloaded == False:
                 if self.optimus.optimizer_offload == True:
                     self.load_optimizer()
                     if self.optimus.display_mem == True:
                         print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
-                self.optimizer_offloaded = False
+                #self.optimizer_offloaded = False
+                optimizer_offloaded = False
 
 
 
@@ -690,6 +723,7 @@ class Schedule1F1B(Schedule):
     # run 1F1B schedule
     def run(self, data, labels):
         global model_offloaded
+        global optimizer_offloaded # TODO: CMH: IMSI
 
         #num_warmup_microbatches = self.optimus.tpl.world_size - self.optimus.tpl.stage - 1
         num_warmup_microbatches = self.optimus.tpl.get_last_stage() - self.optimus.tpl.stage
@@ -711,6 +745,16 @@ class Schedule1F1B(Schedule):
                 #print(f" >>>>>> [rank:{self.optimus.tpl.rank}], before calling load_model() ...") # TO DELETE
                 self.load_model()
                 #print(f" >>>>>> [rank:{self.optimus.tpl.rank}], after calling load_model() ...") # TO DELETE
+                #model_offloaded = False
+
+                # TODO: CMH: IMSI
+                #if optimizer_offloaded == True:
+                if optimizer_offloaded == True and model_offloaded == False:
+                    self.load_optimizer()
+                    optimizer_offloaded = False
+                    if self.optimus.display_mem == True:
+                        print(f" >>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
+
                 model_offloaded = False
 
         for i in range(num_warmup_microbatches):
@@ -768,16 +812,16 @@ class Schedule1F1B(Schedule):
 
         if self.optimus.force_free_mem == True:
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
-            self.force_free_mem()
+            #self.force_free_mem() # TODO: CMH: IMSI2
             if self.optimus.model_offload == True:
                 self.check_model_offload()
-            #if self.optimus.optimizer_offload == True and self.optimizer_offloaded == True:
-            #    self.load_optimizer()
-            #    self.optimizer_offloaded = False
-            if self.optimizer_offloaded == True:
+            self.force_free_mem() # TODO: CMH: IMSI2
+            #if optimizer_offloaded == True:
+            if optimizer_offloaded == True and model_offloaded == False:
                 if self.optimus.optimizer_offload == True:
                     self.load_optimizer()
                     if self.optimus.display_mem == True:
                         print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
-                self.optimizer_offloaded = False
+                #self.optimizer_offloaded = False
+                optimizer_offloaded = False
 

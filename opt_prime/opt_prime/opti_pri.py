@@ -319,9 +319,10 @@ class Optimus_p:
         world_size = self.comm.world_size
         local_rank = self.comm.local_rank
 
-        if optimizer_offload == True and model_offload == True:
-            print(f"Either optimizer_offload or model_offload must be True, but not both!")
-            sys.exit(1)
+        # TODO: CMH, IMSI
+        #if optimizer_offload == True and model_offload == True:
+        #    print(f"Either optimizer_offload or model_offload must be True, but not both!")
+        #    sys.exit(1)
 
         if dp_size < 1 or world_size % dp_size != 0:
             print(f"Data Parallel Size(dp_size option) is not valid")
@@ -506,6 +507,7 @@ class Optimus_p:
         self.free_threshold = 4294967296 # 4GB # For forcefully garbage collection/cache cleaning
         self.free_threshold2 = 5368709120 # 5GB # For optimizer offloading
         self.free_threshold3 = 22548578304 # 21GB # For model offloading
+        #self.free_threshold3 = 26843545600 # 25GB # For model offloading
 
         self.display_mem = display_mem
 
