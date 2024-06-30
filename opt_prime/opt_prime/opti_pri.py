@@ -319,10 +319,6 @@ class Optimus_p:
         world_size = self.comm.world_size
         local_rank = self.comm.local_rank
 
-        # TODO: CMH, IMSI
-        #if optimizer_offload == True and model_offload == True:
-        #    print(f"Either optimizer_offload or model_offload must be True, but not both!")
-        #    sys.exit(1)
 
         if dp_size < 1 or world_size % dp_size != 0:
             print(f"Data Parallel Size(dp_size option) is not valid")
