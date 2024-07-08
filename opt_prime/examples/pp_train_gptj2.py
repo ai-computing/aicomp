@@ -81,7 +81,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"micro batch size: {micro_batch_size}")
 
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, optimizer_offload=True, ir_analyze=IR_Anal.SEQUENTIAL)
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" local_rank={optimus_p.get_local_rank()} ...")
 
 optimus_p.train()
