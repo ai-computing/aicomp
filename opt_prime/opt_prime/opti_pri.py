@@ -302,7 +302,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, optimizer_offload=False, model_offload=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -439,6 +439,10 @@ class Optimus_p:
 
                 self.run_info.output_node = self.ir.get_output_node()
 
+                if rank == 0:
+                    self.ir.print_graph(rank)
+                    self.run_info.print_getitem_dic()
+
                 for stage in reversed(range(1, self.tpl.get_num_stage())):
                     self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
                 self.run_info.special_nodes = self.ir.special_nodes
@@ -549,8 +553,8 @@ class Optimus_p:
         #        print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
 
         self.optimizer = None  # TODO
-        self.optimizer_offload = optimizer_offload
-        self.model_offload = model_offload
+        self.swap_opt_in_fwdbwd = swap_opt_in_fwdbwd 
+        self.swap_model_in_optstep = swap_model_in_optstep 
 
 
     def prepare_labels(self, labels):

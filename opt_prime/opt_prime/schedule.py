@@ -108,12 +108,12 @@ class Schedule:
         return next_node_name
 
     def offload_optimizer(self):
-        if self.optimus.optimizer_offload == False:
-            print(f"offload_optimizer() should be used when optimizer_offload == True")
+        if self.optimus.swap_opt_in_fwdbwd == False:
+            print(f"offload_optimizer() should be used when swap_opt_in_fwdbwd == True")
             return
 
         if self.optimus.optimizer == None:
-            print(f"optimus.optimizer not set when optimizer_offload == True")
+            print(f"optimus.optimizer not set when swap_opt_in_fwdbwd == True")
             return
 
         state_dict = self.optimus.optimizer.state_dict()
@@ -124,12 +124,12 @@ class Schedule:
 
 
     def load_optimizer(self):
-        if self.optimus.optimizer_offload == False:
-            print(f"load_optimizer() should be used when optimizer_offload == True")
+        if self.optimus.swap_opt_in_fwdbwd == False:
+            print(f"load_optimizer() should be used when swap_opt_in_fwdbwd == True")
             return
 
         if self.optimus.optimizer == None:
-            print(f"optimus.optimizer not set when optimizer_offload == True")
+            print(f"optimus.optimizer not set when swap_opt_in_fwdbwd == True")
             return
 
         state_dict = self.optimus.optimizer.state_dict()
@@ -139,8 +139,8 @@ class Schedule:
                     state[k] = v.to(self.optimus.run_info.device)
 
     def offload_model(self):
-        if self.optimus.model_offload == False:
-            print(f"offload_model() should be used when model_offload == True")
+        if self.optimus.swap_model_in_optstep == False:
+            print(f"offload_model() should be used when swap_model_in_optstep == True")
             return
 
         self.optimus.run_info.submod.to('cpu')
@@ -151,8 +151,8 @@ class Schedule:
 
 
     def load_model(self):
-        if self.optimus.model_offload == False:
-            print(f"load_model() should be used when model_offload == True")
+        if self.optimus.swap_model_in_optstep == False:
+            print(f"load_model() should be used when swap_model_in_optstep == True")
             return
 
         self.optimus.run_info.submod.to(self.optimus.run_info.device)
@@ -160,19 +160,19 @@ class Schedule:
         if self.optimus.display_mem == True:
             print(f" >>> >>> [rank:{self.optimus.tpl.rank}], load model ...")
 
-    def check_model_offload(self):
+    def check_swap_model_in_optstep(self):
         global model_offloaded
         global optimizer_offloaded
 
-        if self.optimus.model_offload == False:
-            print(f"load_model() should be used when model_offload == True")
+        if self.optimus.swap_model_in_optstep == False:
+            print(f"load_model() should be used when swap_model_in_optstep == True")
             return
 
         self.allocated_mem = torch.cuda.memory_allocated(self.optimus.tpl.local_rank) 
         self.cached_mem = torch.cuda.memory_reserved(self.optimus.tpl.local_rank)
         remain_mem = self.total_mem - self.cached_mem
         #if self.optimus.display_mem == True:
-        #    print(f"###[rank:{self.optimus.tpl.rank}], remain[:{remain_mem}], total[:{self.total_mem}], cached[:{self.cached_mem}] ... in check_model_offload ...") # TO DELETE
+        #    print(f"###[rank:{self.optimus.tpl.rank}], remain[:{remain_mem}], total[:{self.total_mem}], cached[:{self.cached_mem}] ... in check_swap_model_in_optstep ...") # TO DELETE
         if remain_mem < self.optimus.free_threshold3:
             if model_offloaded == False:
                 self.offload_model()
@@ -633,7 +633,7 @@ class Schedule:
         if remain_mem < self.optimus.free_threshold2:
             #if self.optimizer_offloaded == False:
             if optimizer_offloaded == False:
-                if self.optimus.optimizer_offload == True:
+                if self.optimus.swap_opt_in_fwdbwd == True:
                     self.offload_optimizer()
                     if self.optimus.display_mem == True:
                         print(f" >>> [rank:{self.optimus.tpl.rank}], offload optimizer [remain:{remain_mem}]...")
@@ -663,7 +663,7 @@ class ScheduleGPipe(Schedule):
 
         if self.optimus.force_free_mem == True:
             self.cond_free_mem_()
-            if self.optimus.model_offload == True and model_offloaded == True:
+            if self.optimus.swap_model_in_optstep == True and model_offloaded == True:
                 self.load_model()
                 #model_offloaded = False
 
@@ -691,11 +691,11 @@ class ScheduleGPipe(Schedule):
 
         if self.optimus.force_free_mem == True:
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
-            if self.optimus.model_offload == True:
-                self.check_model_offload()
+            if self.optimus.swap_model_in_optstep == True:
+                self.check_swap_model_in_optstep()
             self.force_free_mem()
             if optimizer_offloaded == True and model_offloaded == False:
-                if self.optimus.optimizer_offload == True:
+                if self.optimus.swap_opt_in_fwdbwd == True:
                     self.load_optimizer()
                     if self.optimus.display_mem == True:
                         print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
@@ -731,7 +731,7 @@ class Schedule1F1B(Schedule):
         if self.optimus.force_free_mem == True:
             self.cond_free_mem_()
             #print(f" >>>>>> [rank:{self.optimus.tpl.rank}], after first cond_free_mem  ..., model_offloaded:{model_offloaded}")
-            if self.optimus.model_offload == True and model_offloaded == True:
+            if self.optimus.swap_model_in_optstep == True and model_offloaded == True:
                 #print(f" >>>>>> [rank:{self.optimus.tpl.rank}], before calling load_model() ...") # TO DELETE
                 self.load_model()
                 #print(f" >>>>>> [rank:{self.optimus.tpl.rank}], after calling load_model() ...") # TO DELETE
@@ -800,11 +800,11 @@ class Schedule1F1B(Schedule):
 
         if self.optimus.force_free_mem == True:
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
-            if self.optimus.model_offload == True:
-                self.check_model_offload()
+            if self.optimus.swap_model_in_optstep == True:
+                self.check_swap_model_in_optstep()
             self.force_free_mem()
             if optimizer_offloaded == True and model_offloaded == False:
-                if self.optimus.optimizer_offload == True:
+                if self.optimus.swap_opt_in_fwdbwd == True:
                     self.load_optimizer()
                     if self.optimus.display_mem == True:
                         print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
