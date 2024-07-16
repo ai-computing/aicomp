@@ -18,6 +18,7 @@ from transformers import BartForCausalLM
 from transformers import MBartForCausalLM
 from transformers import OPTForCausalLM
 from transformers import WhisperForCausalLM
+from transformers import GPT2ForSequenceClassification
 
 import transformers.utils.fx as hf_fx
 import inspect
@@ -57,6 +58,7 @@ huggingface_model_class = [
         MBartForCausalLM, 
         OPTForCausalLM,
         WhisperForCausalLM,
+        GPT2ForSequenceClassification,
         # TODO
         ]
 
@@ -105,12 +107,20 @@ class IR(object):
             print(f"Not supported split method!")
             sys.exit(1)
 
+        # TODO: TO DELETE
+        #if int(os.environ["RANK"]) == 0:
+        #    print(f">> ------------------ FX graph (pre) --------------------------------")
+        #    for n in self.gm.graph.nodes:
+        #        print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
+        #    print(f">> ------------------------------------------------------------")
+
         if method == "simple":
             submods = self.simple_split(model, num_stage)
 
         # TODO: add new split method
         #elif method == ...
         #
+
             
         self.check_last_submods(submods, num_stage)
 

@@ -43,6 +43,8 @@ class Schedule:
 
 
     def init_env_mark(self, mb_idx):
+        self.optimus.run_info.env_recv_mark[mb_idx]["input_ids"] = None # TODO: Seq Cls.
+        self.optimus.run_info.env_send_mark[mb_idx]["input_ids"] = None # TODO: Seq Cls.
         for i in range(len(self.optimus.run_info.metadata_range)):
             self.optimus.run_info.env_recv_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
             self.optimus.run_info.env_send_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
@@ -301,7 +303,9 @@ class Schedule:
                         if self.optimus.run_info.env_recv_mark[mb_idx][node_name] is None:
                             self.optimus.run_info.env[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
                             self.optimus.run_info.env_recv_mark[mb_idx][node_name] = 1
-                        if isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
+                        # TODO: Seq Cls.
+                        #if isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
+                        if node_name != "input_ids" and isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
                             if not self.optimus.run_info.env[mb_idx][node_name].requires_grad or self.optimus.run_info.env[mb_idx][node_name].grad_fn is None:
                                 self.optimus.run_info.env[mb_idx][node_name].requires_grad_(True)
                                 logging.info(f" ###### node name:{node_name} requires_grad(True) #####") 
