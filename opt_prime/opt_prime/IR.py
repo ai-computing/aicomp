@@ -9,6 +9,7 @@ import torch.nn as nn
 
 from transformers import GPT2Config
 from transformers import OPTConfig
+from transformers import WhisperConfig
 from transformers import GPT2LMHeadModel
 from transformers import GPTNeoForCausalLM
 from transformers import BertLMHeadModel
@@ -16,6 +17,7 @@ from transformers import GPTJForCausalLM
 from transformers import BartForCausalLM
 from transformers import MBartForCausalLM
 from transformers import OPTForCausalLM
+from transformers import WhisperForCausalLM
 
 import transformers.utils.fx as hf_fx
 import inspect
@@ -54,6 +56,7 @@ huggingface_model_class = [
         BartForCausalLM,
         MBartForCausalLM, 
         OPTForCausalLM,
+        WhisperForCausalLM,
         # TODO
         ]
 
