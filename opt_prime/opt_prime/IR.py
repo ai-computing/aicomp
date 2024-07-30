@@ -8,8 +8,10 @@ import torch
 import torch.nn as nn
 
 from transformers import GPT2Config
+from transformers import BertConfig
 from transformers import OPTConfig
 from transformers import WhisperConfig
+from transformers import LlamaConfig
 from transformers import GPT2LMHeadModel
 from transformers import GPTNeoForCausalLM
 from transformers import BertLMHeadModel
@@ -19,6 +21,7 @@ from transformers import MBartForCausalLM
 from transformers import OPTForCausalLM
 from transformers import WhisperForCausalLM
 from transformers import GPT2ForSequenceClassification
+from transformers import LlamaForCausalLM
 
 import transformers.utils.fx as hf_fx
 import inspect
@@ -59,6 +62,7 @@ huggingface_model_class = [
         OPTForCausalLM,
         WhisperForCausalLM,
         GPT2ForSequenceClassification,
+        LlamaForCausalLM,
         # TODO
         ]
 
