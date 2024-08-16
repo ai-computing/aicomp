@@ -506,8 +506,8 @@ class Optimus_p:
         self.force_free_mem = force_free_mem
         self.free_threshold = 4294967296 # 4GB # For forcefully garbage collection/cache cleaning
         self.free_threshold2 = 5368709120 # 5GB # For optimizer offloading
-        self.free_threshold3 = 22548578304 # 21GB # For model offloading
-        #self.free_threshold3 = 26843545600 # 25GB # For model offloading
+        #self.free_threshold3 = 22548578304 # 21GB # For model offloading
+        self.free_threshold3 = 26843545600 # 25GB # For model offloading
 
         self.display_mem = display_mem
 
@@ -563,6 +563,7 @@ class Optimus_p:
 
             target_node_name = "labels"
             mbatches = torch.chunk(labels, self.mbsize)
+            assert len(mbatches) == self.mbsize, f"len(mbatches):[{len(mbatches)}] is not equal to mbsize:[{self.mbsize}]"
             if self.mbsize == 1:
                 self.run_info.env[0][target_node_name] = labels
             else:
