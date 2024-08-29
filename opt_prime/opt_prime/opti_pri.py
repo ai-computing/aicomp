@@ -319,6 +319,10 @@ class Optimus_p:
         world_size = self.comm.world_size
         local_rank = self.comm.local_rank
 
+        if world_size == 1:
+            print(f"> WORLD SIZE is 1. mbsize reset to 1")
+            self.mbsize = mbsize = 1
+
 
         if dp_size < 1 or world_size % dp_size != 0:
             print(f"Data Parallel Size(dp_size option) is not valid")
@@ -570,17 +574,23 @@ class Optimus_p:
                 for j in range(self.mbsize):
                     self.run_info.env[j][target_node_name] = mbatches[j]
 
-            for j in range(self.mbsize):
-                obj = self.run_info.env[j][target_node_name]
-                self.comm.send_data(obj, self.tpl.get_last_rank(), self.device)
+            if self.comm.world_size > 1:
+                for j in range(self.mbsize):
+                    obj = self.run_info.env[j][target_node_name]
+                    self.comm.send_data(obj, self.tpl.get_last_rank(), self.device)
+            else:
+                self.run_info.env[0][target_node_name] = self.run_info.env[0][target_node_name].to(self.device)
 
 
     def ready_labels(self):
 
         if self.tpl.is_last_stage():
             target_node_name = "labels"
-            for j in range(self.mbsize):
-                self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
+
+            # CMH
+            if self.comm.world_size > 1:
+                for j in range(self.mbsize):
+                    self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
             if self.mbsize == 1:
                 labels = self.run_info.env[0][target_node_name]
             else:

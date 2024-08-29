@@ -82,7 +82,7 @@ if int(os.environ["RANK"]) == 0:
     print ('Total parameters in model: {:,}'.format(get_total_params(model)))
 
 
-micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 if int(os.environ["WORLD_SIZE"]) > 1 else 1 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
