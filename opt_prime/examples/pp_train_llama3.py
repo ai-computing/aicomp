@@ -32,6 +32,34 @@ from opt_prime.IR import IR_Anal
 
 logging.basicConfig(level=logging.ERROR)
 
+#
+rank = int(os.environ['RANK'])
+local_rank = int(os.environ['LOCAL_RANK'])
+world_size = int(os.environ['WORLD_SIZE'])
+local_world_size = int(os.environ['LOCAL_WORLD_SIZE'])
+master_addr = os.getenv("MASTER_ADDR")
+master_port = os.getenv("MASTER_PORT")
+
+cache_dir="mycache_dir2"
+
+init_method = "tcp://" + str(master_addr) + ":" + str(master_port)
+#print(f"rank:{rank}, world_size:{world_size}, init_method:{init_method}")
+print(f"rank:{rank}, world_size:{world_size}, init_method:{init_method}, local_world_size:{local_world_size}, local_rank:{local_rank}")
+
+dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=init_method)
+
+###
+group_gloo = dist.new_group(backend="gloo")
+
+batch_size = 32
+micro_batch_size = 8 # TODO
+
+if int(os.environ["RANK"]) == 0:
+    print(f"total process count: {os.environ['WORLD_SIZE']}")
+    print(f"batch size: {batch_size}")
+    print(f"micro batch size: {micro_batch_size}")
+
+
 
 #
 # This program needs 'access token' for Llama. First, obtain your access token for Llama !!!
@@ -56,13 +84,10 @@ if version.parse(current_version) >= version.parse(required_version):
 else:
     raise ValueError('This program needs torch version 2.3.1 or higher. But current torch version is {current_version}.')
 
-#tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf", token=access_token)
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token)
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-70B-Instruct", token=access_token, cache_dir=cache_dir)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-#model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", token=access_token, use_cache=False)
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token, use_cache=False)
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0
@@ -70,23 +95,19 @@ def get_total_params(module: torch.nn.Module):
         total_params += param.numel()
     return total_params
 
+for i in range(local_world_size):
+    if local_rank == i:
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-70B-Instruct", token=access_token, use_cache=False, cache_dir=cache_dir)
 
-if int(os.environ["RANK"]) == 0:
-    print ('Total parameters in model: {:,}'.format(get_total_params(model)))
+        if int(os.environ["RANK"]) == 0:
+            print('Total parameters in model: {:,}'.format(get_total_params(model)))
 
+        optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL 
+        print(f" rank={optimus_p.get_rank()} ...")
 
-batch_size = 32
-micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
-
-if int(os.environ["RANK"]) == 0:
-    print(f"total process count: {os.environ['WORLD_SIZE']}")
-    print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
-
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
-print(f" rank={optimus_p.get_rank()} ...")
+    print(f"..[local_rank:{local_rank}, i:{i}] Before barrier()...")
+    dist.barrier(group=group_gloo)
+    print(f"..[local_rank:{local_rank}, i:{i}] After barrier()...................................")
 
 optimus_p.train()
 
@@ -136,6 +157,8 @@ def train():
 
         torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
         optimus_p.optimizer.step()
+        #
+        print(f">> [Rank:{int(os.environ['RANK'])}] ({i}) After optimizer.step() ..") # TO DELETE
 
         if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.mbsize

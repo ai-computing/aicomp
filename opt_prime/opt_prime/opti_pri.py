@@ -587,7 +587,6 @@ class Optimus_p:
         if self.tpl.is_last_stage():
             target_node_name = "labels"
 
-            # CMH
             if self.comm.world_size > 1:
                 for j in range(self.mbsize):
                     self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
