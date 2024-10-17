@@ -56,8 +56,8 @@ optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
-optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
-#optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+#optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
+optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 
 datasets = load_dataset("squad").data["train"]["context"]
