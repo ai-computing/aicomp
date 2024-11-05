@@ -58,11 +58,13 @@ if version.parse(current_version) >= version.parse(required_version):
 else:
     raise ValueError('This program needs torch version 2.3.1 or higher. But current torch version is {current_version}.')
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-13b-chat-hf", token=access_token)
+#tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf", token=access_token)
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-13b-chat-hf", token=access_token, use_cache=False)
+#model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", token=access_token, use_cache=False)
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token, use_cache=False)
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0
@@ -75,7 +77,10 @@ if int(os.environ["RANK"]) == 0:
     print ('Total parameters in model: {:,}'.format(get_total_params(model)))
 
 
-batch_size = 64
+#batch_size = 32
+batch_size = 176
+#micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+#micro_batch_size = 24
 micro_batch_size = 16
 
 if int(os.environ["RANK"]) == 0:
@@ -84,8 +89,8 @@ if int(os.environ["RANK"]) == 0:
     print(f"micro batch size: {micro_batch_size}")
 
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
 optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
@@ -127,6 +132,7 @@ def train():
 
         #optimus_p.run(data, labels)
         #optimus_p.run(data, labels, mode="gpipe")
+
         with autocast(device_type='cuda', dtype=torch.bfloat16):    
             optimus_p.run(data, labels, mode="1f1b")
 
@@ -141,15 +147,16 @@ def train():
         if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.mbsize
             total_loss += loss
-            log_interval = 10
+            log_interval = 1
             if i % log_interval == 0 and i > 0:
                 cur_loss = total_loss / log_interval
                 elapsed = time.time() - start_time
                 print('| epoch {:3d} | {:5d}/{:5d} batches | '
-                    'lr {:02.2f} | ms/batch {:5.2f} | '
+                    'lr {:02.2f} | elapsed {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
                         epoch, i, nbatches, scheduler.get_lr()[0],
-                        elapsed * 1000 / log_interval,
+                        #elapsed * 1000 / log_interval,
+                        elapsed,
                         cur_loss, math.exp(cur_loss)))
 
                 total_loss = 0
