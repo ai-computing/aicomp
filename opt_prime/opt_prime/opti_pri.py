@@ -566,6 +566,14 @@ class Optimus_p:
         if self.tpl.is_first_stage():
 
             target_node_name = "labels"
+            mbatches = list(torch.chunk(labels, self.mbsize))
+
+            # data padding
+            if labels.size(0) % self.mbsize != 0:
+                padding_size = self.mbsize - (labels.size(0) % self.mbsize)
+                padding = torch.zeros(padding_size, *labels.size()[1:], device=labels.device, dtype=labels.dtype)
+                labels = torch.cat([labels, padding], dim=0)
+
             mbatches = torch.chunk(labels, self.mbsize)
             assert len(mbatches) == self.mbsize, f"len(mbatches):[{len(mbatches)}] is not equal to mbsize:[{self.mbsize}]"
             if self.mbsize == 1:

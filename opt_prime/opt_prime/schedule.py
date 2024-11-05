@@ -85,6 +85,21 @@ class Schedule:
             input = next(self.args_iter)
             if isinstance(input, torch.Tensor):
                 mbatches = torch.chunk(input, self.optimus.mbsize)
+                mbsize2 = len(mbatches)
+
+                # Check if padding is necessary
+                if mbsize2 < self.optimus.mbsize:
+                    # Create padding batch (zeros) matching the input tensor's dimensions
+                    mbatches = list(mbatches)
+                    padding_batch = torch.zeros_like(mbatches[0])
+
+                    # Pad mbatches with the necessary number of padding batches
+                    mbatches.extend([padding_batch] * (self.optimus.mbsize - mbsize2))
+
+                    # Convert back to tuple to maintain the original data type
+                    mbatches = tuple(mbatches)
+                                
+                # Now proceed as usual
                 if self.optimus.mbsize == 1:
                     input = input.to(self.optimus.run_info.device)
                     self.optimus.run_info.env[0]["placeholder"] = input
@@ -248,6 +263,11 @@ class Schedule:
             criterion = nn.MSELoss()
 
         criterion = criterion.to(self.optimus.run_info.device)
+
+        if output1.size(0) != target1.size(0):
+            min_size = min(output1.size(0), target1.size(0))
+            output1 = output1[:min_size]
+            target1 = target1[:min_size]
 
         result = criterion(output1, target1)
 
