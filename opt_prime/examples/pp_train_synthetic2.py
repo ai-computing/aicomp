@@ -120,11 +120,11 @@ for i in range(100):
 
     # prepare input and label
     if optimus_p.is_first_stage():
-        data = torch.rand(batch_size, out_features)
+        data = torch.rand(batch_size, in_features)
         labels = torch.rand(batch_size, out_features)
 
         if optimus_p.get_rank() == 1:
-            data = torch.rand(batch_size, out_features)
+            data = torch.rand(batch_size, in_features)
 
     labels = optimus_p.move_labels2last_stage(labels)
 
