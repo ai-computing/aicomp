@@ -193,7 +193,7 @@ class Topology:
 class Run_Info:
 
     #def __init__(self, ir, device, mbsize):
-    def __init__(self, device, mbsize):
+    def __init__(self, device, mbsize, num_classes):
         #self.mod = ir.model_ir[0] # TODO
         #self.graph = self.mod.graph
         self.name = None
@@ -218,6 +218,8 @@ class Run_Info:
         self.metadata_range = []
 
         self.state_dict_cpu = {}
+
+        self.num_classes = num_classes
 
 
     #def setup_special_nodes(self, ir):
@@ -302,7 +304,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -348,7 +350,10 @@ class Optimus_p:
             print(f">>> Using CPU ...")
 
 
-        self.run_info = Run_Info(self.device, mbsize) 
+        # num_classes auto config
+        self.num_classes = self._infer_num_classes(module)
+
+        self.run_info = Run_Info(device=self.device, mbsize=mbsize, num_classes=self.num_classes)
         self.model2type = { "hf" : 50, "sy" : 51,}
         self.model_type = None
 
@@ -559,19 +564,18 @@ class Optimus_p:
         self.optimizer = None  # TODO
         self.swap_opt_in_fwdbwd = swap_opt_in_fwdbwd 
         self.swap_model_in_optstep = swap_model_in_optstep 
-
+        self.use_padding = use_padding  # padding option
 
     def prepare_labels(self, labels):
-
         if self.tpl.is_first_stage():
-
             target_node_name = "labels"
-            mbatches = list(torch.chunk(labels, self.mbsize))
 
             # data padding
-            if labels.size(0) % self.mbsize != 0:
+            if self.use_padding and labels.size(0) % self.mbsize != 0:
                 padding_size = self.mbsize - (labels.size(0) % self.mbsize)
-                padding = torch.zeros(padding_size, *labels.size()[1:], device=labels.device, dtype=labels.dtype)
+                # Use class value as padding
+                padding_value = self.num_classes  # num_classes를 패딩 값으로 사용
+                padding = torch.full((padding_size, *labels.size()[1:]), padding_value, device=labels.device, dtype=labels.dtype)
                 labels = torch.cat([labels, padding], dim=0)
 
             mbatches = torch.chunk(labels, self.mbsize)
@@ -673,3 +677,11 @@ class Optimus_p:
 
     def get_world_size(self):
         return self.tpl.world_size
+
+    def _infer_num_classes(self, module: nn.Module) -> int:
+        # infer num_classes from the model's output layer
+        last_layer = list(module.children())[-1]
+        if isinstance(last_layer, nn.Linear):
+            return last_layer.out_features
+        else:
+            raise ValueError("Cannot infer num_classes from the model structure.")

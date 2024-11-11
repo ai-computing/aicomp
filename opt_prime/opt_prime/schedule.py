@@ -62,36 +62,17 @@ class Schedule:
         self.args_iter = iter(args)
 
         if self.optimus.tpl.is_first_stage():
-            #for n in self.optimus.run_info.mod.graph.nodes:
-                #if (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'x') or \
-                #        (n.op == 'placeholder' and self.optimus.tpl.is_first_stage() and n.name == 'input_ids'):
-                #    input = next(self.args_iter)
-                #
-                #    if isinstance(input, torch.Tensor):
-                #        mbatches = torch.chunk(input, self.optimus.mbsize)
-                #        if self.optimus.mbsize == 1:
-                #            input = input.to(self.optimus.run_info.device)
-                #            self.optimus.run_info.env[0]["placeholder"] = input
-                #        else:
-                #            for j in range(self.optimus.mbsize):
-                #                mbatch = mbatches[j].to(self.optimus.run_info.device)
-                #                self.optimus.run_info.env[j]["placeholder"] = mbatch
-                #    else:
-                #        logging.critical(f"### input:{input} not Tensor --> currently not supported!!")
-                #        sys.exit(1)
-                #    break
-
-
             input = next(self.args_iter)
             if isinstance(input, torch.Tensor):
                 mbatches = torch.chunk(input, self.optimus.mbsize)
                 mbsize2 = len(mbatches)
 
                 # Check if padding is necessary
-                if mbsize2 < self.optimus.mbsize:
-                    # Create padding batch (zeros) matching the input tensor's dimensions
+                if self.optimus.use_padding and mbsize2 < self.optimus.mbsize:
+                    # Create padding batch with class value as padding
                     mbatches = list(mbatches)
-                    padding_batch = torch.zeros_like(mbatches[0])
+                    padding_value = self.optimus.run_info.num_classes  # Assuming this is the padding class value
+                    padding_batch = torch.full_like(mbatches[0], padding_value)
 
                     # Pad mbatches with the necessary number of padding batches
                     mbatches.extend([padding_batch] * (self.optimus.mbsize - mbsize2))
