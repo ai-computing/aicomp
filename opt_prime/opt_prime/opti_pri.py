@@ -684,4 +684,5 @@ class Optimus_p:
         if isinstance(last_layer, nn.Linear):
             return last_layer.out_features
         else:
-            raise ValueError("Cannot infer num_classes from the model structure.")
+            print(f"Cannot infer num_classes from the model structure: {type(last_layer)}")
+            return -1
