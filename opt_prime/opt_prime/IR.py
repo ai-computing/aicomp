@@ -7,21 +7,21 @@ import math
 import torch
 import torch.nn as nn
 
-from transformers import GPT2Config
-from transformers import BertConfig
-from transformers import OPTConfig
-from transformers import WhisperConfig
-from transformers import LlamaConfig
-from transformers import GPT2LMHeadModel
-from transformers import GPTNeoForCausalLM
-from transformers import BertLMHeadModel
-from transformers import GPTJForCausalLM
-from transformers import BartForCausalLM
-from transformers import MBartForCausalLM
-from transformers import OPTForCausalLM
-from transformers import WhisperForCausalLM
-from transformers import GPT2ForSequenceClassification
-from transformers import LlamaForCausalLM
+#from transformers import GPT2Config
+#from transformers import BertConfig
+#from transformers import OPTConfig
+#from transformers import WhisperConfig
+#from transformers import LlamaConfig
+#from transformers import GPT2LMHeadModel
+#from transformers import GPTNeoForCausalLM
+#from transformers import BertLMHeadModel
+#from transformers import GPTJForCausalLM
+#from transformers import BartForCausalLM
+#from transformers import MBartForCausalLM
+#from transformers import OPTForCausalLM
+#from transformers import WhisperForCausalLM
+#from transformers import GPT2ForSequenceClassification
+#from transformers import LlamaForCausalLM
 
 import transformers.utils.fx as hf_fx
 import inspect
@@ -41,6 +41,8 @@ import os
 import gc
 from enum import Enum
 
+from transformers.utils.fx import _SUPPORTED_MODELS
+
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -52,19 +54,19 @@ class IR_Anal(Enum):
     SEQUENTIAL = 3
 
 
-huggingface_model_class = [
-        GPT2LMHeadModel, 
-        GPTNeoForCausalLM, 
-        BertLMHeadModel, 
-        GPTJForCausalLM, 
-        BartForCausalLM,
-        MBartForCausalLM, 
-        OPTForCausalLM,
-        WhisperForCausalLM,
-        GPT2ForSequenceClassification,
-        LlamaForCausalLM,
-        # TODO
-        ]
+#huggingface_model_class = [
+#        GPT2LMHeadModel, 
+#        GPTNeoForCausalLM, 
+#        BertLMHeadModel, 
+#        GPTJForCausalLM, 
+#        BartForCausalLM,
+#        MBartForCausalLM, 
+#        OPTForCausalLM,
+#        WhisperForCausalLM,
+#        GPT2ForSequenceClassification,
+#        LlamaForCausalLM,
+#        # TODO
+#        ]
 
 
 class IR(object):
@@ -81,7 +83,8 @@ class IR(object):
 
     def retrieve_IR(self, model: nn.Module):
 
-        if model.__class__ in huggingface_model_class:
+        #if model.__class__ in huggingface_model_class:
+        if model.__class__.__name__ in _SUPPORTED_MODELS:
             input_names = model.dummy_inputs.keys()
             sig = inspect.signature(model.forward)
             concrete_args = {
