@@ -351,9 +351,9 @@ class Optimus_p:
 
 
         # num_classes auto config
-        self.num_classes = self._infer_num_classes(module)
+        self.ignore_index = -100
 
-        self.run_info = Run_Info(device=self.device, mbsize=mbsize, num_classes=self.num_classes)
+        self.run_info = Run_Info(device=self.device, mbsize=mbsize, num_classes=self.ignore_index)
         self.model2type = { "hf" : 50, "sy" : 51,}
         self.model_type = None
 
@@ -570,11 +570,11 @@ class Optimus_p:
         if self.tpl.is_first_stage():
             target_node_name = "labels"
 
-            # data padding
+            # labels padding
             if self.use_padding and labels.size(0) % self.mbsize != 0:
                 padding_size = self.mbsize - (labels.size(0) % self.mbsize)
                 # Use class value as padding
-                padding_value = self.num_classes  # num_classes를 패딩 값으로 사용
+                padding_value = self.ignore_index  
                 padding = torch.full((padding_size, *labels.size()[1:]), padding_value, device=labels.device, dtype=labels.dtype)
                 labels = torch.cat([labels, padding], dim=0)
 
@@ -677,12 +677,3 @@ class Optimus_p:
 
     def get_world_size(self):
         return self.tpl.world_size
-
-    def _infer_num_classes(self, module: nn.Module) -> int:
-        # infer num_classes from the model's output layer
-        last_layer = list(module.children())[-1]
-        if isinstance(last_layer, nn.Linear):
-            return last_layer.out_features
-        else:
-            print(f"Cannot infer num_classes from the model structure: {type(last_layer)}")
-            return -1

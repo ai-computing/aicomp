@@ -64,22 +64,18 @@ class Schedule:
         if self.optimus.tpl.is_first_stage():
             input = next(self.args_iter)
             if isinstance(input, torch.Tensor):
-                mbatches = torch.chunk(input, self.optimus.mbsize)
-                mbsize2 = len(mbatches)
+                # Check if input size is smaller than mbsize before chunking
+                mbsize2 = input.size(0)
 
-                # Check if padding is necessary
                 if self.optimus.use_padding and mbsize2 < self.optimus.mbsize:
-                    # Create padding batch with class value as padding
-                    mbatches = list(mbatches)
-                    padding_value = self.optimus.run_info.num_classes  # Assuming this is the padding class value
-                    padding_batch = torch.full_like(mbatches[0], padding_value)
+                    # Create padding batch with zeros
+                    padding_size = self.optimus.mbsize - mbsize2
+                    padding_batch = torch.zeros_like(input[0:1])
+                    padding = torch.cat([padding_batch] * padding_size)
+                    input = torch.cat([input, padding])
 
-                    # Pad mbatches with the necessary number of padding batches
-                    mbatches.extend([padding_batch] * (self.optimus.mbsize - mbsize2))
-
-                    # Convert back to tuple to maintain the original data type
-                    mbatches = tuple(mbatches)
-                                
+                # Now chunk the padded input
+                mbatches = torch.chunk(input, self.optimus.mbsize)
                 # Now proceed as usual
                 if self.optimus.mbsize == 1:
                     input = input.to(self.optimus.run_info.device)
@@ -235,10 +231,9 @@ class Schedule:
             #flat_args.append(target1)
 
         self.optimus.run_info.env[mb_idx]["labels"] = None 
-
         #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
         if self.optimus.model_type == self.optimus.model2type["hf"]:
-            criterion = nn.CrossEntropyLoss()
+            criterion = nn.CrossEntropyLoss(ignore_index=self.optimus.ignore_index)
         #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
         elif self.optimus.model_type == self.optimus.model2type["sy"]:
             criterion = nn.MSELoss()
@@ -246,10 +241,17 @@ class Schedule:
         criterion = criterion.to(self.optimus.run_info.device)
 
         if output1.size(0) != target1.size(0):
-            min_size = min(output1.size(0), target1.size(0))
-            output1 = output1[:min_size]
-            target1 = target1[:min_size]
-
+            # Check for padding in target1 by looking for ignore_index
+            if self.optimus.ignore_index in target1:
+                # Find first padding index
+                pad_start = (target1 == self.optimus.ignore_index).nonzero()[0].item()
+                output1 = output1[:pad_start]
+                target1 = target1[:pad_start]
+            else:
+                # If no padding found, take minimum size as fallback
+                min_size = min(output1.size(0), target1.size(0))
+                output1 = output1[:min_size]
+                target1 = target1[:min_size]
         result = criterion(output1, target1)
 
         #print(f" >>>> loss: {result}, result.shape:{result.shape}")
