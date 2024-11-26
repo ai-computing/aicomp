@@ -8,6 +8,10 @@
 
     python3 llama3_inference_basic.py
 
+### Required python packages
+
+    pip3 install torch, huggingface_hub, transformers, datasets, bitsandbytes, gradio, pypdf
+
 A Gradio-based web UI is provided, and the default configuration allows access at 127.0.0.1:7860.
 
 We recommend using a GPU with more than 8GB of memory.
