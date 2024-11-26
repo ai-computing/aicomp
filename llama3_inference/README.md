@@ -1,12 +1,14 @@
 # Llama3 8B inference examples
 
-### basic version
+### Basic version
 
     python3 llama3_inference_basic.py
 
-### memory offload version (to free up GPU memory space, some layers are swapped with host memory)
+### Memory offload version (to free up GPU memory space, some layers are swapped with host memory)
 
     python3 llama3_inference_basic.py
+
+# We recommend using a GPU with more than 8GB of memory.
 
 ## License
 
