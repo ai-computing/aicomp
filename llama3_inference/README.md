@@ -8,7 +8,7 @@
 
     python3 llama3_inference_basic.py
 
-# We recommend using a GPU with more than 8GB of memory.
+We recommend using a GPU with more than 8GB of memory.
 
 ## License
 
