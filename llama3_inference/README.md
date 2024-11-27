@@ -6,7 +6,7 @@
 
 ### Memory offload version (to free up GPU memory space, some layers are swapped with host memory)
 
-    python3 llama3_inference_basic.py
+    python3 llama3_inference_memory_offload.py
 
 ### Required python packages
 
