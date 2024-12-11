@@ -65,12 +65,9 @@ class Schedule:
             input = next(self.args_iter)
             if isinstance(input, torch.Tensor):
                 # Check if input size is smaller than mbsize before chunking
-                mbsize2 = input.size(0)
-
-                if self.optimus.use_padding and mbsize2 < self.optimus.mbsize:
-                    # Create padding batch with zeros
-                    padding_size = self.optimus.mbsize - mbsize2
-                    padding_batch = torch.zeros_like(input[0:1])
+                if self.optimus.use_padding and input.size(0) % self.optimus.mbsize != 0:
+                    padding_size = self.optimus.mbsize - (input.size(0) % self.optimus.mbsize)
+                    padding_batch = torch.zeros_like(input[0:1]) 
                     padding = torch.cat([padding_batch] * padding_size)
                     input = torch.cat([input, padding])
 
