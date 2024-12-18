@@ -10,7 +10,7 @@
 
 ### Required python packages
 
-    pip3 install torch, huggingface_hub, transformers, datasets, bitsandbytes, gradio, pypdf
+    pip3 install torch huggingface_hub transformers datasets bitsandbytes gradio pypdf accelerate
 
 A Gradio-based web UI is provided, and the default configuration allows access at 127.0.0.1:7860.
 
