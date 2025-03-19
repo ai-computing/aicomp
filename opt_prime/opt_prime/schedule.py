@@ -41,10 +41,24 @@ class Schedule:
 
         global model_offloaded
 
+        ##
+        self.placeholder_name = self.get_placeholder_name()
+
+    ##
+    def get_placeholder_name(self):
+        if self.optimus.model_type == self.optimus.model2type["hf"]:
+            return "input_ids"
+        elif self.optimus.model_type == self.optimus.model2type["vt"]:
+            return "pixel_values"
+        elif self.optimus.model_type == self.optimus.model2type["sy"]:
+            return "x"
+
 
     def init_env_mark(self, mb_idx):
-        self.optimus.run_info.env_recv_mark[mb_idx]["input_ids"] = None # TODO: Seq Cls.
-        self.optimus.run_info.env_send_mark[mb_idx]["input_ids"] = None # TODO: Seq Cls.
+        #self.optimus.run_info.env_recv_mark[mb_idx]["input_ids"] = None # TODO: Seq Cls.
+        #self.optimus.run_info.env_send_mark[mb_idx]["input_ids"] = None # TODO: Seq Cls.
+        self.optimus.run_info.env_recv_mark[mb_idx][self.placeholder_name] = None # TODO: Seq Cls.
+        self.optimus.run_info.env_send_mark[mb_idx][self.placeholder_name] = None # TODO: Seq Cls.
         for i in range(len(self.optimus.run_info.metadata_range)):
             self.optimus.run_info.env_recv_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
             self.optimus.run_info.env_send_mark[mb_idx][self.optimus.run_info.metadata_range[i][1]] = None
@@ -185,10 +199,9 @@ class Schedule:
 
         #node = self.get_output_node()
         node = self.optimus.run_info.output_node
-        #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
-        if self.optimus.model_type == self.optimus.model2type["hf"]:
+        #if self.optimus.model_type == self.optimus.model2type["hf"]:
+        if self.optimus.model_type == self.optimus.model2type["hf"] or self.optimus.model_type == self.optimus.model2type["vt"]:
             key_ = node.args[0]['logits']
-        #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
         elif self.optimus.model_type == self.optimus.model2type["sy"]:
             key_ = node.args[0]
 
@@ -202,8 +215,8 @@ class Schedule:
 
         target1_ = self.optimus.run_info.env[mb_idx]["labels"]
 
-        #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
-        if self.optimus.model_type == self.optimus.model2type["hf"]:
+        #if self.optimus.model_type == self.optimus.model2type["hf"]:
+        if self.optimus.model_type == self.optimus.model2type["hf"] or self.optimus.model_type == self.optimus.model2type["vt"]:
             output1_ = output1_.view(-1, output1_.size(-1))
             target1_ = target1_.view(-1)
 
@@ -228,10 +241,9 @@ class Schedule:
             #flat_args.append(target1)
 
         self.optimus.run_info.env[mb_idx]["labels"] = None 
-        #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
-        if self.optimus.model_type == self.optimus.model2type["hf"]:
+        #if self.optimus.model_type == self.optimus.model2type["hf"]:
+        if self.optimus.model_type == self.optimus.model2type["hf"] or self.optimus.model_type == self.optimus.model2type["vt"]:
             criterion = nn.CrossEntropyLoss(ignore_index=self.optimus.ignore_index)
-        #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
         elif self.optimus.model_type == self.optimus.model2type["sy"]:
             criterion = nn.MSELoss()
 
@@ -273,15 +285,14 @@ class Schedule:
 
         if self.optimus.tpl.is_first_stage():
             target_node_name = "placeholder"
-            #if self.optimus.ir.model_type == self.optimus.ir.model2type["hf"]:
-            if self.optimus.model_type == self.optimus.model2type["hf"]:
-                self.optimus.run_info.env[mb_idx]["input_ids"] = self.optimus.run_info.env[mb_idx][target_node_name]
-            #elif self.optimus.ir.model_type == self.optimus.ir.model2type["sy"]:
-            elif self.optimus.model_type == self.optimus.model2type["sy"]:
-                self.optimus.run_info.env[mb_idx]["x"] = self.optimus.run_info.env[mb_idx][target_node_name]
-            else:
-                print(f"Not supported model type!")
-                sys.exit(1)
+            #if self.optimus.model_type == self.optimus.model2type["hf"]:
+            #    self.optimus.run_info.env[mb_idx]["input_ids"] = self.optimus.run_info.env[mb_idx][target_node_name]
+            #elif self.optimus.model_type == self.optimus.model2type["sy"]:
+            #    self.optimus.run_info.env[mb_idx]["x"] = self.optimus.run_info.env[mb_idx][target_node_name]
+            #else:
+            #    print(f"Not supported model type!")
+            #    sys.exit(1)
+            self.optimus.run_info.env[mb_idx][self.placeholder_name] = self.optimus.run_info.env[mb_idx][target_node_name]
 
         if self.optimus.tpl.get_stage() > self.optimus.tpl.get_first_stage():
             pre_split_rank = self.optimus.tpl.get_prev_rank()
@@ -305,7 +316,8 @@ class Schedule:
                             self.optimus.run_info.env_recv_mark[mb_idx][node_name] = 1
                         # TODO: Seq Cls.
                         #if isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
-                        if node_name != "input_ids" and isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
+                        #if node_name != "input_ids" and isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
+                        if node_name != self.placeholder_name and isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
                             if not self.optimus.run_info.env[mb_idx][node_name].requires_grad or self.optimus.run_info.env[mb_idx][node_name].grad_fn is None:
                                 self.optimus.run_info.env[mb_idx][node_name].requires_grad_(True)
                                 logging.info(f" ###### node name:{node_name} requires_grad(True) #####") 

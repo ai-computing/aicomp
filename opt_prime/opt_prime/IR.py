@@ -83,9 +83,30 @@ class IR(object):
 
     def retrieve_IR(self, model: nn.Module):
 
-        #if model.__class__ in huggingface_model_class:
-        if model.__class__.__name__ in _SUPPORTED_MODELS:
+        ##
+        if model.__class__.__name__ in [ "ViTForImageClassification" ]:
+            #input_names = model.dummy_inputs.keys()
+            #input_names = list(model.dummy_inputs.keys())
+            #input_names = input_names + ['pixel_values']
+            input_names = ['pixel_values']
+            print(f" vit >> input_names: {input_names}")
+
+            sig = inspect.signature(model.forward)
+            concrete_args = {
+                p.name: p.default
+                for p in sig.parameters.values()
+                if p.name not in input_names
+            }
+
+            tracer = hf_fx.HFTracer()
+
+            traced_graph = tracer.trace(model, concrete_args=concrete_args)
+            self.gm = torch.fx.GraphModule(model, traced_graph)
+            return self.optimus.model2type["vt"]
+
+        elif model.__class__.__name__ in _SUPPORTED_MODELS:
             input_names = model.dummy_inputs.keys()
+
             sig = inspect.signature(model.forward)
             concrete_args = {
                 p.name: p.default

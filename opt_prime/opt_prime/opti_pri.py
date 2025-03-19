@@ -354,7 +354,8 @@ class Optimus_p:
         self.ignore_index = -100
 
         self.run_info = Run_Info(device=self.device, mbsize=mbsize, num_classes=self.ignore_index)
-        self.model2type = { "hf" : 50, "sy" : 51,}
+        #self.model2type = { "hf" : 50, "sy" : 51,}
+        self.model2type = { "hf" : 50, "sy" : 51, "vt" : 52,}
         self.model_type = None
 
         self.clean_module_memory = True
