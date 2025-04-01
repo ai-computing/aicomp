@@ -73,58 +73,15 @@ else:
     raise ValueError('This program needs transformers version 4.46.2 or higher.')
 
 
-## just for testing purposes
-#def split_modules(model):
-#    transformer_blocks = model.model.layers
-#    num_blocks = len(transformer_blocks) + 2
-#
-#    layers_per_process = [
-#        (i * num_blocks) // world_size for i in range(world_size + 1)
-#    ]
-#
-#    if rank == 0:
-#        print(f" num_blocks = {num_blocks}")
-#        print(f" layers_per_process = {layers_per_process}")
-#
-#    process_layers = [
-#        list(range(layers_per_process[i], layers_per_process[i + 1]))
-#        for i in range(world_size)
-#    ]
-#
-#    if world_size > 2:
-#        if len(process_layers[-1]) > len(process_layers[-2]):
-#            process_layers[-2] = process_layers[-2] + [process_layers[-1][0]]
-#            process_layers[-1] = process_layers[-1][1:]
-#
-#    return process_layers
-#
-#
-#def list_modules(model):
-#    print(f" --------------------------------------------------")
-#    for name, module in model.named_modules():
-#        print(f"[rank:{rank}] name: {name}")
-#    print(f" --------------------------------------------------")
-#    print(f" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-#
-#    process_layers = split_modules(model)
-#    if rank == 0:
-#        print(f" process_layers = {process_layers}")
-#        print(f" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
-
-
-#tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token)
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token)
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token)
+#tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
 
-#model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token, use_cache=False)
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token, use_cache=False)
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token, use_cache=False)
+#model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token, use_cache=False)
 
-
-## TEST
-#list_modules(model)
 
 
 class Optimus_t:
