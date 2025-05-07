@@ -6,6 +6,8 @@ from torch import Tensor, Size
 
 from opt_prime.IR import IR_Anal
 
+from torch.distributed._functional_collectives import AsyncCollectiveTensor
+
 
 
 logging.basicConfig(level=logging.ERROR)
@@ -24,7 +26,8 @@ class Comm:
             Size: 103, 
             int: 104, 
             NoneType: 105,
-            type: 106, }
+            type: 106,
+            AsyncCollectiveTensor: 107, }
 
         self.ds_id2type = {v:k for k, v in self.ds_type2id.items()}
         
@@ -110,6 +113,8 @@ class Comm:
             return self.receive_none(from_rank)
         elif ds_type is type:
             return self.receive_type(from_rank, device)
+        elif ds_type is AsyncCollectiveTensor:
+            return self.receive_tensor(from_rank, device)
         else:
             logging.critical(f"#### receive_data: not supported type!")
         # TODO
@@ -136,6 +141,9 @@ class Comm:
             self.send_none(obj, to_rank)
         elif isinstance(obj, type):
             self.send_type(obj, to_rank, device)
+        elif isinstance(obj, AsyncCollectiveTensor):
+            obj = obj.wait()
+            self.send_tensor(obj, to_rank, device)
         else:
             logging.critical(f"#### send_data: not supported type!")
 

@@ -7,6 +7,8 @@ import sys
 import torch.nn as nn
 
 from torch.nn.parallel import DistributedDataParallel
+from torch.distributed.device_mesh import init_device_mesh
+from torch.distributed.tensor.parallel import parallelize_module, ColwiseParallel, RowwiseParallel
 
 from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
@@ -34,12 +36,26 @@ SCHEDULE = {
 
 class Topology:
 
-    def __init__(self, rank, local_rank, world_size, pp_size, dp_size):
+    def __init__(self, rank, local_rank, world_size, pp_size, dp_size, tp_size):
         self.rank = rank
         self.local_rank = local_rank
         self.world_size = world_size
         self.pp_size = pp_size
         self.dp_size = dp_size
+        self.tp_size = tp_size
+
+        self.device_mesh = init_device_mesh("cuda", mesh_shape=(pp_size, dp_size, tp_size), mesh_dim_names=("pp", "dp", "tp"))
+        self.tp_group = self.device_mesh["tp"].get_group()
+        self.dp_group = self.device_mesh["dp"].get_group()
+        self.pp_group = self.device_mesh["pp"].get_group()
+        self.tp_mesh = self.device_mesh["tp"]
+        self.dp_mesh = self.device_mesh["dp"]
+        self.pp_mesh = self.device_mesh["pp"]
+
+        #if rank == 0:
+        #    print(f"> pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
+        print(f"> [rank:{rank}] pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
+
 
         #
         self.stage2rank = {}
@@ -51,8 +67,19 @@ class Topology:
 
 
     def set_stage2rank(self):
-        for i in range(self.pp_size):
-            self.stage2rank[i] = [i*self.dp_size + j for j in range(self.dp_size)]
+        #for i in range(self.pp_size):
+        #    self.stage2rank[i] = [i*self.dp_size + j for j in range(self.dp_size)]
+        pp_dim = 0
+        total_ranks = self.device_mesh.mesh
+        for pp_stage in range(self.pp_size):
+            stage_ranks = total_ranks[pp_stage, :, :].flatten().tolist()
+            self.stage2rank[pp_stage] = stage_ranks
+
+        if self.rank == 0:
+            print(f" ----------------------------------")
+            print(f"stage2rank = { self.stage2rank }")
+            print(f" ----------------------------------")
+
 
     def get_rank2stage(self, rank):
         for stage, ranks in self.stage2rank.items():
@@ -304,7 +331,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, dp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -325,24 +352,40 @@ class Optimus_p:
             print(f"> WORLD SIZE is 1. mbsize reset to 1")
             self.mbsize = mbsize = 1
 
+        assert tp_size >= 1 and world_size % tp_size == 0, f"world size({world_size}) must be divisible by tp size({tp_size})"
 
-        if dp_size < 1 or world_size % dp_size != 0:
-            print(f"Data Parallel Size(dp_size option) is not valid")
-            sys.exit(1)
+        assert dp_size >= 1 and world_size % dp_size == 0, f"world size({world_size}) must be divisible by dp size({dp_size})"
 
-        pp_size = world_size // dp_size
+
+        if pp_size == 1:
+            pp_size = world_size // tp_size // dp_size
+
+        assert pp_size >= 1 and world_size == pp_size * dp_size * tp_size, f"world size({world_size}) == pp_size({pp_size}) * dp_size({dp_size}) * tp_size({tp_size})"
+
+        if tp_size > 1:
+            assert "llama" in  module.__class__.__name__.lower(), f"Tensor parallel (size={tp_size}) is only supported for Llama models."
+
+        ##pp_size = world_size // dp_size
+        #pp_size = world_size // tp_size // dp_size
 
         if rank == 0:
+            print(f"> World Size: {world_size}")
+
             print(f"> Pipeline Parallel Size: {pp_size}")  
+
             if dp_size > 1:
                 print(f"> Data Parallel Size: {dp_size}")
+
+            if tp_size > 1:
+                print(f"> Tensor Parallel Size: {tp_size}")
 
             print(f">> ir_analyze: {ir_analyze}")
 
 
-        self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size)
+        self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
         if use_gpu == True:
+            torch.cuda.set_device(local_rank) # TODO
             self.device = torch.device(f"cuda:{local_rank}")
             print(f">>> Using GPU ... cuda:{local_rank}")
         else:
@@ -360,6 +403,11 @@ class Optimus_p:
 
         self.clean_module_memory = True
 
+        # TODO
+        split_method = "llama-tp-split" if module.__class__.__name__.startswith("Llama") and tp_size > 1 else "simple"
+        print(f">> model class name: {module.__class__.__name__}")
+        print(f">> split method: {split_method}")
+
         if ir_analyze == IR_Anal.SEQUENTIAL:
             print(f"SEQUENTIAL mode >> [rank:{rank}, local_world_size:{self.comm.local_world_size}]")
 
@@ -368,7 +416,8 @@ class Optimus_p:
                     self.ir = IR(module, self)
 
                     self.model_type = self.ir.retrieve_IR(module)
-                    self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
+                    #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
+                    self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
 
                     self.ir.setup_submod(self.tpl.stage, rank) # setup name, submod, node
                     self.ir.build_getitem_dic()
@@ -408,7 +457,8 @@ class Optimus_p:
             #self.model_ir.append(IR(module))
 
             self.model_type = self.ir.retrieve_IR(module)
-            self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
+            #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
+            self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
 
             self.ir.setup_submod(self.tpl.stage, rank) # setup name, submod, node
             self.ir.build_getitem_dic()
@@ -520,6 +570,9 @@ class Optimus_p:
         self.free_threshold3 = 26843545600 # 25GB # For model offloading
 
         self.display_mem = display_mem
+
+        if tp_size > 1:
+            self.prepare_tp_group()
 
         if dp_size > 1:
             self.prepare_dp_group()
@@ -650,18 +703,99 @@ class Optimus_p:
 
 
     def prepare_dp_group(self):
+    #
+    #    for i in range(0, self.tpl.pp_size):
+    #        start_rank = i * self.tpl.dp_size
+    #        end_rank = (i+1) * self.tpl.dp_size
+    #        dp_group = list(range(start_rank, end_rank))
+    #        if self.tpl.rank in dp_group:
+    #            ddp_group = dist.new_group(dp_group)
+    #            #self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=False)
+    #            self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=True)
+    #            print(f"Preparing DP group: {dp_group}")
+    #        else:
+    #            dist.new_group(dp_group)
+    #
+        self.run_info.submod = DistributedDataParallel(self.run_info.submod, find_unused_parameters=True, device_mesh=self.tpl.dp_mesh)
 
-        for i in range(0, self.tpl.pp_size):
-            start_rank = i * self.tpl.dp_size
-            end_rank = (i+1) * self.tpl.dp_size
-            dp_group = list(range(start_rank, end_rank))
-            if self.tpl.rank in dp_group:
-                ddp_group = dist.new_group(dp_group)
-                #self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=False)
-                self.run_info.submod = DistributedDataParallel(self.run_info.submod, process_group=ddp_group, find_unused_parameters=True)
-                print(f"Preparing DP group: {dp_group}")
-            else:
-                dist.new_group(dp_group)
+    def check_tp_post(self, arg0):
+        if isinstance(arg0, torch.fx.Node):
+            arg0 = arg0.name
+        parts = arg0.split('_')
+
+        if len(parts) > 2 and parts[0] == "model" and parts[1] == "layers":
+            layer_id = int(parts[2])
+            if parts[3] == "self" and parts[4] == "attn" and parts[5] == "q" and parts[6] == "proj": # self_attn_q_proj
+                return 0, layer_id
+            elif parts[3] == "self" and parts[4] == "attn" and parts[5] == "k" and parts[6] == "proj": # self_attn_k_proj
+                return 1, layer_id
+            elif parts[3] == "self" and parts[4] == "attn" and parts[5] == "v" and parts[6] == "proj": # self_attn_v_proj
+                return 2, layer_id
+
+        return -1, -1
+
+    
+    # TODO
+    def prepare_tp_group(self):
+        #
+        #print(f"############## TP feature is coming soon. #############################")
+        #sys.exit(0)
+        # TODO
+
+        tp_plan = {}
+        for name, module in self.run_info.submod.named_modules():
+            parts = name.split('_')
+            if len(parts) > 2 and parts[0] == "model" and parts[1] == "layers":
+                layer_id = int(parts[2])
+                if parts[3] == "self" and parts[4] == "attn" and parts[5] == "q" and parts[6] == "proj": # self_attn_q_proj
+                    tp_plan[f"model_layers_{layer_id}_self_attn_q_proj"] = ColwiseParallel()
+                elif parts[3] == "self" and parts[4] == "attn" and parts[5] == "k" and parts[6] == "proj": # self_attn_k_proj
+                    tp_plan[f"model_layers_{layer_id}_self_attn_k_proj"] = ColwiseParallel()
+                elif parts[3] == "self" and parts[4] == "attn" and parts[5] == "v" and parts[6] == "proj": # self_attn_v_proj
+                    tp_plan[f"model_layers_{layer_id}_self_attn_v_proj"] = ColwiseParallel()
+                elif parts[3] == "self" and parts[4] == "attn" and parts[5] == "o" and parts[6] == "proj": # self_attn_o_proj
+                    tp_plan[f"model_layers_{layer_id}_self_attn_o_proj"] = RowwiseParallel()
+                elif parts[3] == "mlp" and parts[4] == "gate" and parts[5] == "proj": # mlp_gate_proj
+                    tp_plan[f"model_layers_{layer_id}_mlp_gate_proj"] = ColwiseParallel()
+                elif parts[3] == "mlp" and parts[4] == "down" and parts[5] == "proj": # mlp_down_proj
+                    tp_plan[f"model_layers_{layer_id}_mlp_down_proj"] = RowwiseParallel()
+                elif parts[3] == "mlp" and parts[4] == "up" and parts[5] == "proj": # mlp_up_proj
+                    tp_plan[f"model_layers_{layer_id}_mlp_up_proj"] = ColwiseParallel()
+
+        print(f" >> rank:{self.get_rank()} -----------------------------------------------")
+        print(f"rank: {self.get_rank()}, #### last layer id:{layer_id}")
+        print(f" >> rank:{self.get_rank()} -----------------------------------------------")
+
+
+        print(f">>>> self.tpl.tp_mesh.size(): {self.tpl.tp_mesh.size()}")
+
+        for node in self.run_info.submod.graph.nodes:
+            if node.op == 'call_method' and node.name.startswith("view"):
+                result, layer_id = self.check_tp_post(node.args[0])
+
+                if result == 0:
+                    print(f">model_layers_{layer_id}_self_attn_q_proj ==> node.args[3]:{node.args[3]}")
+                    new_args = list(node.args)
+                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
+                    node.args = tuple(new_args)
+                    print(f"> >model_layers_{layer_id}_self_attn_q_proj ==> node.args[3]:{node.args[3]}")
+
+                elif result == 1:
+                    print(f">>model_layers_{layer_id}_self_attn_k_proj ===> node.args[3]:{node.args[3]}")
+                    new_args = list(node.args)
+                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
+                    node.args = tuple(new_args)
+                    print(f">> >> model_layers_{layer_id}_self_attn_k_proj ===> node.args[3]:{node.args[3]}")
+
+                elif result == 2:
+                    print(f">>>model_layers_{layer_id}_self_attn_v_proj ===> node.args[3]:{node.args[3]}")
+                    new_args = list(node.args)
+                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
+                    node.args = tuple(new_args)
+                    print(f">>> >>>model_layers_{layer_id}_self_attn_v_proj ===> node.args[3]:{node.args[3]}")
+
+        self.run_info.submod.recompile()
+        self.run_info.submod = parallelize_module(module=self.run_info.submod, device_mesh=self.tpl.tp_mesh, parallelize_plan=tp_plan)
 
 
     def get_output(self):

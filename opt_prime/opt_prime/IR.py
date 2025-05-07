@@ -68,6 +68,9 @@ class IR_Anal(Enum):
 #        # TODO
 #        ]
 
+_OTHER_MODELS = [
+        "WhisperForCausalLM",
+        ]
 
 class IR(object):
     def __init__(self, model: nn.Module, optimus):
@@ -104,7 +107,8 @@ class IR(object):
             self.gm = torch.fx.GraphModule(model, traced_graph)
             return self.optimus.model2type["vt"]
 
-        elif model.__class__.__name__ in _SUPPORTED_MODELS:
+        #elif model.__class__.__name__ in _SUPPORTED_MODELS:
+        elif model.__class__.__name__ in _SUPPORTED_MODELS or model.__class__.__name__ in _OTHER_MODELS:
             input_names = model.dummy_inputs.keys()
 
             sig = inspect.signature(model.forward)
@@ -131,7 +135,7 @@ class IR(object):
 
     def split_IR(self, model: nn.Module, method, num_stage):
 
-        if method not in [ "simple", ]:
+        if method not in [ "simple", "llama-tp-split", ]:
             print(f"Not supported split method!")
             sys.exit(1)
 
@@ -144,6 +148,9 @@ class IR(object):
 
         if method == "simple":
             submods = self.simple_split(model, num_stage)
+
+        elif method == "llama-tp-split":
+            submods = self.llama_tp_split(model, num_stage)
 
         # TODO: add new split method
         #elif method == ...
@@ -311,6 +318,184 @@ class IR(object):
         assert len(self.metadata_range) == num_stage
 
         return submodules
+
+
+    def llama_tp_split(self, module, num_stage):
+
+        assert module.__class__.__name__.startswith("Llama")
+
+        num_layers = len(module.model.layers)
+        #num_blocks = len(module.model.layers) + 2
+        num_blocks = num_layers + 2
+        last_layer = num_layers - 1
+
+        assert num_layers >= num_stage, f"# of layers[{num_layers}] is smaller than # of stages:{num_stage}"
+
+        layers_per_stage = [ (i * num_blocks) // num_stage for i in range(num_stage + 1) ]
+
+        stage_layers = [ list(range(layers_per_stage[i], layers_per_stage[i + 1])) for i in range(num_stage) ]
+        if num_stage > 2:
+            #if len(stage_layers[-1]) > len(stage_layers[-2]):
+            if len(stage_layers[-1]) > len(stage_layers[-2]) and stage_layers[-1][0] != last_layer:
+                stage_layers[-2] = stage_layers[-2] + [stage_layers[-1][0]]
+                stage_layers[-1] = stage_layers[-1][1:]
+
+        if self.optimus.is_first_stage():
+            print(f" num_stage: {num_stage}")
+            print(f" num_blocks = {num_blocks}")
+            print(f" layers_per_stage = {layers_per_stage}")
+            print(f" stage_layers = {stage_layers}")
+
+            # Example :
+            #   num_stage = 4
+            #   layers_per_stage = [0, 3, 6, 9, 12]
+            #   stage_layers = [[0,1,2], [3,4,5], [6,7,8], [9,10,11]]
+
+        
+        node_p = None
+        layer_id = 0
+        status = 0
+        k = 0
+        for n in self.gm.graph.nodes:
+            if n.op == 'call_module' and isinstance(n.target, str):
+                parts = n.target.split('.')
+
+                if len(parts) > 2 and parts[0] == "model" and parts[1] == "layers":
+                    layer_id = int(parts[2])
+                    if layer_id in stage_layers[k]:
+                        status = 1
+                        node_p = n
+                    else:
+                        status = 2
+
+
+            if status == 2:
+                self.metadata_range.append((k, node_p.name))
+                k = k + 1
+                status = 0
+
+            if k > num_stage - 1:
+                break
+
+        if len(self.metadata_range) <  num_stage:
+            self.metadata_range.append((k, node_p.name))
+
+        self.last_flag = False
+
+        def part_fn(node):
+            last_idx, last_name = self.metadata_range[-1]
+
+            if self.last_flag == True:
+                idx = last_idx
+                #print(f" part_fn:  node.name:{node.name}, --> {idx}")
+                return idx
+
+            idx = 0
+
+            cur = node
+            while cur.name != last_name:
+                for i, m_name in self.metadata_range:
+                    if cur.name == m_name:
+                        idx = i
+                        #print(f" part_fn:  node.name:{node.name}, m_name:{m_name}, --> {idx}")
+                        return idx
+
+                cur = cur._next
+
+            if cur.name == last_name:
+                idx = last_idx
+                self.last_flag = True
+
+            #print(f" part_fn:  node.name:{node.name}, --> {idx}")
+            return idx
+
+        if int(os.environ["RANK"]) == 0:
+            print(f" ------------------------------------------------------------")
+            print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
+            print(f" ------------------------------------------------------------")
+
+        submodules = split_module(self.gm, module, part_fn, keep_original_order=True)
+
+        def move_parameters(split_graph_module, user_target, parameter_value, use_index, _buffer):
+
+            assert isinstance(parameter_value, torch.Tensor), f"Not torch.Tensor but {type(parameter_value)} received."
+
+            target = split_graph_module.get_submodule(user_target)
+            new_parameter_name = f"moved_{node.target.replace('.', '_')}"
+
+            assert not hasattr(target, new_parameter_name), f"{user_target} has parameter[{new_parameter_name}]"
+
+            if _buffer:
+                target.register_buffer(new_parameter_name, parameter_value)
+            else:
+                setattr(target, new_parameter_name, parameter_value)
+
+            placeholder_cnt = 0
+            for snode in target.graph.nodes:
+                if snode.op == "placeholder":
+                    if placeholder_cnt == use_index:
+                        with target.graph.inserting_before(snode):
+                            get_attr = target.graph.get_attr(new_parameter_name)
+                            snode.replace_all_uses_with(get_attr)
+                            target.graph.erase_node(snode)
+                    placeholder_cnt += 1
+
+            target.graph.lint()
+            target.recompile()
+
+            return get_attr
+
+        def remove_reference(node, user, delete_node=True):
+            assert len(user.kwargs) == 0
+            use_indices = [i for i, arg in enumerate(user.args) if arg == node]
+            assert len(use_indices) == 1
+            args_copy = list(user.args)
+            args_copy.pop(use_indices[0])
+            user.args = tuple(args_copy)
+            if delete_node:
+                node.graph.erase_node(node)
+
+            return use_indices[0]
+
+        remove_candidates = list()
+        for node in submodules.graph.nodes:
+            if node.op == "get_attr" and len(node.users) == 1:
+                user = list(node.users)[0]
+                assert user.op == "call_module"
+                use_index = remove_reference(node, user)
+
+                atoms = node.target.split(".")
+                module_itr = submodules
+                for atom in atoms[:-1]:
+                    module_itr = getattr(module_itr, atom)
+                parameter_value = getattr(module_itr, atoms[-1])
+                _buffer = atoms[-1] in module_itr._buffers
+
+                move_parameters(submodules, user.target, parameter_value, use_index, _buffer)
+
+                remove_candidates.append((module_itr, atoms))
+
+        for module_itr, atoms in remove_candidates:
+            delattr(module_itr, atoms[-1])
+        submodules.graph.lint()
+        submodules.recompile()
+
+        self.metadata_range = []
+
+        cnt = 0
+        for n in submodules.graph.nodes:
+            if n.op == 'call_module':
+                self.metadata_range.append((cnt, n.name))
+                cnt = cnt + 1
+
+        print(f" ------------------------------------------------------------")
+        print(f"  rank:{self.optimus.tpl.rank},  second metadata_range: {self.metadata_range}")
+        print(f" ------------------------------------------------------------")
+
+        assert len(self.metadata_range) == num_stage
+
+        return submodules
+
 
         
     def check_last_submods(self, submods, num_stage):
