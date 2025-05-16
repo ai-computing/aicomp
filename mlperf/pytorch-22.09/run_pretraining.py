@@ -818,7 +818,9 @@ def prepare_model_and_optimizer(args, device, stream):
                             value=args.learning_rate, sync=False)
     full_ar = torch.cuda.device_count() < torch.distributed.get_world_size()
     clip_after_ar = args.dwu_overlap_reductions
-    set_param_views_to_flat_buffer = not args.dwu_overlap_reductions
+#swsok, for test
+#    set_param_views_to_flat_buffer = not args.dwu_overlap_reductions
+    set_param_views_to_flat_buffer = False
 
     if args.distributed_lamb:
         from optim import distributed_fused_lamb
