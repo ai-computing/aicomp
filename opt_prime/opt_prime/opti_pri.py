@@ -331,7 +331,8 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
+    #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -515,6 +516,13 @@ class Optimus_p:
                     print(f" ### Rank:{rank}, clean_module_memory ...")
                     print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
                 print(f"[rank:{rank}, local_rank:{local_rank}] PARALLEL MODE PROCESSING ...")
+
+                # TODO
+                if pre_barrier is not None:
+                    dist.barrier(group=pre_barrier)
+                    pre_barrier_remaining = self.comm.local_world_size - self.comm.local_rank - 1
+                    for j in range(pre_barrier_remaining):
+                        dist.barrier(group=pre_barrier)
 
 
         elif ir_analyze == IR_Anal.SINGLE and rank != 0:
