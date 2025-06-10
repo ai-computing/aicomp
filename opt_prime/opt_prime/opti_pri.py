@@ -21,6 +21,7 @@ from torch.fx.graph_module import GraphModule
 
 import psutil
 import os
+import glob
 
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -332,7 +333,8 @@ def print_cpu_memory_usage(str, print_flag = False):
 class Optimus_p:
 
     #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None):
+    #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, ckpt_dir_postfix: Optional[str]= None):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -344,6 +346,7 @@ class Optimus_p:
         self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
 
         self.activation_ckpt = activation_ckpt
+
 
         rank = self.comm.rank
         world_size = self.comm.world_size
@@ -384,6 +387,11 @@ class Optimus_p:
 
 
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
+
+        self.checkpoint = True
+        self.ckpt_dir = f"checkpoint_{ckpt_dir_postfix}_{self.tpl.stage}" or f"checkpoint_{self.tpl.stage}"
+        if self.checkpoint == True:
+            os.makedirs(self.ckpt_dir, exist_ok=True)
 
         if use_gpu == True:
             torch.cuda.set_device(local_rank) # TODO
@@ -628,6 +636,10 @@ class Optimus_p:
         self.swap_model_in_optstep = swap_model_in_optstep 
         self.use_padding = use_padding  # padding option
 
+
+        #if self.checkpoint:
+        # TODO
+
     def prepare_labels(self, labels):
         if self.tpl.is_first_stage():
             target_node_name = "labels"
@@ -820,3 +832,39 @@ class Optimus_p:
 
     def get_world_size(self):
         return self.tpl.world_size
+
+    def save_ckpt(self, step, epoch):
+        if self.checkpoint != True:
+            return
+
+        ckpt_path = os.path.join(self.ckpt_dir, f"ckpt_step_{step}_epoch_{epoch}.pt")
+
+        torch.save({
+            'epoch': epoch,
+            'stage': self.tpl.stage,
+            'stage_state_dict': self.run_info.submod.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            }, ckpt_path)
+        print(f"Checkpoint saved: {ckpt_path}")
+
+        ckpt_files = sorted(
+                glob.glob(os.path.join(self.ckpt_dir, "ckpt_step_*.pt")),
+                key=os.path.getmtime,
+                reverse=True
+                )
+        for old_ckpt in ckpt_files[2:]:
+            os.remove(old_ckpt)
+            print(f"Old checkpoint deleted: {old_ckpt}")
+
+    def load_ckpt(self, step, epoch):
+        if self.checkpoint != True:
+            return
+
+        ckpt_path = os.path.join(self.ckpt_dir, f"ckpt_step_{step}_epoch_{epoch}.pt")
+
+        ckpt = torch.load(ckpt_path)
+
+        self.run_info.submod.load_state_dict(ckpt['stage_state_dict'])
+        self.optimizer.load_state_dict(ckpt['optimizer_state_dict'])
+
+        print(f"Checkpoint loaded: {ckpt_path}")
