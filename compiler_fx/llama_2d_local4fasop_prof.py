@@ -179,7 +179,7 @@ print(f"data_size={data_size}")
 nbatches = len(dataloader)
 print(f"nbatches={nbatches}")
 
-optimus_t = Optimus_t(model, dp_size=1, tp_size=1)
+optimus_t = Optimus_t(model, dp_size=1, tp_size=world_size)
 #optimus_t = Optimus_t(model, dp_size=1, tp_size=2)
 #optimus_t = Optimus_t(model, dp_size=1, tp_size=4)
 
