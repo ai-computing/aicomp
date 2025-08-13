@@ -10,6 +10,9 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.device_mesh import init_device_mesh
 from torch.distributed.tensor.parallel import parallelize_module, ColwiseParallel, RowwiseParallel
 
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+
 from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
 from opt_prime.schedule import ScheduleGPipe 
@@ -683,6 +686,14 @@ class Optimus_p:
                 labels = torch.cat(outputs)
             return labels
         return None
+
+    
+    def prepare_dataloader(self, datasets, batch_size):
+        if self.tpl.dp_size > 1:
+            dp_rank = (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size
+            return DataLoader(datasets, batch_size=batch_size, num_workers=4, sampler=DistributedSampler(datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank))
+        else:
+            return DataLoader(datasets, batch_size=batch_size, num_workers=4)
 
 
     def move_labels2last_stage(self, labels):
