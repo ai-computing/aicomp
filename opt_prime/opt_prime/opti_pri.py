@@ -337,7 +337,7 @@ class Optimus_p:
 
     #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
     #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None):
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, ckpt_dir_postfix: Optional[str]= None, prt_shape=False):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -391,7 +391,7 @@ class Optimus_p:
 
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
-        self.checkpoint = True
+        self.checkpoint = checkpoint
         self.ckpt_dir = f"checkpoint_{ckpt_dir_postfix}_{self.tpl.stage}" or f"checkpoint_{self.tpl.stage}"
         if self.checkpoint == True:
             os.makedirs(self.ckpt_dir, exist_ok=True)

@@ -53,7 +53,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, ckpt_dir_postfix="gpt2")
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, checkpoint=True, ckpt_dir_postfix="gpt2")
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
