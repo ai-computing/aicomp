@@ -335,9 +335,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
-    #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None):
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -652,6 +650,9 @@ class Optimus_p:
 
         if self.prt_shape == True:
             self.ir.print_module_shape_after_parallel()
+
+        self.swap_use_disk = swap_use_disk
+
 
     def prepare_labels(self, labels):
         if self.tpl.is_first_stage():

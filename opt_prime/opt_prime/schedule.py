@@ -127,6 +127,11 @@ class Schedule:
                 if isinstance(v, torch.Tensor):
                     state[k] = v.cpu()
 
+        if self.optimus.swap_use_disk == True:
+            disk_path_opt = f"temp_optistat_{self.optimus.tpl.rank}"
+            torch.save({'optimizer_state_dict': self.optimus.optimizer.state_dict()}, disk_path_opt)
+            #print(f"[W] optimizer state dict --> DISK({disk_path_opt})")
+
 
     def load_optimizer(self):
         if self.optimus.swap_opt_in_fwdbwd == False:
@@ -136,6 +141,12 @@ class Schedule:
         if self.optimus.optimizer == None:
             print(f"optimus.optimizer not set when swap_opt_in_fwdbwd == True")
             return
+
+        if self.optimus.swap_use_disk == True:
+            disk_path_opt = f"temp_optistat_{self.optimus.tpl.rank}"
+            opt_state = torch.load(disk_path_opt)
+            self.optimus.optimizer.load_state_dict(opt_state['optimizer_state_dict'])
+            #print(f"[R] optimizer state dict <-- DISK({disk_path_opt})")
 
         state_dict = self.optimus.optimizer.state_dict()
         for state in state_dict['state'].values():
@@ -153,12 +164,23 @@ class Schedule:
         if self.optimus.display_mem == True:
             print(f" >>> >>> [rank:{self.optimus.tpl.rank}], offload model ...")
 
+        if self.optimus.swap_use_disk == True:
+            disk_path_model = f"temp_model_{self.optimus.tpl.rank}"
+            torch.save({'model_state_dict': self.optimus.run_info.submod.state_dict()}, disk_path_model)
+            #print(f"[W] model state dict --> DISK({disk_path_model})")
+
 
 
     def load_model(self):
         if self.optimus.swap_model_in_optstep == False:
             print(f"load_model() should be used when swap_model_in_optstep == True")
             return
+
+        if self.optimus.swap_use_disk == True:
+            disk_path_model = f"temp_model_{self.optimus.tpl.rank}"
+            model_state = torch.load(disk_path_model)
+            self.optimus.run_info.submod.load_state_dict(model_state['model_state_dict'])
+            #print(f"[R] model state dict <-- DISK({disk_path_model})")
 
         self.optimus.run_info.submod.to(self.optimus.run_info.device)
 
