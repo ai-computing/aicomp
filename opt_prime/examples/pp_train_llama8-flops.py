@@ -115,7 +115,7 @@ if int(os.environ["RANK"]) == 0:
     print('>>>>>>> # of Operations:', macs, ', # of Parameters', params)
 
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")
 
 
