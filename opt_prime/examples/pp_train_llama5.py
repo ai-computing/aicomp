@@ -109,9 +109,17 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=4, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=2, tp_size=2, dp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=4, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=2, dp_size=4, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=2, tp_size=2, dp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
 #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=2, tp_size=4, dp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=4, tp_size=2, dp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=4, dp_size=4, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=8, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=4, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=4, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")
 
 # TODO
@@ -124,7 +132,8 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
-dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
 print(f"data_size={data_size}")
 nbatches = len(dataloader)

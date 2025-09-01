@@ -1,8 +1,8 @@
 #
-# Copyright (c) 2024-present, ETRI, All rights reserved.
+# Copyright (c) 2025-present, ETRI, All rights reserved.
 #
 # Usage: torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> 
-#                 --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama4_ckpt_save.py <llama_access_token>
+#                 --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama8-flops.py <llama_access_token>
 #
 # *** This program was tested with torch 2.5.0 and transformers 4.46.2.
 #     The version of transformers used must be consistent across all machines used for testing ***
@@ -32,6 +32,9 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.opti_pri import Optimus_p
 from opt_prime.IR import IR_Anal
 
+from functools import partial
+from ptflops import get_model_complexity_info
+
 logging.basicConfig(level=logging.ERROR)
 
 
@@ -44,7 +47,7 @@ if len(sys.argv) > 1:
 access_token = os.getenv('LLAMA_ACCESS_TOKEN')
 if access_token is None:
     raise ValueError("LLAMA_ACCESS_TOKEN environment variable is not set."
-                    "       [Usage:] torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama4_ckpt_save.py <llama_access_token>")
+                    "       [Usage:] torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama8.py <llama_access_token>")
 
 
 #
@@ -72,11 +75,11 @@ else:
     raise ValueError('This program needs transformers version 4.46.2 or higher.')
 
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token)
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B", token=access_token)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token, use_cache=False)
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-3B", token=access_token, use_cache=False)
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0
@@ -92,31 +95,46 @@ if int(os.environ["RANK"]) == 0:
 batch_size = 32
 micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
 
+def llama_input_constructor(input_shape, tokenizer):
+    inp_seq = ""
+    for _ in range(input_shape[1] - 2):  # [CLS], [SEP]
+        inp_seq += tokenizer.pad_token
+
+    inputs = tokenizer([inp_seq] * input_shape[0], padding=True, truncation=True, max_length=1024, return_tensors="pt")
+    data, labels = inputs.input_ids, inputs.input_ids
+    temp = {'input_ids': data , 'labels' : labels }
+    return temp
+
+
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, checkpoint=True, ckpt_dir_postfix="llama")
+    macs, params = get_model_complexity_info(model, (1, 1024), as_strings=True, input_constructor=partial(llama_input_constructor, tokenizer=tokenizer), print_per_layer_stat=True, verbose=True)
+    print('>>>>>>> # of Operations:', macs, ', # of Parameters', params)
+
+
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")
+
 
 optimus_p.train()
 
-#optimus_p.optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
-optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
 scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
-dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
 print(f"data_size={data_size}")
 nbatches = len(dataloader)
 print(f"nbatches={nbatches}")
 
 
-#epochs = 1 # The number of epochs
-epochs = 2 # The number of epochs
+epochs = 1 # The number of epochs
 
 def train():
 
@@ -124,6 +142,7 @@ def train():
 
     total_loss = 0
     start_time = time.time()
+
 
     for i, batch in enumerate(dataloader):
 
@@ -147,7 +166,7 @@ def train():
         else:
             loss = None
 
-        torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+
         optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():
@@ -167,9 +186,6 @@ def train():
                 total_loss = 0
                 start_time = time.time()
 
-    optimus_p.save_ckpt(i, epoch)
-
-
 if optimus_p.get_rank() == 0:
     tick = time.time()
 
@@ -183,6 +199,16 @@ if optimus_p.get_rank() == 0:
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
+
+if dist.is_initialized():
+    try:
+        dist.barrier()
+        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
+        torch.cuda.synchronize()
+        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
+        dist.destroy_process_group()
+    except Exception as e:
+        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
 
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
 

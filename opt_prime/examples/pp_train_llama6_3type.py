@@ -1,6 +1,12 @@
 #
 # Copyright (c) 2025-present, ETRI, All rights reserved.
 #
+# Usage: torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> 
+#                 --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama6_3type.py <llama_access_token>
+#
+# *** This program was tested with torch 2.5.0 and transformers 4.46.2.
+#     The version of transformers used must be consistent across all machines used for testing ***
+#
 
 
 import torch
@@ -14,24 +20,65 @@ import os
 import sys
 import math
 import time
+from packaging import version
 
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 
+import transformers
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.opti_pri import Optimus_p
+from opt_prime.IR import IR_Anal
 
 logging.basicConfig(level=logging.ERROR)
 
 
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+#
+# This program needs 'access token' for Llama. First, obtain your access token for Llama !!!
+#
+if len(sys.argv) > 1:
+    os.environ['LLAMA_ACCESS_TOKEN'] = sys.argv[1]
+
+access_token = os.getenv('LLAMA_ACCESS_TOKEN')
+if access_token is None:
+    raise ValueError("LLAMA_ACCESS_TOKEN environment variable is not set."
+                    "       [Usage:] torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama.py <llama_access_token>")
+
+
+#
+# This program needs torch version 2.3.1 or higher !!!
+#
+required_version = "2.3.1"
+current_version = torch.__version__
+
+if version.parse(current_version) >= version.parse(required_version):
+    print(f"[rank:{int(os.environ['RANK'])}] torch version 2.3.1 or higher --> OK")
+else:
+    print(f"[rank:{int(os.environ['RANK'])}] current torch version is {current_version}.")
+    raise ValueError('This program needs torch version 2.3.1 or higher.')
+
+#
+# This program needs transformers version 4.46.2 or higher !!!
+#
+required_tf_version = "4.46.2"
+current_tf_version = transformers.__version__
+
+if version.parse(current_tf_version) >= version.parse(required_tf_version):
+    print(f"[rank:{int(os.environ['RANK'])}] transformers version 4.46.2 or higher --> OK")
+else:
+    print(f"[rank:{int(os.environ['RANK'])}] current transformers version is {current_tf_version}.")
+    raise ValueError('This program needs transformers version 4.46.2 or higher.')
+
+
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token)
+#tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-13b-chat-hf", token=access_token)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-config = GPT2Config(use_cache=False)
-model = GPT2LMHeadModel(config)
-model = model.from_pretrained("gpt2") # TODO
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B", token=access_token, use_cache=False)
+#model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-13b-chat-hf", token=access_token, use_cache=False)
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0
@@ -52,26 +99,27 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"micro batch size: {micro_batch_size}")
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, checkpoint=True, ckpt_dir_postfix="gpt2")
+
+optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, swap_use_disk=True)
 print(f" rank={optimus_p.get_rank()} ...")
 
+
 optimus_p.train()
-#optimus_p.optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
-optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+
+optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
 scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
-dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
 print(f"data_size={data_size}")
 nbatches = len(dataloader)
 print(f"nbatches={nbatches}")
 
 
-
-epochs = 3 # The number of epochs
-#epochs = 1 # The number of epochs
+epochs = 1 # The number of epochs
 
 def train():
 
@@ -79,6 +127,7 @@ def train():
 
     total_loss = 0
     start_time = time.time()
+
 
     for i, batch in enumerate(dataloader):
 
@@ -102,9 +151,8 @@ def train():
         else:
             loss = None
 
-        torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
-        optimus_p.optimizer.step()
 
+        optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.mbsize
@@ -123,9 +171,6 @@ def train():
                 total_loss = 0
                 start_time = time.time()
 
-    optimus_p.save_ckpt(i, epoch)
-
-
 if optimus_p.get_rank() == 0:
     tick = time.time()
 
@@ -139,6 +184,16 @@ if optimus_p.get_rank() == 0:
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
+
+if dist.is_initialized():
+    try:
+        dist.barrier()
+        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
+        torch.cuda.synchronize()
+        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
+        dist.destroy_process_group()
+    except Exception as e:
+        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
 
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
 

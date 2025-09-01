@@ -10,6 +10,9 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.device_mesh import init_device_mesh
 from torch.distributed.tensor.parallel import parallelize_module, ColwiseParallel, RowwiseParallel
 
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+
 from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
 from opt_prime.schedule import ScheduleGPipe 
@@ -332,9 +335,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True):
-    #def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None):
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, ckpt_dir_postfix: Optional[str]= None):
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
 
         #self.model_ir = []
         self.mbsize = mbsize
@@ -388,10 +389,12 @@ class Optimus_p:
 
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
-        self.checkpoint = True
+        self.checkpoint = checkpoint
         self.ckpt_dir = f"checkpoint_{ckpt_dir_postfix}_{self.tpl.stage}" or f"checkpoint_{self.tpl.stage}"
         if self.checkpoint == True:
             os.makedirs(self.ckpt_dir, exist_ok=True)
+
+        self.prt_shape = prt_shape
 
         if use_gpu == True:
             torch.cuda.set_device(local_rank) # TODO
@@ -448,6 +451,9 @@ class Optimus_p:
                     self.run_info.special_nodes = self.ir.special_nodes
                     self.run_info.metadata_range = self.ir.metadata_range
                     self.run_info.getitem_dic = self.run_info.getitem_dic
+
+                    if self.prt_shape == True:
+                        self.ir.print_module_shape_before_parallel()
 
                     if self.clean_module_memory == True:
                         print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
@@ -518,6 +524,9 @@ class Optimus_p:
                 self.run_info.metadata_range = self.ir.metadata_range
                 self.run_info.getitem_dic = self.run_info.getitem_dic
 
+                if self.prt_shape == True:
+                    self.ir.print_module_shape_before_parallel()
+
                 if self.clean_module_memory == True:
                     print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                     self.ir.clean_module_memory()
@@ -569,6 +578,9 @@ class Optimus_p:
 
                 for stage in reversed(range(1, self.tpl.get_num_stage())):
                     self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
+
+                if self.prt_shape == True:
+                    self.ir.print_module_shape_before_parallel()
 
                 if self.clean_module_memory == True:
                     print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
@@ -636,9 +648,11 @@ class Optimus_p:
         self.swap_model_in_optstep = swap_model_in_optstep 
         self.use_padding = use_padding  # padding option
 
+        if self.prt_shape == True:
+            self.ir.print_module_shape_after_parallel()
 
-        #if self.checkpoint:
-        # TODO
+        self.swap_use_disk = swap_use_disk
+
 
     def prepare_labels(self, labels):
         if self.tpl.is_first_stage():
@@ -683,6 +697,14 @@ class Optimus_p:
                 labels = torch.cat(outputs)
             return labels
         return None
+
+    
+    def prepare_dataloader(self, datasets, batch_size):
+        if self.tpl.dp_size > 1:
+            dp_rank = (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size
+            return DataLoader(datasets, batch_size=batch_size, num_workers=4, sampler=DistributedSampler(datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank))
+        else:
+            return DataLoader(datasets, batch_size=batch_size, num_workers=4)
 
 
     def move_labels2last_stage(self, labels):

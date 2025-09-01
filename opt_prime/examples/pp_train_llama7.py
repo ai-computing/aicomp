@@ -53,6 +53,7 @@ group_gloo = dist.new_group(backend="gloo")
 
 batch_size = 32
 micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+#micro_batch_size = 1 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
@@ -130,7 +131,8 @@ for i in range(local_world_size):
             print('Total parameters in model: {:,}'.format(get_total_params(model)))
 
         #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL
-        optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=4, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
+        optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
+        #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
         print(f" rank={optimus_p.get_rank()} ...")
 
     if local_rank > i:
@@ -150,7 +152,8 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
-dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+#dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
 print(f"data_size={data_size}")
 nbatches = len(dataloader)

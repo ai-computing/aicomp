@@ -745,6 +745,30 @@ class IR(object):
             if n.op == 'call_module':
                 self.delete_module(del_submod, n)
 
+    def print_module_shape_before_parallel(self):
+        if self.optimus.get_rank() == 0:
+            file_name = f"tensor_info_before.txt"
+            with open(file_name, "w") as f:
+                for stage in range(self.optimus.tpl.num_stage):
+                    param_info = []
+                    mod_name = f"submod_{stage}"
+                    mod = self.model_ir[0].get_submodule(mod_name)
+
+                    for name, param in mod.named_parameters():
+                        param_info.append(f"Name: {name}, Shape: {param.shape}")
+                    f.write("\n".join(param_info))
+            print(f"================================================")
+
+    def print_module_shape_after_parallel(self):
+        param_info = []
+        file_name = f"tensor_info_rank_{self.optimus.get_rank()}.txt"
+
+        for name, param in self.optimus.run_info.submod.named_parameters():
+            param_info.append(f"Name: {name}, Shape: {param.shape}")
+        with open(file_name, "w") as f:
+                f.write("\n".join(param_info))
+        print(f"================================================")
+
 
     def clean_module_memory(self):
         self.reference = []
@@ -762,4 +786,5 @@ class IR(object):
 
         gc.collect()
         torch.cuda.empty_cache()
+
 
