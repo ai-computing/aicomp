@@ -3,12 +3,13 @@
 #common args
 DOCKER_IMG=swsok/nccl_tests:cuda12.9
 CONTAINER_NAME="nccl_tests_docker"
-COMMON_ARG="--gpus all --name $CONTAINER_NAME --ipc=host --network=host"
+COMMON_ARG="--name $CONTAINER_NAME --ipc=host --network=host"
 LOG=nccl_tests_result.txt
+GPU_PAIR="0,4"
 
 docker rm -f $CONTAINER_NAME 2>/dev/null
 
-docker run -d $COMMON_ARG $DOCKER_IMG sleep infinity
+docker run -d $COMMON_ARG --gpus '"device='"$GPU_PAIR"'"' $DOCKER_IMG sleep infinity
 
 EXEC_LIST=(all_gather_perf all_reduce_perf alltoall_perf broadcast_perf gather_perf hypercube_perf reduce_perf reduce_scatter_perf scatter_perf sendrecv_perf)
 
