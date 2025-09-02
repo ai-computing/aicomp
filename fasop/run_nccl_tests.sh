@@ -5,7 +5,7 @@ DOCKER_IMG=swsok/nccl_tests:cuda12.9
 CONTAINER_NAME="nccl_tests_docker"
 COMMON_ARG="--name $CONTAINER_NAME --ipc=host --network=host"
 LOG=nccl_tests_result.txt
-GPU_PAIR="0,4"
+GPU_PAIR="0,1"
 
 docker rm -f $CONTAINER_NAME 2>/dev/null
 
@@ -15,7 +15,8 @@ EXEC_LIST=(all_gather_perf all_reduce_perf alltoall_perf broadcast_perf gather_p
 
 for perf_test in "${EXEC_LIST[@]}"; do
 	echo $perf_test | tee -a $LOG
-	docker exec $CONTAINER_NAME ./build/$perf_test -b 1G -e 1G -f 2 -g 2 | grep float | awk '{print $7,$11}' | tee -a $LOG
+	docker exec $CONTAINER_NAME ./build/$perf_test -b 1G -e 1G -f 2 -g 2 | grep float | awk '{print $7,$8,$11,$12}' | tee -a $LOG
+#	docker exec $CONTAINER_NAME ./build/$perf_test -b 8 -e 1G -f 2 -g 2
 done
 
 docker stop $CONTAINER_NAME >/dev/null
