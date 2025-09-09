@@ -26,8 +26,6 @@ from torch.utils.data import DataLoader
 import transformers
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from opt_prime.opti_pri import Optimus_p
-from opt_prime.IR import IR_Anal
 
 from functools import partial
 from ptflops import get_model_complexity_info
