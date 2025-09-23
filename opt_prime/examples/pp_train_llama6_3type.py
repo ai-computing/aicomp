@@ -111,6 +111,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
+datasets = datasets[:int(len(datasets) * 0.02)] # small datasets
 #dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
 dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
@@ -157,7 +158,8 @@ def train():
         if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.mbsize
             total_loss += loss
-            log_interval = 10
+            #log_interval = 10
+            log_interval = 1
             if i % log_interval == 0 and i > 0:
                 cur_loss = total_loss / log_interval
                 elapsed = time.time() - start_time
