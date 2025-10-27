@@ -117,7 +117,7 @@ def train():
                 print('| epoch {:3d} | {:5d}/{:5d} batches | '
                     'lr {:02.2f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
-                        epoch, i, nbatches, scheduler.get_lr()[0],
+                        epoch+1, i, nbatches, scheduler.get_lr()[0],
                         elapsed * 1000 / log_interval,
                         cur_loss, math.exp(cur_loss)))
 
@@ -132,8 +132,8 @@ if optimus_p.get_rank() == 0:
 
 loaded_ckpt = False
 
-#for epoch in range(1, epochs + 1):
-for epoch in range(2, epochs + 1):
+for epoch in range(1, epochs + 1):
+#for epoch in range(2, epochs + 1):
     if not loaded_ckpt:
         optimus_p.load_ckpt(322, epoch)
         loaded_ckpt = True

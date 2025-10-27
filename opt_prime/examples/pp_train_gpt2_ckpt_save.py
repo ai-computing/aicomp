@@ -70,7 +70,7 @@ print(f"nbatches={nbatches}")
 
 
 
-epochs = 3 # The number of epochs
+epochs = 2 # The number of epochs
 #epochs = 1 # The number of epochs
 
 def train():

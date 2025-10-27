@@ -118,8 +118,8 @@ nbatches = len(dataloader)
 print(f"nbatches={nbatches}")
 
 
-#epochs = 1 # The number of epochs
-epochs = 2 # The number of epochs
+epochs = 1 # The number of epochs
+#epochs = 2 # The number of epochs
 
 def train():
 
@@ -163,7 +163,7 @@ def train():
                 print('| epoch {:3d} | {:5d}/{:5d} batches | '
                     'lr {:02.2f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
-                        epoch, i, nbatches, scheduler.get_lr()[0],
+                        epoch+1, i, nbatches, scheduler.get_lr()[0],
                         elapsed * 1000 / log_interval,
                         cur_loss, math.exp(cur_loss)))
 
