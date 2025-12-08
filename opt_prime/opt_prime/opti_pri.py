@@ -223,8 +223,8 @@ class Topology:
 
 class Run_Info:
 
-    #def __init__(self, ir, device, mbsize):
-    def __init__(self, device, mbsize, num_classes):
+    #def __init__(self, ir, device, num_mb):
+    def __init__(self, device, num_mb, num_classes):
         #self.mod = ir.model_ir[0] # TODO
         #self.graph = self.mod.graph
         self.name = None
@@ -232,16 +232,16 @@ class Run_Info:
         self.submod = None
 
         self.output_node = None
-        self.env: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
-        self.env_recv_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
-        self.env_send_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
-        self.env_grad_recv_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
-        self.env_grad_send_mark: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
+        self.env: List[Dict[str, Any]] = [{} for _ in range(num_mb)]
+        self.env_recv_mark: List[Dict[str, Any]] = [{} for _ in range(num_mb)]
+        self.env_send_mark: List[Dict[str, Any]] = [{} for _ in range(num_mb)]
+        self.env_grad_recv_mark: List[Dict[str, Any]] = [{} for _ in range(num_mb)]
+        self.env_grad_send_mark: List[Dict[str, Any]] = [{} for _ in range(num_mb)]
         self.device = device
-        self.loss: List[Any] = [None for _ in range(mbsize)]
-        self.output: List[Any] = [None for _ in range(mbsize)]
-        self.flat_args: List[Dict[str, List[torch.Tensor]]] = [{} for _ in range(mbsize)]
-        self.grads: List[Dict[str, Any]] = [{} for _ in range(mbsize)]
+        self.loss: List[Any] = [None for _ in range(num_mb)]
+        self.output: List[Any] = [None for _ in range(num_mb)]
+        self.flat_args: List[Dict[str, List[torch.Tensor]]] = [{} for _ in range(num_mb)]
+        self.grads: List[Dict[str, Any]] = [{} for _ in range(num_mb)]
         self.getitem_dic : Dict[str, Any] = {}
 
         #self.special_nodes: Dict[str, Tuple[int, int]] = ir.special_nodes
@@ -319,10 +319,10 @@ class Run_Info:
         print(f" ===============================")
 
 
-    def clean_run_info(self, mbsize):
-        self.env = [{} for _ in range(mbsize)]
-        self.flat_args = [{} for _ in range(mbsize)]
-        self.grads = [{} for _ in range(mbsize)]
+    def clean_run_info(self, num_mb):
+        self.env = [{} for _ in range(num_mb)]
+        self.flat_args = [{} for _ in range(num_mb)]
+        self.grads = [{} for _ in range(num_mb)]
 
 
 pid = os.getpid()
@@ -335,10 +335,10 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
+    def __init__(self, module:nn.Module, num_mb, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
 
         #self.model_ir = []
-        self.mbsize = mbsize
+        self.num_mb = num_mb
 
         #self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
@@ -354,8 +354,8 @@ class Optimus_p:
         local_rank = self.comm.local_rank
 
         if world_size == 1:
-            print(f"> WORLD SIZE is 1. mbsize reset to 1")
-            self.mbsize = mbsize = 1
+            print(f"> WORLD SIZE is 1. num_mb reset to 1")
+            self.num_mb = num_mb = 1
 
         assert tp_size >= 1 and world_size % tp_size == 0, f"world size({world_size}) must be divisible by tp size({tp_size})"
 
@@ -408,7 +408,7 @@ class Optimus_p:
         # num_classes auto config
         self.ignore_index = -100
 
-        self.run_info = Run_Info(device=self.device, mbsize=mbsize, num_classes=self.ignore_index)
+        self.run_info = Run_Info(device=self.device, num_mb=num_mb, num_classes=self.ignore_index)
         #self.model2type = { "hf" : 50, "sy" : 51,}
         self.model2type = { "hf" : 50, "sy" : 51, "vt" : 52,}
         self.model_type = None
@@ -659,23 +659,23 @@ class Optimus_p:
             target_node_name = "labels"
 
             # labels padding
-            if self.use_padding and labels.size(0) % self.mbsize != 0:
-                padding_size = self.mbsize - (labels.size(0) % self.mbsize)
+            if self.use_padding and labels.size(0) % self.num_mb != 0:
+                padding_size = self.num_mb - (labels.size(0) % self.num_mb)
                 # Use class value as padding
                 padding_value = self.ignore_index  
                 padding = torch.full((padding_size, *labels.size()[1:]), padding_value, device=labels.device, dtype=labels.dtype)
                 labels = torch.cat([labels, padding], dim=0)
 
-            mbatches = torch.chunk(labels, self.mbsize)
-            assert len(mbatches) == self.mbsize, f"len(mbatches):[{len(mbatches)}] is not equal to mbsize:[{self.mbsize}]"
-            if self.mbsize == 1:
+            mbatches = torch.chunk(labels, self.num_mb)
+            assert len(mbatches) == self.num_mb, f"len(mbatches):[{len(mbatches)}] is not equal to num_mb:[{self.num_mb}]"
+            if self.num_mb == 1:
                 self.run_info.env[0][target_node_name] = labels
             else:
-                for j in range(self.mbsize):
+                for j in range(self.num_mb):
                     self.run_info.env[j][target_node_name] = mbatches[j]
 
             if self.comm.world_size > 1:
-                for j in range(self.mbsize):
+                for j in range(self.num_mb):
                     obj = self.run_info.env[j][target_node_name]
                     self.comm.send_data(obj, self.tpl.get_last_rank(), self.device)
             else:
@@ -688,9 +688,9 @@ class Optimus_p:
             target_node_name = "labels"
 
             if self.comm.world_size > 1:
-                for j in range(self.mbsize):
+                for j in range(self.num_mb):
                     self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
-            if self.mbsize == 1:
+            if self.num_mb == 1:
                 labels = self.run_info.env[0][target_node_name]
             else:
                 outputs = tuple(mb["labels"] for mb in self.run_info.env)
@@ -733,7 +733,7 @@ class Optimus_p:
         return self.run_info.loss
 
     #def get_loss2(self):
-    #    loss = sum(self.run_info.loss) / self.mbsize
+    #    loss = sum(self.run_info.loss) / self.num_mb
     #    return loss.item()
 
 

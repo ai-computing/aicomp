@@ -62,10 +62,10 @@ Run the following command for every node:
 The most basic parallelism option is 'pp_size'. If the 'pp_size' option is omitted, its value is automatically determined based on the number of available GPUs. You may also specify 'pp_size' explicitly if desired.
 
     # Example of a 4-GPU setup with pipeline parallel size=4
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True)
 
     # Example of a 4-GPU setup with pipeline parallel size=4
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=4)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4)
 
 ### Changing scheduling policy for PP
 
@@ -87,10 +87,10 @@ To apply 2D parallelism with PP+DP, use the 'dp_size' option when instantiating 
 
 
     # Example of an 8-GPU setup with pipeline parallel size=4 and data parallel size=2
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2)
 
     # Example of an 8-GPU setup with pipeline parallel size=4 and data parallel size=2
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=4, dp_size=2)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4, dp_size=2)
 
 Configuration diagram of 2D parallelism with pp_size=4 and dp_size=2 applied simultaneously
 
@@ -102,10 +102,10 @@ Configuration diagram of 2D parallelism with pp_size=4 and dp_size=2 applied sim
 To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating the Optimus_p class. 'tp_size' is applicable to the Llama model.
 
     # Example of an 16-GPU setup with pipeline parallel size=8 and tensor parallel size=2
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2)
 
     # Example of an 16-GPU setup with pipeline parallel size=8 and tensor parallel size=2
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=8, tp_size=2)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=8, tp_size=2)
 
 
 ### Configuring PP+TP+DP
@@ -113,10 +113,10 @@ To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating 
 To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size' options. 'tp_size' is applicable to the Llama model.
 
     # Example of a 16-GPU setup with pipeline parallel size=4, tensor parallel size=2, and data parallel size=2
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, dp_size=2)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, dp_size=2)
 
     # Example of a 16-GPU setup with pipeline parallel size=4, tensor parallel size=2, and data parallel size=2
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=4, tp_size=2, dp_size=2)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4, tp_size=2, dp_size=2)
 
 ## Configuring memory optimization options
 
@@ -124,13 +124,13 @@ To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size
 When the 'swap_opt_in_fwdbwd' option is set to True, the optimizer state is offloaded to host memory during the forward and backward passes to reduce GPU memory usage. This helps avoid GPU OOM and enables training of larger models.
 
     # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, swap_opt_in_fwdbwd=True)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True)
 
 ### Executing the optimizer step on the CPU 
 When the 'swap_model_in_optstep' option is set to True, the optimizer’s step() phase is executed on the CPU. This option must be used together with 'swap_opt_in_fwdbwd', and by avoiding the GPU OOM that can occur when using 'swap_opt_in_fwdbwd' alone, it enables the operation of even larger models.
 	
     # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
-    optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
 
 ## License
 

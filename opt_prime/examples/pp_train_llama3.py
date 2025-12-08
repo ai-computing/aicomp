@@ -52,12 +52,12 @@ dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=in
 group_gloo = dist.new_group(backend="gloo")
 
 batch_size = 32
-micro_batch_size = 8 # TODO
+num_mb = 8 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
     print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
+    print(f"num of mbatch: {num_mb}")
 
 
 
@@ -102,7 +102,7 @@ for i in range(local_world_size):
         if int(os.environ["RANK"]) == 0:
             print('Total parameters in model: {:,}'.format(get_total_params(model)))
 
-        optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL 
+        optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL 
         print(f" rank={optimus_p.get_rank()} ...")
 
     print(f"..[local_rank:{local_rank}, i:{i}] Before barrier()...")
@@ -161,7 +161,7 @@ def train():
         print(f">> [Rank:{int(os.environ['RANK'])}] ({i}) After optimizer.step() ..") # TO DELETE
 
         if optimus_p.is_last_stage():
-            loss = sum(loss) / optimus_p.mbsize
+            loss = sum(loss) / optimus_p.num_mb
             total_loss += loss
             log_interval = 10
             if i % log_interval == 0 and i > 0:

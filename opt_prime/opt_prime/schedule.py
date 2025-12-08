@@ -78,21 +78,21 @@ class Schedule:
         if self.optimus.tpl.is_first_stage():
             input = next(self.args_iter)
             if isinstance(input, torch.Tensor):
-                # Check if input size is smaller than mbsize before chunking
-                if self.optimus.use_padding and input.size(0) % self.optimus.mbsize != 0:
-                    padding_size = self.optimus.mbsize - (input.size(0) % self.optimus.mbsize)
+                # Check if input size is smaller than num_mb before chunking
+                if self.optimus.use_padding and input.size(0) % self.optimus.num_mb != 0:
+                    padding_size = self.optimus.num_mb - (input.size(0) % self.optimus.num_mb)
                     padding_batch = torch.zeros_like(input[0:1]) 
                     padding = torch.cat([padding_batch] * padding_size)
                     input = torch.cat([input, padding])
 
                 # Now chunk the padded input
-                mbatches = torch.chunk(input, self.optimus.mbsize)
+                mbatches = torch.chunk(input, self.optimus.num_mb)
                 # Now proceed as usual
-                if self.optimus.mbsize == 1:
+                if self.optimus.num_mb == 1:
                     input = input.to(self.optimus.run_info.device)
                     self.optimus.run_info.env[0]["placeholder"] = input
                 else:
-                    for j in range(self.optimus.mbsize):
+                    for j in range(self.optimus.num_mb):
                         mbatch = mbatches[j].to(self.optimus.run_info.device)
                         self.optimus.run_info.env[j]["placeholder"] = mbatch
             else:
@@ -217,7 +217,7 @@ class Schedule:
     def run_loss(self, mb_idx):
         assert self.optimus.tpl.is_last_stage() == True
 
-        assert mb_idx < self.optimus.mbsize
+        assert mb_idx < self.optimus.num_mb
 
         #node = self.get_output_node()
         node = self.optimus.run_info.output_node
@@ -576,7 +576,7 @@ class Schedule:
         kwargs["valid_index"] = [i for i in range(num_nodes)]
 
         if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
-            if mb_idx == self.optimus.mbsize - 1:
+            if mb_idx == self.optimus.num_mb - 1:
                 #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
                 self.optimus.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
                 result = self.core_backward(*args, **kwargs)
@@ -695,7 +695,7 @@ class ScheduleGPipe(Schedule):
             #self.get_input(data, labels)
             self.get_input(data)
 
-        for i in range(self.optimus.mbsize):
+        for i in range(self.optimus.num_mb):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
 
@@ -713,13 +713,13 @@ class ScheduleGPipe(Schedule):
 
                 model_offloaded = False
 
-        for i in range(self.optimus.mbsize):
+        for i in range(self.optimus.num_mb):
             self.pre_fx_micro_forward_core(i)
             self.fx_micro_forward_core(i)
             result = self.post_fx_micro_forward_core(i)
             next(result)
 
-        for i in range(self.optimus.mbsize):
+        for i in range(self.optimus.num_mb):
             if self.optimus.tpl.is_last_stage():
                 self.run_loss(i)
             grads = self.pre_fx_micro_backward_core(i)
@@ -728,7 +728,7 @@ class ScheduleGPipe(Schedule):
             next(result)
 
         if self.optimus.force_free_mem == True:
-            self.optimus.run_info.clean_run_info(self.optimus.mbsize)
+            self.optimus.run_info.clean_run_info(self.optimus.num_mb)
             if self.optimus.swap_model_in_optstep == True:
                 self.check_swap_model_in_optstep()
             self.force_free_mem()
@@ -755,14 +755,14 @@ class Schedule1F1B(Schedule):
 
         #num_warmup_microbatches = self.optimus.tpl.world_size - self.optimus.tpl.stage - 1
         num_warmup_microbatches = self.optimus.tpl.get_last_stage() - self.optimus.tpl.stage
-        num_warmup_microbatches = min(num_warmup_microbatches, self.optimus.mbsize)
-        remaining = self.optimus.mbsize - num_warmup_microbatches
+        num_warmup_microbatches = min(num_warmup_microbatches, self.optimus.num_mb)
+        remaining = self.optimus.num_mb - num_warmup_microbatches
 
         if self.optimus.tpl.is_first_stage():
             #self.get_input(data, labels)
             self.get_input(data)
 
-        for i in range(self.optimus.mbsize):
+        for i in range(self.optimus.num_mb):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
 
@@ -837,7 +837,7 @@ class Schedule1F1B(Schedule):
 
 
         if self.optimus.force_free_mem == True:
-            self.optimus.run_info.clean_run_info(self.optimus.mbsize)
+            self.optimus.run_info.clean_run_info(self.optimus.num_mb)
             if self.optimus.swap_model_in_optstep == True:
                 self.check_swap_model_in_optstep()
             self.force_free_mem()

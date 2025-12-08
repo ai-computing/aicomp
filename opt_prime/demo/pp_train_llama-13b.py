@@ -80,16 +80,16 @@ if int(os.environ["RANK"]) == 0:
 
 
 batch_size = 384
-micro_batch_size = 64
+num_mb = 64
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
     print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
+    print(f"num of mbatch: {num_mb}")
 
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
@@ -156,7 +156,7 @@ def train():
         optimus_p.optimizer.step()
 
         # if optimus_p.is_last_stage():
-        #     loss = sum(loss) / optimus_p.mbsize
+        #     loss = sum(loss) / optimus_p.num_mb
         #     total_loss += loss
         #     log_interval = 10
         #     if i % log_interval == 0 and i > 0:
@@ -175,7 +175,7 @@ def train():
         # 로그 및 TensorBoard 기록 (마지막 스테이지에서만)
         if optimus_p.is_last_stage():
             # 여러 micro-batch의 loss 합이 리스트로 반환되므로 sum 후 평균
-            loss_value = sum(loss) / optimus_p.mbsize
+            loss_value = sum(loss) / optimus_p.num_mb
             total_loss += loss_value
 
             log_interval = 1

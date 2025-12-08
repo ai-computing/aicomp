@@ -86,16 +86,16 @@ if int(os.environ["RANK"]) == 0:
     print ('Total parameters in model: {:,}'.format(get_total_params(model)))
 
 
-micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+num_mb = int(os.environ["WORLD_SIZE"]) // 2 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
     print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
+    print(f"num of mbatch: {num_mb}")
 
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True)
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, preserve_output=True)
-#optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, preserve_output=True)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
@@ -136,7 +136,7 @@ for i in range(100):
 
     if optimus_p.is_last_stage():
         loss = optimus_p.get_loss() 
-        print(f'Step {i}, Loss1:{sum(loss) / micro_batch_size}')
+        print(f'Step {i}, Loss1:{sum(loss) / num_mb}')
     else:
         loss = None
 

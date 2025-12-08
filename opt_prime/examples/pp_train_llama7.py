@@ -52,13 +52,13 @@ dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=in
 group_gloo = dist.new_group(backend="gloo")
 
 batch_size = 32
-micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
-#micro_batch_size = 1 # TODO
+num_mb = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+#num_mb = 1 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
     print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
+    print(f"num of mbatch: {num_mb}")
 
 
 
@@ -130,9 +130,9 @@ for i in range(local_world_size):
         if int(os.environ["RANK"]) == 0:
             print('Total parameters in model: {:,}'.format(get_total_params(model)))
 
-        #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL
-        optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
-        #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
+        #optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL
+        optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
+        #optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
         print(f" rank={optimus_p.get_rank()} ...")
 
     if local_rank > i:
@@ -196,7 +196,7 @@ def train():
         optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():
-            loss = sum(loss) / optimus_p.mbsize
+            loss = sum(loss) / optimus_p.num_mb
             total_loss += loss
             log_interval = 10
             if i % log_interval == 0 and i > 0:

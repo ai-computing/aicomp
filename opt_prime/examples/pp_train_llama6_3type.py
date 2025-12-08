@@ -92,15 +92,15 @@ if int(os.environ["RANK"]) == 0:
 
 
 batch_size = 32
-micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
+num_mb = int(os.environ["WORLD_SIZE"]) // 2 # TODO
 
 if int(os.environ["RANK"]) == 0:
     print(f"total process count: {os.environ['WORLD_SIZE']}")
     print(f"batch size: {batch_size}")
-    print(f"micro batch size: {micro_batch_size}")
+    print(f"num of mbatch: {num_mb}")
 
 
-optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, swap_use_disk=True)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, swap_use_disk=True)
 print(f" rank={optimus_p.get_rank()} ...")
 
 
@@ -156,7 +156,7 @@ def train():
         optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():
-            loss = sum(loss) / optimus_p.mbsize
+            loss = sum(loss) / optimus_p.num_mb
             total_loss += loss
             #log_interval = 10
             log_interval = 1
