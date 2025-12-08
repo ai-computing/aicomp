@@ -1,9 +1,9 @@
-# OptimusPrime: Highly-efficient 3D parallelization framework for training and inference with giant models
+# OptimusPrime: Highly-efficient 3D parallelization framework for training LLMs
 
-OptimusPrime is a 3D parallelization framework designed for the efficient training and inference of large-scale DNN models. 
+OptimusPrime is a 3D parallelization framework designed for the efficient training of large-scale DNN models. 
 It analyzes the model structure in the form of a PyTorch FX graph within a deep learning cluster environment composed of multiple GPUs and nodes. 
 Based on this analysis, OptimusPrime derives optimized parallelization policies tailored to the hardware environment of the cluster, 
-enabling efficient parallel training and inference.
+enabling efficient parallel training.
 
 ## Supported models
 
@@ -69,7 +69,7 @@ The most basic parallelism option is 'pp_size'. If the 'pp_size' option is omitt
 
 ### Changing scheduling policy for PP
 
-Pipeline parallel in OptimusPrime supports both 'gpipe' and '1f1b' scheduling options. To use either mode, open the desired script in 'opt_prime/examples' and set the 'mode' option in optimus_p.run() as shown below
+Pipeline parallel in OptimusPrime supports both 'gpipe' and '1f1b' scheduling options. To use either mode, open the desired script in 'opt_prime/examples' and set the 'mode' option in optimus_p.run() as shown below.
 
     # Pipeline parallelism uses the 'gpipe' scheduler by default
     optimus_p.run(data, labels)
@@ -99,7 +99,7 @@ Configuration diagram of 2D parallelism with pp_size=4 and dp_size=2 applied sim
 </p>
 
 ### Configuring PP+TP
-To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating the Optimus_p class. 'tp_size' is applicable to the Llama model
+To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating the Optimus_p class. 'tp_size' is applicable to the Llama model.
 
     # Example of an 16-GPU setup with pipeline parallel size=8 and tensor parallel size=2
     optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2)
@@ -110,7 +110,7 @@ To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating 
 
 ### Configuring PP+TP+DP
 
-To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size' options. 'tp_size' is applicable to the Llama model
+To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size' options. 'tp_size' is applicable to the Llama model.
 
     # Example of a 16-GPU setup with pipeline parallel size=4, tensor parallel size=2, and data parallel size=2
     optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, dp_size=2)
@@ -127,7 +127,7 @@ When the 'swap_opt_in_fwdbwd' option is set to True, the optimizer state is offl
     optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, swap_opt_in_fwdbwd=True)
 
 ### Executing the optimizer step on the CPU 
-When the 'swap_model_in_optstep' option is set to True, the optimizer’s step() phase is executed on the CPU. This option must be used together with 'swap_opt_in_fwdbwd', and by avoiding the GPU OOM issues that can occur when using 'swap_opt_in_fwdbwd' alone, it enables the operation of even larger models.
+When the 'swap_model_in_optstep' option is set to True, the optimizer’s step() phase is executed on the CPU. This option must be used together with 'swap_opt_in_fwdbwd', and by avoiding the GPU OOM that can occur when using 'swap_opt_in_fwdbwd' alone, it enables the operation of even larger models.
 	
     # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
     optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
