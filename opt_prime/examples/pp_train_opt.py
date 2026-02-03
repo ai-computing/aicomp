@@ -66,7 +66,8 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
-dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
+# Use DP-aware dataloader (DistributedSampler) when dp_size > 1.
+dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
 print(f"data_size={data_size}")
 nbatches = len(dataloader)
