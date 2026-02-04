@@ -28,12 +28,31 @@ DOCKER_DIR="$(dirname "$SCRIPT_DIR")/docker"
 MICRO_BATCH_SIZES=(1 2 4 8 16 32 64 128)
 
 # ============================================================================
+# Logging setup - output to both terminal and log file
+# ============================================================================
+LOG_DIR="$SCRIPT_DIR/results"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/make_profiledb_$(date +%Y%m%d_%H%M%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+echo "=============================================="
+echo " Log file: $LOG_FILE"
+echo "=============================================="
+
+# ============================================================================
 # Parse arguments
 # ============================================================================
 MODEL_SIZE=${1:-"70B"}
 MASTER_ADDR=${2:-"127.0.0.1"}
 NODE1_HOSTNAME=${3:-""}
 REMOTE_DIR=${4:-"$(dirname "$SCRIPT_DIR")"}
+
+# ============================================================================
+# HuggingFace Token (read from current shell, passed to containers)
+# ============================================================================
+if [ -z "$LLAMA_ACCESS_TOKEN" ]; then
+    echo "WARNING: LLAMA_ACCESS_TOKEN not set in current shell."
+    echo "Run: source ~/.bashrc"
+fi
 
 # Set MODEL_NAME based on MODEL_SIZE
 case "$MODEL_SIZE" in
@@ -110,19 +129,19 @@ run_mbs_sweep() {
             /bin/bash -c "cd /workspace/fasop/make_profiledb && \
             mkdir -p results && \
             bash ./run_distributed.sh \
-                '$MODEL_NAME' \
-                '$NODE_RANK' \
-                '$MASTER_ADDR' \
-                '$NNODES' \
-                '8' \
-                'True' \
-                '$PP' \
-                '$TP' \
-                '$DP' \
-                '$BATCH_SIZE' \
-                '$MBS' \
-                '$RUN_ID' \
-            2>&1 | tee 'results/${RUN_ID}.log'" || true
+                \"$MODEL_NAME\" \
+                \"$NODE_RANK\" \
+                \"$MASTER_ADDR\" \
+                \"$NNODES\" \
+                8 \
+                True \
+                \"$PP\" \
+                \"$TP\" \
+                \"$DP\" \
+                \"$BATCH_SIZE\" \
+                \"$MBS\" \
+                \"$RUN_ID\" \
+            2>&1 | tee \"results/${RUN_ID}.log\"" || true
 
         DOCKER_EXIT=$?
         ELAPSED=$SECONDS
@@ -200,7 +219,7 @@ docker run -d --gpus all --name $CONTAINER_NAME \
     --ipc=host \
     --network=host \
     -w $CONTAINER_WORKSPACE_DIR \
-    -e LLAMA_ACCESS_TOKEN=${LLAMA_ACCESS_TOKEN:-$HF_TOKEN} \
+    -e LLAMA_ACCESS_TOKEN="$LLAMA_ACCESS_TOKEN" \
     --entrypoint /bin/bash \
     $CONTAINER_IMAGE -c "tail -f /dev/null"
 
@@ -251,19 +270,28 @@ if [ -z "$NODE1_HOSTNAME" ]; then
 else
     echo "Starting node1 via SSH: $NODE1_HOSTNAME"
 
-    # Start node1 container and run in background
-    ssh "$NODE1_HOSTNAME" "cd $REMOTE_DIR/make_profiledb && \
-        docker rm -f $CONTAINER_NAME 2>/dev/null || true && \
+    # Build image on node1 if not exists
+    echo "===> Checking/building Docker image on $NODE1_HOSTNAME..."
+    ssh "$NODE1_HOSTNAME" "if ! docker image inspect $CONTAINER_IMAGE >/dev/null 2>&1; then \
+        echo '===> Building image on node1...'; \
+        cd $REMOTE_DIR/docker && docker build --network=host -t $CONTAINER_IMAGE .; \
+    else \
+        echo '===> Image exists on node1'; \
+    fi"
+
+    # Start node1 container
+    echo "===> Starting container on $NODE1_HOSTNAME..."
+    ssh "$NODE1_HOSTNAME" "docker rm -f $CONTAINER_NAME 2>/dev/null || true && \
         docker run -d --gpus all --name $CONTAINER_NAME \
             -v \${HOME}/aicomp/fasop:$CONTAINER_WORKSPACE_DIR \
             -v \${HOME}/.cache/huggingface:/root/.cache/huggingface \
             --ipc=host --network=host \
             -w $CONTAINER_WORKSPACE_DIR \
-            -e LLAMA_ACCESS_TOKEN=\${LLAMA_ACCESS_TOKEN:-\$HF_TOKEN} \
+            -e LLAMA_ACCESS_TOKEN='$LLAMA_ACCESS_TOKEN' \
             --entrypoint /bin/bash \
-            $CONTAINER_IMAGE -c 'tail -f /dev/null'" &
+            $CONTAINER_IMAGE -c 'tail -f /dev/null'"
 
-    sleep 5  # Wait for node1 container
+    sleep 3  # Wait for node1 container
 
     # Run MBS sweep on both nodes for TP=8
     for MBS in "${MICRO_BATCH_SIZES[@]}"; do
@@ -278,14 +306,14 @@ else
         # Start node1 in background
         ssh "$NODE1_HOSTNAME" "docker exec $CONTAINER_NAME \
             /bin/bash -c \"cd /workspace/fasop/make_profiledb && \
-            bash ./run_distributed.sh '$MODEL_NAME' 1 '$MASTER_ADDR' 2 8 True 2 8 1 $BATCH_SIZE $MBS '$RUN_ID'\"" &
+            bash ./run_distributed.sh \\\"$MODEL_NAME\\\" 1 \\\"$MASTER_ADDR\\\" 2 8 True 2 8 1 $BATCH_SIZE $MBS \\\"$RUN_ID\\\"\"" &
         NODE1_PID=$!
 
         # Run node0
         SECONDS=0
         docker exec $CONTAINER_NAME \
             /bin/bash -c "cd /workspace/fasop/make_profiledb && \
-            bash ./run_distributed.sh '$MODEL_NAME' 0 '$MASTER_ADDR' 2 8 True 2 8 1 $BATCH_SIZE $MBS '$RUN_ID'" || true
+            bash ./run_distributed.sh \"$MODEL_NAME\" 0 \"$MASTER_ADDR\" 2 8 True 2 8 1 $BATCH_SIZE $MBS \"$RUN_ID\"" || true
 
         DOCKER_EXIT=$?
         ELAPSED=$SECONDS
