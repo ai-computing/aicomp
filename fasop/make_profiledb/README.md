@@ -54,13 +54,17 @@ MODEL_CONFIGS = {
 
 Runs Docker container and sweeps MBS (micro batch size) from 1 to 128 (powers of 2) until OOM for each TP configuration.
 
+**Requires `LLAMA_ACCESS_TOKEN` environment variable** (HuggingFace token for Llama models):
+
 ```bash
 # Single node only (TP=1,2,4)
-./make_profiledb.sh 70B
+LLAMA_ACCESS_TOKEN=hf_xxxxx ./make_profiledb.sh 70B
 
 # With multi-node support (TP=1,2,4,8) - auto SSH to node1
-./make_profiledb.sh 70B 10.0.0.1 node1 /home/user/aicomp/fasop
+LLAMA_ACCESS_TOKEN=hf_xxxxx ./make_profiledb.sh 70B 10.0.0.1 node1 /home/user/aicomp/fasop
 ```
+
+> **Note:** Get your token from https://huggingface.co/settings/tokens
 
 **Arguments:**
 | Argument | Required | Description |

@@ -11,9 +11,7 @@
 # Example:
 #   ./make_profiledb.sh 70B                                    # Single node, TP=1,2,4
 #   ./make_profiledb.sh 70B 10.0.0.1 node1 /home/user/fasop   # Multi-node, TP=1,2,4,8
-#
-
-set -e
+# node1 means the node that has node rank 1 with this script
 
 # ============================================================================
 # Configuration
@@ -27,16 +25,7 @@ DOCKER_DIR="$(dirname "$SCRIPT_DIR")/docker"
 # MBS values to try (2^N, stops on OOM)
 MICRO_BATCH_SIZES=(1 2 4 8 16 32 64 128)
 
-# ============================================================================
-# Logging setup - output to both terminal and log file
-# ============================================================================
-LOG_DIR="$SCRIPT_DIR/results"
-mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/make_profiledb_$(date +%Y%m%d_%H%M%S).log"
-exec > >(tee -a "$LOG_FILE") 2>&1
-echo "=============================================="
-echo " Log file: $LOG_FILE"
-echo "=============================================="
+set -e
 
 # ============================================================================
 # Parse arguments
@@ -47,12 +36,14 @@ NODE1_HOSTNAME=${3:-""}
 REMOTE_DIR=${4:-"$(dirname "$SCRIPT_DIR")"}
 
 # ============================================================================
-# HuggingFace Token (read from current shell, passed to containers)
+# HuggingFace Token (required for Llama models)
 # ============================================================================
 if [ -z "$LLAMA_ACCESS_TOKEN" ]; then
-    echo "WARNING: LLAMA_ACCESS_TOKEN not set in current shell."
-    echo "Run: source ~/.bashrc"
+    echo "ERROR: LLAMA_ACCESS_TOKEN not set"
+    echo "Usage: LLAMA_ACCESS_TOKEN=hf_xxxxx ./make_profiledb.sh 70B ..."
+    exit 1
 fi
+echo "===> LLAMA_ACCESS_TOKEN found (length: ${#LLAMA_ACCESS_TOKEN})"
 
 # Set MODEL_NAME based on MODEL_SIZE
 case "$MODEL_SIZE" in
@@ -245,21 +236,21 @@ docker exec $CONTAINER_NAME bash -c "mkdir -p $RESULT_DIR && echo 'model,batch_s
 #  4 |  2 |  1 |    8     |   1
 #  8 |  2 |  1 |    8     |   2  (multi-node)
 
-## only tp=8 test
-# echo ""
-# echo "[1/4] TP=1, PP=8, DP=1 (single node)"
-# echo "=============================================="
-# run_mbs_sweep 8 1 1 1
+# only tp=8 test
+echo ""
+echo "[1/4] TP=1, PP=8, DP=1 (single node)"
+echo "=============================================="
+run_mbs_sweep 8 1 1 1
 
-# # echo ""
-# # echo "[2/4] TP=2, PP=4, DP=1 (single node)"
-# # echo "=============================================="
-# # run_mbs_sweep 4 2 1 1
+echo ""
+echo "[2/4] TP=2, PP=4, DP=1 (single node)"
+echo "=============================================="
+run_mbs_sweep 4 2 1 1
 
-# echo ""
-# echo "[3/4] TP=4, PP=2, DP=1 (single node)"
-# echo "=============================================="
-# run_mbs_sweep 2 4 1 1
+echo ""
+echo "[3/4] TP=4, PP=2, DP=1 (single node)"
+echo "=============================================="
+run_mbs_sweep 2 4 1 1
 
 echo ""
 echo "[4/4] TP=8, PP=2, DP=1 (multi-node)"
@@ -287,7 +278,7 @@ else
             -v \${HOME}/.cache/huggingface:/root/.cache/huggingface \
             --ipc=host --network=host \
             -w $CONTAINER_WORKSPACE_DIR \
-            -e LLAMA_ACCESS_TOKEN='$LLAMA_ACCESS_TOKEN' \
+            -e LLAMA_ACCESS_TOKEN=\"$LLAMA_ACCESS_TOKEN\" \
             --entrypoint /bin/bash \
             $CONTAINER_IMAGE -c 'tail -f /dev/null'"
 
@@ -306,14 +297,18 @@ else
         # Start node1 in background
         ssh "$NODE1_HOSTNAME" "docker exec $CONTAINER_NAME \
             /bin/bash -c \"cd /workspace/fasop/make_profiledb && \
-            bash ./run_distributed.sh \\\"$MODEL_NAME\\\" 1 \\\"$MASTER_ADDR\\\" 2 8 True 2 8 1 $BATCH_SIZE $MBS \\\"$RUN_ID\\\"\"" &
+            mkdir -p results && \
+            bash ./run_distributed.sh \\\"$MODEL_NAME\\\" 1 \\\"$MASTER_ADDR\\\" 2 8 True 2 8 1 $BATCH_SIZE $MBS \\\"$RUN_ID\\\" \
+            2>&1 | tee results/${RUN_ID}_node1.log\"" &
         NODE1_PID=$!
 
         # Run node0
         SECONDS=0
         docker exec $CONTAINER_NAME \
             /bin/bash -c "cd /workspace/fasop/make_profiledb && \
-            bash ./run_distributed.sh \"$MODEL_NAME\" 0 \"$MASTER_ADDR\" 2 8 True 2 8 1 $BATCH_SIZE $MBS \"$RUN_ID\"" || true
+            mkdir -p results && \
+            bash ./run_distributed.sh \"$MODEL_NAME\" 0 \"$MASTER_ADDR\" 2 8 True 2 8 1 $BATCH_SIZE $MBS \"$RUN_ID\" \
+            2>&1 | tee \"results/${RUN_ID}_node0.log\"" || true
 
         DOCKER_EXIT=$?
         ELAPSED=$SECONDS
