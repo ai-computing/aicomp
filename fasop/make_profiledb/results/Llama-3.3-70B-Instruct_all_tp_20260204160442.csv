@@ -1,0 +1,7 @@
+model,batch_size,micro_batch_size,pp,tp,dp,status,elapsed_sec
+70b,8,1,2,8,1,SUCCESS,850
+70b,16,2,2,8,1,SUCCESS,865
+70b,32,4,2,8,1,SUCCESS,883
+70b,64,8,2,8,1,SUCCESS,906
+70b,128,16,2,8,1,SUCCESS,1000
+70b,256,32,2,8,1,SUCCESS,913
