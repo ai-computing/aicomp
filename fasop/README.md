@@ -47,9 +47,9 @@ fasop/
 
 > **Interactive web-based visualization for monitoring FASOP search progress in real-time.**
 
-![Web Pareto Viewer](demo/pareto_viewer.png)
-
-![FASOP Demo](demo/Optimus-Prime-FASOP-Demo.gif)
+<p align="center">
+  <img src="demo/Optimus-Prime-FASOP-Demo.gif" alt="Optimus-Prime-FASOP_Demo">
+</p>
 
 ### Quick Start
 
@@ -58,7 +58,6 @@ fasop/
 cd demo
 python web_pareto_viewer.py
 # Open http://localhost:3000
-# Click 'search' button
 ```
 
 ### Features
