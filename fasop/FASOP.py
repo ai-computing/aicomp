@@ -184,6 +184,8 @@ Note: Heterogeneous mode is auto-detected when multiple GPU types are specified.
                               help="Additional experiment name suffix")
     output_group.add_argument("--parsing", action='store_true',
                               help="Enable parsing mode for real-time JSONL output (default: False)")
+    output_group.add_argument("--parsing-file", type=str, default=None,
+                              help="Custom JSONL output path for parsing mode (e.g., main_logs/my_run.jsonl)")
     output_group.add_argument("--no-save-csv", action='store_true',
                               help="Skip saving results to CSV file (default: False)")
 
@@ -297,10 +299,14 @@ def validate_and_init_config(args: argparse.Namespace) -> FasopConfig:
         # Auto-generate log filename when verbose mode is enabled
         log_file = f"main_logs/{args.model_type}_{gpu_str}_gbs{args.gbs}_{timestamp}.log"
 
+    # Validate parsing-file usage
+    if args.parsing_file and not args.parsing:
+        raise SystemExit("Error: --parsing-file requires --parsing")
+
     # Determine parsing file path (JSONL for real-time logging)
     parsing_file = None
     if args.parsing:
-        parsing_file = f"main_logs/{args.model_type}_{gpu_str}_gbs{args.gbs}_{timestamp}.jsonl"
+        parsing_file = args.parsing_file or f"main_logs/{args.model_type}_{gpu_str}_gbs{args.gbs}_{timestamp}.jsonl"
 
     # Create config
     config = FasopConfig(
@@ -626,6 +632,53 @@ def run_strategy_search(
         print(f"[PARETO] GBS pivoting enabled: {gbs_values}")
     else:
         gbs_values = [config.gbs]  # Single GBS value
+
+    # Pre-calculate total combinations for pareto mode with parsing
+    if config.pareto and jsonl_logger:
+        pareto_total_count = 0
+        pareto_breakdown = []  # List of {gbs, cluster, count} for each combination
+
+        for gbs in gbs_values:
+            current_config = replace(config, gbs=gbs)
+            cluster_combinations = get_all_cluster_combinations(
+                gpu_cluster=current_config.gpu_cluster,
+                pareto=current_config.pareto
+            )
+            print(f"[PARETO]Cluster combinations: {cluster_combinations}")
+            
+            for current_cluster in cluster_combinations:
+                num_node = sum(current_cluster.values())
+                cluster_gpu_types = list(current_cluster.keys())
+                available_tps_per_gpu = [set(profile_db.get_available_tp(gpu_type)) for gpu_type in cluster_gpu_types]
+                if available_tps_per_gpu and all(tps for tps in available_tps_per_gpu):
+                    available_tps = sorted(list(set.intersection(*available_tps_per_gpu)))
+                else:
+                    available_tps = None
+
+                count = count_parallel_strategies(
+                    M=current_config.gpu_per_node,
+                    N=num_node,
+                    gbs=gbs,
+                    num_layers=int(model_config["num_layers"].item()),
+                    available_tps=available_tps
+                )
+                pareto_total_count += count
+                pareto_breakdown.append({
+                    "gbs": gbs,
+                    "cluster": dict(current_cluster),
+                    "count": count
+                })
+
+        # Log pareto meta information at the start
+        jsonl_logger.log_meta({
+            "type": "pareto_meta",
+            "pareto_total_count": pareto_total_count,
+            "gbs_values": gbs_values,
+            "model_type": config.model_type,
+            "gpu_cluster": dict(config.gpu_cluster),
+        })
+        print(f"[PARETO] Total combinations across all GBS values: {pareto_total_count}")
+        
 
     # Iterate over GBS values
     for gbs in gbs_values:

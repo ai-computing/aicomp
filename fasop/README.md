@@ -16,12 +16,16 @@ fasop/
 ├── config.py                # Configuration: GPU specs, ProfileDB, parse_gpu_cluster(),...
 ├── model_config.py          # LLaMA, GPT model information: get_model_config()
 ├── estimate.py              # Cost estimation: FASOP class, get_cost_c(), get_cost_e_fx()
-├── partition.py             # PP partition logic : PartitionAlgorithm, expand_node_costs() 
+├── partition.py             # PP partition logic : PartitionAlgorithm, expand_node_costs()
 ├── device_placement.py      # device_placement_from_cluster(), get_all_cluster_combinations(),...
 ├── pipe.py                  # Pipeline modeling : Stage class, get_stage_latency(),...
 ├── stage.py                 # Stage-level time calculation : StageTime, PPGroup
 ├── utils.py                 # Utility functions : TeeLogger, JSONLLogger, factor(),...
 ├── make_pareto.py           # Pareto analysis and plotting : compute_pareto_frontier(),...
+│
+├── demo/                    # Demo tools and visualization
+│   ├── web_pareto_viewer.py # Real-time web-based Pareto viewer (Plotly.js)
+│   └── README.md            # Demo documentation
 │
 ├── known_cost/              # Profile data and inspection utility
 │   ├── load.py              # NPZ data viewer : show_profiles()
@@ -36,6 +40,37 @@ fasop/
     ├── _06_get_layer_time.py
     └── docker/
 ```
+
+---
+
+## Demo: Real-time Web Pareto Frontier graph Viewer
+
+> **Interactive web-based visualization for monitoring FASOP search progress in real-time.**
+
+![Web Pareto Viewer](demo/pareto_viewer.png)
+
+![FASOP Demo](demo/Optimus-Prime-FASOP-Demo.gif)
+
+### Quick Start
+
+```bash
+# From demo/ directory - just run and click "Search" button
+cd demo
+python web_pareto_viewer.py
+# Open http://localhost:3000
+# Click 'search' button
+```
+
+### Features
+- Real-time Pareto frontier visualization with Plotly.js
+- Progress tracking (valid/OOM/pareto counts)
+- Interactive hover tooltips with configuration details
+- Auto-refresh every 1 second
+- Built-in search button to start FASOP directly from web UI
+
+See [demo/README.md](demo/README.md) for detailed documentation.
+
+---
 
 ## Profile Data Format
 

@@ -223,11 +223,15 @@ def enumerate_parallel_strategies(M, N, gbs, known, num_layers, available_tps=No
 
 def compute_pareto_frontier(costs: np.ndarray, throughputs: np.ndarray) -> np.ndarray:
     """
-    Compute Pareto frontier mask for cost-throughput tradeoff.
+    Compute Pareto frontier mask for cost-throughput tradeoff using O(n log n) skyline algorithm.
 
     A point is on the Pareto frontier if no other point has both:
     - Lower or equal cost AND higher or equal throughput (with at least one strictly better)
 
+    Algorithm:
+        1. Sort points by cost (ascending), with throughput (descending) for tie-breaking
+        2. Scan once: a point is on frontier if its throughput exceeds all previous points
+        
     Args:
         costs: Array of cost values (lower is better)
         throughputs: Array of throughput values (higher is better)
@@ -236,18 +240,22 @@ def compute_pareto_frontier(costs: np.ndarray, throughputs: np.ndarray) -> np.nd
         Boolean mask where True indicates Pareto frontier points
     """
     n = len(costs)
-    is_pareto = np.ones(n, dtype=bool)
-
-    for i in range(n):
-        for j in range(n):
-            if i != j:
-                # Point j dominates point i if j has lower/equal cost AND higher/equal throughput
-                # with at least one strictly better
-                if (costs[j] <= costs[i] and throughputs[j] >= throughputs[i]) and \
-                   (costs[j] < costs[i] or throughputs[j] > throughputs[i]):
-                    is_pareto[i] = False
-                    break
-
+    
+    # Sort by cost (ascending), then by throughput (descending) for tie-breaking
+    # lexsort sorts by the last key first, so we put costs last
+    indices = np.lexsort((-throughputs, costs))
+    sorted_throughputs = throughputs[indices]
+    
+    # Track which points are on the frontier
+    is_pareto = np.zeros(n, dtype=bool)
+    max_throughput = -np.inf
+    
+    # Single pass: if throughput exceeds max seen so far, it's on frontier
+    for i, idx in enumerate(indices):
+        if sorted_throughputs[i] > max_throughput:
+            is_pareto[idx] = True
+            max_throughput = sorted_throughputs[i]
+    
     return is_pareto
 
 
