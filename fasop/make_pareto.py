@@ -14,17 +14,29 @@ throughputs = df['throughput(samples/s)'].values
 
 # Pareto frontier computation function
 def compute_pareto_frontier(costs, throughputs):
+    """
+    O(n log n) skyline algorithm for Pareto frontier computation.
+
+    Goal: minimize cost, maximize throughput
+
+    A point is on the Pareto frontier if no other point has
+    both lower cost AND higher throughput.
+    """
     n = len(costs)
-    is_pareto = np.ones(n, dtype=bool)
-    
-    for i in range(n):
-        for j in range(n):
-            if i != j:
-                if (costs[j] <= costs[i] and throughputs[j] >= throughputs[i]) and \
-                   (costs[j] < costs[i] or throughputs[j] > throughputs[i]):
-                    is_pareto[i] = False
-                    break
-    
+
+    # Step 1: Sort by cost ascending, throughput descending (O(n log n))
+    indices = np.lexsort((-throughputs, costs))
+
+    # Step 2: Single pass tracking max throughput (O(n))
+    is_pareto = np.zeros(n, dtype=bool)
+    max_throughput = -np.inf
+
+    for idx in indices:
+        current_throughput = throughputs[idx]
+        if current_throughput > max_throughput:
+            is_pareto[idx] = True
+            max_throughput = current_throughput
+
     return is_pareto
 
 # Compute First Pareto frontier
