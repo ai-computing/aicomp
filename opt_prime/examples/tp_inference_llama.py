@@ -1,0 +1,249 @@
+#
+# Copyright (c) 2024-present, ETRI, All rights reserved.
+#
+
+"""
+Tensor Parallel Inference Example for LLaMA Models (with KV Cache)
+
+This example demonstrates inference using Tensor Parallelism (TP) and
+optional Pipeline Parallelism (PP) with KV cache for efficient decoding.
+
+TP splits attention heads and MLP layers across GPUs within a stage,
+enabling inference on models larger than a single GPU's memory.
+
+Usage:
+    # TP only (2 GPUs, single stage)
+    torchrun --nproc_per_node=2 tp_inference_llama.py --tp-size 2
+
+    # 3D parallelism: PP=2 x TP=2 (4 GPUs)
+    torchrun --nproc_per_node=4 tp_inference_llama.py --pp-size 2 --tp-size 2
+
+    # Large model with TP=4
+    torchrun --nproc_per_node=4 tp_inference_llama.py \
+        --model meta-llama/Llama-3.3-70B-Instruct --tp-size 4
+
+    # Compare KV cache vs full-sequence recomputation
+    torchrun --nproc_per_node=2 tp_inference_llama.py --tp-size 2 --use-kv-cache
+    torchrun --nproc_per_node=2 tp_inference_llama.py --tp-size 2
+
+Environment:
+    - Requires: PyTorch >= 2.0, transformers, CUDA >= 12.1
+    - TP is only supported for LLaMA models
+    - GPU count must equal pp_size * tp_size
+"""
+
+import torch
+import torch.distributed as dist
+import argparse
+import os
+import sys
+import time
+
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig, TextStreamer
+
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from opt_prime.inference import Optimus_Inference
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Tensor Parallel Inference for LLaMA (with KV Cache)"
+    )
+    parser.add_argument(
+        "--model", type=str,
+        default="meta-llama/Llama-3.2-1B",
+        help="HuggingFace model name or path"
+    )
+    parser.add_argument(
+        "--prompt", type=str,
+        default="The future of artificial intelligence is",
+        help="Input prompt for generation"
+    )
+    parser.add_argument(
+        "--max-new-tokens", type=int, default=50,
+        help="Maximum number of tokens to generate"
+    )
+    parser.add_argument(
+        "--temperature", type=float, default=0.7,
+        help="Sampling temperature"
+    )
+    parser.add_argument(
+        "--top-k", type=int, default=50,
+        help="Top-k sampling parameter"
+    )
+    parser.add_argument(
+        "--top-p", type=float, default=0.95,
+        help="Top-p (nucleus) sampling parameter"
+    )
+    parser.add_argument(
+        "--no-sample", action="store_true",
+        help="Use greedy decoding instead of sampling"
+    )
+    parser.add_argument(
+        "--pp-size", type=int, default=1,
+        help="Pipeline parallel size (default: 1, pure TP)"
+    )
+    parser.add_argument(
+        "--tp-size", type=int, default=2,
+        help="Tensor parallel size (default: 2)"
+    )
+    parser.add_argument(
+        "--use-kv-cache", action="store_true",
+        help="Use KV cache for O(n) decode (default: full-sequence O(n^2))"
+    )
+    parser.add_argument(
+        "--dtype", type=str, default="bfloat16",
+        choices=["float32", "float16", "bfloat16"],
+        help="Data type for inference"
+    )
+    return parser.parse_args()
+
+
+def get_dtype(dtype_str: str) -> torch.dtype:
+    dtype_map = {
+        "float32": torch.float32,
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+    }
+    return dtype_map[dtype_str]
+
+
+def main():
+    args = parse_args()
+
+    rank = int(os.environ.get("RANK", 0))
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+
+    # Validate TP configuration
+    assert args.tp_size >= 2, "This example requires --tp-size >= 2"
+    assert world_size == args.pp_size * args.tp_size, \
+        f"World size ({world_size}) must equal pp_size ({args.pp_size}) * tp_size ({args.tp_size})"
+
+    if rank == 0:
+        print("=" * 60)
+        print("Tensor Parallel Inference Example")
+        print("=" * 60)
+        print(f"  Model:          {args.model}")
+        print(f"  World Size:     {world_size}")
+        print(f"  TP Size:        {args.tp_size}")
+        print(f"  PP Size:        {args.pp_size}")
+        print(f"  Dtype:          {args.dtype}")
+        print(f"  Max New Tokens: {args.max_new_tokens}")
+        print(f"  KV Cache:       {'enabled' if args.use_kv_cache else 'disabled'}")
+        print(f"  Sampling:       {'greedy' if args.no_sample else f'temp={args.temperature}, top_k={args.top_k}, top_p={args.top_p}'}")
+        print("=" * 60)
+
+    # Load model configuration
+    # use_cache=False for FX tracing. KV caching is handled externally
+    # by CachedScaledDotProductAttention when --use-kv-cache is set.
+    config = AutoConfig.from_pretrained(args.model, use_cache=False)
+
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    # Load model
+    dtype = get_dtype(args.dtype)
+    if rank == 0:
+        print(f"\nLoading model: {args.model}")
+
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model,
+        config=config,
+        torch_dtype=dtype,
+    )
+
+    if rank == 0:
+        total_params = sum(p.numel() for p in model.parameters())
+        print(f"Total parameters: {total_params:,}")
+        params_per_gpu = total_params / args.tp_size
+        print(f"Parameters per TP rank: ~{params_per_gpu:,.0f}")
+
+    # Create inference engine with TP + optional KV cache
+    engine = Optimus_Inference(
+        model,
+        use_gpu=True,
+        pp_size=args.pp_size,
+        tp_size=args.tp_size,
+        dtype=dtype,
+        use_kv_cache=args.use_kv_cache,
+    )
+
+    engine.eval()
+
+    # Prepare input (only needed on first stage)
+    if engine.is_first_stage():
+        tokens = tokenizer(
+            args.prompt,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=2048,
+        )
+        input_ids = tokens.input_ids.cuda()
+        if engine.is_input_rank():
+            print(f"\n[Rank {rank}] Prompt: {args.prompt}")
+            print(f"[Rank {rank}] Input shape: {input_ids.shape}")
+    else:
+        input_ids = None
+
+    # Set up streaming on the output rank (first TP rank of last stage)
+    if engine.is_output_rank():
+        method = "KV cache, O(n)" if args.use_kv_cache else "full-seq recompute, O(n^2)"
+        print(f"\nGenerating {args.max_new_tokens} tokens "
+              f"(TP={args.tp_size}, PP={args.pp_size}, {method})...")
+        print("\n" + "=" * 60)
+        print(args.prompt, end="", flush=True)
+        streamer = TextStreamer(tokenizer, skip_special_tokens=True)
+    else:
+        streamer = None
+
+    # Generate
+    start_time = time.time()
+
+    output_ids = engine.generate(
+        input_ids,
+        max_new_tokens=args.max_new_tokens,
+        temperature=args.temperature,
+        top_k=args.top_k,
+        top_p=args.top_p,
+        do_sample=not args.no_sample,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.pad_token_id,
+        streamer=streamer,
+        verbose=False,
+    )
+
+    generation_time = time.time() - start_time
+
+    # Statistics (output rank only)
+    if engine.is_output_rank() and output_ids is not None:
+        prompt_token_count = len(tokenizer(args.prompt).input_ids)
+        num_generated = output_ids.size(1) - prompt_token_count
+
+        print("=" * 60)
+        print(f"\nGeneration Statistics:")
+        print(f"  Tokens generated : {num_generated}")
+        print(f"  Total time       : {generation_time:.2f}s")
+        if num_generated > 0:
+            print(f"  Tokens/second    : {num_generated / generation_time:.2f}")
+            print(f"  Avg time/token   : {generation_time / num_generated * 1000:.1f}ms")
+        print(f"  TP size          : {args.tp_size}")
+        print(f"  PP size          : {args.pp_size}")
+        if args.use_kv_cache:
+            print(f"  Method           : KV cache (O(n) decode)")
+        else:
+            print(f"  Method           : full-sequence recomputation (O(n^2) decode)")
+        print("=" * 60)
+
+    dist.barrier()
+
+    if rank == 0:
+        print(f"\n[Rank {rank}] Inference completed successfully!")
+
+
+if __name__ == "__main__":
+    main()

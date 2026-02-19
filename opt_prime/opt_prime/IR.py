@@ -84,7 +84,7 @@ class IR(object):
         self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
 
-    def retrieve_IR(self, model: nn.Module):
+    def retrieve_IR(self, model: nn.Module, use_kv_cache: bool = False):
 
         ##
         if model.__class__.__name__ in [ "ViTForImageClassification" ]:
@@ -109,7 +109,10 @@ class IR(object):
 
         #elif model.__class__.__name__ in _SUPPORTED_MODELS:
         elif model.__class__.__name__ in _SUPPORTED_MODELS or model.__class__.__name__ in _OTHER_MODELS:
-            input_names = model.dummy_inputs.keys()
+            input_names = list(model.dummy_inputs.keys())
+            if use_kv_cache:
+                if 'position_ids' not in input_names:
+                    input_names.append('position_ids')
 
             sig = inspect.signature(model.forward)
             concrete_args = {
