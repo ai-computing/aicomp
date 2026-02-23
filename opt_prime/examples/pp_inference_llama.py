@@ -104,6 +104,11 @@ def parse_args():
         action="store_true",
         help="Use KV cache for O(n) decode (default: full-sequence O(n^2))"
     )
+    parser.add_argument(
+        "--serving-mode",
+        action="store_true",
+        help="Keep KV cache allocated between requests (requires --use-kv-cache)"
+    )
     return parser.parse_args()
 
 
@@ -135,6 +140,8 @@ def main():
         print(f"Dtype: {args.dtype}")
         print(f"Max New Tokens: {args.max_new_tokens}")
         print(f"KV Cache: {'enabled' if args.use_kv_cache else 'disabled (full-sequence)'}")
+        if args.use_kv_cache:
+            print(f"Cache Mode: {'serving (cache kept)' if args.serving_mode else 'batch (cache freed)'}")
         print("=" * 60)
 
     # Load model configuration
@@ -172,6 +179,7 @@ def main():
         tp_size=args.tp_size,
         dtype=dtype,
         use_kv_cache=args.use_kv_cache,
+        serving_mode=args.serving_mode,
     )
 
     # Set to evaluation mode
@@ -236,7 +244,8 @@ def main():
             print(f"  - Tokens/second: {num_generated / generation_time:.2f}")
             print(f"  - Avg time/token: {generation_time / num_generated:.2f}s")
         if args.use_kv_cache:
-            print(f"  - Method: KV cache (O(n))")
+            mode = "serving" if args.serving_mode else "batch"
+            print(f"  - Method: KV cache (O(n), {mode} mode)")
         else:
             print(f"  - Method: full-sequence recomputation (O(n^2))")
         print("=" * 60)

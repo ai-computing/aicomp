@@ -92,6 +92,10 @@ def parse_args():
         help="Use KV cache for O(n) decode (default: full-sequence O(n^2))"
     )
     parser.add_argument(
+        "--serving-mode", action="store_true",
+        help="Keep KV cache allocated between requests (requires --use-kv-cache)"
+    )
+    parser.add_argument(
         "--dtype", type=str, default="bfloat16",
         choices=["float32", "float16", "bfloat16"],
         help="Data type for inference"
@@ -131,6 +135,8 @@ def main():
         print(f"  Dtype:          {args.dtype}")
         print(f"  Max New Tokens: {args.max_new_tokens}")
         print(f"  KV Cache:       {'enabled' if args.use_kv_cache else 'disabled'}")
+        if args.use_kv_cache:
+            print(f"  Cache Mode:     {'serving (cache kept)' if args.serving_mode else 'batch (cache freed)'}")
         print(f"  Sampling:       {'greedy' if args.no_sample else f'temp={args.temperature}, top_k={args.top_k}, top_p={args.top_p}'}")
         print("=" * 60)
 
@@ -170,6 +176,7 @@ def main():
         tp_size=args.tp_size,
         dtype=dtype,
         use_kv_cache=args.use_kv_cache,
+        serving_mode=args.serving_mode,
     )
 
     engine.eval()
@@ -234,7 +241,8 @@ def main():
         print(f"  TP size          : {args.tp_size}")
         print(f"  PP size          : {args.pp_size}")
         if args.use_kv_cache:
-            print(f"  Method           : KV cache (O(n) decode)")
+            mode = "serving" if args.serving_mode else "batch"
+            print(f"  Method           : KV cache (O(n) decode, {mode} mode)")
         else:
             print(f"  Method           : full-sequence recomputation (O(n^2) decode)")
         print("=" * 60)

@@ -92,12 +92,14 @@ class Optimus_Inference:
         dtype: torch.dtype = torch.bfloat16,
         ir_analyze: IR_Anal = IR_Anal.PARALLEL,
         use_kv_cache: bool = False,
+        serving_mode: bool = False,
     ):
         self.use_gpu = use_gpu
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
         self.dtype = dtype
         self.use_kv_cache = use_kv_cache
+        self.serving_mode = serving_mode
 
         # Model type mapping (reused from training)
         self.model2type = {"hf": 50, "sy": 51, "vt": 52}
@@ -692,9 +694,12 @@ class Optimus_Inference:
         if self._schedule_infer is None:
             self._schedule_infer = ScheduleInference(self)
 
-        # Enable all CachedSDPA modules
+        # Enable/reset all CachedSDPA modules
         for m in self._cached_sdpa_modules:
-            m.enable()
+            if self.serving_mode and m._enabled:
+                m.clear()    # Already allocated — reset position only
+            else:
+                m.enable()   # First call or batch mode — activate
 
         # Get batch size and initial sequence length from first stage
         if self.tpl.is_first_stage():
@@ -836,9 +841,13 @@ class Optimus_Inference:
                         self.tpl.get_last_rank(), self.device
                     )
 
-        # Disable CachedSDPA modules and free cache memory
+        # Serving mode: keep cache allocated for next request (clear position only)
+        # Batch mode: free cache memory completely
         for m in self._cached_sdpa_modules:
-            m.disable()
+            if self.serving_mode:
+                m.clear()
+            else:
+                m.disable()
 
         # Trim generated_ids to actual length
         if self.tpl.is_last_stage():
@@ -906,6 +915,22 @@ class Optimus_Inference:
         if self.kv_cache is not None:
             self.kv_cache.free()
             self.kv_cache = None
+
+    def release_kv_cache(self) -> None:
+        """Explicitly free CachedSDPA KV cache memory.
+
+        Use this in serving mode to release GPU memory when the serving
+        session ends. In batch mode this is unnecessary since generate()
+        already calls disable() after each request.
+
+        Example (serving mode):
+            engine = Optimus_Inference(model, use_kv_cache=True, serving_mode=True)
+            for prompt in requests:
+                engine.generate(prompt, ...)  # cache kept between calls
+            engine.release_kv_cache()         # free when done serving
+        """
+        for m in self._cached_sdpa_modules:
+            m.disable()
 
     def __repr__(self) -> str:
         return (
