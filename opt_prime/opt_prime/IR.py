@@ -143,7 +143,7 @@ class IR(object):
             sys.exit(1)
 
         # TODO: TO DELETE
-        #if int(os.environ["RANK"]) == 0:
+        #if int(os.environ.get("RANK", "0")) == 0:
         #    print(f">> ------------------ FX graph (pre) --------------------------------")
         #    for n in self.gm.graph.nodes:
         #        print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
@@ -164,7 +164,7 @@ class IR(object):
 
         self.model_ir.append(submods)
 
-        if int(os.environ["RANK"]) == 0:
+        if int(os.environ.get("RANK", "0")) == 0:
             print(f">> ------------------ FX graph --------------------------------")
             for n in self.model_ir[0].graph.nodes:
                 print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
@@ -232,7 +232,7 @@ class IR(object):
         if len(self.metadata_range) <  num_stage:
             self.metadata_range.append((k, n.name))
 
-        if int(os.environ["RANK"]) == 0:
+        if int(os.environ.get("RANK", "0")) == 0:
             print(f" ------------------------------------------------------------")
             print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
             print(f" ------------------------------------------------------------")
@@ -412,7 +412,7 @@ class IR(object):
             #print(f" part_fn:  node.name:{node.name}, --> {idx}")
             return idx
 
-        if int(os.environ["RANK"]) == 0:
+        if int(os.environ.get("RANK", "0")) == 0:
             print(f" ------------------------------------------------------------")
             print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
             print(f" ------------------------------------------------------------")

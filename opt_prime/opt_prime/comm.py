@@ -56,12 +56,12 @@ class Comm:
     def init_comm(self, use_gpu):
         torch.manual_seed(42)
 
-        self.rank = int(os.environ["RANK"])
-        self.world_size = int(os.environ["WORLD_SIZE"])
-        self.master_addr = os.getenv("MASTER_ADDR")
-        self.master_port = os.getenv("MASTER_PORT")
-        self.local_rank = int(os.environ["LOCAL_RANK"])
-        self.local_world_size = int(os.environ["LOCAL_WORLD_SIZE"])
+        self.rank = int(os.environ.get("RANK", "0"))
+        self.world_size = int(os.environ.get("WORLD_SIZE", "1"))
+        self.master_addr = os.getenv("MASTER_ADDR", "127.0.0.1")
+        self.master_port = os.getenv("MASTER_PORT", "29500")
+        self.local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+        self.local_world_size = int(os.environ.get("LOCAL_WORLD_SIZE", "1"))
 
         if use_gpu == True:
             gpu_cnt = torch.cuda.device_count()
@@ -76,6 +76,11 @@ class Comm:
         else:
             self.backend = "gloo"
             print(f"CPU mode is used.")
+
+        # Single-process mode: skip distributed initialization
+        if self.world_size == 1:
+            print(f"Single-process mode (world_size=1), skipping distributed init.")
+            return
 
         if dist.is_initialized():
             print(f"Communication already initialized")

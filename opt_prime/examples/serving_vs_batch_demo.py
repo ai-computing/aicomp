@@ -106,7 +106,8 @@ def run_benchmark(engine, tokenizer, args, serving_mode: bool, rank: int):
     mode_name = "SERVING" if serving_mode else "BATCH"
 
     # Synchronize and clear GPU cache before benchmark
-    dist.barrier()
+    if dist.is_initialized():
+        dist.barrier()
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
 
@@ -175,7 +176,8 @@ def run_benchmark(engine, tokenizer, args, serving_mode: bool, rank: int):
                   f"{mem_after['reserved']:>11.1f}  {delta:>+10.1f}  "
                   f"{elapsed:>8.2f}  {cache_status}")
 
-        dist.barrier()
+        if dist.is_initialized():
+            dist.barrier()
 
     # Summary
     if engine.is_output_rank() and records:
@@ -246,7 +248,8 @@ def main():
     # Clean up batch engine to get a fair baseline for serving mode
     del engine_batch
     torch.cuda.empty_cache()
-    dist.barrier()
+    if dist.is_initialized():
+        dist.barrier()
 
     # ----------------------------------------------------------------
     # Phase 2: SERVING MODE (cache kept between requests)
@@ -329,7 +332,8 @@ def main():
             print(f"      (no cache re-allocation overhead).")
         print()
 
-    dist.barrier()
+    if dist.is_initialized():
+        dist.barrier()
 
     if rank == 0:
         print("Demo completed.")

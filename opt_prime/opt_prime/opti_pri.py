@@ -48,17 +48,24 @@ class Topology:
         self.dp_size = dp_size
         self.tp_size = tp_size
 
-        self.device_mesh = init_device_mesh("cuda", mesh_shape=(pp_size, dp_size, tp_size), mesh_dim_names=("pp", "dp", "tp"))
-        self.tp_group = self.device_mesh["tp"].get_group()
-        self.dp_group = self.device_mesh["dp"].get_group()
-        self.pp_group = self.device_mesh["pp"].get_group()
-        self.tp_mesh = self.device_mesh["tp"]
-        self.dp_mesh = self.device_mesh["dp"]
-        self.pp_mesh = self.device_mesh["pp"]
-
-        #if rank == 0:
-        #    print(f"> pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
-        print(f"> [rank:{rank}] pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
+        if world_size > 1:
+            self.device_mesh = init_device_mesh("cuda", mesh_shape=(pp_size, dp_size, tp_size), mesh_dim_names=("pp", "dp", "tp"))
+            self.tp_group = self.device_mesh["tp"].get_group()
+            self.dp_group = self.device_mesh["dp"].get_group()
+            self.pp_group = self.device_mesh["pp"].get_group()
+            self.tp_mesh = self.device_mesh["tp"]
+            self.dp_mesh = self.device_mesh["dp"]
+            self.pp_mesh = self.device_mesh["pp"]
+            print(f"> [rank:{rank}] pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
+        else:
+            self.device_mesh = None
+            self.tp_group = None
+            self.dp_group = None
+            self.pp_group = None
+            self.tp_mesh = None
+            self.dp_mesh = None
+            self.pp_mesh = None
+            print(f"> [rank:{rank}] Single-process mode, no device mesh")
 
 
         #
@@ -71,13 +78,15 @@ class Topology:
 
 
     def set_stage2rank(self):
-        #for i in range(self.pp_size):
-        #    self.stage2rank[i] = [i*self.dp_size + j for j in range(self.dp_size)]
-        pp_dim = 0
-        total_ranks = self.device_mesh.mesh
-        for pp_stage in range(self.pp_size):
-            stage_ranks = total_ranks[pp_stage, :, :].flatten().tolist()
-            self.stage2rank[pp_stage] = stage_ranks
+        if self.device_mesh is not None:
+            total_ranks = self.device_mesh.mesh
+            for pp_stage in range(self.pp_size):
+                stage_ranks = total_ranks[pp_stage, :, :].flatten().tolist()
+                self.stage2rank[pp_stage] = stage_ranks
+        else:
+            # Single-process: stage 0 contains rank 0 only
+            for pp_stage in range(self.pp_size):
+                self.stage2rank[pp_stage] = [0]
 
         if self.rank == 0:
             print(f" ----------------------------------")
@@ -462,7 +471,8 @@ class Optimus_p:
                         print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
                     print(f"[rank:{rank}, local_rank:{local_rank}] SEQUENTIAL MODE PROCESSING ...")
 
-                dist.barrier()
+                if self.comm.world_size > 1:
+                    dist.barrier()
 
 
         if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
@@ -615,17 +625,19 @@ class Optimus_p:
                 #    self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
 
                 special_nodes_obj = [self.ir.special_nodes, self.ir.metadata_range, self.run_info.getitem_dic, self.model_type]
-                print(f" ### Rank:{rank}, local_rank:{local_rank} - before broadcast_object_list.. ")
-                dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
-                print(f" ### Rank:{rank}, local_rank:{local_rank} - after broadcast_object_list.. ")
+                if self.comm.world_size > 1:
+                    print(f" ### Rank:{rank}, local_rank:{local_rank} - before broadcast_object_list.. ")
+                    dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
+                    print(f" ### Rank:{rank}, local_rank:{local_rank} - after broadcast_object_list.. ")
                 self.run_info.special_nodes = special_nodes_obj[0]
                 self.run_info.metadata_range = special_nodes_obj[1]
                 self.run_info.getitem_dic = special_nodes_obj[2]
             else:
                 special_nodes_obj = [None, None, None, None]
-                print(f" ### Rank:{rank}, local_rank:{local_rank} - before broadcast_object_list.. ")
-                dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
-                print(f" ### Rank:{rank}, local_rank:{local_rank} - after broadcast_object_list.. ")
+                if self.comm.world_size > 1:
+                    print(f" ### Rank:{rank}, local_rank:{local_rank} - before broadcast_object_list.. ")
+                    dist.broadcast_object_list(special_nodes_obj, src=0, device=self.device)
+                    print(f" ### Rank:{rank}, local_rank:{local_rank} - after broadcast_object_list.. ")
                 self.run_info.special_nodes = special_nodes_obj[0]
                 self.run_info.metadata_range = special_nodes_obj[1]
                 self.run_info.getitem_dic = special_nodes_obj[2]
