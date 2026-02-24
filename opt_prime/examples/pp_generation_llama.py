@@ -25,6 +25,9 @@ Usage:
     # PP=2 x TP=2
     torchrun --nproc_per_node=4 pp_generation_llama.py --pp-size 2 --tp-size 2
 
+    # Use KVCacheManager as external backend (instead of CachedSDPA internal cache)
+    python pp_generation_llama.py --use-kv-manager
+
 Environment:
     - Requires: PyTorch >= 2.0, transformers, CUDA >= 12.1
     - Model: meta-llama/Llama-3.2-1B (or specify via --model)
@@ -90,6 +93,11 @@ def parse_args():
         choices=["float32", "float16", "bfloat16"],
         help="Data type for inference"
     )
+    parser.add_argument(
+        "--use-kv-manager", action="store_true",
+        help="Use KVCacheManager as external backend for CachedSDPA "
+             "(default: CachedSDPA internal cache)"
+    )
     return parser.parse_args()
 
 
@@ -116,6 +124,8 @@ def main():
         print(f"  TP Size:        {args.tp_size}")
         print(f"  Dtype:          {args.dtype}")
         print(f"  Max New Tokens: {args.max_new_tokens}")
+        cache_mode = "KVCacheManager (external)" if args.use_kv_manager else "CachedSDPA (internal)"
+        print(f"  KV Cache Mode:  {cache_mode}")
         print("=" * 60)
 
     # ----- Load model & tokenizer -----
@@ -140,8 +150,24 @@ def main():
         tp_size=args.tp_size,
         dtype=dtype,
         use_kv_cache=True,     # must be True for CachedSDPA injection
+        use_kv_manager=args.use_kv_manager,
     )
     engine.eval()
+
+    # ----- Setup KVCacheManager backend (if requested) -----
+    if args.use_kv_manager:
+        # Use num_attention_heads (not num_key_value_heads) because the K,V
+        # tensors arriving at SDPA have already been expanded by repeat_kv
+        # from num_kv_heads to num_attention_heads.
+        num_heads = config.num_attention_heads
+        head_dim = config.hidden_size // config.num_attention_heads
+        engine.init_kv_cache(
+            num_layers=config.num_hidden_layers,
+            num_heads=num_heads,
+            head_dim=head_dim,
+            batch_size=1,
+        )
+        engine._attach_kv_manager()
 
     # ----- Create ScheduleGeneration -----
     scheduler = ScheduleGeneration(engine)
@@ -307,8 +333,11 @@ def main():
     # =========================================================
     #  Disable CachedSDPA and print statistics
     # =========================================================
-    for m in engine._cached_sdpa_modules:
-        m.disable()
+    if args.use_kv_manager:
+        engine.release_kv_cache()  # frees both CachedSDPA and KVCacheManager
+    else:
+        for m in engine._cached_sdpa_modules:
+            m.disable()
 
     if engine.is_output_rank():
         print(f"\n--- End ---\n")
@@ -320,6 +349,8 @@ def main():
         print(f"  Tokens generated : {num_generated}")
         if num_generated > 1:
             print(f"  Decode tok/s     : {(num_generated - 1) / decode_time:.2f}")
+        cache_mode = "KVCacheManager (external)" if args.use_kv_manager else "CachedSDPA (internal)"
+        print(f"  KV Cache backend : {cache_mode}")
         print(f"  PP={args.pp_size}, TP={args.tp_size}")
         print(f"{'=' * 60}")
 

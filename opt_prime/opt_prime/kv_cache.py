@@ -122,7 +122,8 @@ class KVCacheManager:
         Args:
             layer_idx: Layer index to update
             new_k: New key tensor of shape [batch, num_heads, new_seq_len, head_dim]
-            new_v: New value tensor of shape [batch, num_heads, new_seq_len, head_dim]
+                    or [num_heads, new_seq_len, head_dim] (batch=1 squeezed)
+            new_v: New value tensor (same shape options as new_k)
             position: Starting position for the update (defaults to current seq_len)
 
         Returns:
@@ -138,6 +139,12 @@ class KVCacheManager:
 
         if position is None:
             position = self._seq_len
+
+        # Handle both 3D [num_heads, seq_len, head_dim] and
+        # 4D [batch, num_heads, seq_len, head_dim] tensors
+        if new_k.dim() == 3:
+            new_k = new_k.unsqueeze(0)
+            new_v = new_v.unsqueeze(0)
 
         new_seq_len = new_k.size(2)
         end_position = position + new_seq_len
@@ -277,29 +284,58 @@ class CachedScaledDotProductAttention(nn.Module):
         self.max_seq_len = max_seq_len
         self.dtype = dtype
 
+        # Internal cache (default mode)
         self.cache_k: Optional[torch.Tensor] = None
         self.cache_v: Optional[torch.Tensor] = None
         self.cache_pos: int = 0
         self._enabled: bool = False
+
+        # External KVCacheManager backend (optional)
+        self.kv_manager: Optional[KVCacheManager] = None
 
     def enable(self) -> None:
         """Enable KV caching for a generation session."""
         self._enabled = True
         self.cache_pos = 0
 
+    def set_kv_manager(self, kv_manager: 'KVCacheManager') -> None:
+        """Attach external KVCacheManager as storage backend.
+
+        When attached, forward() delegates K,V storage to the KVCacheManager
+        instead of using internal cache tensors.
+        """
+        self.kv_manager = kv_manager
+
+    def clear_kv_manager(self) -> None:
+        """Detach external KVCacheManager (revert to internal cache)."""
+        self.kv_manager = None
+
     def disable(self) -> None:
-        """Disable KV caching and free memory."""
+        """Disable KV caching and free internal memory.
+
+        In external mode (kv_manager attached), only internal state is reset.
+        The KVCacheManager is a shared resource managed by the caller.
+        """
         self._enabled = False
         self.cache_pos = 0
         self.cache_k = None
         self.cache_v = None
 
     def clear(self) -> None:
-        """Reset cache position for a new generation (keeps allocation)."""
+        """Reset cache position for a new generation (keeps allocation).
+
+        In external mode, only resets cache_pos. The KVCacheManager
+        is cleared at the session level by the caller.
+        """
         self.cache_pos = 0
-        if self.cache_k is not None:
-            self.cache_k.zero_()
-            self.cache_v.zero_()
+        if self.kv_manager is not None:
+            # External mode: cache_pos reset only; KVCacheManager managed by caller
+            pass
+        else:
+            # Internal mode: zero out cached tensors
+            if self.cache_k is not None:
+                self.cache_k.zero_()
+                self.cache_v.zero_()
 
     def forward(
         self,
@@ -317,31 +353,46 @@ class CachedScaledDotProductAttention(nn.Module):
                 dropout_p=dropout_p, is_causal=is_causal, **kwargs,
             )
 
-        # Lazy cache allocation on first call
-        if self.cache_k is None:
-            batch_size, num_heads, _, head_dim = key.shape
-            self.cache_k = torch.zeros(
-                batch_size, num_heads, self.max_seq_len, head_dim,
-                dtype=key.dtype, device=key.device,
+        if self.kv_manager is not None:
+            # === External mode: delegate to KVCacheManager ===
+            # Pass explicit position to avoid _seq_len double-update problem:
+            # multiple layers in the same forward pass share the same cache_pos.
+            full_key, full_value = self.kv_manager.update(
+                self.layer_idx, key, value, position=self.cache_pos
             )
-            self.cache_v = torch.zeros(
-                batch_size, num_heads, self.max_seq_len, head_dim,
-                dtype=value.dtype, device=value.device,
-            )
+            is_decode = self.cache_pos > 0
+            new_seq_len = key.size(2)
+            self.cache_pos += new_seq_len
 
-        new_seq_len = key.size(2)
-        end_pos = self.cache_pos + new_seq_len
+            full_key = full_key.contiguous()
+            full_value = full_value.contiguous()
+        else:
+            # === Internal mode: existing logic (unchanged) ===
+            # Lazy cache allocation on first call
+            if self.cache_k is None:
+                batch_size, num_heads, _, head_dim = key.shape
+                self.cache_k = torch.zeros(
+                    batch_size, num_heads, self.max_seq_len, head_dim,
+                    dtype=key.dtype, device=key.device,
+                )
+                self.cache_v = torch.zeros(
+                    batch_size, num_heads, self.max_seq_len, head_dim,
+                    dtype=value.dtype, device=value.device,
+                )
 
-        # Store new K, V in cache
-        self.cache_k[:, :, self.cache_pos:end_pos, :] = key
-        self.cache_v[:, :, self.cache_pos:end_pos, :] = value
+            new_seq_len = key.size(2)
+            end_pos = self.cache_pos + new_seq_len
 
-        # Extract full cached K, V (contiguous for SDPA backend compatibility)
-        full_key = self.cache_k[:, :, :end_pos, :].contiguous()
-        full_value = self.cache_v[:, :, :end_pos, :].contiguous()
+            # Store new K, V in cache
+            self.cache_k[:, :, self.cache_pos:end_pos, :] = key
+            self.cache_v[:, :, self.cache_pos:end_pos, :] = value
 
-        is_decode = self.cache_pos > 0
-        self.cache_pos = end_pos
+            # Extract full cached K, V (contiguous for SDPA backend compatibility)
+            full_key = self.cache_k[:, :, :end_pos, :].contiguous()
+            full_value = self.cache_v[:, :, :end_pos, :].contiguous()
+
+            is_decode = self.cache_pos > 0
+            self.cache_pos = end_pos
 
         if is_decode:
             # Decode: query at current position attends to all cached positions.
@@ -358,9 +409,10 @@ class CachedScaledDotProductAttention(nn.Module):
             )
 
     def __repr__(self) -> str:
+        mode = "external" if self.kv_manager is not None else "internal"
         return (
             f"CachedScaledDotProductAttention("
             f"layer={self.layer_idx}, "
             f"cache_pos={self.cache_pos}/{self.max_seq_len}, "
-            f"enabled={self._enabled})"
+            f"enabled={self._enabled}, mode={mode})"
         )

@@ -93,12 +93,15 @@ class Optimus_Inference:
         ir_analyze: IR_Anal = IR_Anal.PARALLEL,
         use_kv_cache: bool = False,
         serving_mode: bool = False,
+        use_kv_manager: bool = False,
     ):
         self.use_gpu = use_gpu
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
         self.dtype = dtype
-        self.use_kv_cache = use_kv_cache
+        self.use_kv_manager = use_kv_manager
+        # use_kv_manager implies use_kv_cache
+        self.use_kv_cache = use_kv_cache or use_kv_manager
         self.serving_mode = serving_mode
 
         # Model type mapping (reused from training)
@@ -701,6 +704,10 @@ class Optimus_Inference:
             else:
                 m.enable()   # First call or batch mode — activate
 
+        # Reset KVCacheManager for new generation
+        if self.use_kv_manager and self.kv_cache is not None:
+            self.kv_cache.clear()
+
         # Get batch size and initial sequence length from first stage
         if self.tpl.is_first_stage():
             assert input_ids is not None, "input_ids required on first stage"
@@ -849,6 +856,10 @@ class Optimus_Inference:
             else:
                 m.disable()
 
+        # Reset KVCacheManager position for next generation
+        if self.use_kv_manager and self.kv_cache is not None:
+            self.kv_cache.clear()
+
         # Trim generated_ids to actual length
         if self.tpl.is_last_stage():
             generated_ids = generated_ids[:, :input_seq_len + num_generated]
@@ -879,12 +890,16 @@ class Optimus_Inference:
         batch_size = batch_size or self.max_batch_size
         max_seq_len = max_seq_len or self.max_seq_len
 
-        # Calculate layer range for this stage
-        layers_per_stage = num_layers // self.tpl.pp_size
-        layer_start = self.tpl.stage * layers_per_stage
-        layer_end = (self.tpl.stage + 1) * layers_per_stage
-        if self.tpl.stage == self.tpl.pp_size - 1:
-            layer_end = num_layers  # Last stage gets remaining layers
+        # Derive layer range from actual CachedSDPA modules injected into
+        # this stage's FX graph. This is more accurate than assuming an even
+        # split because llama-tp-split may not divide layers evenly.
+        if self._cached_sdpa_modules:
+            layer_start = self._cached_sdpa_modules[0].layer_idx
+            layer_end = self._cached_sdpa_modules[-1].layer_idx + 1
+        else:
+            # No SDPA nodes on this stage (e.g., embed-only or head-only stage)
+            layer_start = 0
+            layer_end = 0
 
         # Adjust num_heads for tensor parallelism
         if self.tpl.tp_size > 1:
@@ -905,6 +920,21 @@ class Optimus_Inference:
         self.kv_cache.allocate(batch_size)
         print(f"[Inference] Rank:{self.tpl.rank} KV cache initialized: {self.kv_cache}")
 
+    def _attach_kv_manager(self) -> None:
+        """Attach this engine's KVCacheManager to all CachedSDPA modules.
+
+        After calling this, CachedSDPA modules will delegate K,V storage
+        to the centralized KVCacheManager instead of their internal caches.
+
+        Requires init_kv_cache() to have been called first.
+        """
+        assert self.kv_cache is not None, \
+            "Call init_kv_cache() before _attach_kv_manager()"
+        for m in self._cached_sdpa_modules:
+            m.set_kv_manager(self.kv_cache)
+        print(f"[Inference] Rank:{self.tpl.rank} attached KVCacheManager to "
+              f"{len(self._cached_sdpa_modules)} CachedSDPA modules")
+
     def clear_kv_cache(self) -> None:
         """Clear KV cache for new generation."""
         if self.kv_cache is not None:
@@ -917,7 +947,7 @@ class Optimus_Inference:
             self.kv_cache = None
 
     def release_kv_cache(self) -> None:
-        """Explicitly free CachedSDPA KV cache memory.
+        """Explicitly free all KV cache memory (CachedSDPA + KVCacheManager).
 
         Use this in serving mode to release GPU memory when the serving
         session ends. In batch mode this is unnecessary since generate()
@@ -931,6 +961,10 @@ class Optimus_Inference:
         """
         for m in self._cached_sdpa_modules:
             m.disable()
+        # Also free KVCacheManager if attached
+        if self.kv_cache is not None:
+            self.kv_cache.free()
+            self.kv_cache = None
 
     def __repr__(self) -> str:
         return (

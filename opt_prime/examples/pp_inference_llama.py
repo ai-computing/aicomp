@@ -16,6 +16,9 @@ Usage:
     torchrun --nproc_per_node=4 --nnodes=2 --node_rank=0 \
              --master_addr=<IP> --master_port=29500 pp_inference_llama.py
 
+    # Use KVCacheManager as external backend (instead of CachedSDPA internal cache)
+    torchrun --nproc_per_node=4 pp_inference_llama.py --use-kv-manager
+
 Environment:
     - Requires: PyTorch >= 2.0, transformers, CUDA >= 12.1
     - Model: meta-llama/Llama-3.2-1B (or specify via --model)
@@ -109,6 +112,12 @@ def parse_args():
         action="store_true",
         help="Keep KV cache allocated between requests (requires --use-kv-cache)"
     )
+    parser.add_argument(
+        "--use-kv-manager",
+        action="store_true",
+        help="Use KVCacheManager as external backend for CachedSDPA "
+             "(implies --use-kv-cache)"
+    )
     return parser.parse_args()
 
 
@@ -139,9 +148,12 @@ def main():
         print(f"TP Size: {args.tp_size}")
         print(f"Dtype: {args.dtype}")
         print(f"Max New Tokens: {args.max_new_tokens}")
-        print(f"KV Cache: {'enabled' if args.use_kv_cache else 'disabled (full-sequence)'}")
-        if args.use_kv_cache:
+        kv_enabled = args.use_kv_cache or args.use_kv_manager
+        print(f"KV Cache: {'enabled' if kv_enabled else 'disabled (full-sequence)'}")
+        if kv_enabled:
             print(f"Cache Mode: {'serving (cache kept)' if args.serving_mode else 'batch (cache freed)'}")
+            backend = "KVCacheManager (external)" if args.use_kv_manager else "CachedSDPA (internal)"
+            print(f"Cache Backend: {backend}")
         print("=" * 60)
 
     # Load model configuration
@@ -180,10 +192,25 @@ def main():
         dtype=dtype,
         use_kv_cache=args.use_kv_cache,
         serving_mode=args.serving_mode,
+        use_kv_manager=args.use_kv_manager,
     )
 
     # Set to evaluation mode
     engine.eval()
+
+    # Setup KVCacheManager backend if requested
+    if args.use_kv_manager:
+        # Use num_attention_heads (not num_key_value_heads) because the K,V
+        # tensors arriving at SDPA have already been expanded by repeat_kv.
+        num_heads = config.num_attention_heads
+        head_dim = config.hidden_size // config.num_attention_heads
+        engine.init_kv_cache(
+            num_layers=config.num_hidden_layers,
+            num_heads=num_heads,
+            head_dim=head_dim,
+            batch_size=1,
+        )
+        engine._attach_kv_manager()
 
     # Prepare input (only needed on first stage)
     if engine.is_first_stage():
@@ -205,7 +232,8 @@ def main():
 
     # Set up streaming output on the output rank (first TP rank of last stage)
     if engine.is_output_rank():
-        method = "KV cache, O(n)" if args.use_kv_cache else "full-sequence recomputation, O(n^2)"
+        kv_enabled = args.use_kv_cache or args.use_kv_manager
+        method = "KV cache, O(n)" if kv_enabled else "full-sequence recomputation, O(n^2)"
         print(f"\nGenerating {args.max_new_tokens} tokens ({method})...")
         print("\n" + "=" * 60)
         # Print prompt, then stream generated tokens right after it
@@ -243,9 +271,10 @@ def main():
         if num_generated > 0:
             print(f"  - Tokens/second: {num_generated / generation_time:.2f}")
             print(f"  - Avg time/token: {generation_time / num_generated:.2f}s")
-        if args.use_kv_cache:
+        if args.use_kv_cache or args.use_kv_manager:
             mode = "serving" if args.serving_mode else "batch"
-            print(f"  - Method: KV cache (O(n), {mode} mode)")
+            backend = "KVCacheManager" if args.use_kv_manager else "CachedSDPA internal"
+            print(f"  - Method: KV cache (O(n), {mode} mode, {backend})")
         else:
             print(f"  - Method: full-sequence recomputation (O(n^2))")
         print("=" * 60)
