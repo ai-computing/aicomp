@@ -175,13 +175,13 @@ OptimusPrime provides a pipeline/tensor parallel inference engine (`Optimus_Infe
     cd opt_prime/examples
 
     # TP=2, CachedSDPA internal cache
-    torchrun --nproc_per_node=2 tp_inference_llama.py --tp-size 2 --use-kv-cache
+    torchrun --nproc_per_node=2 pp_inference_llama.py --tp-size 2 --use-kv-cache
 
     # TP=2, KVCacheManager external backend
-    torchrun --nproc_per_node=2 tp_inference_llama.py --tp-size 2 --use-kv-manager
+    torchrun --nproc_per_node=2 pp_inference_llama.py --tp-size 2 --use-kv-manager
 
     # PP=2 x TP=2, KVCacheManager external backend
-    torchrun --nproc_per_node=4 tp_inference_llama.py --pp-size 2 --tp-size 2 --use-kv-manager
+    torchrun --nproc_per_node=4 pp_inference_llama.py --pp-size 2 --tp-size 2 --use-kv-manager
 
 ### Explicit Prefill/Decode API (ScheduleGeneration)
 

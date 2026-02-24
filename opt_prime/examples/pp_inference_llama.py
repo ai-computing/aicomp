@@ -3,25 +3,46 @@
 #
 
 """
-Pipeline Parallel Inference Example for LLaMA Models
+Pipeline/Tensor Parallel Inference Example for LLaMA Models
 
 This example demonstrates how to run inference on LLaMA models using
-pipeline parallelism with the Optimus_Inference engine.
+pipeline parallelism (PP), tensor parallelism (TP), or a combination
+of both (PP x TP) with the Optimus_Inference engine.
 
 Usage:
-    # Single node, 4 GPUs
+    # PP only — Single node, 4 GPUs (full-sequence recomputation, no KV cache)
     torchrun --nproc_per_node=4 --nnodes=1 --master_port=29500 pp_inference_llama.py
 
-    # Multi-node (run on each node)
-    torchrun --nproc_per_node=4 --nnodes=2 --node_rank=0 \
-             --master_addr=<IP> --master_port=29500 pp_inference_llama.py
+    # PP only — Multi-node (run on each node, full-sequence recomputation, no KV cache)
+    (node0) torchrun --nproc_per_node=2 --nnodes=2 --node_rank=0 \
+             --master_addr=<IP of node0> --master_port=29500 pp_inference_llama.py
+    (node1) torchrun --nproc_per_node=2 --nnodes=2 --node_rank=1 \
+             --master_addr=<IP of node0> --master_port=29500 pp_inference_llama.py
+
+    # TP only (2 GPUs, single stage, full-sequence recomputation, no KV cache)
+    torchrun --nproc_per_node=2 pp_inference_llama.py --tp-size 2
+
+    # PP=2 x TP=2 (4 GPUs, full-sequence recomputation, no KV cache)
+    torchrun --nproc_per_node=4 pp_inference_llama.py --pp-size 2 --tp-size 2
+
+    # Large model with TP=4 (full-sequence recomputation, no KV cache)
+    torchrun --nproc_per_node=4 pp_inference_llama.py \
+        --model meta-llama/Llama-2-13b-chat-hf --tp-size 4
+
+    # Use KV cache (CachedSDPA internal cache)
+    torchrun --nproc_per_node=4 pp_inference_llama.py --pp-size 4 --use-kv-cache
 
     # Use KVCacheManager as external backend (instead of CachedSDPA internal cache)
     torchrun --nproc_per_node=4 pp_inference_llama.py --use-kv-manager
 
+    # TP=2, KVCacheManager external backend
+    torchrun --nproc_per_node=2 pp_inference_llama.py --tp-size 2 --use-kv-manager
+
 Environment:
     - Requires: PyTorch >= 2.0, transformers, CUDA >= 12.1
     - Model: meta-llama/Llama-3.2-1B (or specify via --model)
+    - TP is only supported for LLaMA models
+    - GPU count must equal pp_size * tp_size
     - HuggingFace token may be required for gated models
 """
 
@@ -40,7 +61,7 @@ from opt_prime.inference import Optimus_Inference
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Pipeline Parallel Inference for LLaMA"
+        description="Pipeline/Tensor Parallel Inference for LLaMA"
     )
     parser.add_argument(
         "--model",
@@ -93,7 +114,7 @@ def parse_args():
         "--tp-size",
         type=int,
         default=1,
-        help="Tensor parallel size"
+        help="Tensor parallel size (default: 1)"
     )
     parser.add_argument(
         "--dtype",
@@ -138,22 +159,28 @@ def main():
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
 
+    # Validate parallelism configuration
+    if args.tp_size > 1:
+        assert world_size == args.pp_size * args.tp_size, \
+            f"World size ({world_size}) must equal pp_size ({args.pp_size}) * tp_size ({args.tp_size})"
+
     if rank == 0:
         print("=" * 60)
-        print("Pipeline Parallel Inference Example")
+        print("Pipeline/Tensor Parallel Inference Example")
         print("=" * 60)
-        print(f"Model: {args.model}")
-        print(f"World Size: {world_size}")
-        print(f"PP Size: {args.pp_size if args.pp_size > 1 else 'auto'}")
-        print(f"TP Size: {args.tp_size}")
-        print(f"Dtype: {args.dtype}")
-        print(f"Max New Tokens: {args.max_new_tokens}")
+        print(f"  Model:          {args.model}")
+        print(f"  World Size:     {world_size}")
+        print(f"  PP Size:        {args.pp_size if args.pp_size > 1 else 'auto'}")
+        print(f"  TP Size:        {args.tp_size}")
+        print(f"  Dtype:          {args.dtype}")
+        print(f"  Max New Tokens: {args.max_new_tokens}")
         kv_enabled = args.use_kv_cache or args.use_kv_manager
-        print(f"KV Cache: {'enabled' if kv_enabled else 'disabled (full-sequence)'}")
+        print(f"  KV Cache:       {'enabled' if kv_enabled else 'disabled (full-sequence)'}")
         if kv_enabled:
-            print(f"Cache Mode: {'serving (cache kept)' if args.serving_mode else 'batch (cache freed)'}")
+            print(f"  Cache Mode:     {'serving (cache kept)' if args.serving_mode else 'batch (cache freed)'}")
             backend = "KVCacheManager (external)" if args.use_kv_manager else "CachedSDPA (internal)"
-            print(f"Cache Backend: {backend}")
+            print(f"  Cache Backend:  {backend}")
+        print(f"  Sampling:       {'greedy' if args.no_sample else f'temp={args.temperature}, top_k={args.top_k}, top_p={args.top_p}'}")
         print("=" * 60)
 
     # Load model configuration
@@ -171,7 +198,7 @@ def main():
     # Load model
     dtype = get_dtype(args.dtype)
     if rank == 0:
-        print(f"Loading model: {args.model}")
+        print(f"\nLoading model: {args.model}")
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
@@ -182,6 +209,9 @@ def main():
     if rank == 0:
         total_params = sum(p.numel() for p in model.parameters())
         print(f"Total parameters: {total_params:,}")
+        if args.tp_size > 1:
+            params_per_gpu = total_params / args.tp_size
+            print(f"Parameters per TP rank: ~{params_per_gpu:,.0f}")
 
     # Create inference engine
     engine = Optimus_Inference(
@@ -222,19 +252,18 @@ def main():
             max_length=2048,
         )
         input_ids = tokens.input_ids.cuda()
-        input_seq_len = input_ids.size(1)
         if engine.is_input_rank():
             print(f"\n[Rank {rank}] Prompt: {args.prompt}")
             print(f"[Rank {rank}] Input shape: {input_ids.shape}")
     else:
         input_ids = None
-        input_seq_len = 0
 
     # Set up streaming output on the output rank (first TP rank of last stage)
     if engine.is_output_rank():
         kv_enabled = args.use_kv_cache or args.use_kv_manager
         method = "KV cache, O(n)" if kv_enabled else "full-sequence recomputation, O(n^2)"
-        print(f"\nGenerating {args.max_new_tokens} tokens ({method})...")
+        print(f"\nGenerating {args.max_new_tokens} tokens "
+              f"(PP={args.pp_size}, TP={args.tp_size}, {method})...")
         print("\n" + "=" * 60)
         # Print prompt, then stream generated tokens right after it
         print(args.prompt, end="", flush=True)
@@ -266,17 +295,19 @@ def main():
 
         print("=" * 60)
         print(f"\nGeneration Statistics:")
-        print(f"  - Tokens generated: {num_generated}")
-        print(f"  - Total time: {generation_time:.2f}s")
+        print(f"  Tokens generated : {num_generated}")
+        print(f"  Total time       : {generation_time:.2f}s")
         if num_generated > 0:
-            print(f"  - Tokens/second: {num_generated / generation_time:.2f}")
-            print(f"  - Avg time/token: {generation_time / num_generated:.2f}s")
+            print(f"  Tokens/second    : {num_generated / generation_time:.2f}")
+            print(f"  Avg time/token   : {generation_time / num_generated * 1000:.1f}ms")
+        print(f"  PP size          : {args.pp_size}")
+        print(f"  TP size          : {args.tp_size}")
         if args.use_kv_cache or args.use_kv_manager:
             mode = "serving" if args.serving_mode else "batch"
             backend = "KVCacheManager" if args.use_kv_manager else "CachedSDPA internal"
-            print(f"  - Method: KV cache (O(n), {mode} mode, {backend})")
+            print(f"  Method           : KV cache (O(n) decode, {mode} mode, {backend})")
         else:
-            print(f"  - Method: full-sequence recomputation (O(n^2))")
+            print(f"  Method           : full-sequence recomputation (O(n^2) decode)")
         print("=" * 60)
 
     # Synchronize at the end
