@@ -257,12 +257,18 @@ class ScheduleGeneration(ScheduleInference):
         self.kv_cache = kv_cache
 
     @torch.no_grad()
-    def prefill(self, input_ids: torch.Tensor) -> Optional[torch.Tensor]:
+    def prefill(
+        self,
+        input_ids: torch.Tensor,
+        position_ids: Optional[torch.Tensor] = None,
+    ) -> Optional[torch.Tensor]:
         """
         Process the prompt and initialize KV cache (prefill phase).
 
         Args:
             input_ids: Input token IDs tensor of shape [batch_size, seq_len]
+            position_ids: Position IDs tensor of shape [1, seq_len] for RoPE.
+                          If None, auto-generated as arange(seq_len).
 
         Returns:
             Logits for the last position if this is the last stage, None otherwise
@@ -271,6 +277,15 @@ class ScheduleGeneration(ScheduleInference):
 
         if self.optimus.tpl.is_first_stage():
             self.get_input(input_ids)
+            # Set position_ids for RoPE (critical for LLaMA)
+            if position_ids is None and input_ids is not None:
+                seq_len = input_ids.size(1) if input_ids.dim() > 1 else input_ids.size(0)
+                position_ids = torch.arange(
+                    seq_len, device=input_ids.device
+                ).unsqueeze(0)
+            if position_ids is not None:
+                self.optimus.run_info.env[0]["position_ids"] = \
+                    position_ids.to(self.optimus.run_info.device)
 
         self.pre_forward()
         self.forward_core()
@@ -299,7 +314,7 @@ class ScheduleGeneration(ScheduleInference):
 
         Args:
             input_token: Single token tensor of shape [batch_size, 1]
-            position: Current position in the sequence
+            position: Current position in the sequence (0-based absolute position)
 
         Returns:
             Logits for the generated position if this is the last stage, None otherwise
@@ -308,6 +323,12 @@ class ScheduleGeneration(ScheduleInference):
 
         if self.optimus.tpl.is_first_stage():
             self.get_input(input_token)
+            # Set position_ids for RoPE — must be the absolute position
+            position_ids = torch.tensor(
+                [[position]], device=input_token.device
+            )
+            self.optimus.run_info.env[0]["position_ids"] = \
+                position_ids.to(self.optimus.run_info.device)
 
         self.pre_forward()
         self.forward_core()
