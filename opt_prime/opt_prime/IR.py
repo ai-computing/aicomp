@@ -84,7 +84,7 @@ class IR(object):
         self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
 
-    def retrieve_IR(self, model: nn.Module):
+    def retrieve_IR(self, model: nn.Module, use_kv_cache: bool = False):
 
         ##
         if model.__class__.__name__ in [ "ViTForImageClassification" ]:
@@ -109,7 +109,10 @@ class IR(object):
 
         #elif model.__class__.__name__ in _SUPPORTED_MODELS:
         elif model.__class__.__name__ in _SUPPORTED_MODELS or model.__class__.__name__ in _OTHER_MODELS:
-            input_names = model.dummy_inputs.keys()
+            input_names = list(model.dummy_inputs.keys())
+            if use_kv_cache:
+                if 'position_ids' not in input_names:
+                    input_names.append('position_ids')
 
             sig = inspect.signature(model.forward)
             concrete_args = {
@@ -140,7 +143,7 @@ class IR(object):
             sys.exit(1)
 
         # TODO: TO DELETE
-        #if int(os.environ["RANK"]) == 0:
+        #if int(os.environ.get("RANK", "0")) == 0:
         #    print(f">> ------------------ FX graph (pre) --------------------------------")
         #    for n in self.gm.graph.nodes:
         #        print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
@@ -161,7 +164,7 @@ class IR(object):
 
         self.model_ir.append(submods)
 
-        if int(os.environ["RANK"]) == 0:
+        if int(os.environ.get("RANK", "0")) == 0:
             print(f">> ------------------ FX graph --------------------------------")
             for n in self.model_ir[0].graph.nodes:
                 print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
@@ -229,7 +232,7 @@ class IR(object):
         if len(self.metadata_range) <  num_stage:
             self.metadata_range.append((k, n.name))
 
-        if int(os.environ["RANK"]) == 0:
+        if int(os.environ.get("RANK", "0")) == 0:
             print(f" ------------------------------------------------------------")
             print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
             print(f" ------------------------------------------------------------")
@@ -409,7 +412,7 @@ class IR(object):
             #print(f" part_fn:  node.name:{node.name}, --> {idx}")
             return idx
 
-        if int(os.environ["RANK"]) == 0:
+        if int(os.environ.get("RANK", "0")) == 0:
             print(f" ------------------------------------------------------------")
             print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
             print(f" ------------------------------------------------------------")
