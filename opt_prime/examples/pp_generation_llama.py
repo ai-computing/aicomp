@@ -6,11 +6,19 @@
 Explicit Prefill/Decode Generation Example using ScheduleGeneration
 
 This example demonstrates the explicit two-phase generation API:
-  1. prefill()     — forward entire prompt, CachedSDPA stores all K,V
-  2. decode_step() — forward one token per step, CachedSDPA appends K,V
+    1. prefill()     — forward entire prompt, CachedSDPA stores all K,V
+    2. decode_step() — forward one token per step, CachedSDPA appends K,V
 
 This gives fine-grained control over the generation loop, unlike
 engine.generate() which wraps both phases internally.
+
+NOTE:
+    This example uses gated Hugging Face models (e.g., LLaMA).
+    Access to these models requires prior approval on the Hugging Face Hub.
+    You must:
+    1. Request and obtain access to the model repository on Hugging Face.
+    2. Authenticate locally by running: hf auth login
+
 
 Usage:
     # Single GPU (no torchrun)

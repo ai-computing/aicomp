@@ -9,6 +9,13 @@ This example demonstrates single-process inference on a single GPU.
 Unlike the PP/TP examples, this script can be run directly with `python`
 without needing `torchrun` or any distributed launcher.
 
+NOTE:
+    This example uses gated Hugging Face models (e.g., LLaMA).
+    Access to these models requires prior approval on the Hugging Face Hub.
+    You must:
+    1. Request and obtain access to the model repository on Hugging Face.
+    2. Authenticate locally by running: hf auth login
+
 Usage:
     # Direct execution (no torchrun)
     python single_gpu_inference_llama.py

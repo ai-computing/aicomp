@@ -9,6 +9,13 @@ This example demonstrates how to run inference on LLaMA models using
 pipeline parallelism (PP), tensor parallelism (TP), or a combination
 of both (PP x TP) with the Optimus_Inference engine.
 
+NOTE:
+    This example uses gated Hugging Face models (e.g., LLaMA).
+    Access to these models requires prior approval on the Hugging Face Hub.
+    You must:
+    1. Request and obtain access to the model repository on Hugging Face.
+    2. Authenticate locally by running: hf auth login
+
 Usage:
     # PP only — Single node, 4 GPUs (full-sequence recomputation, no KV cache)
     torchrun --nproc_per_node=4 --nnodes=1 --master_port=29500 pp_inference_llama.py
