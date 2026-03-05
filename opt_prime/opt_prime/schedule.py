@@ -223,10 +223,27 @@ class Schedule:
         node = self.optimus.run_info.output_node
         #if self.optimus.model_type == self.optimus.model2type["hf"]:
         if self.optimus.model_type == self.optimus.model2type["hf"] or self.optimus.model_type == self.optimus.model2type["vt"]:
-            key_ = node.args[0]['logits']
+            if isinstance(node.args[0], dict) and 'logits' in node.args[0]:
+                key_ = node.args[0]['logits']
+            elif isinstance(node.args[0], (tuple, list)):
+                key_ = node.args[0][0]  # torch.export format: first element is logits
+            else:
+                key_ = node.args[0]
         elif self.optimus.model_type == self.optimus.model2type["sy"]:
             key_ = node.args[0]
+            # Export path may wrap output in a tuple: (submod_N,)
+            if isinstance(key_, (tuple, list)):
+                key_ = key_[0]
 
+        # One-time diagnostic: log output structure for debugging convergence
+        # Store flag on optimus (not self) since Schedule is recreated per run()
+        if not getattr(self.optimus, '_loss_diag_done', False):
+            self.optimus._loss_diag_done = True
+            print(f">> [LOSS-DIAG] output node.args[0] type={type(node.args[0]).__name__}, "
+                  f"key_={key_}, str(key_)='{str(key_)}'")
+            if str(key_) in self.optimus.run_info.getitem_dic:
+                gi = self.optimus.run_info.getitem_dic[str(key_)]
+                print(f">> [LOSS-DIAG] getitem_dic['{str(key_)}'] = {gi}")
 
         if str(key_) in self.optimus.run_info.getitem_dic:
             a_submod = self.optimus.run_info.getitem_dic[str(key_)][0]
@@ -283,9 +300,19 @@ class Schedule:
                 min_size = min(output1.size(0), target1.size(0))
                 output1 = output1[:min_size]
                 target1 = target1[:min_size]
+        # One-time shape diagnostic
+        if not getattr(self.optimus, '_loss_shape_diag_done', False):
+            self.optimus._loss_shape_diag_done = True
+            print(f">> [LOSS-DIAG] output1.shape={output1.shape}, target1.shape={target1.shape}, "
+                  f"output1.dtype={output1.dtype}")
+
         result = criterion(output1, target1)
 
-        #print(f" >>>> loss: {result}, result.shape:{result.shape}")
+        # Detect NaN/Inf in loss (indicates numerical instability)
+        if isinstance(result, torch.Tensor) and (torch.isnan(result).any() or torch.isinf(result).any()):
+            print(f">> [LOSS-DIAG] WARNING: NaN/Inf loss detected at mb_idx={mb_idx}! "
+                  f"loss={result.item()}, output1 has NaN={torch.isnan(output1).any().item()}, "
+                  f"output1 has Inf={torch.isinf(output1).any().item()}")
 
 
         self.optimus.run_info.grads[mb_idx][node.name] = (None,)

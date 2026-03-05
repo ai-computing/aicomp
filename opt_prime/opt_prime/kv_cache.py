@@ -402,10 +402,16 @@ class CachedScaledDotProductAttention(nn.Module):
                 dropout_p=dropout_p, is_causal=False, **kwargs,
             )
         else:
-            # Prefill: standard causal attention with original mask
+            # Prefill: use is_causal=True instead of the explicit attn_mask.
+            # The torch.export path can produce an incorrect causal mask
+            # (off-by-one in _update_causal_mask due to cache_position tracing),
+            # so we let SDPA compute its own causal mask which is always correct
+            # when Q_len == K_len (true during prefill).
+            # Drop 'scale' from kwargs if present — pass it explicitly to
+            # avoid any conflict between the mask kwarg and is_causal.
             return F.scaled_dot_product_attention(
-                query, full_key, full_value, attn_mask=attn_mask,
-                dropout_p=dropout_p, is_causal=is_causal, **kwargs,
+                query, full_key, full_value, attn_mask=None,
+                dropout_p=dropout_p, is_causal=True, **kwargs,
             )
 
     def __repr__(self) -> str:

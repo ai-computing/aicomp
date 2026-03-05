@@ -94,8 +94,10 @@ class Optimus_Inference:
         use_kv_cache: bool = False,
         serving_mode: bool = False,
         use_kv_manager: bool = False,
+        dynamo_capture: bool = False,
     ):
         self.use_gpu = use_gpu
+        self.dynamo_capture = dynamo_capture
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
         self.dtype = dtype
@@ -161,7 +163,7 @@ class Optimus_Inference:
 
         # Initialize IR and split model
         self.ir = IR(module, self)
-        self.model_type = self.ir.retrieve_IR(module, use_kv_cache=use_kv_cache)
+        self.model_type = self.ir.retrieve_IR(module, use_kv_cache=use_kv_cache, dynamo_capture=dynamo_capture, for_training=False)
         self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
         self.ir.setup_submod(self.tpl.stage, rank)
         self.ir.build_getitem_dic()
@@ -239,12 +241,88 @@ class Optimus_Inference:
 
         # Adjust view operations for TP
         for node in self.run_info.submod.graph.nodes:
+            # Match view nodes: call_method("view") or call_function(aten.view/reshape)
+            is_view = False
             if node.op == 'call_method' and node.name.startswith("view"):
+                is_view = True
+            elif node.op == 'call_function':
+                target_name = getattr(node.target, '__name__', str(node.target))
+                if 'view' in target_name or 'reshape' in target_name:
+                    is_view = True
+
+            if is_view:
                 result, layer_id = self._check_tp_post(node.args[0])
                 if result in [0, 1, 2]:  # Q, K, V projections
+                    tp_size = self.tpl.tp_mesh.size()
                     new_args = list(node.args)
-                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
+                    if node.op == 'call_method' and len(new_args) > 3:
+                        # HFTracer: view(tensor, bs, seq, num_heads, head_dim)
+                        new_args[3] = new_args[3] // tp_size
+                    elif node.op == 'call_function' and len(new_args) >= 2 and isinstance(new_args[1], (list, tuple)):
+                        # torch.export: reshape(tensor, [bs, seq, num_heads, head_dim])
+                        shape = list(new_args[1])
+                        if len(shape) >= 3:
+                            shape[2] = shape[2] // tp_size
+                            new_args[1] = shape
                     node.args = tuple(new_args)
+
+        # Adjust GQA repeat_kv ops for TP (export path only).
+        # Pattern: unsqueeze(K/V, 2) → expand([B, kv_heads, n_rep, S, D])
+        #          → reshape([B, q_heads, S, D])
+        # After ColwiseParallel splits K/V proj weights, the actual kv_heads
+        # is halved but the hardcoded shape constants in expand/reshape are not.
+        tp_size = self.tpl.tp_mesh.size()
+        adjusted_expands = set()  # track which expand nodes were adjusted
+        for node in self.run_info.submod.graph.nodes:
+            if node.op != 'call_function':
+                continue
+            target_name = getattr(node.target, '__name__', str(node.target))
+
+            # expand with 5D shape: [B, kv_heads, n_rep, S, D]
+            if 'expand' in target_name:
+                if (len(node.args) >= 2
+                        and isinstance(node.args[1], (list, tuple))
+                        and len(node.args[1]) == 5):
+                    # Trace back through unsqueeze/transpose/reshape to K/V proj
+                    res, _ = self._trace_back_to_proj(node.args[0])
+                    if res in [1, 2]:  # K or V
+                        new_args = list(node.args)
+                        shape = list(new_args[1])
+                        if isinstance(shape[1], int):
+                            shape[1] = shape[1] // tp_size
+                        new_args[1] = shape
+                        node.args = tuple(new_args)
+                        adjusted_expands.add(node)
+
+            # reshape 5D→4D after a repeat_kv expand: [B, q_heads, S, D]
+            # The chain may be expand → clone → reshape (clone needed
+            # because expand produces non-contiguous view).
+            if 'reshape' in target_name or 'view' in target_name:
+                if (len(node.args) >= 2
+                        and isinstance(node.args[1], (list, tuple))
+                        and len(node.args[1]) == 4):
+                    # Trace back through clone/contiguous to find expand
+                    inp = node.args[0]
+                    found_expand = False
+                    for _ in range(3):  # at most a few intermediate ops
+                        if not isinstance(inp, torch.fx.Node):
+                            break
+                        if inp in adjusted_expands:
+                            found_expand = True
+                            break
+                        inp_name = getattr(inp.target, '__name__',
+                                           str(inp.target))
+                        if 'clone' in inp_name or 'contiguous' in inp_name:
+                            inp = inp.args[0] if inp.args else None
+                        else:
+                            break
+                    if found_expand:
+                        new_args = list(node.args)
+                        shape = list(new_args[1])
+                        if isinstance(shape[1], int):
+                            shape[1] = shape[1] // tp_size
+                        new_args[1] = shape
+                        node.args = tuple(new_args)
 
         self.run_info.submod.recompile()
         self.run_info.submod = parallelize_module(
@@ -269,6 +347,26 @@ class Optimus_Inference:
                 elif parts[5] == "v" and parts[6] == "proj":
                     return 2, layer_id
 
+        return -1, -1
+
+    def _trace_back_to_proj(self, node, max_depth: int = 10) -> Tuple[int, int]:
+        """Trace arg[0] chain back through intermediate ops to find Q/K/V proj.
+
+        Follows the first input argument of each node (reshape, transpose,
+        unsqueeze, etc.) up to max_depth steps until a Q/K/V projection
+        call_module node is found.
+        """
+        current = node
+        for _ in range(max_depth):
+            if not isinstance(current, torch.fx.Node):
+                return -1, -1
+            res, layer_id = self._check_tp_post(current)
+            if res >= 0:
+                return res, layer_id
+            if current.args and isinstance(current.args[0], torch.fx.Node):
+                current = current.args[0]
+            else:
+                return -1, -1
         return -1, -1
 
     def _prepare_dp_group(self) -> None:
@@ -704,6 +802,7 @@ class Optimus_Inference:
             else:
                 m.enable()   # First call or batch mode — activate
 
+
         # Reset KVCacheManager for new generation
         if self.use_kv_manager and self.kv_cache is not None:
             self.kv_cache.clear()
@@ -795,6 +894,7 @@ class Optimus_Inference:
                 position_ids = torch.tensor(
                     [[cur_pos]], device=self.device
                 ).expand(batch_size, -1)
+
                 full_output = self._schedule_infer.run(
                     next_token.unsqueeze(1), position_ids=position_ids
                 )

@@ -14,6 +14,7 @@ import os
 import sys
 import math
 import time
+import argparse
 
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from datasets import load_dataset
@@ -72,7 +73,12 @@ if int(os.environ["RANK"]) == 0:
     macs, params = get_model_complexity_info(model, (1, 1024), as_strings=True, input_constructor=partial(gpt_input_constructor, tokenizer=tokenizer), print_per_layer_stat=True, verbose=True)
     print('>>>>>>> # of Operations:', macs, ', # of Parameters', params)
 
-optimus_p = Optimus_p(model, num_mb, use_gpu=True)
+parser = argparse.ArgumentParser()
+parser.add_argument('--dynamo-capture', action='store_true', default=False,
+                    help='Use TorchDynamo capture (torch.export) instead of HFTracer')
+args = parser.parse_args()
+
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()

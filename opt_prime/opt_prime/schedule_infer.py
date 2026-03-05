@@ -79,6 +79,24 @@ class ScheduleInference:
                     self.optimus.run_info.env_recv_mark[0][node_name] = None
                     self.optimus.run_info.env_send_mark[0][node_name] = None
 
+        # Populate get_attr values from the top-level split graph.
+        # With the torch.export path, buffers used by inline ATen ops
+        # (e.g., inv_freq for RoPE) may remain as get_attr nodes in the
+        # split graph instead of being moved into submodules.
+        if hasattr(self.optimus, 'ir') and self.optimus.ir.model_ir:
+            split_gm = self.optimus.ir.model_ir[0]
+            for node in split_gm.graph.nodes:
+                if node.op == 'get_attr':
+                    try:
+                        attr = split_gm
+                        for atom in node.target.split('.'):
+                            attr = getattr(attr, atom)
+                        if isinstance(attr, torch.Tensor):
+                            self.optimus.run_info.env[0][node.name] = \
+                                attr.to(self.optimus.run_info.device)
+                    except Exception:
+                        pass  # Will be resolved lazily in extract_tensor_args
+
     def get_input(self, data: torch.Tensor) -> None:
         """
         Prepare input data for the first stage.
@@ -125,6 +143,79 @@ class ScheduleInference:
                                 )
                             self.optimus.run_info.env_recv_mark[0][node_name] = 1
 
+    def _resolve_buffer_or_param(self, node):
+        """Resolve a buffer/parameter node to its tensor value.
+
+        After split_module(), buffer references (e.g., inv_freq for RoPE)
+        may appear in the top-level split graph as placeholder or get_attr
+        nodes. split_module() may use naming conventions like 'b_' prefix
+        (buffer) or 'p_' (parameter) with dots replaced by underscores.
+        The actual buffer lives inside a submodule (e.g., submod_0.model...),
+        so we strip the submod_N prefix when matching.
+        """
+        # Build lookup cache on first call
+        if not hasattr(self, '_buf_param_cache'):
+            self._buf_param_cache = self._build_buf_param_cache()
+
+        name = node.name
+        val = self._buf_param_cache.get(name)
+        if val is not None:
+            return val.to(self.optimus.run_info.device)
+        return None
+
+    def _add_to_cache(self, cache, fqn, tensor):
+        """Add a tensor to the cache under multiple naming conventions."""
+        flat = fqn.replace('.', '_')
+        cache.setdefault(flat, tensor)
+        cache.setdefault(f"b_{flat}", tensor)
+        cache.setdefault(f"p_{flat}", tensor)
+        # Strip submod_N. prefix (buffer lives inside a partition)
+        parts = fqn.split('.')
+        if parts[0].startswith('submod_'):
+            short_fqn = '.'.join(parts[1:])
+            short_flat = short_fqn.replace('.', '_')
+            cache.setdefault(short_flat, tensor)
+            cache.setdefault(f"b_{short_flat}", tensor)
+            cache.setdefault(f"p_{short_flat}", tensor)
+
+    def _build_buf_param_cache(self):
+        """Build a name → tensor lookup for all buffers and parameters.
+
+        Searches both the pre-split GraphModule (self.ir.gm) and the
+        post-split module (model_ir[0]).  Also searches plain tensor
+        attributes since GraphModule._copy_attr stores copied buffers
+        as regular attributes (not registered buffers).
+        """
+        cache = {}
+        if not hasattr(self.optimus, 'ir'):
+            return cache
+
+        # Collect root modules to search
+        roots = []
+        if hasattr(self.optimus.ir, 'gm') and self.optimus.ir.gm is not None:
+            roots.append(self.optimus.ir.gm)
+        if self.optimus.ir.model_ir:
+            roots.append(self.optimus.ir.model_ir[0])
+
+        for root in roots:
+            # Registered buffers and parameters
+            for fqn, tensor in root.named_buffers():
+                self._add_to_cache(cache, fqn, tensor)
+            for fqn, tensor in root.named_parameters():
+                self._add_to_cache(cache, fqn, tensor)
+
+            # Also search plain tensor attributes in __dict__
+            # (GraphModule._copy_attr stores copied buffers as regular
+            #  attributes, not registered buffers, so named_buffers() misses them)
+            for mod_name, mod in root.named_modules():
+                for attr_name, attr_val in list(mod.__dict__.items()):
+                    if (isinstance(attr_val, torch.Tensor)
+                            and not isinstance(attr_val, nn.Parameter)):
+                        fqn = f"{mod_name}.{attr_name}" if mod_name else attr_name
+                        self._add_to_cache(cache, fqn, attr_val)
+
+        return cache
+
     def forward_core(self) -> Any:
         """
         Execute forward pass for this stage's submodule.
@@ -137,8 +228,20 @@ class ScheduleInference:
                 submod_name = self.optimus.run_info.getitem_dic[b.name][0]
                 idx = self.optimus.run_info.getitem_dic[b.name][1]
                 return self.optimus.run_info.env[0][submod_name][idx]
-            else:
+            elif b.name in self.optimus.run_info.env[0]:
                 return self.optimus.run_info.env[0][b.name]
+            else:
+                # Fallback: try to resolve as a buffer/parameter reference.
+                # This handles get_attr nodes and other node types that
+                # split_module() may create for cross-stage buffer access.
+                val = self._resolve_buffer_or_param(b)
+                if val is not None:
+                    self.optimus.run_info.env[0][b.name] = val  # cache
+                    return val
+                raise KeyError(
+                    f"Cannot resolve '{b.name}' "
+                    f"(op='{b.op}', target='{b.target}') in env"
+                )
 
         args = fx.graph.map_arg(self.optimus.run_info.node.args, extract_tensor_args)
         kwargs = fx.graph.map_arg(self.optimus.run_info.node.kwargs, extract_tensor_args)
@@ -192,13 +295,13 @@ class ScheduleInference:
         output_node = self.optimus.run_info.output_node
 
         # For HuggingFace models, extract logits
-        if self.optimus.model_type == self.optimus.model2type["hf"]:
-            key_ = output_node.args[0].get('logits')
-            if key_ is None:
-                key_ = output_node.args[0]
-        elif self.optimus.model_type == self.optimus.model2type["vt"]:
-            key_ = output_node.args[0].get('logits')
-            if key_ is None:
+        if self.optimus.model_type == self.optimus.model2type["hf"] or \
+                self.optimus.model_type == self.optimus.model2type["vt"]:
+            if isinstance(output_node.args[0], dict) and 'logits' in output_node.args[0]:
+                key_ = output_node.args[0]['logits']
+            elif isinstance(output_node.args[0], (tuple, list)):
+                key_ = output_node.args[0][0]  # torch.export format
+            else:
                 key_ = output_node.args[0]
         else:
             key_ = output_node.args[0]
