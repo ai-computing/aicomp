@@ -1016,6 +1016,18 @@ class IR(object):
                 and getattr(model.config, 'use_cache', False)):
             _orig_use_cache = model.config.use_cache
             model.config.use_cache = False
+
+        # Disable layerdrop before export.  Models like Whisper use
+        # data-dependent control flow (`random.uniform() < layerdrop`) inside
+        # an `if self.training:` guard.  torch.export cannot handle
+        # data-dependent branches (even with layerdrop=0.0, random.uniform
+        # creates an unbacked symbolic value during tracing).
+        # Fix: after model.train(), set training=False on modules with
+        # layerdrop so the `if self.training:` guard is never entered.
+        _layerdrop_modules = []
+        for mod in model.modules():
+            if hasattr(mod, 'layerdrop'):
+                _layerdrop_modules.append(mod)
         # Determine input names and create example inputs
         input_names = self._get_export_input_names(model, use_kv_cache)
         example_inputs = self._create_example_inputs(model, input_names)
@@ -1053,14 +1065,74 @@ class IR(object):
                     print(f">> [IR] Exporting in TRAINING mode (has active Dropout)")
                 else:
                     print(f">> [IR] Exporting in TRAINING mode (for correct SDPA kernel selection)")
-        exported_program = export(
-            model, args=(), kwargs=example_inputs, strict=False,
-            dynamic_shapes=dynamic_shapes,
-        )
+
+        # After model.train(), disable training on modules with layerdrop
+        # so `if self.training:` guard around random.uniform is never entered.
+        if _layerdrop_modules:
+            for mod in _layerdrop_modules:
+                mod.training = False
+            if int(os.environ.get("RANK", "0")) == 0:
+                print(f">> [IR] Disabled training on {len(_layerdrop_modules)} "
+                      f"module(s) with layerdrop to avoid data-dependent control flow")
+
+        # Patch _update_causal_mask to return None during training-mode export.
+        # Models like GPT-2 compute an explicit causal mask at the top of the
+        # model (in _update_causal_mask) and pass it to ALL attention layers,
+        # creating a global skip connection.  After pipeline split, this mask
+        # ends up in one stage but is needed by all stages — the schedule
+        # cannot propagate it correctly.  By returning None, each attention
+        # layer uses its own internal self.bias buffer for causal masking,
+        # keeping the mask local to each layer (no skip connection).
+        # LLaMA already returns None in training mode, so this is a no-op
+        # for LLaMA.  For inference (for_training=False), skip the patch.
+        # NOTE: Some models (e.g., OPT) return a tuple from _update_causal_mask
+        # and rely on the external mask for causal attention (no internal
+        # self.bias fallback).  For these, the patch would break unpacking
+        # and remove causal masking.  We detect this via try/except: if export
+        # fails with TypeError (tuple unpack), we revert and retry.
+        _orig_update_causal_mask = None
+        if for_training:
+            for mod in model.modules():
+                if hasattr(mod, '_update_causal_mask') and callable(mod._update_causal_mask):
+                    _orig_update_causal_mask = (mod, mod._update_causal_mask)
+                    mod._update_causal_mask = lambda *a, **kw: None
+                    if int(os.environ.get("RANK", "0")) == 0:
+                        print(f">> [IR] Patched _update_causal_mask → None "
+                              f"(avoid global mask skip connection)")
+                    break
+
+        try:
+            exported_program = export(
+                model, args=(), kwargs=example_inputs, strict=False,
+                dynamic_shapes=dynamic_shapes,
+            )
+        except TypeError as e:
+            if _orig_update_causal_mask is not None and (
+                    'unpack' in str(e) or 'NoneType' in str(e)):
+                # _update_causal_mask returns a tuple (e.g., OPT) — revert patch
+                mod_ref, orig_fn = _orig_update_causal_mask
+                mod_ref._update_causal_mask = orig_fn
+                _orig_update_causal_mask = None
+                if int(os.environ.get("RANK", "0")) == 0:
+                    print(f">> [IR] _update_causal_mask returns tuple; "
+                          f"reverted patch and retrying export")
+                exported_program = export(
+                    model, args=(), kwargs=example_inputs, strict=False,
+                    dynamic_shapes=dynamic_shapes,
+                )
+            else:
+                raise
         model.train(_was_training)  # Restore original mode
         # Restore original use_cache setting
         if _orig_use_cache is not None:
             model.config.use_cache = _orig_use_cache
+        # Restore training mode on layerdrop modules
+        for mod in _layerdrop_modules:
+            mod.training = True
+        # Restore _update_causal_mask
+        if _orig_update_causal_mask is not None:
+            mod_ref, orig_fn = _orig_update_causal_mask
+            mod_ref._update_causal_mask = orig_fn
 
         # Reconstruct module-level graph from nn_module_stack metadata
         # (bypasses unflatten() which is broken for LLaMA — PyTorch #147348)
