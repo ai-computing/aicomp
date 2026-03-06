@@ -163,7 +163,7 @@ class Optimus_Inference:
 
         # Initialize IR and split model
         self.ir = IR(module, self)
-        self.model_type = self.ir.retrieve_IR(module, use_kv_cache=use_kv_cache, dynamo_capture=dynamo_capture, for_training=False)
+        self.model_type = self.ir.retrieve_IR(module, use_kv_cache=self.use_kv_cache, dynamo_capture=dynamo_capture, for_training=False)
         self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
         self.ir.setup_submod(self.tpl.stage, rank)
         self.ir.build_getitem_dic()
@@ -792,8 +792,9 @@ class Optimus_Inference:
         Returns:
             Generated token IDs if this is the last stage, None otherwise
         """
-        if self._schedule_infer is None:
-            self._schedule_infer = ScheduleInference(self)
+        # Use ScheduleGeneration for explicit prefill/decode phases
+        if self._schedule_gen is None:
+            self._schedule_gen = ScheduleGeneration(self)
 
         # Enable/reset all CachedSDPA modules
         for m in self._cached_sdpa_modules:
@@ -801,7 +802,6 @@ class Optimus_Inference:
                 m.clear()    # Already allocated — reset position only
             else:
                 m.enable()   # First call or batch mode — activate
-
 
         # Reset KVCacheManager for new generation
         if self.use_kv_manager and self.kv_cache is not None:
@@ -844,21 +844,10 @@ class Optimus_Inference:
         num_generated = 0
 
         # === PREFILL: forward the entire prompt ===
-        if self.tpl.is_first_stage():
-            position_ids = torch.arange(
-                input_seq_len, device=self.device
-            ).unsqueeze(0).expand(batch_size, -1)
-            full_output = self._schedule_infer.run(input_ids, position_ids=position_ids)
-        else:
-            full_output = self._schedule_infer.run(None)
+        logits = self._schedule_gen.prefill(input_ids)
 
         # Sample first token on last stage
         if self.tpl.is_last_stage():
-            if isinstance(full_output, torch.Tensor) and full_output.dim() >= 2:
-                logits = full_output[:, -1, :]
-            else:
-                logits = full_output
-
             next_token = self._sample_token(logits, temperature, top_k, top_p, do_sample)
 
             # Sync sampled token across TP ranks (sampling may diverge)
@@ -886,28 +875,31 @@ class Optimus_Inference:
             if self.tpl.is_first_stage() and not self.tpl.is_last_stage():
                 next_token = self.comm.receive_data(self.tpl.get_last_rank(), self.device)
 
+        # TP sync: broadcast sampled token within TP group
+        if self.tpl.tp_size > 1:
+            if next_token is None:
+                next_token = torch.zeros(1, dtype=torch.long, device=self.device)
+            dist.broadcast(
+                next_token,
+                src=self.tpl.stage2rank[self.tpl.stage][0],
+                group=self.tpl.tp_group,
+            )
+
         # === DECODE LOOP: one token at a time with KV cache ===
         for i in range(1, max_new_tokens):
-            # Forward single token with correct position
-            if self.tpl.is_first_stage():
-                cur_pos = input_seq_len + i - 1
-                position_ids = torch.tensor(
-                    [[cur_pos]], device=self.device
-                ).expand(batch_size, -1)
+            cur_pos = input_seq_len + i - 1
 
-                full_output = self._schedule_infer.run(
-                    next_token.unsqueeze(1), position_ids=position_ids
-                )
+            # Forward single token via decode_step
+            if self.tpl.is_first_stage():
+                token_input = next_token.unsqueeze(0) if next_token.dim() == 1 else next_token
+                if token_input.dim() == 1:
+                    token_input = token_input.unsqueeze(0)  # [1, 1]
+                logits = self._schedule_gen.decode_step(token_input, cur_pos)
             else:
-                full_output = self._schedule_infer.run(None)
+                logits = self._schedule_gen.decode_step(None, cur_pos)
 
             # Sample on last stage
             if self.tpl.is_last_stage():
-                if isinstance(full_output, torch.Tensor) and full_output.dim() >= 2:
-                    logits = full_output[:, -1, :]
-                else:
-                    logits = full_output
-
                 next_token = self._sample_token(
                     logits, temperature, top_k, top_p, do_sample
                 )
@@ -948,17 +940,28 @@ class Optimus_Inference:
                         self.tpl.get_last_rank(), self.device
                     )
 
+            # TP sync: broadcast sampled token within TP group
+            if self.tpl.tp_size > 1:
+                if next_token is None:
+                    next_token = torch.zeros(1, dtype=torch.long, device=self.device)
+                dist.broadcast(
+                    next_token,
+                    src=self.tpl.stage2rank[self.tpl.stage][0],
+                    group=self.tpl.tp_group,
+                )
+
         # Serving mode: keep cache allocated for next request (clear position only)
         # Batch mode: free cache memory completely
-        for m in self._cached_sdpa_modules:
-            if self.serving_mode:
-                m.clear()
-            else:
-                m.disable()
-
-        # Reset KVCacheManager position for next generation
-        if self.use_kv_manager and self.kv_cache is not None:
-            self.kv_cache.clear()
+        if self.use_kv_manager and not self.serving_mode:
+            self.release_kv_cache()
+        else:
+            for m in self._cached_sdpa_modules:
+                if self.serving_mode:
+                    m.clear()
+                else:
+                    m.disable()
+            if self.use_kv_manager and self.kv_cache is not None:
+                self.kv_cache.clear()
 
         # Trim generated_ids to actual length
         if self.tpl.is_last_stage():
