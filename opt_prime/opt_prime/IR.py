@@ -327,17 +327,46 @@ def build_module_graph_from_export(exported_program, original_model, input_names
     param_buffer_nodes = set()   # lifted params / buffers
     user_input_nodes = []        # actual user inputs (input_ids, ...)
 
-    # Build name→FQN map for params and buffers
+    # Build name→FQN map for params, buffers, and lifted tensor constants
     param_names = set()
     buffer_names = set()
+    lifted_constant_names = set()
     if hasattr(sig, 'inputs_to_parameters'):
         param_names = set(sig.inputs_to_parameters.keys())
     if hasattr(sig, 'inputs_to_buffers'):
         buffer_names = set(sig.inputs_to_buffers.keys())
+    if hasattr(sig, 'inputs_to_lifted_tensor_constants') and sig.inputs_to_lifted_tensor_constants:
+        lifted_constant_names = set(sig.inputs_to_lifted_tensor_constants.keys())
+        if int(os.environ.get("RANK", "0")) == 0:
+            print(f">> [IR] Found {len(lifted_constant_names)} lifted tensor constant(s) "
+                  f"(e.g. local attention masks)")
+        # Register lifted tensor constants as buffers on original_model
+        # so that get_attr can find them at runtime
+        for placeholder_name, fqn in sig.inputs_to_lifted_tensor_constants.items():
+            tensor_val = None
+            if hasattr(exported_program, 'constants') and fqn in exported_program.constants:
+                tensor_val = exported_program.constants[fqn]
+            elif hasattr(flat_gm, fqn.replace('.', '_')):
+                tensor_val = getattr(flat_gm, fqn.replace('.', '_'))
+            if tensor_val is not None:
+                # Walk/create the submodule path and register as buffer
+                parts = fqn.split('.')
+                parent = original_model
+                for part in parts[:-1]:
+                    if hasattr(parent, part):
+                        parent = getattr(parent, part)
+                    else:
+                        # Create intermediate Module if needed
+                        sub = torch.nn.Module()
+                        parent.add_module(part, sub)
+                        parent = sub
+                # Skip if attribute already exists (e.g. GPT-J embed_positions)
+                if not hasattr(parent, parts[-1]):
+                    parent.register_buffer(parts[-1], tensor_val, persistent=False)
 
     for node in flat_graph.nodes:
         if node.op == 'placeholder':
-            if node.name in param_names or node.name in buffer_names:
+            if node.name in param_names or node.name in buffer_names or node.name in lifted_constant_names:
                 param_buffer_nodes.add(node)
             else:
                 user_input_nodes.append(node)
@@ -490,12 +519,14 @@ def build_module_graph_from_export(exported_program, original_model, input_names
         if param_node in value_map:
             return value_map[param_node]
 
-        # Find the FQN for this param/buffer
+        # Find the FQN for this param/buffer/lifted constant
         fqn = None
         if hasattr(sig, 'inputs_to_parameters') and param_node.name in sig.inputs_to_parameters:
             fqn = sig.inputs_to_parameters[param_node.name]
         elif hasattr(sig, 'inputs_to_buffers') and param_node.name in sig.inputs_to_buffers:
             fqn = sig.inputs_to_buffers[param_node.name]
+        elif hasattr(sig, 'inputs_to_lifted_tensor_constants') and param_node.name in sig.inputs_to_lifted_tensor_constants:
+            fqn = sig.inputs_to_lifted_tensor_constants[param_node.name]
 
         if fqn:
             if fqn not in created_getattrs:
