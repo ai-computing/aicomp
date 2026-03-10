@@ -121,11 +121,17 @@ class Schedule:
             print(f"optimus.optimizer not set when swap_opt_in_fwdbwd == True")
             return
 
-        state_dict = self.optimus.optimizer.state_dict()
-        for state in state_dict['state'].values():
+        # Iterate optimizer.state directly (NOT state_dict()) because
+        # PyTorch 2.5+ state_dict() returns copies via
+        # _process_value_according_to_param_policy, so modifying the
+        # returned dict does NOT update the actual optimizer state.
+        for param, state in self.optimus.optimizer.state.items():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
-                    state[k] = v.cpu()
+                    if hasattr(v, 'to_local'):
+                        state[k] = v.to_local().detach().cpu()
+                    else:
+                        state[k] = v.cpu()
 
         if self.optimus.swap_use_disk == True:
             disk_path_opt = f"temp_optistat_{self.optimus.tpl.rank}"
@@ -148,18 +154,109 @@ class Schedule:
             self.optimus.optimizer.load_state_dict(opt_state['optimizer_state_dict'])
             #print(f"[R] optimizer state dict <-- DISK({disk_path_opt})")
 
-        state_dict = self.optimus.optimizer.state_dict()
-        for state in state_dict['state'].values():
+        # Use optimizer.state directly (same reason as offload_optimizer)
+        for param, state in self.optimus.optimizer.state.items():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(self.optimus.run_info.device)
+
+    def _move_params(self, device):
+        """Move parameters to device for CPU offload / GPU load-back.
+
+        For DTensor params (from TP): param.data = plain_tensor does NOT
+        strip the DTensor wrapper. So we REPLACE the Parameter objects in
+        optimizer.param_groups with new plain Parameters during offload,
+        and restore the original DTensor params during load-back (copying
+        the optimizer-updated values into the DTensor's local tensor).
+        """
+        submod = self.optimus.run_info.submod
+        is_offloading = (str(device) == 'cpu')
+
+        if is_offloading:
+            torch.cuda.synchronize()
+
+        if self.optimus.optimizer is not None:
+            for gi, group in enumerate(self.optimus.optimizer.param_groups):
+                for pi in range(len(group['params'])):
+                    p = group['params'][pi]
+
+                    if is_offloading:
+                        data = p.data
+                        if hasattr(data, 'to_local'):
+                            # --- DTensor param: replace with plain Parameter ---
+                            if not hasattr(self, '_dtensor_originals'):
+                                self._dtensor_originals = {}
+
+                            key = (gi, pi)
+                            self._dtensor_originals[key] = p  # keep original DTensor param
+
+                            # Create plain CPU parameter
+                            local_data = data.to_local().detach().cpu()
+                            new_p = torch.nn.Parameter(local_data, requires_grad=p.requires_grad)
+
+                            if p.grad is not None:
+                                grad = p.grad
+                                if hasattr(grad, 'to_local'):
+                                    grad = grad.to_local().detach()
+                                new_p.grad = grad.cpu()
+
+                            # Transfer optimizer state from old key to new key
+                            if p in self.optimus.optimizer.state:
+                                self.optimus.optimizer.state[new_p] = self.optimus.optimizer.state.pop(p)
+
+                            group['params'][pi] = new_p
+                        else:
+                            # --- Plain param: just move data ---
+                            p.data = p.data.cpu()
+                            if p.grad is not None:
+                                p.grad = p.grad.cpu()
+                    else:
+                        # --- Loading back to GPU ---
+                        key = (gi, pi)
+                        if hasattr(self, '_dtensor_originals') and key in self._dtensor_originals:
+                            orig_p = self._dtensor_originals[key]
+
+                            # Copy optimizer-updated values into original DTensor's local tensor
+                            orig_p.data.to_local().copy_(p.data.to(device))
+
+                            # Transfer optimizer state back to original DTensor param
+                            if p in self.optimus.optimizer.state:
+                                state = self.optimus.optimizer.state.pop(p)
+                                for k, v in state.items():
+                                    if isinstance(v, torch.Tensor):
+                                        state[k] = v.to(device)
+                                self.optimus.optimizer.state[orig_p] = state
+
+                            # Clear grad on original (will be recomputed in next fwd/bwd)
+                            orig_p.grad = None
+
+                            # Restore original DTensor param in optimizer
+                            group['params'][pi] = orig_p
+                        else:
+                            p.data = p.data.to(device)
+                            if p.grad is not None:
+                                p.grad = p.grad.to(device)
+        else:
+            # No optimizer yet: use submod.parameters()
+            for param in list(submod.parameters()):
+                if is_offloading:
+                    param.data = param.data.cpu()
+                    if param.grad is not None:
+                        param.grad = param.grad.cpu()
+                else:
+                    param.data = param.data.to(device)
+                    if param.grad is not None:
+                        param.grad = param.grad.to(device)
+
+        for buf in submod.buffers():
+            buf.data = buf.data.to(device)
 
     def offload_model(self):
         if self.optimus.swap_model_in_optstep == False:
             print(f"offload_model() should be used when swap_model_in_optstep == True")
             return
 
-        self.optimus.run_info.submod.to('cpu')
+        self._move_params('cpu')
 
         if self.optimus.display_mem == True:
             print(f" >>> >>> [rank:{self.optimus.tpl.rank}], offload model ...")
@@ -182,7 +279,7 @@ class Schedule:
             self.optimus.run_info.submod.load_state_dict(model_state['model_state_dict'])
             #print(f"[R] model state dict <-- DISK({disk_path_model})")
 
-        self.optimus.run_info.submod.to(self.optimus.run_info.device)
+        self._move_params(self.optimus.run_info.device)
 
         if self.optimus.display_mem == True:
             print(f" >>> >>> [rank:{self.optimus.tpl.rank}], load model ...")
