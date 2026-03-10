@@ -106,6 +106,8 @@ def parse_args():
         help="Use KVCacheManager as external backend for CachedSDPA "
              "(default: CachedSDPA internal cache)"
     )
+    parser.add_argument('--dynamo-capture', action='store_true', default=False,
+                        help='Use torch.export.export() instead of HFTracer/symbolic_trace')
     return parser.parse_args()
 
 
@@ -159,6 +161,7 @@ def main():
         dtype=dtype,
         use_kv_cache=True,     # must be True for CachedSDPA injection
         use_kv_manager=args.use_kv_manager,
+        dynamo_capture=args.dynamo_capture,
     )
     engine.eval()
 

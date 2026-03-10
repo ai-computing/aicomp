@@ -344,7 +344,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, num_mb, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
+    def __init__(self, module:nn.Module, num_mb, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False):
 
         #self.model_ir = []
         self.num_mb = num_mb
@@ -352,6 +352,7 @@ class Optimus_p:
         #self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
         self.use_gpu = use_gpu
+        self.dynamo_capture = dynamo_capture
 
         self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
 
@@ -436,7 +437,7 @@ class Optimus_p:
                 if local_rank == i:
                     self.ir = IR(module, self)
 
-                    self.model_type = self.ir.retrieve_IR(module)
+                    self.model_type = self.ir.retrieve_IR(module, dynamo_capture=dynamo_capture)
                     #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
                     self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
 
@@ -481,7 +482,7 @@ class Optimus_p:
             self.ir = IR(module, self)
             #self.model_ir.append(IR(module))
 
-            self.model_type = self.ir.retrieve_IR(module)
+            self.model_type = self.ir.retrieve_IR(module, dynamo_capture=dynamo_capture)
             #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
             self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
 
@@ -788,6 +789,21 @@ class Optimus_p:
 
         return -1, -1
 
+    def _trace_back_to_proj(self, node, max_depth=10):
+        """Trace arg[0] chain back to find Q/K/V projection call_module."""
+        current = node
+        for _ in range(max_depth):
+            if not isinstance(current, torch.fx.Node):
+                return -1, -1
+            res, layer_id = self.check_tp_post(current)
+            if res >= 0:
+                return res, layer_id
+            if current.args and isinstance(current.args[0], torch.fx.Node):
+                current = current.args[0]
+            else:
+                return -1, -1
+        return -1, -1
+
     
     # TODO
     def prepare_tp_group(self):
@@ -823,30 +839,92 @@ class Optimus_p:
 
         print(f">>>> self.tpl.tp_mesh.size(): {self.tpl.tp_mesh.size()}")
 
+        tp_size = self.tpl.tp_mesh.size()
+
         for node in self.run_info.submod.graph.nodes:
+            # Match view nodes: call_method("view") or call_function(aten.view/reshape)
+            is_view = False
             if node.op == 'call_method' and node.name.startswith("view"):
+                is_view = True
+            elif node.op == 'call_function':
+                target_name = getattr(node.target, '__name__', str(node.target))
+                if 'view' in target_name or 'reshape' in target_name:
+                    is_view = True
+
+            if is_view:
+                # Only check direct arg[0] — do NOT trace back deeply here,
+                # as that would wrongly match GQA repeat_kv reshapes too.
                 result, layer_id = self.check_tp_post(node.args[0])
 
-                if result == 0:
-                    print(f">model_layers_{layer_id}_self_attn_q_proj ==> node.args[3]:{node.args[3]}")
+                if result in [0, 1, 2]:  # Q, K, V projections
                     new_args = list(node.args)
-                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
+                    if node.op == 'call_method' and len(new_args) > 3:
+                        # HFTracer: view(tensor, bs, seq, num_heads, head_dim)
+                        print(f"> TP adjust view (HFTracer) layer_{layer_id} proj={result}: args[3]={new_args[3]} -> {new_args[3] // tp_size}")
+                        new_args[3] = new_args[3] // tp_size
+                    elif node.op == 'call_function' and len(new_args) >= 2 and isinstance(new_args[1], (list, tuple)):
+                        # torch.export: reshape(tensor, [bs, seq, num_heads, head_dim])
+                        shape = list(new_args[1])
+                        if len(shape) >= 3:
+                            print(f"> TP adjust reshape (export) layer_{layer_id} proj={result}: shape[2]={shape[2]} -> {shape[2] // tp_size}")
+                            shape[2] = shape[2] // tp_size
+                            new_args[1] = shape
                     node.args = tuple(new_args)
-                    print(f"> >model_layers_{layer_id}_self_attn_q_proj ==> node.args[3]:{node.args[3]}")
 
-                elif result == 1:
-                    print(f">>model_layers_{layer_id}_self_attn_k_proj ===> node.args[3]:{node.args[3]}")
-                    new_args = list(node.args)
-                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
-                    node.args = tuple(new_args)
-                    print(f">> >> model_layers_{layer_id}_self_attn_k_proj ===> node.args[3]:{node.args[3]}")
+        # Adjust GQA repeat_kv ops for TP (export path only).
+        # Pattern: unsqueeze(K/V, 2) -> expand([B, kv_heads, n_rep, S, D])
+        #          -> clone -> reshape([B, q_heads, S, D])
+        # After ColwiseParallel splits K/V proj weights, the actual kv_heads
+        # is halved but the hardcoded shape constants in expand/reshape are not.
+        adjusted_expands = set()
+        for node in self.run_info.submod.graph.nodes:
+            if node.op != 'call_function':
+                continue
+            target_name = getattr(node.target, '__name__', str(node.target))
 
-                elif result == 2:
-                    print(f">>>model_layers_{layer_id}_self_attn_v_proj ===> node.args[3]:{node.args[3]}")
-                    new_args = list(node.args)
-                    new_args[3] = new_args[3] // self.tpl.tp_mesh.size()
-                    node.args = tuple(new_args)
-                    print(f">>> >>>model_layers_{layer_id}_self_attn_v_proj ===> node.args[3]:{node.args[3]}")
+            # expand with 5D shape: [B, kv_heads, n_rep, S, D]
+            if 'expand' in target_name:
+                if (len(node.args) >= 2
+                        and isinstance(node.args[1], (list, tuple))
+                        and len(node.args[1]) == 5):
+                    res, _ = self._trace_back_to_proj(node.args[0])
+                    if res in [1, 2]:  # K or V
+                        new_args = list(node.args)
+                        shape = list(new_args[1])
+                        if isinstance(shape[1], int):
+                            print(f"> TP adjust GQA expand: shape[1]={shape[1]} -> {shape[1] // tp_size}")
+                            shape[1] = shape[1] // tp_size
+                        new_args[1] = shape
+                        node.args = tuple(new_args)
+                        adjusted_expands.add(node)
+
+            # reshape 5D->4D after a repeat_kv expand: [B, q_heads, S, D]
+            # Chain may be expand -> clone -> reshape
+            if 'reshape' in target_name or 'view' in target_name:
+                if (len(node.args) >= 2
+                        and isinstance(node.args[1], (list, tuple))
+                        and len(node.args[1]) == 4):
+                    inp = node.args[0]
+                    found_expand = False
+                    for _ in range(3):
+                        if not isinstance(inp, torch.fx.Node):
+                            break
+                        if inp in adjusted_expands:
+                            found_expand = True
+                            break
+                        inp_name = getattr(inp.target, '__name__', str(inp.target))
+                        if 'clone' in inp_name or 'contiguous' in inp_name:
+                            inp = inp.args[0] if inp.args else None
+                        else:
+                            break
+                    if found_expand:
+                        new_args = list(node.args)
+                        shape = list(new_args[1])
+                        if isinstance(shape[1], int):
+                            print(f"> TP adjust GQA reshape: shape[1]={shape[1]} -> {shape[1] // tp_size}")
+                            shape[1] = shape[1] // tp_size
+                        new_args[1] = shape
+                        node.args = tuple(new_args)
 
         self.run_info.submod.recompile()
         self.run_info.submod = parallelize_module(module=self.run_info.submod, device_mesh=self.tpl.tp_mesh, parallelize_plan=tp_plan)

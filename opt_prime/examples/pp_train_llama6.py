@@ -27,6 +27,7 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 
 import transformers
+import argparse
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.opti_pri import Optimus_p
@@ -50,8 +51,13 @@ logging.basicConfig(level=logging.ERROR)
 #
 # This program needs 'access token' for Llama. First, obtain your access token for Llama !!!
 #
-if len(sys.argv) > 1:
-    os.environ['LLAMA_ACCESS_TOKEN'] = sys.argv[1]
+parser = argparse.ArgumentParser()
+parser.add_argument('token', nargs='?', default=None, help='LLaMA access token')
+parser.add_argument('--dynamo-capture', action='store_true', default=False,
+                    help='Use TorchDynamo capture (torch.export) instead of HFTracer')
+args = parser.parse_args()
+if args.token:
+    os.environ['LLAMA_ACCESS_TOKEN'] = args.token
 
 access_token = os.getenv('LLAMA_ACCESS_TOKEN')
 if access_token is None:
@@ -126,7 +132,7 @@ if int(os.environ["RANK"]) == 0:
 #optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
 #optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=2, tp_size=8, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
 #optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=8, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
-optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, dp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, dp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 
 #optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4, tp_size=4, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")

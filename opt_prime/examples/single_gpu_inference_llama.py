@@ -99,6 +99,8 @@ def parse_args():
         choices=["float32", "float16", "bfloat16"],
         help="Data type for inference"
     )
+    parser.add_argument('--dynamo-capture', action='store_true', default=False,
+                        help='Use torch.export.export() instead of HFTracer/symbolic_trace')
     return parser.parse_args()
 
 
@@ -155,6 +157,7 @@ def main():
         use_kv_cache=args.use_kv_cache,
         serving_mode=args.serving_mode,
         use_kv_manager=args.use_kv_manager,
+        dynamo_capture=args.dynamo_capture,
     )
     engine.eval()
 

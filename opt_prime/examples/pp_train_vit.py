@@ -2,7 +2,7 @@
 # Copyright (c) 2025-present, ETRI, All rights reserved.
 #
 # Usage: torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> 
-#                 --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_vit.py <llama_access_token>
+#                 --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_vit.py 
 #
 # *** This program was tested with torch 2.5.0 and transformers 4.46.2.
 #     The version of transformers used must be consistent across all machines used for testing ***
@@ -21,6 +21,7 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 from transformers import ViTForImageClassification
 from transformers import ViTImageProcessor
+import argparse
 from torchvision.transforms import Compose, Normalize, RandomHorizontalFlip, RandomResizedCrop, Resize, ToTensor
 
 
@@ -85,7 +86,12 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"num of mbatch: {num_mb}")
 
-optimus_p = Optimus_p(model, num_mb, use_gpu=True)
+parser = argparse.ArgumentParser()
+parser.add_argument('--dynamo-capture', action='store_true', default=False,
+                    help='Use TorchDynamo capture (torch.export) instead of HFTracer')
+args = parser.parse_args()
+
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
 #optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
 print(f" rank={optimus_p.get_rank()} ...")
 
