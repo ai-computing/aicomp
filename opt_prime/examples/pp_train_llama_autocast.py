@@ -99,7 +99,8 @@ print(f" rank={optimus_p.get_rank()} ...")
 optimus_p.train()
 
 #optimus_p.optimizer = torch.optim.SGD(optimus_p.parameters(), lr=5.0)
-optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+lr = 1e-5 if args.dynamo_capture else 3e-5
+optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 
 datasets = load_dataset("squad").data["train"]["context"]
@@ -112,6 +113,7 @@ print(f"nbatches={nbatches}")
 
 
 epochs = 1 # The number of epochs
+
 
 def train():
 
@@ -133,7 +135,7 @@ def train():
 
         optimus_p.optimizer.zero_grad()
 
-        with autocast(device_type="cuda"):
+        with autocast(device_type="cuda", dtype=torch.bfloat16):
             #optimus_p.run(data, labels)
             #optimus_p.run(data, labels, mode="gpipe")
             optimus_p.run(data, labels, mode="1f1b")

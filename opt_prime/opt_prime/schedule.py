@@ -29,7 +29,30 @@ model_offloaded = False
 
 class Schedule:
 
-    def __init__(self, optimus): 
+    @staticmethod
+    def _upcast_for_pipeline(result):
+        """Cast reduced-precision tensors to float32 at pipeline stage boundaries.
+
+        Under autocast, intermediate activations may be float16/bfloat16.
+        When these are communicated between pipeline stages, the gradients
+        at stage boundaries inherit the reduced precision, causing accumulated
+        rounding errors that lead to training divergence over many iterations.
+
+        By upcasting to float32 at boundaries, each stage still benefits from
+        mixed-precision internally (autocast casts inputs as needed), while
+        inter-stage gradient communication remains in float32.
+        """
+        if isinstance(result, torch.Tensor):
+            if result.is_floating_point() and result.dtype != torch.float32:
+                return result.float()
+            return result
+        elif isinstance(result, tuple):
+            return tuple(Schedule._upcast_for_pipeline(r) for r in result)
+        elif isinstance(result, list):
+            return [Schedule._upcast_for_pipeline(r) for r in result]
+        return result
+
+    def __init__(self, optimus):
         self.optimus = optimus
 
         if self.optimus.force_free_mem == True:
@@ -332,16 +355,6 @@ class Schedule:
             if isinstance(key_, (tuple, list)):
                 key_ = key_[0]
 
-        # One-time diagnostic: log output structure for debugging convergence
-        # Store flag on optimus (not self) since Schedule is recreated per run()
-        if not getattr(self.optimus, '_loss_diag_done', False):
-            self.optimus._loss_diag_done = True
-            print(f">> [LOSS-DIAG] output node.args[0] type={type(node.args[0]).__name__}, "
-                  f"key_={key_}, str(key_)='{str(key_)}'")
-            if str(key_) in self.optimus.run_info.getitem_dic:
-                gi = self.optimus.run_info.getitem_dic[str(key_)]
-                print(f">> [LOSS-DIAG] getitem_dic['{str(key_)}'] = {gi}")
-
         if str(key_) in self.optimus.run_info.getitem_dic:
             a_submod = self.optimus.run_info.getitem_dic[str(key_)][0]
             a_idx = self.optimus.run_info.getitem_dic[str(key_)][1]
@@ -397,19 +410,11 @@ class Schedule:
                 min_size = min(output1.size(0), target1.size(0))
                 output1 = output1[:min_size]
                 target1 = target1[:min_size]
-        # One-time shape diagnostic
-        if not getattr(self.optimus, '_loss_shape_diag_done', False):
-            self.optimus._loss_shape_diag_done = True
-            print(f">> [LOSS-DIAG] output1.shape={output1.shape}, target1.shape={target1.shape}, "
-                  f"output1.dtype={output1.dtype}")
-
+        # Cast logits to float32 before loss computation to ensure
+        # float32 gradients at the backward starting point under autocast.
+        if output1.dtype != torch.float32:
+            output1 = output1.float()
         result = criterion(output1, target1)
-
-        # Detect NaN/Inf in loss (indicates numerical instability)
-        if isinstance(result, torch.Tensor) and (torch.isnan(result).any() or torch.isinf(result).any()):
-            print(f">> [LOSS-DIAG] WARNING: NaN/Inf loss detected at mb_idx={mb_idx}! "
-                  f"loss={result.item()}, output1 has NaN={torch.isnan(output1).any().item()}, "
-                  f"output1 has Inf={torch.isinf(output1).any().item()}")
 
 
         self.optimus.run_info.grads[mb_idx][node.name] = (None,)
@@ -514,9 +519,13 @@ class Schedule:
         else:
             result = self.optimus.run_info.submod(*args, **kwargs)
 
+        # Upcast to float32 at pipeline stage boundaries under autocast
+        # to prevent gradient precision loss during inter-stage communication
+        if torch.is_autocast_enabled():
+            result = Schedule._upcast_for_pipeline(result)
+
         self.optimus.run_info.flat_args[mb_idx][self.optimus.run_info.name] = flat_args
         self.optimus.run_info.env[mb_idx][self.optimus.run_info.name] = result
-
 
     # For Act ckpt
     def produce_forward_output(self, mb_idx, node_name):
@@ -551,8 +560,10 @@ class Schedule:
         kwargs = fx.graph.map_arg(self.optimus.run_info.node.kwargs, extract_tensor_args)
 
         result = self.optimus.run_info.submod(*args, **kwargs)
-        #with torch.no_grad():
-        #    result = self.optimus.run_info.submod(*args, **kwargs)
+
+        # Upcast to float32 (must match fx_micro_forward_core for consistent dtypes)
+        if torch.is_autocast_enabled():
+            result = Schedule._upcast_for_pipeline(result)
 
         #print(f" [ACT CKPT] rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}, node name:{node_name}")
 
@@ -566,7 +577,7 @@ class Schedule:
 
         if self.optimus.tpl.stage < self.optimus.tpl.get_last_stage():
             next_split_rank = self.optimus.tpl.get_next_rank()
-        
+
             for node_name, range_ in self.optimus.run_info.special_nodes.items():
                 src_stage, needed_by_stage = range_
                 if self.optimus.tpl.stage >= src_stage and self.optimus.tpl.stage < needed_by_stage:
@@ -699,17 +710,27 @@ class Schedule:
         num_nodes = self.get_num_nodes(node.name) 
         kwargs["valid_index"] = [i for i in range(num_nodes)]
 
+        # Disable autocast during backward to prevent gradient precision loss.
+        # Under autocast, backward matmuls (e.g. grad @ weight.T) cast both
+        # operands to float16, producing float16 gradients. Without autocast,
+        # dtype promotion applies (float16 @ float32 -> float32), matching
+        # standard PyTorch practice where backward runs outside autocast.
+        no_autocast = torch.amp.autocast(device_type="cuda", enabled=False)
+
         if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
             if mb_idx == self.optimus.num_mb - 1:
-                #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
+                #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...")
                 self.optimus.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
-                result = self.core_backward(*args, **kwargs)
-            
+                with no_autocast:
+                    result = self.core_backward(*args, **kwargs)
+
             else:
                 with self.optimus.run_info.submod.no_sync():
-                    result = self.core_backward(*args, **kwargs)
+                    with no_autocast:
+                        result = self.core_backward(*args, **kwargs)
         else:
-            result = self.core_backward(*args, **kwargs)
+            with no_autocast:
+                result = self.core_backward(*args, **kwargs)
 
 
         if self.optimus.force_free_mem == True:
