@@ -326,7 +326,7 @@ All methods found the identical optimal partition `[25, 24, 24, 9]`.
 
 - **Minmax (0.16 ms)**: A greedy heuristic that starts with an even split and iteratively moves one node from the heaviest stage to the lightest. Converges in a few iterations with $O(\text{PP} \times iterations)$ complexity. Very fast but not guaranteed to find the global optimum in all cases.
 
-- **DP (19.6 ms)**: Evaluates all possible cut positions using dynamic programming. For each of the `num_nodes` positions and `PP` stages, it considers every valid cut point, resulting in $O(\text{num\_nodes}^2 \times \text{PP})$ complexity. This guarantees the optimal partition but requires significantly more computation than the greedy approach.
+- **DP (19.6 ms)**: Evaluates all possible cut positions using dynamic programming. For each of the `num_nodes` positions and `PP` stages, it considers every valid cut point, resulting in $O(\text{numnodes}^2 \times \text{PP})$ complexity. This guarantees the optimal partition but requires significantly more computation than the greedy approach.
 
 - **ILP (CP-SAT, 2.4 sec)**: Uses the CP-SAT solver from OR-Tools, a modern constraint programming solver that combines SAT-based search with lazy clause generation. For middle stages (stages 1 to PP-2), binary indicator variables and big-M constraints are created for every `(k_start, k_end)` pair. With 82 nodes and PP=4, this produced 6,565 variables and 31,928 constraints. CP-SAT's propagation and learning mechanisms make it ~32x faster than SCIP on this formulation.
 
