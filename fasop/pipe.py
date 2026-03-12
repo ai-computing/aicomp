@@ -546,6 +546,159 @@ def dynamic_programming2(
     return partition, stage_comp_time_lst, stage_comm_time_lst, stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst
 
 
+def _get_comm_cost(cost_c: np.ndarray, cut_pos: int, stage_idx: int) -> float:
+    """Safe lookup of communication cost at (cut_pos, stage_idx)."""
+    r = min(cut_pos, cost_c.shape[0] - 1) if cost_c.size else 0
+    c = min(stage_idx, cost_c.shape[1] - 1) if cost_c.size else 0
+    return float(cost_c[r, c]) if cost_c.size else 0.0
+
+
+def _create_mip_solver(pywraplp):
+    """
+    Create a MIP-capable solver using the best available backend.
+
+    Tries in order: SCIP (best open-source MIP), HiGHS (fast), CBC (fallback), GLPK.
+    Returns (solver, solver_name). Raises RuntimeError if none available.
+    """
+    # Prefer SCIP (strong for MIP with continuous vars), then HiGHS, CBC, GLPK
+    for solver_id, name in [
+        ('SCIP', 'SCIP'),
+        ('HIGHS_MIP', 'HiGHS'),
+        ('HIGHS', 'HiGHS'),
+        ('CBC', 'CBC'),
+        ('GLPK_MIP', 'GLPK'),
+    ]:
+        solver = pywraplp.Solver.CreateSolver(solver_id)
+        if solver is not None:
+            return solver, name
+    raise RuntimeError(
+        "ILP requires a MIP solver (SCIP, HiGHS, CBC, or GLPK). "
+        "Install ortools: pip install ortools"
+    )
+
+
+# Scale factor for CP-SAT integer formulation (costs -> integers).
+# Kept so scaled values fit in 32-bit for CP-SAT (max_comp ~ 1e3–1e5 ms).
+_ILP_CP_SAT_SCALE = int(1e6)
+
+
+def _solve_ilp_cpsat(
+    num_nodes: int,
+    prefix: List[List[float]],
+    cost_c: np.ndarray,
+    pp_degree: int,
+    num_mb_val: int,
+    M_float: float,
+    verbose: bool,
+) -> Optional[List[int]]:
+    """
+    Solve the partition ILP using CP-SAT (integer-only, often faster than SCIP/CBC).
+
+    All costs are scaled to integers. Returns partition list if solved, else None.
+    """
+    try:
+        from ortools.sat.python import cp_model
+    except ImportError:
+        return None
+
+    scale = _ILP_CP_SAT_SCALE
+    M_int = min(int(M_float * scale) + 1, 2**31 - 1)  # CP-SAT friendly upper bound
+
+    model = cp_model.CpModel()
+
+    # Cut position binary variables
+    cut_vars = {}
+    cut_ints = []
+    for j in range(pp_degree - 1):
+        lb, ub = j + 1, num_nodes - (pp_degree - 1 - j)
+        for k in range(lb, ub + 1):
+            cut_vars[(j, k)] = model.new_bool_var(f"y_{j}_{k}")
+        cut_int = model.new_int_var(lb, ub, f"cut_{j}")
+        model.add(cut_int == sum(k * cut_vars[(j, k)] for k in range(lb, ub + 1)))
+        cut_ints.append(cut_int)
+        model.add(sum(cut_vars[(j, k)] for k in range(lb, ub + 1)) == 1)
+
+    for j in range(len(cut_ints) - 1):
+        model.add(cut_ints[j] + 1 <= cut_ints[j + 1])
+
+    # Stage costs as integer variables (scaled)
+    stage_costs = [
+        model.new_int_var(0, M_int, f"stage_cost_{j}") for j in range(pp_degree)
+    ]
+
+    # Stage 0
+    lb0, ub0 = 1, num_nodes - (pp_degree - 1)
+    comm0 = _get_comm_cost(cost_c, 0, 0)
+    for k in range(lb0, ub0 + 1):
+        val = int(round((prefix[0][k] + comm0) * scale))
+        val = max(0, min(val, M_int))
+        y = cut_vars[(0, k)]
+        model.add(stage_costs[0] <= val + M_int * (1 - y))
+        model.add(stage_costs[0] >= val - M_int * (1 - y))
+
+    # Middle stages
+    for j in range(1, pp_degree - 1):
+        lb_prev = j
+        ub_prev = num_nodes - (pp_degree - j)
+        lb_curr = j + 1
+        ub_curr = num_nodes - (pp_degree - 1 - j)
+        for k_start in range(lb_prev, ub_prev + 1):
+            for k_end in range(max(k_start + 1, lb_curr), ub_curr + 1):
+                comp_val = prefix[j][k_end] - prefix[j][k_start]
+                comm_val = _get_comm_cost(cost_c, k_start, j - 1)
+                val = int(round((comp_val + comm_val) * scale))
+                val = max(0, min(val, M_int))
+                both = model.new_bool_var(f"both_{j}_{k_start}_{k_end}")
+                model.add(both <= cut_vars[(j - 1, k_start)])
+                model.add(both <= cut_vars[(j, k_end)])
+                model.add(
+                    both >= cut_vars[(j - 1, k_start)] + cut_vars[(j, k_end)] - 1
+                )
+                model.add(stage_costs[j] <= val + M_int * (1 - both))
+                model.add(stage_costs[j] >= val - M_int * (1 - both))
+
+    # Last stage
+    lb_last = pp_degree - 1
+    ub_last = num_nodes - 1
+    for k in range(lb_last, ub_last + 1):
+        val = int(
+            round(
+                (prefix[-1][num_nodes] - prefix[-1][k] + _get_comm_cost(cost_c, k, pp_degree - 2))
+                * scale
+            )
+        )
+        val = max(0, min(val, M_int))
+        y = cut_vars[(pp_degree - 2, k)]
+        model.add(stage_costs[-1] <= val + M_int * (1 - y))
+        model.add(stage_costs[-1] >= val - M_int * (1 - y))
+
+    max_stage_cost = model.new_int_var(0, M_int, "max_stage_cost")
+    for j in range(pp_degree):
+        model.add(max_stage_cost >= stage_costs[j])
+
+    model.minimize(
+        (num_mb_val - 1) * max_stage_cost + sum(stage_costs)
+    )
+
+    solver = cp_model.CpSolver()
+    if not verbose:
+        solver.parameters.log_search_progress = False
+    status = solver.solve(model)
+
+    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return None
+
+    cut_values = [0] + [int(solver.value(cut_ints[j])) for j in range(len(cut_ints))] + [num_nodes]
+    partition = [cut_values[j + 1] - cut_values[j] for j in range(pp_degree)]
+
+    if verbose:
+        sc = [solver.value(stage_costs[j]) / scale for j in range(pp_degree)]
+        print(f"ILP (CP-SAT): partition={partition}, cuts={cut_values[1:-1]}")
+        print(f"ILP stage_costs (scaled back): {[round(x, 6) for x in sc]}")
+
+    return partition
+
+
 def ILP(
     num_nodes: int,
     cost_e_per_gpu: Dict[str, np.ndarray],
@@ -556,13 +709,13 @@ def ILP(
     verbose: bool = False
 ):
     """
-    Integer Linear Programming for optimal partition using CPLEX.
+    Integer Linear Programming for optimal partition using OR-Tools.
 
-    Supports both FX node-based and legacy layer-based profiling.
-    Uses binary assignment variables for each possible (node, stage) pair.
+    Stage time = computation + communication
+    Uses binary cut-position variables and big-M for indicator constraints.
 
     Args:
-        num_nodes: Total number of nodes/layers to partition
+        num_nodes: Total number of nodes to partition
         cost_e_per_gpu: Dict mapping GPU type to execution cost array
         cost_c: Communication cost array (shape: num_nodes x pp_degree)
         pp_degree: Pipeline parallel degree
@@ -577,144 +730,110 @@ def ILP(
     s_time = time.time()
 
     try:
-        from docplex.mp.model import Model
+        from ortools.linear_solver import pywraplp
     except ImportError:
-        raise ImportError("ILP requires docplex. Install with: pip install docplex")
+        raise ImportError("ILP requires ortools. Install with: pip install ortools")
 
     # Build cost_e list for each stage based on GPU type
     cost_e_list = [_get_cost_e_for_gpu(cost_e_per_gpu, gpu_type_lst[j]) for j in range(pp_degree)]
 
-    # Precompute prefix sums for each GPU type's cost_e
-    # prefix[j][i] = sum of cost_e_list[j][0:i]
+    # Precompute prefix sums: prefix[j][i] = sum of cost_e_list[j][0:i]
     prefix = []
     for j in range(pp_degree):
         psum = [0.0]
         for i in range(num_nodes):
-            psum.append(psum[-1] + cost_e_list[j][i])
+            psum.append(psum[-1] + float(cost_e_list[j][i]))
         prefix.append(psum)
 
-    # Create ILP model
-    m = Model(name='fx_node_partitioning')
+    # Big-M upper bound for stage cost (comp + comm)
+    max_comp = max(prefix[j][num_nodes] for j in range(pp_degree))
+    max_comm = float(np.max(cost_c)) if cost_c.size else 0.0
+    M = (max_comp + max_comm) * 2 + 1e6
 
-    # Binary assignment variables: x[i][j] = 1 if node i is the start of stage j+1
-    # (i.e., node i is the first node after cut point j)
-    # For pp_degree stages, we need pp_degree-1 cut points
-    # cut[j] indicates where stage j+1 starts (1-indexed cut points)
+    num_mb_val = int(num_mb.item()) if hasattr(num_mb, "item") else int(num_mb)
 
-    # Create binary variables for cut positions
-    # y[j][k] = 1 if cut point j is at position k
-    # j ranges from 0 to pp_degree-2 (pp_degree-1 cut points)
-    # k ranges based on valid positions for each cut
+    # Try CP-SAT first (integer formulation, often much faster than SCIP/CBC)
+    partition = _solve_ilp_cpsat(
+        num_nodes, prefix, cost_c, pp_degree, num_mb_val, M, verbose
+    )
 
-    cut_vars = {}  # (j, k) -> binary variable
-    cuts = []  # Integer variables representing actual cut positions
+    if partition is None:
+        # Fallback: MIP with linear_solver (SCIP/CBC/etc.)
+        solver, solver_name = _create_mip_solver(pywraplp)
+        infinity = solver.infinity()
+        cut_vars = {}
+        cut_ints = []
 
-    for j in range(pp_degree - 1):
-        # Cut j can be at positions from j+1 to num_nodes-(pp_degree-1-j)
-        lb = j + 1
-        ub = num_nodes - (pp_degree - 1 - j)
+        for j in range(pp_degree - 1):
+            lb, ub = j + 1, num_nodes - (pp_degree - 1 - j)
+            for k in range(lb, ub + 1):
+                cut_vars[(j, k)] = solver.BoolVar(f'y_{j}_{k}')
+            cut_int = solver.IntVar(lb, ub, f'cut_{j}')
+            solver.Add(cut_int == sum(k * cut_vars[(j, k)] for k in range(lb, ub + 1)))
+            cut_ints.append(cut_int)
+            solver.Add(sum(cut_vars[(j, k)] for k in range(lb, ub + 1)) == 1)
 
-        # Create binary variables for each possible position
-        for k in range(lb, ub + 1):
-            cut_vars[(j, k)] = m.binary_var(name=f'y_{j}_{k}')
+        for j in range(len(cut_ints) - 1):
+            solver.Add(cut_ints[j] + 1 <= cut_ints[j + 1])
 
-        # Exactly one position is selected for this cut
-        m.add_constraint(
-            m.sum(cut_vars[(j, k)] for k in range(lb, ub + 1)) == 1,
-            f'one_cut_{j}'
-        )
+        stage_costs = [solver.NumVar(0.0, infinity, f'stage_cost_{j}') for j in range(pp_degree)]
 
-        # Create integer variable and link to binary
-        cut_int = m.integer_var(lb=lb, ub=ub, name=f'cut_{j}')
-        m.add_constraint(
-            cut_int == m.sum(k * cut_vars[(j, k)] for k in range(lb, ub + 1)),
-            f'cut_link_{j}'
-        )
-        cuts.append(cut_int)
+        lb0, ub0 = 1, num_nodes - (pp_degree - 1)
+        comm0 = _get_comm_cost(cost_c, 0, 0)
+        for k in range(lb0, ub0 + 1):
+            val = prefix[0][k] + comm0
+            y = cut_vars[(0, k)]
+            solver.Add(stage_costs[0] <= val + M * (1 - y))
+            solver.Add(stage_costs[0] >= val - M * (1 - y))
 
-    # Ordering constraints: cut[j-1] < cut[j]
-    for j in range(len(cuts) - 1):
-        m.add_constraint(cuts[j] + 1 <= cuts[j + 1], f'order_{j}')
+        for j in range(1, pp_degree - 1):
+            lb_prev = j
+            ub_prev = num_nodes - (pp_degree - j)
+            lb_curr = j + 1
+            ub_curr = num_nodes - (pp_degree - 1 - j)
+            for k_start in range(lb_prev, ub_prev + 1):
+                for k_end in range(max(k_start + 1, lb_curr), ub_curr + 1):
+                    comp_val = prefix[j][k_end] - prefix[j][k_start]
+                    comm_val = _get_comm_cost(cost_c, k_start, j - 1)
+                    val = comp_val + comm_val
+                    both = solver.BoolVar(f'both_{j}_{k_start}_{k_end}')
+                    solver.Add(both <= cut_vars[(j - 1, k_start)])
+                    solver.Add(both <= cut_vars[(j, k_end)])
+                    solver.Add(both >= cut_vars[(j - 1, k_start)] + cut_vars[(j, k_end)] - 1)
+                    solver.Add(stage_costs[j] <= val + M * (1 - both))
+                    solver.Add(stage_costs[j] >= val - M * (1 - both))
 
-    # Stage computation cost variables
-    stage_costs = [m.continuous_var(name=f'stage_cost_{j}') for j in range(pp_degree)]
+        lb_last = pp_degree - 1
+        ub_last = num_nodes - 1
+        for k in range(lb_last, ub_last + 1):
+            val = prefix[-1][num_nodes] - prefix[-1][k] + _get_comm_cost(cost_c, k, pp_degree - 2)
+            y = cut_vars[(pp_degree - 2, k)]
+            solver.Add(stage_costs[-1] <= val + M * (1 - y))
+            solver.Add(stage_costs[-1] >= val - M * (1 - y))
 
-    # Stage 0: nodes [0, cuts[0])
-    # Use indicator constraints with binary variables
-    lb0, ub0 = 1, num_nodes - (pp_degree - 1)
-    for k in range(lb0, ub0 + 1):
-        m.add_indicator(
-            cut_vars[(0, k)],
-            stage_costs[0] == prefix[0][k],
-            name=f'ind_0_{k}'
-        )
+        max_stage_cost = solver.NumVar(0.0, infinity, 'max_stage_cost')
+        for j in range(pp_degree):
+            solver.Add(max_stage_cost >= stage_costs[j])
 
-    # Middle stages: stage j covers [cuts[j-1], cuts[j]) for j = 1 to pp_degree-2
-    for j in range(1, pp_degree - 1):
-        lb_prev = j
-        ub_prev = num_nodes - (pp_degree - j)
-        lb_curr = j + 1
-        ub_curr = num_nodes - (pp_degree - 1 - j)
+        solver.Minimize((num_mb_val - 1) * max_stage_cost + sum(stage_costs))
 
-        for k_start in range(lb_prev, ub_prev + 1):
-            for k_end in range(max(k_start + 1, lb_curr), ub_curr + 1):
-                # Create auxiliary binary for conjunction
-                both = m.binary_var(name=f'both_{j}_{k_start}_{k_end}')
-                m.add_constraint(both <= cut_vars[(j - 1, k_start)], f'both_a_{j}_{k_start}_{k_end}')
-                m.add_constraint(both <= cut_vars[(j, k_end)], f'both_b_{j}_{k_start}_{k_end}')
-                m.add_constraint(both >= cut_vars[(j - 1, k_start)] + cut_vars[(j, k_end)] - 1, f'both_c_{j}_{k_start}_{k_end}')
+        if verbose:
+            print(f"ILP (ortools, solver={solver_name}): variables={solver.NumVariables()}, constraints={solver.NumConstraints()}")
 
-                m.add_indicator(
-                    both,
-                    stage_costs[j] == prefix[j][k_end] - prefix[j][k_start],
-                    name=f'ind_{j}_{k_start}_{k_end}'
-                )
+        status = solver.Solve()
 
-    # Last stage: nodes [cuts[-1], num_nodes)
-    lb_last = pp_degree - 1
-    ub_last = num_nodes - 1
-    for k in range(lb_last, ub_last + 1):
-        m.add_indicator(
-            cut_vars[(pp_degree - 2, k)],
-            stage_costs[-1] == prefix[-1][num_nodes] - prefix[-1][k],
-            name=f'ind_last_{k}'
-        )
-
-    # Max stage cost variable
-    max_stage_cost = m.continuous_var(name='max_stage_cost')
-    for j in range(pp_degree):
-        m.add_constraint(max_stage_cost >= stage_costs[j], f'max_stage_{j}')
-
-    # Objective: minimize pipeline latency
-    # For 1F1B: (num_mb + pp - 1) * max_stage
-    # Simplified: (num_mb - 1) * max_stage + sum(stage_costs)
-    total_stage_cost = m.sum(stage_costs)
-    m.minimize((num_mb - 1) * max_stage_cost + total_stage_cost)
-
-    # if verbose:
-    #     m.print_information()
-
-    # Solve
-    solution = m.solve()
-
-    if solution is None:
-        print("ILP: No solution found, falling back to even partition")
-        # Fallback to even partition
-        base = num_nodes // pp_degree
-        remainder = num_nodes % pp_degree
-        partition = [base + (1 if i < remainder else 0) for i in range(pp_degree)]
-    else:
-        # Extract partition from cut points
-        cut_values = [0] + [int(solution.get_value(cuts[j])) for j in range(len(cuts))] + [num_nodes]
-        partition = [cut_values[j + 1] - cut_values[j] for j in range(pp_degree)]
-
-        # if verbose:
-        #     print(f"ILP solution: partition={partition}, cuts={cut_values[1:-1]}")
-        #     print(f"ILP stage_costs: {[solution.get_value(stage_costs[j]) for j in range(pp_degree)]}")
-
-    elapsed = time.time() - s_time
-    # if verbose:
-    #     print(f"ILP: {elapsed:.4f} sec")
+        if status != pywraplp.Solver.OPTIMAL and status != pywraplp.Solver.FEASIBLE:
+            print("ILP: No solution found, falling back to even partition")
+            base = num_nodes // pp_degree
+            remainder = num_nodes % pp_degree
+            partition = [base + (1 if i < remainder else 0) for i in range(pp_degree)]
+        else:
+            cut_values = [0] + [int(cut_ints[j].solution_value()) for j in range(len(cut_ints))] + [num_nodes]
+            partition = [cut_values[j + 1] - cut_values[j] for j in range(pp_degree)]
+            if verbose:
+                sc = [stage_costs[j].solution_value() for j in range(pp_degree)]
+                print(f"ILP solution: partition={partition}, cuts={cut_values[1:-1]}")
+                print(f"ILP stage_costs: {sc}")
 
     stage_latency = get_stage_latency(partition, cost_e_per_gpu, cost_c, gpu_type_lst)
     stage_time_lst, stage_comp_time_lst, stage_comm_time_lst, stage_for_send_time_lst, stage_back_send_time_lst = _extract_stage_times(stage_latency)
@@ -819,7 +938,7 @@ def partition_ilp(
     """
     ILP (Integer Linear Programming) partition method.
 
-    Uses CPLEX to solve optimal partition as ILP problem.
+    Uses OR-Tools (SCIP/CBC) to solve optimal partition with comp+comm stage costs.
     Supports both FX node-based and legacy layer-based profiling.
     Internally calls ILP().
     """

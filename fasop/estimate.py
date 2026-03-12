@@ -709,7 +709,7 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
                 rank_map[j].append(int((rank_counter[cur_pp] + cur_pp * tp_degree * dp_degree).item()))
                 rank_node_map[int((rank_counter[cur_pp] + cur_pp * tp_degree * dp_degree).item())] = j
                 rank_counter[cur_pp] += 1
-            
+    
     num_mb = gbs / (dp_degree * mbs)
             
     parallel_config = {"tp" : tp_degree, "dp" : dp_degree, "pp" : pp_degree, "micro_bs" : mbs, "rank_map" : rank_map, "rank_node_map": rank_node_map}

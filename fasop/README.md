@@ -288,9 +288,9 @@ Use ILP solver for optimal partitioning with constraints:
 ```bash
 python FASOP.py --gpus A40 8 --gbs 32 --dataset squad --pp-partition-method ilp
 ```
-- `ilp`: Uses integer linear programming to find optimal partition
+- `ilp`: Uses integer linear programming to find optimal partition (comp + comm cost)
 - Supports additional constraints (memory limits, etc.)
-- Requires `docplex` package (IBM CPLEX Python API)
+- Requires `ortools` package: `pip install ortools`. **CP-SAT is tried first** (integer formulation, often much faster); falls back to SCIP/CBC if needed.
 - Best for complex heterogeneous cluster scenarios
 
 **PP Partition Method Comparison:**
@@ -299,8 +299,47 @@ python FASOP.py --gpus A40 8 --gbs 32 --dataset squad --pp-partition-method ilp
 | `even` | Fastest | Low | Quick baseline, Optimus-Prime style |
 | `minmax` | Fast | Good | Default, balanced performance |
 | `dp` | Medium | Optimal | When accuracy is important |
-| `ilp` | Slow | Optimal | Complex constraints, heterogeneous clusters |
+| `ilp` | Medium (~2 s with CP-SAT) | Optimal | Complex constraints, heterogeneous clusters |
 | `bruteforce` | Slowest | Optimal | Small PP degrees only (PP ≤ 8) |
+
+### Partition Method Search Time Benchmark
+
+We benchmarked the partition search methods using a reduced LLaMA 70B like model (`num_layers=10`, 82 FX nodes) to compare solver performance under identical conditions.
+
+**Test configuration:**
+- Model: LLaMA 70B with `num_layers=10` (82 FX nodes = 1 embed + 10×8 layer nodes + 1 lm_head)
+- Cluster: Homogeneous A40 GPUs
+- PP=4, TP=2, MBS=4, NUM_MB=4
+
+**Results:**
+
+All methods found the identical optimal partition `[25, 24, 24, 9]`.
+
+| Method | Partition | Search Time (ms) | Relative |
+|--------|-----------|-------------------|----------|
+| Minmax | [25, 24, 24, 9] | **0.16** | 1x |
+| DP | [25, 24, 24, 9] | **19.57** | ~122x |
+| ILP (CP-SAT) | [25, 24, 24, 9] | **2,352** | ~14,700x |
+| ILP (SCIP) | [25, 24, 24, 9] | **74,937** | ~468,356x |
+
+**Why are DP and ILP slower than Minmax?**
+
+- **Minmax (0.16 ms)**: A greedy heuristic that starts with an even split and iteratively moves one node from the heaviest stage to the lightest. Converges in a few iterations with $O(\text{PP} \times iterations)$ complexity. Very fast but not guaranteed to find the global optimum in all cases.
+
+- **DP (19.6 ms)**: Evaluates all possible cut positions using dynamic programming. For each of the `num_nodes` positions and `PP` stages, it considers every valid cut point, resulting in $O(\text{num\_nodes}^2 \times \text{PP})$ complexity. This guarantees the optimal partition but requires significantly more computation than the greedy approach.
+
+- **ILP (CP-SAT, 2.4 sec)**: Uses the CP-SAT solver from OR-Tools, a modern constraint programming solver that combines SAT-based search with lazy clause generation. For middle stages (stages 1 to PP-2), binary indicator variables and big-M constraints are created for every `(k_start, k_end)` pair. With 82 nodes and PP=4, this produced 6,565 variables and 31,928 constraints. CP-SAT's propagation and learning mechanisms make it ~32x faster than SCIP on this formulation.
+
+- **ILP (SCIP, 74.9 sec)**: Uses the traditional SCIP MIP solver with LP relaxation and branch-and-bound. The same big-M formulation with continuous `stage_cost` variables and large M values leads to weak LP relaxations, causing excessive branching. SCIP spends most of its time exploring the branch-and-bound tree.
+
+**ILP Scalability implication**: At 82 nodes (10 layers), the ILP formulation produces ~6.5K variables. The full LLaMA 70B model with 80 layers produces 642 FX nodes, where variable count would grow to ~411K ( $O(N^2)$ in `both` variables). Even with CP-SAT, this makes ILP impractical for real-time search at full scale. DP remains the recommended choice when optimality is required, as it achieves the same result in milliseconds.
+
+To reproduce:
+```bash
+python test_search_method_for_small_model.py
+```
+
+The script settings (NUM_LAYERS, PP_DEGREE, TP_DEGREE, MBS) can be modified at the top of the file.
 
 ## Dependencies
 
@@ -318,6 +357,8 @@ conda activate fasop
 # Install dependencies (torch CPU-only for cost estimation, no GPU required)
 pip install numpy pandas matplotlib networkx pyyaml
 pip install torch --index-url https://download.pytorch.org/whl/cpu
+# For --pp-partition-method ilp (optional):
+pip install ortools
 ```
 
 ### Required Packages
@@ -333,6 +374,7 @@ Conda environment: `fasop` (`~/miniforge3/envs/fasop`)
 | matplotlib | 3.10.8 | |
 | networkx | 3.6.1  | |
 | PyYAML  | 6.0.3   | |
+| ortools | (latest)| Optional; required for `--pp-partition-method ilp` |
 
 ## Notes
 
