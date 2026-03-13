@@ -596,10 +596,18 @@ def _solve_ilp_cpsat(
 
     All costs are scaled to integers. Returns partition list if solved, else None.
     """
+    def _log(msg: str) -> None:
+        if verbose:
+            print(f"[ILP-CPSAT] {msg}", flush=True)
+
     try:
         from ortools.sat.python import cp_model
     except ImportError:
+        _log("ortools.sat not available, skipping CP-SAT")
         return None
+
+    _log(f"num_nodes={num_nodes}, pp_degree={pp_degree}, num_mb={num_mb_val}, building model...")
+    t_build = time.time()
 
     scale = _ILP_CP_SAT_SCALE
     M_int = min(int(M_float * scale) + 1, 2**31 - 1)  # CP-SAT friendly upper bound
@@ -680,21 +688,37 @@ def _solve_ilp_cpsat(
         (num_mb_val - 1) * max_stage_cost + sum(stage_costs)
     )
 
+    build_sec = time.time() - t_build
+    _log(f"model built in {build_sec:.2f}s, starting solver...")
+
     solver = cp_model.CpSolver()
     if not verbose:
         solver.parameters.log_search_progress = False
+    t_solve = time.time()
     status = solver.solve(model)
+    solve_sec = time.time() - t_solve
+
+    status_name = {
+        cp_model.OPTIMAL: "OPTIMAL",
+        cp_model.FEASIBLE: "FEASIBLE",
+        cp_model.INFEASIBLE: "INFEASIBLE",
+        cp_model.MODEL_INVALID: "MODEL_INVALID",
+        cp_model.UNKNOWN: "UNKNOWN",
+    }.get(status, f"status={status}")
+    _log(f"solver finished: {status_name}, wall_time={solve_sec:.2f}s")
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        _log("no feasible solution, returning None")
         return None
 
     cut_values = [0] + [int(solver.value(cut_ints[j])) for j in range(len(cut_ints))] + [num_nodes]
     partition = [cut_values[j + 1] - cut_values[j] for j in range(pp_degree)]
 
+    _log(f"solved in {solve_sec:.2f}s: partition={partition}, cuts={cut_values[1:-1]}")
     if verbose:
         sc = [solver.value(stage_costs[j]) / scale for j in range(pp_degree)]
-        print(f"ILP (CP-SAT): partition={partition}, cuts={cut_values[1:-1]}")
-        print(f"ILP stage_costs (scaled back): {[round(x, 6) for x in sc]}")
+        print(f"ILP (CP-SAT): partition={partition}, cuts={cut_values[1:-1]}", flush=True)
+        print(f"ILP stage_costs (scaled back): {[round(x, 6) for x in sc]}", flush=True)
 
     return partition
 
@@ -753,11 +777,21 @@ def ILP(
     num_mb_val = int(num_mb.item()) if hasattr(num_mb, "item") else int(num_mb)
 
     # Try CP-SAT first (integer formulation, often much faster than SCIP/CBC)
-    partition = _solve_ilp_cpsat(
-        num_nodes, prefix, cost_c, pp_degree, num_mb_val, M, verbose
-    )
+    if verbose:
+        print(f"[ILP] trying CP-SAT first (num_nodes={num_nodes}, pp_degree={pp_degree})", flush=True)
+    try:
+        partition = _solve_ilp_cpsat(
+            num_nodes, prefix, cost_c, pp_degree, num_mb_val, M, verbose
+        )
+    except Exception as e:
+        print(f"[ILP] CP-SAT failed (exception): {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        partition = None
 
     if partition is None:
+        if verbose:
+            print("[ILP] CP-SAT returned no solution, falling back to MIP", flush=True)
         # Fallback: MIP with linear_solver (SCIP/CBC/etc.)
         solver, solver_name = _create_mip_solver(pywraplp)
         infinity = solver.infinity()
