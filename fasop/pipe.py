@@ -548,9 +548,11 @@ def dynamic_programming2(
 
 def _get_comm_cost(cost_c: np.ndarray, cut_pos: int, stage_idx: int) -> float:
     """Safe lookup of communication cost at (cut_pos, stage_idx)."""
-    r = min(cut_pos, cost_c.shape[0] - 1) if cost_c.size else 0
-    c = min(stage_idx, cost_c.shape[1] - 1) if cost_c.size else 0
-    return float(cost_c[r, c]) if cost_c.size else 0.0
+    if not cost_c.size or cost_c.shape[0] == 0 or cost_c.shape[1] == 0:
+        return 0.0
+    r = min(cut_pos, cost_c.shape[0] - 1)
+    c = min(stage_idx, cost_c.shape[1] - 1)
+    return float(cost_c[r, c])
 
 
 def _create_mip_solver(pywraplp):
@@ -752,6 +754,13 @@ def ILP(
                   stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst)
     """
     s_time = time.time()
+
+    # pp_degree <= 1: no partition to solve, all nodes in one stage
+    if pp_degree <= 1:
+        partition = [num_nodes]
+        stage_latency = get_stage_latency(partition, cost_e_per_gpu, cost_c, gpu_type_lst)
+        stage_time_lst, stage_comp_time_lst, stage_comm_time_lst, stage_for_send_time_lst, stage_back_send_time_lst = _extract_stage_times(stage_latency)
+        return partition, stage_comp_time_lst, stage_comm_time_lst, stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst
 
     try:
         from ortools.linear_solver import pywraplp
