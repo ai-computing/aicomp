@@ -945,6 +945,54 @@ class Optimus_p:
     def get_world_size(self):
         return self.tpl.world_size
 
+    def save_hf_ckpt(self, save_dir, step=None, epoch=None):
+        """Save stage state_dict for later HF-compatible merging.
+
+        Each rank saves its stage's state_dict with DDP prefix stripped and
+        DTensor converted to local tensor.  DP replicas are identical, so
+        only DP rank 0 writes.  Files are named stage{N}_tp{M}.pt.
+
+        Use merge_hf_ckpt.py (CPU utility) to combine these into a single
+        HuggingFace-compatible checkpoint.
+        """
+        submod = self.run_info.submod
+        raw = submod.module if isinstance(submod, DistributedDataParallel) else submod
+
+        # Collect state_dict with DTensor → local tensor
+        local_sd = {}
+        for key, val in raw.state_dict().items():
+            if hasattr(val, 'to_local'):
+                val = val.to_local().contiguous()
+            local_sd[key] = val.cpu()
+
+        # DP replicas are identical → only DP rank 0 saves
+        if self.tpl.dp_size > 1:
+            dp_rank = (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size
+            if dp_rank != 0:
+                return
+
+        stage = self.tpl.stage
+        tp_rank = self.get_rank() % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+
+        os.makedirs(save_dir, exist_ok=True)
+        fname = f"stage{stage}_tp{tp_rank}.pt"
+        ckpt_path = os.path.join(save_dir, fname)
+
+        torch.save({
+            'stage': stage,
+            'tp_rank': tp_rank,
+            'tp_size': self.tpl.tp_size,
+            'pp_size': self.tpl.num_stage,
+            'step': step,
+            'epoch': epoch,
+            'state_dict': local_sd,
+        }, ckpt_path)
+
+        if int(os.environ.get("RANK", "0")) == 0:
+            print(f"[save_hf_ckpt] Saved {ckpt_path} "
+                  f"(stage={stage}, tp_rank={tp_rank}, "
+                  f"{len(local_sd)} params)")
+
     def save_ckpt(self, step, epoch):
         if self.checkpoint != True:
             return
