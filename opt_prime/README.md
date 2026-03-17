@@ -118,6 +118,42 @@ To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size
     # Example of a 16-GPU setup with pipeline parallel size=4, tensor parallel size=2, and data parallel size=2
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4, tp_size=2, dp_size=2)
 
+## Graph capture mode: `--dynamo-capture`
+
+By default, OptimusPrime uses HuggingFace's HFTracer (built on torch.fx.symbolic_trace) to extract the model's FX graph. For enhanced model compatibility, the --dynamo-capture option enables the use of torch.export.export(). This leverages TorchDynamo to capture a comprehensive ATen-level IR, which is then reconstructed into a module-level FX graph, ensuring a more robust extraction for complex architectures.
+
+### Why use `--dynamo-capture`?
+
+| | HFTracer (default) | `--dynamo-capture` |
+|---|---|---|
+| Capture engine | HuggingFace `HFTracer` | TorchDynamo (`torch.export`) |
+| Graph completeness | May fail on some models | Full graph, no graph breaks |
+| IR level | Module-level directly | ATen → Module-level reconstruction |
+| PyTorch alignment | HuggingFace-specific | PyTorch official export path |
+
+### Usage
+
+Add `--dynamo-capture` to any training or inference script:
+
+    # Training (PP=4)
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_gpt2.py --dynamo-capture
+
+    # Training with 3D parallelism (PP=2, DP=2, TP=2)
+    torchrun --nproc_per_node=8 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama5.py --dynamo-capture <llama access token>
+
+    # Inference (PP=4, TP=2)
+    torchrun --nproc_per_node=8 --master_port=29500 pp_inference_llama.py --pp-size 4 --tp-size 2 --use-kv-manager --dynamo-capture
+
+In Python, pass `dynamo_capture=True` to the constructor:
+
+```python
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=True)
+```
+
+### Notes
+
+* When using `--dynamo-capture` with `torch.amp.autocast` (mixed-precision training), a lower learning rate (e.g., 1e-5 instead of 3e-5) may be needed for stable convergence.
+
 ## Configuring memory optimization options
 
 ### Offloading optimizer state to host memory during forward and backward passes
