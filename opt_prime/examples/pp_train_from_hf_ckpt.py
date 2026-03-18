@@ -89,8 +89,11 @@ print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
 
-# AdamW with low LR and weight decay for regularization
-optimus_p.optimizer = torch.optim.AdamW(optimus_p.parameters(), lr=5e-6, weight_decay=0.01)
+# Use Adam with foreach=False for TP compatibility (foreach ops fail with mixed DTensor/Tensor).
+if optimus_p.tpl.tp_size > 1:
+    optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=5e-6, foreach=False)
+else:
+    optimus_p.optimizer = torch.optim.AdamW(optimus_p.parameters(), lr=5e-6, weight_decay=0.01)
 
 # Format squad data as Q&A pairs to prevent catastrophic forgetting
 squad = load_dataset("squad")
@@ -154,7 +157,9 @@ def train():
         else:
             loss = None
 
-        torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 1.0)
+        # clip_grad_norm_ is incompatible with DTensor (TP) — skip when tp_size > 1
+        if optimus_p.tpl.tp_size <= 1:
+            torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 1.0)
         optimus_p.optimizer.step()
         scheduler.step()
         global_step += 1
@@ -182,6 +187,7 @@ def train():
                 print(f"| Stopping at step {global_step} (--max-steps={args.max_steps})")
             break
 
+    # End-of-training save
     # End-of-training save
     optimus_p.save_hf_ckpt(args.save_dir, step=global_step, epoch=epoch)
 

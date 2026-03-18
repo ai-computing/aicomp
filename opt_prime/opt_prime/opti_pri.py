@@ -955,6 +955,13 @@ class Optimus_p:
         Use merge_hf_ckpt.py (CPU utility) to combine these into a single
         HuggingFace-compatible checkpoint.
         """
+        # Ensure all CUDA operations (optimizer step, etc.) are complete
+        # before reading state_dict. No dist.barrier() — the default NCCL
+        # process group may not have a communicator initialized in multi-node
+        # setups where only PP/DP/TP sub-groups are used during training.
+        if self.use_gpu:
+            torch.cuda.synchronize()
+
         submod = self.run_info.submod
         raw = submod.module if isinstance(submod, DistributedDataParallel) else submod
 

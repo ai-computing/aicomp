@@ -393,7 +393,7 @@ The merged model can be loaded with `from_pretrained()` and used with any PP/TP 
     # Continue training with PP=8 (8 GPUs, different configuration)
     torchrun --nproc_per_node=8 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_from_hf_ckpt.py --model-dir ./merged_model
 
-After continued training, merge again to produce an updated HuggingFace model:
+After continued training, merge again to produce an updated HuggingFace model (in multi-node setups, gather stage files from all servers first, as described in the Multi-node training section above):
 
     python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt_trained --output ./merged_model_v2
 
