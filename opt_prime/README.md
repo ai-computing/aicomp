@@ -250,10 +250,10 @@ When using KV cache (`--use-kv-cache` or `--use-kv-manager`), an additional `--s
 - **Batch mode** (default): Cache memory is freed after each `generate()` call. Each request pays the allocation cost.
 - **Serving mode** (`--serving-mode`): Cache stays allocated between requests. Only the position counter is reset, avoiding re-allocation overhead.
 
-    # Serving mode demo — compares memory behavior across multiple requests
+Example:
+
     torchrun --nproc_per_node=1 serving_vs_batch_demo.py
 
-    # PP=4, 10 requests, 50 tokens each
     torchrun --nproc_per_node=4 serving_vs_batch_demo.py --pp-size 4 --num-requests 10 --max-new-tokens 50
 
 ### Python API
