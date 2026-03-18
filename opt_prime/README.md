@@ -327,9 +327,23 @@ hf_ckpt/
 
 With TP=2, each stage produces two files (e.g., `stage0_tp0.pt`, `stage0_tp1.pt`).
 
+#### Multi-node training
+
+In a multi-node setup, each server saves only the checkpoint files for the stages assigned to its local ranks. For example, with 2 servers (8 GPUs each), PP=8, TP=2:
+
+```
+Server 0 (rank 0~7):   hf_ckpt/stage0_tp0.pt ~ stage3_tp1.pt  (8 files)
+Server 1 (rank 8~15):  hf_ckpt/stage4_tp0.pt ~ stage7_tp1.pt  (8 files)
+```
+
+If the servers share a filesystem (e.g., NFS), all files are automatically in the same directory. If not, gather the files from all servers into a single directory before running the merge utility:
+
+    # Copy from Server 1 to Server 0
+    scp server1:./hf_ckpt/stage*.pt ./hf_ckpt/
+
 ### Step 2: Merge into a single HuggingFace model (CPU)
 
-Run the merge utility on CPU. No GPU required. It restores mangled state_dict keys to their original HuggingFace fully-qualified names and reassembles TP-sharded parameters.
+Run the merge utility on CPU. No GPU required. It restores mangled state_dict keys to their original HuggingFace fully-qualified names and reassembles TP-sharded parameters. All stage checkpoint files must be present in a single `--ckpt-dir` directory.
 
     cd opt_prime/examples
 
