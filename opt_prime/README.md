@@ -376,7 +376,7 @@ The merged model can be loaded with `from_pretrained()` and used with any PP/TP 
     # Continue training with PP=4 (4 GPUs)
     torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_from_hf_ckpt.py --model-dir ./merged_model
 
-    # Continue training with PP=4 (8 GPUs, different configuration)
+    # Continue training with PP=8 (8 GPUs, different configuration)
     torchrun --nproc_per_node=8 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_from_hf_ckpt.py --model-dir ./merged_model
 
 After continued training, merge again to produce an updated HuggingFace model:
@@ -395,7 +395,7 @@ python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt --
 # 3. Inference with merged model (PP=4, KV cache)
 torchrun --nproc_per_node=4 pp_inference_from_hf_ckpt.py --model-dir ./merged_model --use-kv-cache
 
-# 4. Continue training from merged model (PP=4, 8 GPUs)
+# 4. Continue training from merged model (PP=8, 8 GPUs)
 torchrun --nproc_per_node=8 pp_train_from_hf_ckpt.py --model-dir ./merged_model
 
 # 5. Merge continued training result
