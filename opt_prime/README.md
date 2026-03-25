@@ -1,8 +1,8 @@
 # OptimusPrime: Highly-efficient 3D parallelization framework for training LLMs
 
-OptimusPrime is a 3D parallelization framework designed for the efficient training of large-scale DNN models. 
-It analyzes the model structure in the form of a PyTorch FX graph within a deep learning cluster environment composed of multiple GPUs and nodes. 
-Based on this analysis, OptimusPrime derives optimized parallelization policies tailored to the hardware environment of the cluster, 
+OptimusPrime is a 3D parallelization framework designed for the efficient training of large-scale DNN models.
+It analyzes the model structure in the form of a PyTorch FX graph within a deep learning cluster environment composed of multiple GPUs and nodes.
+Based on this analysis, OptimusPrime derives optimized parallelization policies tailored to the hardware environment of the cluster,
 enabling efficient parallel training.
 
 ## Supported models
@@ -10,7 +10,7 @@ enabling efficient parallel training.
 OptimusPrime supports major HuggingFace models, and the following models have been tested:
 
 * gpt2
-* gpt2-medium 
+* gpt2-medium
 * gpt2-large
 * gpt2-xl
 * EleutherAI/gpt-neo-2.7B
@@ -30,7 +30,7 @@ OptimusPrime supports major HuggingFace models, and the following models have be
 
 * Currently supported
   * **Pipeline parallelism (PP)**: In PP, GPipe/1F1B scheduling algorithms are supported
-  * **Data Parallelism (DP)** 
+  * **Data Parallelism (DP)**
   * **Tensor Parallelism (TP)**: For now, TP support is provided only for the Llama model
 
 ## Installation
@@ -38,26 +38,30 @@ OptimusPrime supports major HuggingFace models, and the following models have be
 To install OptimusPrime:
 
     # Make sure PyTorch >= 2.0.1 is installed (Officially tested with version 2.5.0)
-    # CUDA and cuDNN libraries compatible with the PyTorch version must be installed as well (Officially tested with cuda12.4 and cudnn9-devel) 
+    # CUDA and cuDNN libraries compatible with the PyTorch version must be installed as well (Officially tested with cuda12.4 and cudnn9-devel)
     git clone https://github.com/ai-computing/aicomp.git
 
-## Running (Example: gpt2)
+---
 
-### Single-node environment
+## Training (Fine-tuning)
+
+### Running (Example: gpt2)
+
+#### Single-node environment
 
     cd opt_prime/examples
     torchrun --nproc_per_node=<# of GPUs per node> --nnodes=<# of nodes> --node_rank=0 --master_addr=127.0.0.1 --master_port=29500 pp_train_gpt2.py
 
-### Multi-node environment
+#### Multi-node environment
 
 Run the following command for every node:
 
     cd opt_prime/examples
     torchrun --nproc_per_node=<# of GPUs per node> --nnodes=<# of nodes> --node_rank=<current node rank> --master_addr=<IP of rank 0> --master_port=29500 pp_train_gpt2.py
 
-## Configuring parallelism options
+### Configuring parallelism options
 
-### Configuring PP only
+#### Configuring PP only
 
 The most basic parallelism option is 'pp_size'. If the 'pp_size' option is omitted, its value is automatically determined based on the number of available GPUs. You may also specify 'pp_size' explicitly if desired.
 
@@ -67,7 +71,7 @@ The most basic parallelism option is 'pp_size'. If the 'pp_size' option is omitt
     # Example of a 4-GPU setup with pipeline parallel size=4
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4)
 
-### Changing scheduling policy for PP
+#### Changing scheduling policy for PP
 
 Pipeline parallel in OptimusPrime supports both 'gpipe' and '1f1b' scheduling options. To use either mode, open the desired script in 'opt_prime/examples' and set the 'mode' option in optimus_p.run() as shown below.
 
@@ -81,7 +85,7 @@ Pipeline parallel in OptimusPrime supports both 'gpipe' and '1f1b' scheduling op
     # Example of explicitly setting the 1f1b scheduler
     optimus_p.run(data, labels, mode="1f1b")
 
-### Configuring PP+DP 
+#### Configuring PP+DP
 
 To apply 2D parallelism with PP+DP, use the 'dp_size' option when instantiating the Optimus_p class. The 'pp_size' option is applied by default even if not specified, but it can also be explicitly set.
 
@@ -98,7 +102,7 @@ Configuration diagram of 2D parallelism with pp_size=4 and dp_size=2 applied sim
   <img src="https://github.com/ai-computing/aicomp/assets/42994087/9b3546a0-a22a-4014-95a2-420cf742e8be">
 </p>
 
-### Configuring PP+TP
+#### Configuring PP+TP
 To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating the Optimus_p class. 'tp_size' is applicable to the Llama model.
 
     # Example of an 16-GPU setup with pipeline parallel size=8 and tensor parallel size=2
@@ -108,7 +112,7 @@ To apply 2D parallelism with PP+TP, use the 'tp_size' option when instantiating 
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=8, tp_size=2)
 
 
-### Configuring PP+TP+DP
+#### Configuring PP+TP+DP
 
 To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size' options. 'tp_size' is applicable to the Llama model.
 
@@ -118,11 +122,25 @@ To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size
     # Example of a 16-GPU setup with pipeline parallel size=4, tensor parallel size=2, and data parallel size=2
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4, tp_size=2, dp_size=2)
 
-## Graph capture mode: `--dynamo-capture`
+### Configuring memory optimization options
+
+#### Offloading optimizer state to host memory during forward and backward passes
+When the 'swap_opt_in_fwdbwd' option is set to True, the optimizer state is offloaded to host memory during the forward and backward passes to reduce GPU memory usage. This helps avoid GPU OOM and enables training of larger models.
+
+    # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True)
+
+#### Executing the optimizer step on the CPU
+When the 'swap_model_in_optstep' option is set to True, the optimizer's step() phase is executed on the CPU. This option must be used together with 'swap_opt_in_fwdbwd', and by avoiding the GPU OOM that can occur when using 'swap_opt_in_fwdbwd' alone, it enables the operation of even larger models.
+
+    # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
+
+### Graph capture mode: `--dynamo-capture`
 
 By default, OptimusPrime uses HuggingFace's HFTracer (built on torch.fx.symbolic_trace) to extract the model's FX graph. For enhanced model compatibility, the --dynamo-capture option enables the use of torch.export.export(). This leverages TorchDynamo to capture a comprehensive ATen-level IR, which is then reconstructed into a module-level FX graph, ensuring a more robust extraction for complex architectures.
 
-### Why use `--dynamo-capture`?
+#### Why use `--dynamo-capture`?
 
 | | HFTracer (default) | `--dynamo-capture` |
 |---|---|---|
@@ -131,7 +149,7 @@ By default, OptimusPrime uses HuggingFace's HFTracer (built on torch.fx.symbolic
 | IR level | Module-level directly | ATen → Module-level reconstruction |
 | PyTorch alignment | HuggingFace-specific | PyTorch official export path |
 
-### Usage
+#### Usage
 
 Add `--dynamo-capture` to any training or inference script:
 
@@ -150,23 +168,11 @@ In Python, pass `dynamo_capture=True` to the constructor:
 optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=True)
 ```
 
-### Notes
+#### Notes
 
 * When using `--dynamo-capture` with `torch.amp.autocast` (mixed-precision training), a lower learning rate (e.g., 1e-5 instead of 3e-5) may be needed for stable convergence.
 
-## Configuring memory optimization options
-
-### Offloading optimizer state to host memory during forward and backward passes
-When the 'swap_opt_in_fwdbwd' option is set to True, the optimizer state is offloaded to host memory during the forward and backward passes to reduce GPU memory usage. This helps avoid GPU OOM and enables training of larger models.
-
-    # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
-    optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True)
-
-### Executing the optimizer step on the CPU 
-When the 'swap_model_in_optstep' option is set to True, the optimizer’s step() phase is executed on the CPU. This option must be used together with 'swap_opt_in_fwdbwd', and by avoiding the GPU OOM that can occur when using 'swap_opt_in_fwdbwd' alone, it enables the operation of even larger models.
-	
-    # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
-    optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
+---
 
 ## Inference
 
@@ -244,88 +250,11 @@ When using KV cache (`--use-kv-cache` or `--use-kv-manager`), an additional `--s
 - **Batch mode** (default): Cache memory is freed after each `generate()` call. Each request pays the allocation cost.
 - **Serving mode** (`--serving-mode`): Cache stays allocated between requests. Only the position counter is reset, avoiding re-allocation overhead.
 
-    # Serving mode demo — compares memory behavior across multiple requests
+Example:
+
     torchrun --nproc_per_node=1 serving_vs_batch_demo.py
 
-    # PP=4, 10 requests, 50 tokens each
     torchrun --nproc_per_node=4 serving_vs_batch_demo.py --pp-size 4 --num-requests 10 --max-new-tokens 50
-
-Example output (PP=4, Llama-3.2-1B, 4x NVIDIA GeForce RTX 3090):
-
-```
-======================================================================
-  [BATCH MODE] — 10 consecutive requests
-  Cache behavior: freed after each request
-======================================================================
-   Request   Alloc(MB)   Reserv(MB)   Delta(MB)   Time(s)  Status
-  ----------------------------------------------------------------
-         1      1006.5       1102.0        +8.4      5.68  cache freed
-         2      1006.5       1102.0        +8.4      4.05  cache freed
-         3      1006.5       1102.0        +8.4      1.45  cache freed
-         4      1006.5       1102.0        +8.4      4.86  cache freed
-         5      1006.5       1102.0        +8.4      1.43  cache freed
-         6      1006.5       1102.0        +8.4      1.43  cache freed
-         7      1006.5       1102.0        +8.4      4.87  cache freed
-         8      1006.5       1102.0        +8.4      1.45  cache freed
-         9      1006.5       1102.0        +8.4      1.44  cache freed
-        10      1006.5       1102.0        +8.4      1.44  cache freed
-  ----------------------------------------------------------------
-  Summary (BATCH):
-    Baseline memory    : 998.0 MB
-    Peak memory        : 1077.6 MB
-    Avg alloc after gen: 1006.5 MB
-    Memory delta range : +8.4 ~ +8.4 MB
-    Avg time/request   : 2.81s
-    Total time         : 28.10s
-
-  [SERVING MODE] — 10 consecutive requests
-  Cache behavior: kept between requests
-======================================================================
-   Request   Alloc(MB)   Reserv(MB)   Delta(MB)   Time(s)  Status
-  ----------------------------------------------------------------
-         1      2068.5       2100.0       +64.3      1.44  cache kept
-         2      2068.5       2100.0       +64.3      1.44  cache kept
-         3      2068.5       2100.0       +64.3      1.44  cache kept
-         4      2068.5       2100.0       +64.3      1.44  cache kept
-         5      2068.5       2100.0       +64.3      1.45  cache kept
-         6      2068.5       2100.0       +64.3      1.44  cache kept
-         7      2068.5       2100.0       +64.3      1.44  cache kept
-         8      2068.5       2100.0       +64.3      1.45  cache kept
-         9      2068.5       2100.0       +64.3      1.43  cache kept
-        10      2068.5       2100.0       +64.3      1.44  cache kept
-  ----------------------------------------------------------------
-  Summary (SERVING):
-    Baseline memory    : 2004.2 MB
-    Peak memory        : 2075.8 MB
-    Avg alloc after gen: 2068.5 MB
-    Memory delta range : +64.3 ~ +64.3 MB
-    Avg time/request   : 1.44s
-    Total time         : 14.42s
-
-======================================================================
-  COMPARISON: Batch Mode vs Serving Mode
-======================================================================
-
-  After release_kv_cache(): 2004.5 MB allocated
-  Metric                                 Batch       Serving
-  ----------------------------------------------------------
-  Avg memory (MB)                        942.2        1940.2
-  Memory std dev (MB)                      0.0           0.0
-  1st request alloc (MB)                 942.2        1940.2
-  Last request alloc (MB)                942.2        1940.2
-  Avg time/request (s)                   2.809         1.442
-  Avg time (2nd+ req) (s)                2.491         1.442
-  Total time (s)                        28.086        14.419
-======================================================================
-
-  Key observations:
-    - Batch mode: memory allocation fluctuates as cache is
-      allocated and freed on each request.
-    - Serving mode: memory stays stable after the first request
-      because the cache is only cleared (position reset), not freed.
-    - Serving mode was 1.73x faster on 2nd+ requests
-      (no cache re-allocation overhead).
-```
 
 ### Python API
 
@@ -358,6 +287,155 @@ engine.eval()
 input_ids = tokenizer("Hello", return_tensors="pt").input_ids.cuda()
 output_ids = engine.generate(input_ids, max_new_tokens=50)
 ```
+
+---
+
+## HuggingFace-compatible Checkpoint
+
+When training with multiple GPUs using pipeline parallelism (PP) and/or tensor parallelism (TP), model parameters are distributed across stages and shards. The HuggingFace-compatible checkpoint pipeline allows you to save these distributed parameters, merge them into a single standard HuggingFace model on CPU, and then use the merged model for inference or continued training with any parallelism configuration.
+
+### Overview
+
+```
+[Step 1] Parallel Training          [Step 2] CPU Merge Utility       [Step 3] Use Merged Model
+ torchrun (N GPUs)                   python3 (CPU, one-shot)          HuggingFace compatible
+
+ Stage 0 → stage0_tp0.pt            merge_hf_ckpt.py                 from_pretrained()
+ Stage 1 → stage1_tp0.pt    ───→    Read stage files          ───→   • Inference (any PP/TP)
+ Stage 2 → stage2_tp0.pt            Restore keys + TP merge          • Continued training
+ Stage 3 → stage3_tp0.pt            Save single model                • Single GPU usage
+```
+
+### Step 1: Save stage checkpoints during training
+
+Use `save_hf_ckpt()` in your training script to save per-stage state dictionaries. DDP prefixes are stripped and DTensor parameters are converted to local tensors automatically.
+
+    cd opt_prime/examples
+
+    # PP=4 training with checkpoint save (20 steps for quick test)
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_into_hf_ckpt.py --max-steps 20 <llama_access_token>
+
+This produces:
+
+```
+hf_ckpt/
+├── stage0_tp0.pt
+├── stage1_tp0.pt
+├── stage2_tp0.pt
+└── stage3_tp0.pt
+```
+
+With TP=2, each stage produces two files (e.g., `stage0_tp0.pt`, `stage0_tp1.pt`).
+
+#### Multi-node training
+
+In a multi-node setup, each server saves only the checkpoint files for the stages assigned to its local ranks. For example, with 2 servers (8 GPUs each), PP=8, TP=2:
+
+```
+Server 0 (rank 0~7):   hf_ckpt/stage0_tp0.pt ~ stage3_tp1.pt  (8 files)
+Server 1 (rank 8~15):  hf_ckpt/stage4_tp0.pt ~ stage7_tp1.pt  (8 files)
+```
+
+If the servers share a filesystem (e.g., NFS), all files are automatically in the same directory. If not, gather the files from all servers into a single directory before running the merge utility:
+
+    # Copy from Server 1 to Server 0
+    scp server1:./hf_ckpt/stage*.pt ./hf_ckpt/
+
+### Step 2: Merge into a single HuggingFace model (CPU)
+
+Run the merge utility on CPU. No GPU required. It restores mangled state_dict keys to their original HuggingFace fully-qualified names and reassembles TP-sharded parameters. All stage checkpoint files must be present in a single `--ckpt-dir` directory.
+
+    cd opt_prime/examples
+
+    python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt --output ./merged_model
+
+    # With HuggingFace access token (for gated models)
+    python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt --output ./merged_model --token <hf_access_token>
+
+The output directory is a standard HuggingFace model directory:
+
+```
+merged_model/
+├── config.json
+├── model.safetensors
+├── tokenizer.json
+├── tokenizer_config.json
+└── ...
+```
+
+### Step 3: Use the merged model
+
+#### Inference with any parallelism configuration
+
+The merged model can be loaded with `from_pretrained()` and used with any PP/TP configuration, independent of the original training setup.
+
+    cd opt_prime/examples
+
+    # PP=4, with KV cache
+    torchrun --nproc_per_node=4 --master_port=29500 pp_inference_from_hf_ckpt.py --model-dir ./merged_model --use-kv-cache
+
+    # PP=4, TP=2 (8 GPUs) — different configuration from training
+    torchrun --nproc_per_node=8 --master_port=29500 pp_inference_from_hf_ckpt.py --model-dir ./merged_model --pp-size 4 --tp-size 2 --use-kv-cache
+
+    # Greedy decoding
+    torchrun --nproc_per_node=4 --master_port=29500 pp_inference_from_hf_ckpt.py --model-dir ./merged_model --use-kv-cache --no-sample
+
+    # Custom prompt
+    torchrun --nproc_per_node=4 --master_port=29500 pp_inference_from_hf_ckpt.py --model-dir ./merged_model --use-kv-cache --prompt "Who are you"
+
+#### Continued training (fine-tuning) from the merged model
+
+    cd opt_prime/examples
+
+    # Continue training with PP=4 (4 GPUs)
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_from_hf_ckpt.py --model-dir ./merged_model
+
+    # Continue training with PP=8 (8 GPUs, different configuration)
+    torchrun --nproc_per_node=8 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_from_hf_ckpt.py --model-dir ./merged_model
+
+After continued training, merge again to produce an updated HuggingFace model (in multi-node setups, gather stage files from all servers first, as described in the Multi-node training section above):
+
+    python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt_trained --output ./merged_model_v2
+
+### End-to-end example
+
+```bash
+# 1. Train with PP=4 and save checkpoints
+torchrun --nproc_per_node=4 pp_train_llama_into_hf_ckpt.py --max-steps 20 <token>
+
+# 2. Merge into HuggingFace model on CPU
+python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt --output ./merged_model
+
+# 3. Inference with merged model (PP=4, KV cache)
+torchrun --nproc_per_node=4 pp_inference_from_hf_ckpt.py --model-dir ./merged_model --use-kv-cache
+
+# 4. Continue training from merged model (PP=8, 8 GPUs)
+torchrun --nproc_per_node=8 pp_train_from_hf_ckpt.py --model-dir ./merged_model
+
+# 5. Merge continued training result
+python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./hf_ckpt_trained --output ./merged_model_v2
+
+# 6. Inference with updated model
+torchrun --nproc_per_node=4 pp_inference_from_hf_ckpt.py --model-dir ./merged_model_v2 --use-kv-cache
+```
+
+### Python API
+
+```python
+# Save checkpoints during training
+optimus_p.save_hf_ckpt("./hf_ckpt", step=100, epoch=1)
+
+# Load merged model for inference
+model = AutoModelForCausalLM.from_pretrained("./merged_model", use_cache=False)
+engine = Optimus_Inference(model, use_gpu=True, pp_size=4, use_kv_cache=True)
+output = engine.generate(input_ids, max_new_tokens=50)
+
+# Load merged model for continued training
+model = AutoModelForCausalLM.from_pretrained("./merged_model", use_cache=False)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True)
+```
+
+---
 
 ## License
 
