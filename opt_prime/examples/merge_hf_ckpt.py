@@ -113,8 +113,12 @@ def main():
                         help="HuggingFace access token")
     args = parser.parse_args()
 
+    # Token resolution: --token > LLAMA_ACCESS_TOKEN env > huggingface-cli login cache
+    access_token = args.token or os.getenv('LLAMA_ACCESS_TOKEN')
+    # access_token=None is OK — HuggingFace will use cached token from `huggingface-cli login`
+
     print(f"Loading model config: {args.model}")
-    config = AutoConfig.from_pretrained(args.model, token=args.token)
+    config = AutoConfig.from_pretrained(args.model, token=access_token)
 
     # Create model structure without pretrained weights (saves memory)
     with torch.device("meta"):
@@ -219,7 +223,7 @@ def main():
 
     # Save tokenizer too
     try:
-        tokenizer = AutoTokenizer.from_pretrained(args.model, token=args.token)
+        tokenizer = AutoTokenizer.from_pretrained(args.model, token=access_token)
         tokenizer.save_pretrained(args.output)
         print(f"Tokenizer saved to {args.output}/")
     except Exception as e:

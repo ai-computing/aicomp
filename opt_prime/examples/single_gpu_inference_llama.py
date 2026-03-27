@@ -101,6 +101,7 @@ def parse_args():
     )
     parser.add_argument('--dynamo-capture', action='store_true', default=False,
                         help='Use torch.export.export() instead of HFTracer/symbolic_trace')
+    parser.add_argument('token', nargs='?', default=None, help='HuggingFace access token')
     return parser.parse_args()
 
 
@@ -111,6 +112,11 @@ def get_dtype(dtype_str: str) -> torch.dtype:
 
 def main():
     args = parse_args()
+
+    if args.token:
+        os.environ['LLAMA_ACCESS_TOKEN'] = args.token
+    access_token = os.getenv('LLAMA_ACCESS_TOKEN')
+    # access_token=None is OK — HuggingFace will use cached token from `huggingface-cli login`
 
     print("=" * 60)
     print("Single-GPU Inference Example (no torchrun)")
@@ -128,10 +134,10 @@ def main():
     print("=" * 60)
 
     # Load model configuration
-    config = AutoConfig.from_pretrained(args.model, use_cache=False)
+    config = AutoConfig.from_pretrained(args.model, token=access_token, use_cache=False)
 
     # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, token=access_token)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -141,7 +147,7 @@ def main():
     print(f"\nLoading model: {args.model}")
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.model, config=config, torch_dtype=dtype,
+        args.model, token=access_token, config=config, torch_dtype=dtype,
     )
 
     total_params = sum(p.numel() for p in model.parameters())

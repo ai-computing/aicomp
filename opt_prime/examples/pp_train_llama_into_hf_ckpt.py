@@ -52,10 +52,7 @@ if args.token:
     os.environ['LLAMA_ACCESS_TOKEN'] = args.token
 
 access_token = os.getenv('LLAMA_ACCESS_TOKEN')
-if access_token is None:
-    raise ValueError("LLAMA_ACCESS_TOKEN environment variable is not set.\n"
-                    "  [Usage:] torchrun --nproc_per_node=<#_of_GPUs> --nnodes=1 --master_port=29500 "
-                    "pp_train_llama_into_hf_ckpt.py <llama_access_token>")
+# access_token=None is OK — HuggingFace will use cached token from `huggingface-cli login`
 
 required_version = "2.3.1"
 current_version = torch.__version__

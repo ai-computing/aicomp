@@ -75,6 +75,7 @@ def parse_args():
     )
     parser.add_argument('--dynamo-capture', action='store_true', default=False,
                         help='Use torch.export.export() instead of HFTracer/symbolic_trace')
+    parser.add_argument('token', nargs='?', default=None, help='HuggingFace access token')
     return parser.parse_args()
 
 
@@ -203,14 +204,19 @@ def run_benchmark(engine, tokenizer, args, serving_mode: bool, rank: int):
 def main():
     args = parse_args()
 
+    if args.token:
+        os.environ['LLAMA_ACCESS_TOKEN'] = args.token
+    access_token = os.getenv('LLAMA_ACCESS_TOKEN')
+    # access_token=None is OK — HuggingFace will use cached token from `huggingface-cli login`
+
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
     dtype = get_dtype(args.dtype)
 
     # Load model and tokenizer
-    config = AutoConfig.from_pretrained(args.model, use_cache=False)
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    config = AutoConfig.from_pretrained(args.model, token=access_token, use_cache=False)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, token=access_token)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -219,7 +225,7 @@ def main():
         print(f"\nLoading model: {args.model}")
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.model, config=config, torch_dtype=dtype,
+        args.model, token=access_token, config=config, torch_dtype=dtype,
     )
 
     if rank == 0:
@@ -258,7 +264,7 @@ def main():
     # Phase 2: SERVING MODE (cache kept between requests)
     # ----------------------------------------------------------------
     model2 = AutoModelForCausalLM.from_pretrained(
-        args.model, config=config, torch_dtype=dtype,
+        args.model, token=access_token, config=config, torch_dtype=dtype,
     )
 
     engine_serving = Optimus_Inference(

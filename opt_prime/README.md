@@ -41,6 +41,28 @@ To install OptimusPrime:
     # CUDA and cuDNN libraries compatible with the PyTorch version must be installed as well (Officially tested with cuda12.4 and cudnn9-devel)
     git clone https://github.com/ai-computing/aicomp.git
 
+## Authentication for gated models
+
+Some models (e.g., LLaMA) require HuggingFace authentication. OptimusPrime supports three methods — use whichever is most convenient:
+
+**Method 1: Command-line argument** — pass the token directly when running a script:
+
+    torchrun --nproc_per_node=4 --master_port=29500 pp_train_llama5.py <your_hf_token>
+
+**Method 2: Environment variable** — set once, then run without the token argument:
+
+    export LLAMA_ACCESS_TOKEN=<your_hf_token>
+    torchrun --nproc_per_node=4 --master_port=29500 pp_train_llama5.py
+
+**Method 3: HuggingFace CLI login** — log in once, then run without any token:
+
+    huggingface-cli login    # enter your token when prompted (saved to ~/.cache/huggingface/token)
+    # or equivalently:
+    hf auth login
+    torchrun --nproc_per_node=4 --master_port=29500 pp_train_llama5.py
+
+All three methods work for both training (`pp_train_llama*.py`) and inference (`pp_inference_llama*.py`, `pp_generation_llama.py`) scripts. Non-gated models (GPT-2, BERT, OPT, etc.) do not require authentication.
+
 ---
 
 ## Training (Fine-tuning)
@@ -433,6 +455,129 @@ output = engine.generate(input_ids, max_new_tokens=50)
 # Load merged model for continued training
 model = AutoModelForCausalLM.from_pretrained("./merged_model", use_cache=False)
 optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True)
+```
+
+---
+
+## LoRA Fine-tuning
+
+OptimusPrime supports LoRA (Low-Rank Adaptation) for memory-efficient fine-tuning. Only ~0.5% of parameters are trained, significantly reducing memory usage and training time compared to full fine-tuning. LoRA is compatible with PP, DP, TP, and `--dynamo-capture`.
+
+### How it works
+
+LoRA adapters are applied **after** pipeline partitioning. Each target `nn.Linear` module (e.g., Q/K/V/O projections) is replaced with a `LoRALinear` wrapper that freezes the base weight and trains only small `lora_A` and `lora_B` matrices. When TP is active, LoRA adapters are automatically parallelized to match the base linear's sharding plan.
+
+```python
+from opt_prime.opti_pri import Optimus_p
+from opt_prime.lora import LoRAConfig
+
+# 1. Create Optimus_p (PP split + TP + DDP)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, ...)
+
+# 2. Apply LoRA AFTER init, BEFORE optimizer
+lora_config = LoRAConfig(r=8, alpha=16.0, dropout=0.05,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                     "gate_proj", "up_proj", "down_proj"])
+optimus_p.apply_lora(lora_config)
+
+# 3. Optimizer sees only LoRA params (~0.5%)
+optimus_p.optimizer = torch.optim.AdamW(optimus_p.parameters(), lr=2e-4)
+
+# 4. Training loop (same as full fine-tuning)
+optimus_p.run(data, labels, mode="1f1b")
+
+# 5. Save LoRA adapter weights only (very small)
+optimus_p.save_lora_ckpt(step=50, epoch=1)
+```
+
+### Step 1: LoRA training
+
+    cd opt_prime/examples
+
+    # PP=4, 50 steps
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --max-steps 50 <llama_access_token>
+
+    # With custom model (e.g., previously merged model)
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --model ./lora_merged_model --max-steps 30 <llama_access_token>
+
+    # With dynamo-capture
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --dynamo-capture --max-steps 50 <llama_access_token>
+
+    # Custom LoRA hyperparameters
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --lora-r 16 --lora-alpha 32 --max-steps 50 <llama_access_token>
+
+This produces per-stage LoRA checkpoints:
+
+```
+lora_checkpoint_stage_0/lora_step_50_epoch_1.pt  (~0.5% of model size)
+lora_checkpoint_stage_1/lora_step_50_epoch_1.pt
+lora_checkpoint_stage_2/lora_step_50_epoch_1.pt
+lora_checkpoint_stage_3/lora_step_50_epoch_1.pt
+```
+
+### Step 2: Inference — Merge mode (default)
+
+Merge LoRA weights into base model, then run inference with zero LoRA overhead. Requires the same PP configuration as training.
+
+    cd opt_prime/examples
+
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1
+
+### Step 3: Inference — Adapter mode
+
+Keep LoRA adapters active during inference. Allows swapping different adapters without reloading the base model, at a small performance cost.
+
+    cd opt_prime/examples
+
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --no-merge
+
+### Step 4: Export as HuggingFace model
+
+Merge LoRA into base weights and save as stage checkpoint files, then use `merge_hf_ckpt.py` to create a standard HuggingFace model. The resulting model can be used with **any PP/TP configuration**, independent of the original training setup.
+
+    cd opt_prime/examples
+
+    # 4a. Merge LoRA and save stage checkpoints
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --save-merged ./lora_merged_hf_ckpt
+
+    # 4b. Merge stage files into single HF model (CPU, no GPU required)
+    python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./lora_merged_hf_ckpt --output ./lora_merged_model
+
+    # 4c. Inference with any PP/TP configuration
+    torchrun --nproc_per_node=4 --master_port=29500 pp_inference_from_hf_ckpt.py --model-dir ./lora_merged_model --use-kv-cache
+
+    # 4d. Or with different GPU count
+    torchrun --nproc_per_node=8 --master_port=29500 pp_inference_from_hf_ckpt.py --model-dir ./lora_merged_model --pp-size 4 --tp-size 2 --use-kv-cache
+
+### Step 5: Continued LoRA training from merged model
+
+Use the exported HF model as a base for further LoRA fine-tuning. Use `--lora-dir` to keep checkpoints separate from previous rounds.
+
+    cd opt_prime/examples
+
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --model ./lora_merged_model --max-steps 30 --lora-dir lora_v2_checkpoint <llama_access_token>
+
+### End-to-end example
+
+```bash
+# 1. LoRA training (PP=4, 50 steps)
+torchrun --nproc_per_node=4 pp_train_llama_lora.py --max-steps 50 <token>
+
+# 2. Quick inference — merge mode (same PP=4 required)
+torchrun --nproc_per_node=4 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1
+
+# 3. Quick inference — adapter mode (same PP=4 required)
+torchrun --nproc_per_node=4 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --no-merge
+
+# 4. Export as HF model (for any PP/TP configuration)
+torchrun --nproc_per_node=4 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --save-merged ./lora_merged_hf_ckpt
+python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./lora_merged_hf_ckpt --output ./lora_merged_model
+
+# 5. Inference with merged HF model (any GPU count)
+torchrun --nproc_per_node=4 pp_inference_from_hf_ckpt.py --model-dir ./lora_merged_model --use-kv-cache
+
+# 6. Continued LoRA training from merged model
+torchrun --nproc_per_node=4 pp_train_llama_lora.py --model ./lora_merged_model --max-steps 30 --lora-dir lora_v2_checkpoint <token>
 ```
 
 ---
