@@ -1054,6 +1054,9 @@ class Optimus_p:
 
         if lora_dir is None:
             lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
+        else:
+            # Append stage number to avoid overwrite across ranks
+            lora_dir = f"{lora_dir}_stage_{self.tpl.stage}"
         os.makedirs(lora_dir, exist_ok=True)
 
         inner = self.run_info.submod.module if isinstance(self.run_info.submod, DistributedDataParallel) else self.run_info.submod
@@ -1081,6 +1084,8 @@ class Optimus_p:
         """Load LoRA adapter weights."""
         if lora_dir is None:
             lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
+        else:
+            lora_dir = f"{lora_dir}_stage_{self.tpl.stage}"
 
         ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
         ckpt = torch.load(ckpt_path, map_location=self.device, weights_only=False)
