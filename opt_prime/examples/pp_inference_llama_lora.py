@@ -53,6 +53,10 @@ parser = argparse.ArgumentParser(description="PP Inference with LoRA adapters")
 parser.add_argument('token', nargs='?', default=None, help='LLaMA access token')
 parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use torch.export instead of HFTracer')
+parser.add_argument('--pp-size', type=int, default=1,
+                    help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
+parser.add_argument('--tp-size', type=int, default=1,
+                    help='Tensor Parallel size (default: 1, LLaMA only)')
 parser.add_argument('--prompt', type=str, default='The future of artificial intelligence is',
                     help='Input prompt for generation')
 parser.add_argument('--max-new-tokens', type=int, default=50,
@@ -111,6 +115,7 @@ if args.save_merged:
 
     # Use Optimus_p (has save_hf_ckpt)
     optimus_p = Optimus_p(model, num_mb, use_gpu=True,
+                          pp_size=args.pp_size, tp_size=args.tp_size,
                           ir_analyze=IR_Anal.SEQUENTIAL,
                           dynamo_capture=args.dynamo_capture)
 
@@ -154,6 +159,8 @@ use_kv = not args.no_kv_cache
 engine = Optimus_Inference(
     model,
     use_gpu=True,
+    pp_size=args.pp_size,
+    tp_size=args.tp_size,
     use_kv_cache=use_kv,
     dynamo_capture=args.dynamo_capture,
 )

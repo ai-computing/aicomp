@@ -83,10 +83,26 @@ class LoRALinear(nn.Module):
         if self.merged:
             return
         with torch.no_grad():
-            # Cast to base dtype for merge, then mark as merged
-            lora_A_w = self.lora_A.weight.to(self.base_linear.weight.dtype)
-            lora_B_w = self.lora_B.weight.to(self.base_linear.weight.dtype)
-            self.base_linear.weight.data += (lora_B_w @ lora_A_w) * self.scaling
+            base_dtype = self.base_linear.weight.dtype
+
+            # Extract local tensors (handles DTensor from TP parallelization)
+            lora_A_w = self.lora_A.weight
+            lora_B_w = self.lora_B.weight
+            if hasattr(lora_A_w, 'to_local'):
+                lora_A_w = lora_A_w.to_local()
+            if hasattr(lora_B_w, 'to_local'):
+                lora_B_w = lora_B_w.to_local()
+            lora_A_w = lora_A_w.to(base_dtype)
+            lora_B_w = lora_B_w.to(base_dtype)
+
+            delta = (lora_B_w @ lora_A_w) * self.scaling
+
+            # Apply to base weight's local data
+            base_w = self.base_linear.weight
+            if hasattr(base_w, 'to_local'):
+                base_w.to_local().add_(delta)
+            else:
+                base_w.data += delta
         self.merged = True
 
     def state_dict_lora_only(self, prefix=''):
@@ -191,33 +207,59 @@ def _apply_tp_to_lora(submod: nn.Module, targets: list, tp_mesh):
     """Parallelize LoRA adapters to match base linear's TP sharding.
 
     ColwiseParallel targets (q/k/v/gate/up_proj):
-      - base: input Replicate → output Shard(-1)
-      - lora_A: Replicate → r dims (no parallelism needed)
-      - lora_B: r dims → Shard(-1) (ColwiseParallel)
+      - lora_B: ColwiseParallel (output column-sharded)
+      - lora_A: plain tensor + gradient all-reduce hook (keeps TP ranks in sync)
 
     RowwiseParallel targets (o/down_proj):
-      - base: input Shard(-1) → output Replicate (allreduce)
-      - lora_A: Shard(-1) → r dims Replicate (RowwiseParallel, with allreduce)
-      - lora_B: r dims → output (no parallelism needed)
+      - lora_A: RowwiseParallel (input row-sharded + allreduce)
+      - lora_B: plain tensor + gradient all-reduce hook (keeps TP ranks in sync)
+
+    Non-parallelized adapters stay as plain tensors but register a gradient hook
+    that all-reduces their gradients across TP ranks after backward. Without this,
+    TP ranks diverge after the first optimizer step, producing degenerate output.
     """
     from torch.distributed.tensor.parallel import (
         parallelize_module, ColwiseParallel, RowwiseParallel,
     )
+    import torch.distributed as dist
 
     tp_plan = {}
+    sync_params = []  # parameters that need gradient all-reduce across TP
+
     for name, module, matched in targets:
         tp_style = _get_tp_style(matched)
         if tp_style == "colwise":
-            # lora_B output must be column-sharded to match base output
             tp_plan[f"{name}.lora_B"] = ColwiseParallel()
+            sync_params.append(f"{name}.lora_A")
         elif tp_style == "rowwise":
-            # lora_A input is row-sharded, needs allreduce after
             tp_plan[f"{name}.lora_A"] = RowwiseParallel()
+            sync_params.append(f"{name}.lora_B")
 
     if tp_plan:
         parallelize_module(module=submod, device_mesh=tp_mesh, parallelize_plan=tp_plan)
-        print(f"[LoRA-TP] Parallelized {len(tp_plan)} LoRA sub-modules: "
-              f"{list(tp_plan.keys())}")
+
+    # Register gradient all-reduce hooks on non-parallelized adapters
+    # so TP ranks stay synchronized during training
+    tp_group = tp_mesh.get_group()
+    tp_size = tp_mesh.size()
+    hook_count = 0
+    for mod_path in sync_params:
+        mod = submod
+        for attr in mod_path.split('.'):
+            mod = getattr(mod, attr)
+        for param in mod.parameters():
+            if param.requires_grad:
+                def _make_hook(p_tp_group, p_tp_size):
+                    def hook(grad):
+                        dist.all_reduce(grad, op=dist.ReduceOp.SUM, group=p_tp_group)
+                        grad.div_(p_tp_size)
+                        return grad
+                    return hook
+                param.register_hook(_make_hook(tp_group, tp_size))
+                hook_count += 1
+
+    print(f"[LoRA-TP] Parallelized {len(tp_plan)} + gradient-synced {hook_count} "
+          f"LoRA sub-modules")
 
 
 def get_lora_parameters(submod: nn.Module):
@@ -235,22 +277,27 @@ def get_lora_named_parameters(submod: nn.Module):
 
 
 def get_lora_state_dict(submod: nn.Module) -> Dict[str, torch.Tensor]:
-    """Extract only LoRA adapter weights from the submod."""
-    state = {}
-    for name, param in submod.named_parameters():
-        if 'lora_A' in name or 'lora_B' in name:
-            state[name] = param.data
+    """Extract only LoRA adapter weights from the submod.
+
+    Uses PyTorch's native state_dict() which handles DTensor correctly,
+    then filters to LoRA keys only.
+    """
+    full_sd = submod.state_dict()
+    state = {k: v for k, v in full_sd.items() if 'lora_A' in k or 'lora_B' in k}
     return state
 
 
 def load_lora_state_dict(submod: nn.Module, state_dict: Dict[str, torch.Tensor]):
-    """Load LoRA adapter weights into the submod."""
-    current = dict(submod.named_parameters())
-    for name, tensor in state_dict.items():
-        if name in current:
-            current[name].data.copy_(tensor)
-        else:
-            print(f"[LoRA] Warning: '{name}' not found in submod parameters, skipping.")
+    """Load LoRA adapter weights into the submod.
+
+    Uses PyTorch's native load_state_dict(strict=False) which handles
+    DTensor correctly (including shard/replicate placement).
+    """
+    # load_state_dict with strict=False ignores missing keys (base weights)
+    # and only loads the provided LoRA keys
+    missing, unexpected = submod.load_state_dict(state_dict, strict=False)
+    loaded = len(state_dict) - len(unexpected)
+    print(f"[LoRA] Loaded {loaded} tensors, unexpected {len(unexpected)}")
 
 
 def merge_lora_weights(submod: nn.Module):

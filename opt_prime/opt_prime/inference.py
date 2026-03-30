@@ -429,7 +429,11 @@ class Optimus_Inference:
         if lora_dir is None:
             lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
 
-        ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
+        tp_rank = self.tpl.rank % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+        if self.tpl.tp_size > 1:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}_tp{tp_rank}.pt")
+        else:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
         ckpt = torch.load(ckpt_path, map_location=self.run_info.device, weights_only=False)
 
         load_lora_state_dict(self.run_info.submod, ckpt['lora_state_dict'])

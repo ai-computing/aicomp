@@ -45,6 +45,10 @@ parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use TorchDynamo capture (torch.export) instead of HFTracer')
 parser.add_argument('--model', type=str, default='meta-llama/Llama-3.2-1B',
                     help='HuggingFace model name or local path (default: meta-llama/Llama-3.2-1B)')
+parser.add_argument('--pp-size', type=int, default=1,
+                    help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
+parser.add_argument('--tp-size', type=int, default=1,
+                    help='Tensor Parallel size (default: 1, LLaMA only)')
 parser.add_argument('--max-steps', type=int, default=50,
                     help='Stop training after N steps (default: 50, 0=full epoch)')
 parser.add_argument('--lora-r', type=int, default=8, help='LoRA rank')
@@ -96,6 +100,7 @@ if int(os.environ["RANK"]) == 0:
 
 # Step 1: Create Optimus_p (IR extraction → split → TP → DDP)
 optimus_p = Optimus_p(model, num_mb, use_gpu=True,
+                      pp_size=args.pp_size, tp_size=args.tp_size,
                       activation_ckpt=False, force_free_mem=True, display_mem=True,
                       swap_opt_in_fwdbwd=False, swap_model_in_optstep=False,
                       ir_analyze=IR_Anal.SEQUENTIAL,
@@ -159,7 +164,12 @@ def train():
 
         if optimus_p.is_first_stage():
             tokens = tokenizer(batch, padding=True, truncation=True, max_length=512, return_tensors="pt")
-            data, labels = tokens.input_ids, tokens.input_ids
+            input_ids = tokens.input_ids
+            # Causal LM: logits[t] should predict input_ids[t+1]
+            shifted_labels = input_ids.clone()
+            shifted_labels[:, :-1] = input_ids[:, 1:]
+            shifted_labels[:, -1] = -100  # no target for last position
+            data, labels = input_ids, shifted_labels
 
         labels = optimus_p.move_labels2last_stage(labels)
 
@@ -213,9 +223,11 @@ for epoch in range(1, epochs + 1):
 if optimus_p.get_rank() == 0:
     tock = time.time()
     print('Time elapsed: %.3f sec ' % (tock - tick))
+    total_gpus = int(os.environ.get('WORLD_SIZE', '1'))
     print(f"\nLoRA checkpoints saved to: lora_checkpoint_stage_*/")
     print(f"To run inference:")
-    print(f"  torchrun --nproc_per_node=4 pp_inference_llama_lora.py "
-          f"--lora-step {args.max_steps} --lora-epoch 1")
+    tp_flag = f" --tp-size {args.tp_size}" if args.tp_size > 1 else ""
+    print(f"  torchrun --nproc_per_node={total_gpus} pp_inference_llama_lora.py"
+          f"{tp_flag} --lora-step {args.max_steps} --lora-epoch 1")
 
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")

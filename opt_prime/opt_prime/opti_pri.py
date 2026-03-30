@@ -1060,13 +1060,20 @@ class Optimus_p:
         os.makedirs(lora_dir, exist_ok=True)
 
         inner = self.run_info.submod.module if isinstance(self.run_info.submod, DistributedDataParallel) else self.run_info.submod
+
         lora_state = get_lora_state_dict(inner)
 
-        ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
+        # Include tp_rank in filename when TP > 1 to avoid overwrite
+        tp_rank = self.get_rank() % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+        if self.tpl.tp_size > 1:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}_tp{tp_rank}.pt")
+        else:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
         torch.save({
             'epoch': epoch,
             'step': step,
             'stage': self.tpl.stage,
+            'tp_rank': tp_rank,
             'lora_config': self.lora_config,
             'lora_state_dict': lora_state,
         }, ckpt_path)
@@ -1087,7 +1094,11 @@ class Optimus_p:
         else:
             lora_dir = f"{lora_dir}_stage_{self.tpl.stage}"
 
-        ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
+        tp_rank = self.get_rank() % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+        if self.tpl.tp_size > 1:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}_tp{tp_rank}.pt")
+        else:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
         ckpt = torch.load(ckpt_path, map_location=self.device, weights_only=False)
 
         inner = self.run_info.submod.module if isinstance(self.run_info.submod, DistributedDataParallel) else self.run_info.submod
