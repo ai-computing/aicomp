@@ -181,7 +181,20 @@ class Schedule:
         for param, state in self.optimus.optimizer.state.items():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
-                    state[k] = v.to(self.optimus.run_info.device)
+                    v_gpu = v.to(self.optimus.run_info.device)
+                    # If the parameter is DTensor (from TP), wrap the state tensor
+                    # as DTensor with matching placement to avoid mixed Tensor/DTensor
+                    # errors during optimizer.step() (e.g., exp_avg.lerp_(grad)).
+                    # Skip scalar tensors (e.g., Adam's step counter, ndim=0).
+                    if (hasattr(param, '_local_tensor')
+                            and not hasattr(v_gpu, '_local_tensor')
+                            and v_gpu.ndim > 0):
+                        from torch.distributed._tensor import DTensor
+                        v_gpu = DTensor.from_local(v_gpu,
+                            device_mesh=param.device_mesh,
+                            placements=param.placements,
+                            run_check=False)
+                    state[k] = v_gpu
 
     def _move_params(self, device):
         """Move parameters to device for CPU offload / GPU load-back.
@@ -242,12 +255,23 @@ class Schedule:
                             # Copy optimizer-updated values into original DTensor's local tensor
                             orig_p.data.to_local().copy_(p.data.to(device))
 
-                            # Transfer optimizer state back to original DTensor param
+                            # Transfer optimizer state back to original DTensor param.
+                            # Wrap state tensors as DTensor to match the restored
+                            # DTensor param (avoids mixed Tensor/DTensor in optimizer.step).
                             if p in self.optimus.optimizer.state:
                                 state = self.optimus.optimizer.state.pop(p)
                                 for k, v in state.items():
                                     if isinstance(v, torch.Tensor):
-                                        state[k] = v.to(device)
+                                        v_gpu = v.to(device)
+                                        if (hasattr(orig_p, '_local_tensor')
+                                                and not hasattr(v_gpu, '_local_tensor')
+                                                and v_gpu.ndim > 0):
+                                            from torch.distributed._tensor import DTensor
+                                            v_gpu = DTensor.from_local(v_gpu,
+                                                device_mesh=orig_p.device_mesh,
+                                                placements=orig_p.placements,
+                                                run_check=False)
+                                        state[k] = v_gpu
                                 self.optimus.optimizer.state[orig_p] = state
 
                             # Clear grad on original (will be recomputed in next fwd/bwd)
