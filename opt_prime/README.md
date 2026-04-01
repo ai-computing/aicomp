@@ -483,8 +483,12 @@ optimus_p.apply_lora(lora_config)
 # 3. Optimizer sees only LoRA params (~0.5%)
 optimus_p.optimizer = torch.optim.AdamW(optimus_p.parameters(), lr=2e-4)
 
-# 4. Training loop (same as full fine-tuning)
-optimus_p.run(data, labels, mode="1f1b")
+# 4. Training loop — causal LM requires label shift
+input_ids = tokens.input_ids
+shifted_labels = input_ids.clone()
+shifted_labels[:, :-1] = input_ids[:, 1:]
+shifted_labels[:, -1] = -100  # no target for last position
+optimus_p.run(input_ids, shifted_labels, mode="1f1b")
 
 # 5. Save LoRA adapter weights only (very small)
 optimus_p.save_lora_ckpt(step=50, epoch=1)

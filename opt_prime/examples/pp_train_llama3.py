@@ -145,7 +145,12 @@ def train():
         # prepare input and label
         if optimus_p.is_first_stage():
             tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
-            data, labels = tokens.input_ids, tokens.input_ids
+            input_ids = tokens.input_ids
+            # Causal LM: logits[t] should predict input_ids[t+1]
+            shifted_labels = input_ids.clone()
+            shifted_labels[:, :-1] = input_ids[:, 1:]
+            shifted_labels[:, -1] = -100  # no target for last position
+            data, labels = input_ids, shifted_labels
 
         labels = optimus_p.move_labels2last_stage(labels)
 

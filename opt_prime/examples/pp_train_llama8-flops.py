@@ -105,7 +105,12 @@ def llama_input_constructor(input_shape, tokenizer):
         inp_seq += tokenizer.pad_token
 
     inputs = tokenizer([inp_seq] * input_shape[0], padding=True, truncation=True, max_length=1024, return_tensors="pt")
-    data, labels = inputs.input_ids, inputs.input_ids
+    input_ids = inputs.input_ids
+    # Causal LM: logits[t] should predict input_ids[t+1]
+    shifted_labels = input_ids.clone()
+    shifted_labels[:, :-1] = input_ids[:, 1:]
+    shifted_labels[:, -1] = -100  # no target for last position
+    data, labels = input_ids, shifted_labels
     temp = {'input_ids': data , 'labels' : labels }
     return temp
 
@@ -155,7 +160,12 @@ def train():
         # prepare input and label
         if optimus_p.is_first_stage():
             tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
-            data, labels = tokens.input_ids, tokens.input_ids
+            input_ids = tokens.input_ids
+            # Causal LM: logits[t] should predict input_ids[t+1]
+            shifted_labels = input_ids.clone()
+            shifted_labels[:, :-1] = input_ids[:, 1:]
+            shifted_labels[:, -1] = -100  # no target for last position
+            data, labels = input_ids, shifted_labels
 
         labels = optimus_p.move_labels2last_stage(labels)
 
