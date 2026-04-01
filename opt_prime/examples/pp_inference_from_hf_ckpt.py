@@ -152,9 +152,12 @@ def main():
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
-    if args.tp_size > 1:
-        assert world_size == args.pp_size * args.tp_size, \
-            f"World size ({world_size}) must equal pp_size ({args.pp_size}) * tp_size ({args.tp_size})"
+    # Auto-calculate pp_size if not explicitly set (default=1 means auto)
+    if args.pp_size <= 1:
+        args.pp_size = world_size // max(args.tp_size, 1)
+
+    assert world_size == args.pp_size * args.tp_size, \
+        f"World size ({world_size}) must equal pp_size ({args.pp_size}) * tp_size ({args.tp_size})"
 
     if rank == 0:
         print("=" * 60)
@@ -162,7 +165,7 @@ def main():
         print("=" * 60)
         print(f"  Model dir:      {args.model_dir}")
         print(f"  World Size:     {world_size}")
-        print(f"  PP Size:        {args.pp_size if args.pp_size > 1 else 'auto'}")
+        print(f"  PP Size:        {args.pp_size}")
         print(f"  TP Size:        {args.tp_size}")
         print(f"  Dtype:          {args.dtype}")
         print(f"  Max New Tokens: {args.max_new_tokens}")

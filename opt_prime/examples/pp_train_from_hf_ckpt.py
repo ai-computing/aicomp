@@ -46,6 +46,10 @@ parser.add_argument('--save-dir', type=str, default='./hf_ckpt_trained',
                     help='Directory to save stage checkpoints')
 parser.add_argument('--max-steps', type=int, default=20,
                     help='Stop training after N steps to prevent overfitting (default: 20, 0=full epoch)')
+parser.add_argument('--pp-size', type=int, default=1,
+                    help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
+parser.add_argument('--tp-size', type=int, default=1,
+                    help='Tensor Parallel size (default: 1, LLaMA only)')
 args = parser.parse_args()
 
 required_version = "2.3.1"
@@ -81,6 +85,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"num of mbatch: {num_mb}")
 
 optimus_p = Optimus_p(model, num_mb, use_gpu=True,
+                      pp_size=args.pp_size, tp_size=args.tp_size,
                       activation_ckpt=True, force_free_mem=True, display_mem=True,
                       swap_opt_in_fwdbwd=True, swap_model_in_optstep=False,
                       ir_analyze=IR_Anal.SEQUENTIAL,

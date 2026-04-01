@@ -47,6 +47,10 @@ parser.add_argument('--save-interval', type=int, default=0,
                     help='Save checkpoint every N steps (0 = save at epoch end only)')
 parser.add_argument('--max-steps', type=int, default=30,
                     help='Stop training after N steps to prevent overfitting (default: 30)')
+parser.add_argument('--pp-size', type=int, default=1,
+                    help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
+parser.add_argument('--tp-size', type=int, default=1,
+                    help='Tensor Parallel size (default: 1, LLaMA only)')
 args = parser.parse_args()
 if args.token:
     os.environ['LLAMA_ACCESS_TOKEN'] = args.token
@@ -89,7 +93,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"num of mbatch: {num_mb}")
 
-optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=args.pp_size, tp_size=args.tp_size, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
