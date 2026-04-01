@@ -121,8 +121,14 @@ if args.save_merged:
 
     # Apply LoRA → load → merge
     optimus_p.apply_lora(lora_config)
-    lora_dir = f"{args.lora_dir_prefix}{optimus_p.tpl.stage}"
-    optimus_p.load_lora_ckpt(step=args.lora_step, epoch=args.lora_epoch, lora_dir=lora_dir)
+    # Optimus_p.load_lora_ckpt appends "_stage_{N}" internally,
+    # so extract the base name from lora_dir_prefix (e.g., "lora_checkpoint_stage_" → "lora_checkpoint")
+    lora_base = args.lora_dir_prefix.rstrip('_')
+    if lora_base.endswith('_stage'):
+        lora_base = lora_base[:-6]  # strip "_stage" suffix
+    else:
+        lora_base = None  # non-standard prefix, fall back to default
+    optimus_p.load_lora_ckpt(step=args.lora_step, epoch=args.lora_epoch, lora_dir=lora_base)
     optimus_p.merge_lora()
 
     # Save merged weights as stage files

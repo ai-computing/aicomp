@@ -502,7 +502,7 @@ optimus_p.save_lora_ckpt(step=50, epoch=1)
     torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --max-steps 50 <llama_access_token>
 
     # With custom model (e.g., previously merged model)
-    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --model ./lora_merged_model --max-steps 30 <llama_access_token>
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --model-dir ./lora_merged_model --max-steps 30 <llama_access_token>
 
     # With dynamo-capture
     torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --dynamo-capture --max-steps 50 <llama_access_token>
@@ -559,7 +559,7 @@ Use the exported HF model as a base for further LoRA fine-tuning. Use `--lora-di
 
     cd opt_prime/examples
 
-    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --model ./lora_merged_model --max-steps 30 --lora-dir lora_v2_checkpoint <llama_access_token>
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_train_llama_lora.py --model-dir ./lora_merged_model --max-steps 30 --lora-dir lora_v2_checkpoint <llama_access_token>
 
 ### End-to-end example
 
@@ -581,7 +581,7 @@ python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./lora_merge
 torchrun --nproc_per_node=4 pp_inference_from_hf_ckpt.py --model-dir ./lora_merged_model --use-kv-cache
 
 # 6. Continued LoRA training from merged model
-torchrun --nproc_per_node=4 pp_train_llama_lora.py --model ./lora_merged_model --max-steps 30 --lora-dir lora_v2_checkpoint <token>
+torchrun --nproc_per_node=4 pp_train_llama_lora.py --model-dir ./lora_merged_model --max-steps 30 --lora-dir lora_v2_checkpoint <token>
 ```
 
 ---

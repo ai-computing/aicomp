@@ -44,7 +44,9 @@ parser.add_argument('token', nargs='?', default=None, help='LLaMA access token')
 parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use TorchDynamo capture (torch.export) instead of HFTracer')
 parser.add_argument('--model', type=str, default='meta-llama/Llama-3.2-1B',
-                    help='HuggingFace model name or local path (default: meta-llama/Llama-3.2-1B)')
+                    help='HuggingFace model name (default: meta-llama/Llama-3.2-1B)')
+parser.add_argument('--model-dir', type=str, default=None,
+                    help='Local model directory path (overrides --model)')
 parser.add_argument('--pp-size', type=int, default=1,
                     help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
 parser.add_argument('--tp-size', type=int, default=1,
@@ -76,14 +78,16 @@ if version.parse(transformers.__version__) < version.parse(required_tf_version):
     raise ValueError(f'This program needs transformers version {required_tf_version} or higher.')
 
 
-tokenizer = AutoTokenizer.from_pretrained(args.model, token=access_token)
+model_name_or_path = args.model_dir if args.model_dir else args.model
+
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, token=access_token)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
-model = AutoModelForCausalLM.from_pretrained(args.model, token=access_token, use_cache=False)
+model = AutoModelForCausalLM.from_pretrained(model_name_or_path, token=access_token, use_cache=False)
 
 if int(os.environ["RANK"]) == 0:
-    print(f"Model: {args.model}")
+    print(f"Model: {model_name_or_path}")
 
 if int(os.environ["RANK"]) == 0:
     total_params = sum(p.numel() for p in model.parameters())
