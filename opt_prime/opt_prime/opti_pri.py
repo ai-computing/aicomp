@@ -1079,9 +1079,13 @@ class Optimus_p:
         }, ckpt_path)
         print(f"[LoRA] Checkpoint saved: {ckpt_path} ({len(lora_state)} tensors)")
 
-        # Keep only latest 2
+        # Keep only latest 2 checkpoints per tp_rank
+        if self.tpl.tp_size > 1:
+            pattern = os.path.join(lora_dir, f"lora_step_*_tp{tp_rank}.pt")
+        else:
+            pattern = os.path.join(lora_dir, "lora_step_*.pt")
         ckpt_files = sorted(
-            glob.glob(os.path.join(lora_dir, "lora_step_*.pt")),
+            glob.glob(pattern),
             key=os.path.getmtime, reverse=True
         )
         for old in ckpt_files[2:]:

@@ -527,6 +527,9 @@ Merge LoRA weights into base model, then run inference with zero LoRA overhead. 
 
     torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1
 
+    # With custom model (e.g., previously merged model)
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --model-dir ./lora_merged_model --lora-step 30 --lora-epoch 1
+
 ### Step 3: Inference — Adapter mode
 
 Keep LoRA adapters active during inference. Allows swapping different adapters without reloading the base model, at a small performance cost.
@@ -543,6 +546,9 @@ Merge LoRA into base weights and save as stage checkpoint files, then use `merge
 
     # 4a. Merge LoRA and save stage checkpoints
     torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --save-merged ./lora_merged_hf_ckpt
+
+    # 4a-alt. With custom model (e.g., previously merged model)
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=xxx.xxx.xxx.xxx --master_port=29500 pp_inference_llama_lora.py --model-dir ./lora_merged_model --lora-step 30 --lora-epoch 1 --save-merged ./lora_merged_hf_ckpt_v2
 
     # 4b. Merge stage files into single HF model (CPU, no GPU required)
     python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./lora_merged_hf_ckpt --output ./lora_merged_model

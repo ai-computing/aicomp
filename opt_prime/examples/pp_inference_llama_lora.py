@@ -26,6 +26,10 @@
 #     pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --save-merged ./lora_merged_hf_ckpt
 #   python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B --ckpt-dir ./lora_merged_hf_ckpt --output ./lora_merged_model
 #
+#   # With custom model (e.g., previously merged model)
+#   torchrun --nproc_per_node=4 --master_port=29500
+#     pp_inference_llama_lora.py --model-dir ./lora_merged_model --lora-step 30 --lora-epoch 1
+#
 #   # With dynamo-capture
 #   torchrun --nproc_per_node=4 --master_port=29500
 #     pp_inference_llama_lora.py --lora-step 50 --lora-epoch 1 --dynamo-capture
@@ -53,6 +57,10 @@ parser = argparse.ArgumentParser(description="PP Inference with LoRA adapters")
 parser.add_argument('token', nargs='?', default=None, help='LLaMA access token')
 parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use torch.export instead of HFTracer')
+parser.add_argument('--model', type=str, default='meta-llama/Llama-3.2-1B',
+                    help='HuggingFace model name (default: meta-llama/Llama-3.2-1B)')
+parser.add_argument('--model-dir', type=str, default=None,
+                    help='Local model directory path (overrides --model)')
 parser.add_argument('--pp-size', type=int, default=1,
                     help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
 parser.add_argument('--tp-size', type=int, default=1,
@@ -90,6 +98,8 @@ if args.token:
     os.environ['LLAMA_ACCESS_TOKEN'] = args.token
 access_token = os.getenv('LLAMA_ACCESS_TOKEN')
 
+model_name_or_path = args.model_dir if args.model_dir else args.model
+
 rank = int(os.environ.get("RANK", "0"))
 world_size = int(os.environ.get("WORLD_SIZE", "1"))
 
@@ -109,7 +119,7 @@ if args.save_merged:
         print(f"LoRA Save-Merged: step={args.lora_step}, epoch={args.lora_epoch}")
         print(f"Output dir: {args.save_merged}")
 
-    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B",
+    model = AutoModelForCausalLM.from_pretrained(model_name_or_path,
                                                   token=access_token, use_cache=False)
     num_mb = world_size // 2
 
@@ -137,7 +147,7 @@ if args.save_merged:
     if rank == 0:
         print(f"\nMerged (base+LoRA) stage checkpoints saved to: {args.save_merged}/")
         print(f"To create HF model:")
-        print(f"  python3 merge_hf_ckpt.py --model meta-llama/Llama-3.2-1B "
+        print(f"  python3 merge_hf_ckpt.py --model {args.model} "
               f"--ckpt-dir {args.save_merged} --output ./lora_merged_model")
 
     print(f"[rank:{rank}] save-merged done.")
@@ -152,10 +162,10 @@ if rank == 0:
     print(f"LoRA Inference: mode={mode}, step={args.lora_step}, epoch={args.lora_epoch}")
 
 # Load model
-config = AutoConfig.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token, use_cache=False)
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token,
+config = AutoConfig.from_pretrained(model_name_or_path, token=access_token, use_cache=False)
+model = AutoModelForCausalLM.from_pretrained(model_name_or_path, token=access_token,
                                               config=config, torch_dtype=torch.bfloat16)
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B", token=access_token)
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, token=access_token)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
