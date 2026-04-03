@@ -33,6 +33,8 @@ from opt_prime.IR import IR, IR_Anal
 from opt_prime.opti_pri import Topology, Run_Info
 from opt_prime.schedule_infer import ScheduleInference, ScheduleGeneration
 from opt_prime.kv_cache import KVCacheManager, CachedScaledDotProductAttention
+from opt_prime.lora import (LoRAConfig, apply_lora_to_submod, load_lora_state_dict,
+                             merge_lora_weights, count_parameters)
 
 
 logging.basicConfig(level=logging.ERROR)
@@ -403,6 +405,45 @@ class Optimus_Inference:
     def parameters(self):
         """Get model parameters."""
         return self.run_info.submod.parameters()
+
+    # ---- LoRA support for inference ----
+
+    def apply_lora(self, lora_config: LoRAConfig):
+        """Apply LoRA adapters to the inference engine's submodule.
+
+        Must be called AFTER __init__ and BEFORE generate().
+        For inference, set dropout=0.0 in lora_config.
+        """
+        self.lora_config = lora_config
+
+        inner = self.run_info.submod
+        tp_mesh = self.tpl.tp_mesh if self.tpl.tp_size > 1 else None
+        replaced = apply_lora_to_submod(inner, lora_config, tp_mesh=tp_mesh)
+
+        total, trainable = count_parameters(inner)
+        rank = int(os.environ.get("RANK", "0"))
+        print(f"[Inference rank:{rank}] LoRA applied to {len(replaced)} modules")
+
+    def load_lora_ckpt(self, step, epoch, lora_dir=None):
+        """Load LoRA adapter weights into the inference engine."""
+        if lora_dir is None:
+            lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
+
+        tp_rank = self.tpl.rank % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+        if self.tpl.tp_size > 1:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}_tp{tp_rank}.pt")
+        else:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
+        ckpt = torch.load(ckpt_path, map_location=self.run_info.device, weights_only=False)
+
+        load_lora_state_dict(self.run_info.submod, ckpt['lora_state_dict'])
+        print(f"[Inference] LoRA checkpoint loaded: {ckpt_path}")
+
+    def merge_lora(self):
+        """Merge LoRA weights into base model weights for zero-overhead inference."""
+        merge_lora_weights(self.run_info.submod)
+        rank = int(os.environ.get("RANK", "0"))
+        print(f"[Inference rank:{rank}] LoRA weights merged into base model.")
 
     def is_first_stage(self) -> bool:
         """Check if this rank is the first pipeline stage."""

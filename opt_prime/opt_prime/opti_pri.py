@@ -15,8 +15,11 @@ from torch.utils.data.distributed import DistributedSampler
 
 from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
-from opt_prime.schedule import ScheduleGPipe 
-from opt_prime.schedule import Schedule1F1B 
+from opt_prime.schedule import ScheduleGPipe
+from opt_prime.schedule import Schedule1F1B
+from opt_prime.lora import (LoRAConfig, apply_lora_to_submod, get_lora_parameters,
+                             get_lora_state_dict, load_lora_state_dict,
+                             merge_lora_weights, count_parameters)
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -353,6 +356,7 @@ class Optimus_p:
 
         self.use_gpu = use_gpu
         self.dynamo_capture = dynamo_capture
+        self.lora_config = None
 
         self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
 
@@ -737,6 +741,8 @@ class Optimus_p:
         
 
     def parameters(self):
+        if self.lora_config is not None:
+            return get_lora_parameters(self.run_info.submod)
         return self.run_info.submod.parameters()
 
     def train(self):
@@ -970,6 +976,15 @@ class Optimus_p:
         for key, val in raw.state_dict().items():
             if hasattr(val, 'to_local'):
                 val = val.to_local().contiguous()
+
+            # When LoRA is applied, keys contain 'base_linear.' and 'lora_A/B'.
+            # After merge_lora(), base_linear already has merged weights.
+            # Strip 'base_linear.' prefix and skip lora_A/lora_B keys.
+            if 'lora_A' in key or 'lora_B' in key:
+                continue  # Skip LoRA adapter weights (already merged into base)
+            if '.base_linear.' in key:
+                key = key.replace('.base_linear.', '.')  # Unwrap LoRALinear nesting
+
             local_sd[key] = val.cpu()
 
         # DP replicas are identical → only DP rank 0 saves
@@ -999,6 +1014,108 @@ class Optimus_p:
             print(f"[save_hf_ckpt] Saved {ckpt_path} "
                   f"(stage={stage}, tp_rank={tp_rank}, "
                   f"{len(local_sd)} params)")
+
+    # ---- LoRA support ----
+
+    def apply_lora(self, lora_config: LoRAConfig):
+        """Apply LoRA adapters to the pipeline stage's submodule.
+
+        Must be called AFTER Optimus_p.__init__ (which splits the model)
+        and BEFORE setting up the optimizer.
+        """
+        self.lora_config = lora_config
+
+        # If DDP-wrapped, unwrap first, apply LoRA, then re-wrap
+        is_ddp = isinstance(self.run_info.submod, DistributedDataParallel)
+        if is_ddp:
+            inner = self.run_info.submod.module
+        else:
+            inner = self.run_info.submod
+
+        # Pass tp_mesh so LoRA adapters are parallelized to match base TP sharding
+        tp_mesh = self.tpl.tp_mesh if self.tpl.tp_size > 1 else None
+        replaced = apply_lora_to_submod(inner, lora_config, tp_mesh=tp_mesh)
+
+        total, trainable = count_parameters(inner)
+        print(f"[rank:{self.get_rank()}] LoRA applied to {len(replaced)} modules: {replaced}")
+        print(f"[rank:{self.get_rank()}] Parameters: total={total:,}, trainable={trainable:,} ({100*trainable/total:.2f}%)")
+
+        # Re-wrap with DDP if needed (only LoRA params have requires_grad)
+        if is_ddp:
+            self.run_info.submod = DistributedDataParallel(
+                inner, find_unused_parameters=True, device_mesh=self.tpl.dp_mesh
+            )
+
+    def save_lora_ckpt(self, step, epoch, lora_dir=None):
+        """Save only LoRA adapter weights (much smaller than full checkpoint)."""
+        if self.lora_config is None:
+            print("[LoRA] No LoRA config set, skipping save.")
+            return
+
+        if lora_dir is None:
+            lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
+        else:
+            # Append stage number to avoid overwrite across ranks
+            lora_dir = f"{lora_dir}_stage_{self.tpl.stage}"
+        os.makedirs(lora_dir, exist_ok=True)
+
+        inner = self.run_info.submod.module if isinstance(self.run_info.submod, DistributedDataParallel) else self.run_info.submod
+
+        lora_state = get_lora_state_dict(inner)
+
+        # Include tp_rank in filename when TP > 1 to avoid overwrite
+        tp_rank = self.get_rank() % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+        if self.tpl.tp_size > 1:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}_tp{tp_rank}.pt")
+        else:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
+        torch.save({
+            'epoch': epoch,
+            'step': step,
+            'stage': self.tpl.stage,
+            'tp_rank': tp_rank,
+            'lora_config': self.lora_config,
+            'lora_state_dict': lora_state,
+        }, ckpt_path)
+        print(f"[LoRA] Checkpoint saved: {ckpt_path} ({len(lora_state)} tensors)")
+
+        # Keep only latest 2 checkpoints per tp_rank
+        if self.tpl.tp_size > 1:
+            pattern = os.path.join(lora_dir, f"lora_step_*_tp{tp_rank}.pt")
+        else:
+            pattern = os.path.join(lora_dir, "lora_step_*.pt")
+        ckpt_files = sorted(
+            glob.glob(pattern),
+            key=os.path.getmtime, reverse=True
+        )
+        for old in ckpt_files[2:]:
+            os.remove(old)
+
+    def load_lora_ckpt(self, step, epoch, lora_dir=None):
+        """Load LoRA adapter weights."""
+        if lora_dir is None:
+            lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
+        else:
+            lora_dir = f"{lora_dir}_stage_{self.tpl.stage}"
+
+        tp_rank = self.get_rank() % self.tpl.tp_size if self.tpl.tp_size > 1 else 0
+        if self.tpl.tp_size > 1:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}_tp{tp_rank}.pt")
+        else:
+            ckpt_path = os.path.join(lora_dir, f"lora_step_{step}_epoch_{epoch}.pt")
+        ckpt = torch.load(ckpt_path, map_location=self.device, weights_only=False)
+
+        inner = self.run_info.submod.module if isinstance(self.run_info.submod, DistributedDataParallel) else self.run_info.submod
+        load_lora_state_dict(inner, ckpt['lora_state_dict'])
+        print(f"[LoRA] Checkpoint loaded: {ckpt_path}")
+
+    def merge_lora(self):
+        """Merge LoRA weights into base model (for inference deployment)."""
+        if self.lora_config is None:
+            return
+        inner = self.run_info.submod.module if isinstance(self.run_info.submod, DistributedDataParallel) else self.run_info.submod
+        merge_lora_weights(inner)
+        print(f"[rank:{self.get_rank()}] LoRA weights merged into base model.")
 
     def save_ckpt(self, step, epoch):
         if self.checkpoint != True:

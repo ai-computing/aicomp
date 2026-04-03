@@ -47,15 +47,16 @@ parser.add_argument('--save-interval', type=int, default=0,
                     help='Save checkpoint every N steps (0 = save at epoch end only)')
 parser.add_argument('--max-steps', type=int, default=30,
                     help='Stop training after N steps to prevent overfitting (default: 30)')
+parser.add_argument('--pp-size', type=int, default=1,
+                    help='Pipeline Parallel size (default: auto-calculated from world_size/tp_size)')
+parser.add_argument('--tp-size', type=int, default=1,
+                    help='Tensor Parallel size (default: 1, LLaMA only)')
 args = parser.parse_args()
 if args.token:
     os.environ['LLAMA_ACCESS_TOKEN'] = args.token
 
 access_token = os.getenv('LLAMA_ACCESS_TOKEN')
-if access_token is None:
-    raise ValueError("LLAMA_ACCESS_TOKEN environment variable is not set.\n"
-                    "  [Usage:] torchrun --nproc_per_node=<#_of_GPUs> --nnodes=1 --master_port=29500 "
-                    "pp_train_llama_into_hf_ckpt.py <llama_access_token>")
+# access_token=None is OK — HuggingFace will use cached token from `huggingface-cli login`
 
 required_version = "2.3.1"
 current_version = torch.__version__
@@ -92,7 +93,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"num of mbatch: {num_mb}")
 
-optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=args.pp_size, tp_size=args.tp_size, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
@@ -158,7 +159,12 @@ def train():
 
         if optimus_p.is_first_stage():
             tokens = tokenizer(batch, padding=True, truncation=True, max_length=512, return_tensors="pt")
-            data, labels = tokens.input_ids, tokens.input_ids
+            input_ids = tokens.input_ids
+            # Causal LM: logits[t] should predict input_ids[t+1]
+            shifted_labels = input_ids.clone()
+            shifted_labels[:, :-1] = input_ids[:, 1:]
+            shifted_labels[:, -1] = -100  # no target for last position
+            data, labels = input_ids, shifted_labels
 
         labels = optimus_p.move_labels2last_stage(labels)
 
