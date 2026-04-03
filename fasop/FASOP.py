@@ -61,7 +61,7 @@ class FasopConfig:
     precision: int
     pareto: bool
     exhaustive: bool
-    pp_partition_method: str  # "even", "minmax", "dp", "ilp", "exhaustive"
+    pp_partition_method: str  # "minmax", "optimus-even", "dp", "ilp", "bruteforce"
     verbose: bool
     add_exp_name: str
     heterogeneous: bool
@@ -89,10 +89,11 @@ class SearchResult:
     mbs: int
     tp: int
     dp: int
-    pp: float
+    pp: int
     node_type: List[str]
     gpu_cluster_str: str
     partition: List[int]
+    partition_layers: Optional[List[int]]
     step_time: float
     throughput: float
     price_per_step: float
@@ -154,8 +155,8 @@ Note: Heterogeneous mode is auto-detected when multiple GPU types are specified.
     search_group.add_argument("--exhaustive", action='store_true',
                               help="Run exhaustive search for model partitioning (default: False)")
     search_group.add_argument("--pp-partition-method", type=str, default="minmax",
-                              choices=["even", "minmax", "dp", "ilp", "bruteforce"],
-                              help="PP partition method: even (Optimus Prime style), minmax, dp, ilp, bruteforce (default: minmax)")
+                              choices=["minmax", "optimus-even", "dp", "ilp", "bruteforce"],
+                              help="PP partition method: minmax, optimus-even (TP-aware layer-boundary), dp, ilp, bruteforce (default: minmax)")
 
     # -------------------------------------------------------------------------
     # Pareto Options
@@ -463,7 +464,7 @@ def evaluate_single_placement(
         
         tp_deg, dp_deg, mbs, known = parallel_config
         search_idx += 1
-        pp_deg = int(config.gpu_per_node * num_node / (tp_deg * dp_deg))
+        pp_deg = config.gpu_per_node * num_node // (tp_deg * dp_deg)
 
         # Verbose logging - search start
         if config.verbose:
@@ -476,7 +477,7 @@ def evaluate_single_placement(
         parallel_dim = {
             "tp_deg": torch.ones(1,) * tp_deg,
             "dp_deg": torch.ones(1,) * dp_deg,
-            "pp_deg": torch.ones(1,) * (config.gpu_per_node * num_node / (tp_deg * dp_deg))
+            "pp_deg": torch.ones(1,) * (config.gpu_per_node * num_node // (tp_deg * dp_deg))
         }
         fake_config = np.ones((config.gpu_per_node, num_node)) * (-1)
         model_args = (fake_config, config.gbs, mbs, cluster_info_for_model, model_config, parallel_dim)
@@ -500,9 +501,8 @@ def evaluate_single_placement(
         
         # Run estimation
         with torch.no_grad():
-            (rank_map, partition, cost, pipecost, dp_side_cost,
-             all_reduce_embedding_cost, is_oom, oom_gpumem,
-             is_zero_oom, zerooom_gpumem) = model(model_args, node_type, exhaustive_args)
+            (rank_map, partition, partition_layers, cost, pipecost, dp_side_cost,
+             all_reduce_embedding_cost, is_oom, oom_gpumem) = model(model_args, node_type, exhaustive_args)
 
         # Verbose logging - search complete
         if config.verbose:
@@ -529,10 +529,11 @@ def evaluate_single_placement(
             mbs=mbs,
             tp=tp_deg,
             dp=dp_deg,
-            pp=config.gpu_per_node * num_node / (tp_deg * dp_deg),
+            pp=config.gpu_per_node * num_node // (tp_deg * dp_deg),
             node_type=node_type,
             gpu_cluster_str=cluster_str,
             partition=partition,
+            partition_layers=partition_layers,
             step_time=step_time,
             throughput=throughput,
             price_per_step=price_per_step,
@@ -685,6 +686,9 @@ def run_strategy_search(
         # Create config with current GBS
         current_config = replace(config, gbs=gbs)
 
+        # Recalculate iterations for current GBS (pareto pivoting changes GBS)
+        num_iterations = get_iterations(config.dataset, gbs)
+
         if config.pareto_gbs_max and config.verbose:
             print(f"\n{'='*60}")
             print(f"[PARETO] Searching with GBS={gbs}")
@@ -807,6 +811,7 @@ def results_to_dataframe(results: List[SearchResult]) -> pd.DataFrame:
     """
     columns = [
         "index", "gbs", "mbs", "tp", "dp", "pp", "node_type", "gpu_cluster", "partition",
+        "partition_layers",
         "step_time(s)", "throughput(samples/s)", "price_per_step($)", "is_oom", "oom_gpumem(GB)",
         "iterations", "total_time(s)", "total_time(h)", "cost($)"
     ]
@@ -815,6 +820,7 @@ def results_to_dataframe(results: List[SearchResult]) -> pd.DataFrame:
         (
             idx, r.gbs, r.mbs, r.tp, r.dp, r.pp,
             r.node_type, r.gpu_cluster_str, r.partition,
+            r.partition_layers if r.partition_layers is not None else "",
             r.step_time, r.throughput, r.price_per_step, r.is_oom, r.oom_gpumem,
             r.iterations, r.total_time_seconds, r.total_time_hours, r.cost
         )
@@ -823,8 +829,8 @@ def results_to_dataframe(results: List[SearchResult]) -> pd.DataFrame:
     
     df = pd.DataFrame(data, columns=columns)
     
-    # Add rank column
-    df['rank'] = df['step_time(s)'].rank(method='min', ascending=True)
+    # Add rank column (sorted by total training time ascending)
+    df['rank'] = df['total_time(s)'].rank(method='min', ascending=True)
     df['rank'] = df['rank'].astype(int)
     df = df.sort_values(by=['rank'])
     

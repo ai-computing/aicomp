@@ -148,7 +148,7 @@ def count_parallel_strategies(M, N, gbs, num_layers, available_tps=None):
             continue
         remain = M * N // tp_deg
         for dp_deg in factor(remain):
-            pp_degree = M * N / (tp_deg * dp_deg)
+            pp_degree = M * N // (tp_deg * dp_deg)
             if pp_degree != int(pp_degree):
                 continue
             if (W / pp_degree) % dp_deg != 0:
@@ -197,7 +197,7 @@ def enumerate_parallel_strategies(M, N, gbs, known, num_layers, available_tps=No
                 continue
             remain = M*N // tp_deg
             for dp_deg in factor(remain): # data parallelism
-                pp_degree = M*N / (tp_deg*dp_deg)
+                pp_degree = M*N // (tp_deg*dp_deg)
                 # if pp_degree is not int
                 if pp_degree != int(pp_degree):
                     continue

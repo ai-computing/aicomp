@@ -343,11 +343,6 @@ TRANSFORMER_LAYER_EXTRA_PARAMS = 20800
 # param (2 bytes) + grad (2 bytes) + m (4 bytes) + v (4 bytes) + master weights (4 bytes) + buffer = ~18x
 OPTIMIZER_STATE_MULTIPLIER = 18
 
-# ZeRO stage memory multiplier: param + grad + (optim_states / dp)
-# param (2 bytes) + grad (2 bytes) + overhead = 6 bytes base
-ZERO_BASE_MEMORY_MULTIPLIER = 6
-ZERO_OPTIM_STATE_MEMORY = 12  # optimizer states that get sharded
-
 # Parameter count formulas per node (as function of hidden_size h, vocab_size v, num_kv_heads, num_heads)
 # These are used for memory estimation and dp_cost calculation
 def get_node_param_count(node_type: str, h: int, v: int, num_heads: int, num_kv_heads: int, tp: int = 1) -> int:

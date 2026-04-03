@@ -379,59 +379,54 @@ def get_nodes_per_stage_tp_split(
 ) -> List[Tuple[int, int]]:
     """
     TP-aware split: distribute nodes by layer boundaries (LLaMA-style).
-    
-    This simulates IR.py's llama_tp_split logic which:
-    1. Treats model as (embedding + layers + lm_head) blocks
-    2. Distributes blocks evenly
-    3. Adjusts last stage if unbalanced
-    4. Converts layer boundaries to node boundaries
-    
+
+    Replicates IR.py's llama_tp_split logic exactly:
+    1. Compute block boundaries: num_blocks = num_layers + 2
+    2. Build stage block ranges
+    3. Adjust last stage if unbalanced
+    4. Match layer_ids (0..num_layers-1) directly against block ranges
+       (opti_pri matches layer_id against block numbers without offset)
+    5. Convert matched layers to node ranges
+
     Args:
         num_layers: Number of transformer layers
         num_stages: Number of pipeline stages (PP degree)
-        
+
     Returns:
         List of (start_node_idx, end_node_idx) tuples for each stage
     """
     if num_stages > num_layers:
         raise ValueError(f"num_stages ({num_stages}) > num_layers ({num_layers})")
-    
-    # LLaMA-style block distribution
-    # Blocks: embed (block 0) + layers (blocks 1 to num_layers) + lm_head (block num_layers+1)
+
     num_blocks = num_layers + 2  # embed + layers + lm_head
     last_layer = num_layers - 1
-    
-    # Compute layer boundaries
+
+    # Step 1-2: Compute block boundaries and build stage block ranges
+    # Same as opti_pri: layers_per_stage = [(i * num_blocks) // num_stage ...]
     boundaries = [(i * num_blocks) // num_stages for i in range(num_stages + 1)]
-    
-    # Convert to layer lists
-    stage_layers = []
-    for stage_id in range(num_stages):
-        start_block = boundaries[stage_id]
-        end_block = boundaries[stage_id + 1] - 1
-        
-        layers = []
-        for block in range(start_block, end_block + 1):
-            layer_idx = block - 1  # Block 1 -> Layer 0
-            if 0 <= layer_idx < num_layers:
-                layers.append(layer_idx)
-        
-        stage_layers.append(layers)
-    
-    # Adjust last stage if unbalanced
+    stage_blocks = [list(range(boundaries[i], boundaries[i + 1])) for i in range(num_stages)]
+
+    # Step 3: Adjust last stage if unbalanced (same as opti_pri)
     if num_stages > 2:
-        if len(stage_layers[-1]) > len(stage_layers[-2]):
-            if stage_layers[-1] and stage_layers[-1][0] != last_layer:
-                stage_layers[-2].append(stage_layers[-1][0])
-                stage_layers[-1] = stage_layers[-1][1:]
-    
-    # Total nodes including lm_head
-    total_nodes = get_total_nodes(num_layers)
-    
-    # Convert layer indices to node indices
+        if len(stage_blocks[-1]) > len(stage_blocks[-2]):
+            if stage_blocks[-1] and stage_blocks[-1][0] != last_layer:
+                stage_blocks[-2] = stage_blocks[-2] + [stage_blocks[-1][0]]
+                stage_blocks[-1] = stage_blocks[-1][1:]
+
+    # Step 4: Match layer_ids against block ranges
+    # In opti_pri, layer_id (0..num_layers-1) from FX graph is directly
+    # checked against stage_blocks with no block-to-layer offset
+    stage_layers = []
+    for k in range(num_stages):
+        block_set = set(stage_blocks[k])
+        layers = [lid for lid in range(num_layers) if lid in block_set]
+        stage_layers.append(layers)
+
+    # Step 5: Convert layer indices to node indices
     # embed is node 0, layer L starts at node (1 + L * 8), lm_head is last node
+    total_nodes = get_total_nodes(num_layers)
     stage_ranges = []
-    
+
     for stage_id, layers in enumerate(stage_layers):
         if stage_id == 0:
             # First stage always includes embed (node 0)
@@ -444,7 +439,7 @@ def get_nodes_per_stage_tp_split(
                 # Empty stage (edge case)
                 prev_end = stage_ranges[-1][1] if stage_ranges else -1
                 start_node = prev_end + 1
-        
+
         if stage_id == num_stages - 1:
             # Last stage always includes lm_head
             end_node = total_nodes - 1
@@ -459,9 +454,9 @@ def get_nodes_per_stage_tp_split(
             else:
                 # Empty stage
                 end_node = start_node - 1
-        
+
         stage_ranges.append((start_node, end_node))
-    
+
     return stage_ranges
 
 
@@ -760,3 +755,79 @@ def get_layers_per_stage(
         result.append(sorted(list(layers)))
     
     return result
+
+
+# =============================================================================
+# Layer-Node Conversion Utilities
+# =============================================================================
+
+def node_costs_to_layer_costs(node_costs: np.ndarray, num_layers: int) -> np.ndarray:
+    """
+    Convert node-level costs to layer-level costs by summing per layer.
+
+    Args:
+        node_costs: 1D array of node costs, length = 1 + num_layers * 8 + 1
+        num_layers: Number of transformer layers
+
+    Returns:
+        1D array of layer costs, length = num_layers + 2
+        [embed, layer_0, layer_1, ..., layer_{n-1}, lm_head]
+    """
+    layer_costs = np.zeros(num_layers + 2)
+    layer_costs[0] = node_costs[0]  # embed
+    for i in range(num_layers):
+        start = 1 + i * NODES_PER_LAYER
+        layer_costs[i + 1] = np.sum(node_costs[start:start + NODES_PER_LAYER])
+    layer_costs[-1] = node_costs[-1]  # lm_head
+    return layer_costs
+
+
+def layer_partition_to_node_partition(layer_partition: list, num_layers: int) -> list:
+    """
+    Convert layer-count partition to node-count partition.
+
+    First stage includes embed (+1 node), last stage includes lm_head (+1 node).
+
+    Args:
+        layer_partition: List of transformer layer counts per stage
+        num_layers: Number of transformer layers
+
+    Returns:
+        List of node counts per stage
+    """
+    node_partition = []
+    for i, layer_count in enumerate(layer_partition):
+        nodes = layer_count * NODES_PER_LAYER
+        if i == 0:
+            nodes += 1  # embed
+        if i == len(layer_partition) - 1:
+            nodes += 1  # lm_head
+        node_partition.append(nodes)
+    return node_partition
+
+
+def node_partition_to_layer_counts(partition: list, num_layers: int) -> list:
+    """
+    Compute the number of transformer layers in each stage from a node partition.
+
+    Args:
+        partition: List of node counts per stage
+        num_layers: Number of transformer layers
+
+    Returns:
+        List of layer counts per stage
+    """
+    total = get_total_nodes(num_layers)
+    layer_counts = []
+    pos = 0
+    for count in partition:
+        layers = set()
+        for ni in range(pos, pos + count):
+            if ni == 0:
+                continue  # embed
+            if ni == total - 1:
+                continue  # lm_head
+            layers.add((ni - 1) // NODES_PER_LAYER)
+        layer_counts.append(len(layers))
+        pos += count
+    return layer_counts

@@ -21,7 +21,7 @@ from pipe import (
     minmax, schedule, get_stage_latency, explain_minmax,
     dynamic_programming, dynamic_programming2, exhaustive_partition, ILP,
     # Partition method wrappers
-    partition_even, partition_minmax, partition_dp, partition_ilp, partition_bruteforce,
+    partition_minmax, partition_optimus_even, partition_dp, partition_ilp, partition_bruteforce,
     get_partition_function, PARTITION_METHODS
 )
 from device_placement import get_gpu_for_stage
@@ -38,8 +38,6 @@ from config import (
     TRANSFORMER_LAYER_PARAM_MULTIPLIER,
     TRANSFORMER_LAYER_EXTRA_PARAMS,
     OPTIMIZER_STATE_MULTIPLIER,
-    ZERO_BASE_MEMORY_MULTIPLIER,
-    ZERO_OPTIM_STATE_MEMORY,
     GPUConfig,
     ProfileDB,
 )
@@ -74,12 +72,12 @@ class FASOP(nn.Module):
             exp_name: Experiment name
             gpu_config: GPUConfig object containing GPU bandwidth settings
             num_node: Number of nodes
-            partition_method: PP partition method - "even", "minmax", "dp", "ilp", "exhaustive"
-                - even: Optimus Prime style (simple_split if tp=1, llama_tp_split if tp>1)
-                - minmax: Min-max load balancing
+            partition_method: PP partition method - "minmax", "optimus-even", "dp", "ilp", "bruteforce"
+                - minmax: Min-max load balancing (tp=1: op-level, tp>1: layer-level)
+                - optimus-even: Even split (tp=1: simple_split, tp>1: llama_tp_split)
                 - dp: Dynamic programming
-                - ilp: Integer Linear Programming (CPLEX)
-                - exhaustive: Exhaustive search
+                - ilp: Integer Linear Programming
+                - bruteforce: Exhaustive search
         """
         super().__init__()
         self.model_config = model_config
@@ -157,11 +155,11 @@ class FASOP(nn.Module):
             "_profile_db": self.profile_db,
         }
         
-        rank_map, partition, estimated_latency, pipecost, dp_side_cost, all_reduce_embedding_cost, is_oom, oom_gpumem, is_zero_oom, zerooom_gpumem = predict(
+        rank_map, partition, partition_layers, estimated_latency, pipecost, dp_side_cost, all_reduce_embedding_cost, is_oom, oom_gpumem = predict(
             config, bs, micro_bs, cluster_info, model_config, gpu_profiledb, parallel_dims,
             node_type, exhaustive, self.partition_method, self.gpu_config
         )
-        return rank_map, partition, estimated_latency, pipecost, dp_side_cost, all_reduce_embedding_cost, is_oom, oom_gpumem, is_zero_oom, zerooom_gpumem
+        return rank_map, partition, partition_layers, estimated_latency, pipecost, dp_side_cost, all_reduce_embedding_cost, is_oom, oom_gpumem
 
 
 # =============================================================================
@@ -650,11 +648,11 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
 
     Args:
         partition_method: PP partition method
-            - "even": Optimus Prime style (even split with minmax)
-            - "minmax": Min-max load balancing (default)
+            - "minmax": Min-max load balancing (tp=1: op-level, tp>1: layer-level)
+            - "optimus-even": Even split (tp=1: simple_split, tp>1: llama_tp_split)
             - "dp": Dynamic programming
             - "ilp": Integer Linear Programming
-            - "exhaustive": Exhaustive search
+            - "bruteforce": Exhaustive search
     """
     total_layers = int(model_config["num_layers"])
     model_type = model_config["type"]
@@ -662,8 +660,8 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
     M, N = config.shape
     config = np.asarray(config)
 
-    # Convert partition_method to even_split flag for backward compatibility
-    even_split = (partition_method == "even")
+    # Convert partition_method to even_split flag for backward compatibility (T5 path)
+    even_split = (partition_method == "optimus-even")
     
     # Check if using FX node-level profiling (NPZ format)
     use_fx_nodes = _check_fx_node_format(gpu_profiledb)
@@ -772,14 +770,16 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
 
         # Select partition method using unified interface
         partition_fn = get_partition_function(partition_method)
-        partition, stage_comp_time_lst, _, _, stage_for_send_time_lst, stage_back_send_time_lst = partition_fn(
+        partition, stage_comp_time_lst, _, _, stage_for_send_time_lst, stage_back_send_time_lst, partition_layers = partition_fn(
             num_layer=num_nodes_or_layers,
             cost_e_per_gpu=cost_e_per_gpu,
             cost_c=cost_c_arr,
             pp_degree=pp_degree,
             gpu_type_lst=gpu_type_lst,
             num_mb=num_mb,
-            verbose=exhaustive.get("verbose", False)
+            verbose=exhaustive.get("verbose", False),
+            tp_degree=tp_degree,
+            num_layers=total_layers,
         )
 
         if exhaustive["exhaustive"]:
@@ -788,8 +788,9 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
                                                     num_mb, stage_comp_time_lst, 
                                                     stage_for_send_time_lst, 
                                                     stage_back_send_time_lst)
-        is_oom, oom_gpumem, is_zero_oom, zerooom_gpumem  = EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb)
+        is_oom, oom_gpumem  = EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb)
     else: # If the model is T5
+        partition_layers = None  # T5 does not support layer-level partition
         # get gpu type for each stage
         gpu_type_lst = get_gpu_for_stage(pp_degree, N, node_type)
 
@@ -852,12 +853,12 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
                     stage_back_send_time_lst = stage_back_send_time_lst_temp
                     stage_wise_cost_lst = stage_wise_cost_lst_temp
                     
-                is_oom, oom_gpumem, is_zero_oom, zerooom_gpumem  = EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb) # use gpu_type_lst
+                is_oom, oom_gpumem  = EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb) # use gpu_type_lst
         else:
             partition, stage_comp_time_lst, _, _, stage_for_send_time_lst, stage_back_send_time_lst = minmax(
                 int(num_nodes_or_layers), cost_e_per_gpu, cost_c_arr, pp_degree, gpu_type_lst, even_split
             )
-            is_oom, oom_gpumem, is_zero_oom, zerooom_gpumem  = EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb) # use gpu_type_lst
+            is_oom, oom_gpumem  = EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb) # use gpu_type_lst
 
             pipecost_last, stage_wise_cost_lst = schedule(pp_degree, num_mb, stage_comp_time_lst, stage_for_send_time_lst, stage_back_send_time_lst)
         
@@ -886,7 +887,7 @@ def predict(config, gbs, mbs, cluster_info, model_config, gpu_profiledb, paralle
         print(f"{cost_last.item():.4f}, {pipecost_last.item():.4f}, {dp_side_cost_last.item():.4f}, {all_reduce_embedding_cost:.4f}")
         assert False, "Done!"
     
-    return rank_map, partition, cost_last, pipecost_last, dp_side_cost_last, all_reduce_embedding_cost, is_oom, oom_gpumem, is_zero_oom, zerooom_gpumem
+    return rank_map, partition, partition_layers, cost_last, pipecost_last, dp_side_cost_last, all_reduce_embedding_cost, is_oom, oom_gpumem
     
 
 def EstimatePeakMemory(partition, model_config, parallel_config, layer_type, cluster_info, gbs, num_mb):
@@ -910,7 +911,7 @@ def EstimatePeakMemory(partition, model_config, parallel_config, layer_type, clu
     N = len(cluster_info)
     
     memory = []
-    memory_zero = []
+    
     p = pp
     if num_mb > pp:
         p = pp
@@ -955,26 +956,21 @@ def EstimatePeakMemory(partition, model_config, parallel_config, layer_type, clu
                 activation += (4 * s * b * h ) / tp + ( 4 * s * b * v ) / tp
                 
         major = param_count * OPTIMIZER_STATE_MULTIPLIER
-        major_zero = param_count * (ZERO_BASE_MEMORY_MULTIPLIER + int(ZERO_OPTIM_STATE_MEMORY / dp))
         memory.append((major + activation) / 1024 /1024 /1024)
-        memory_zero.append((major_zero + activation) / 1024 / 1024 /1024)
+        
     
 
     oom = False
     oom_zero = False
     error_percent=1.10
     # oom_gpumem = 0.0
-    # zerooom_gpumem = 0.0
+    
     oom_gpumem = max(memory)
-    zerooom_gpumem = max(memory_zero)
+    
     # debug    
     # print(f"partition size: {len(partition)}, \n partition: {partition}")
     # print(f"cluster size: {len(cluster_info)}, \n cluster_info: {cluster_info}")
     # print(f"memory size: {len(memory)}, oom_gpumem: {oom_gpumem}, \n {memory}")
-    # print(f"memory zero size: {len(memory_zero)}, zerooom_gpumem: {zerooom_gpumem}, \n {memory_zero}")
-    
-    # print(f"oom_gpumem: {oom_gpumem}, \n {memory}")
-    # print(f"zerooom_gpumem: {zerooom_gpumem}, \n {memory_zero}")
     
     for i in range(len(partition)):
         if len(partition) > N:
@@ -999,28 +995,14 @@ def EstimatePeakMemory(partition, model_config, parallel_config, layer_type, clu
         if (memory[i] * error_percent) > memory_max:
             oom = True
             oom_gpumem = memory[i] * error_percent
-        
-        if (memory_zero[i]) > memory_max:
-            oom_zero = True
-            zerooom_gpumem = memory_zero[i] * error_percent
-    # debug              
-    # print(f"is oom: {oom}")
-    # print(f"is zero oom: {oom_zero}")
-    
-    # print(f"is oom_gpumem: {oom_gpumem}")
-    # print(f"is zerooom_gpumem: {zerooom_gpumem}")
 
     # Convert tensor to float if needed
     if hasattr(oom_gpumem, 'item'):
         oom_gpumem = oom_gpumem.item()
     elif hasattr(oom_gpumem, '__float__'):
         oom_gpumem = float(oom_gpumem)
-    if hasattr(zerooom_gpumem, 'item'):
-        zerooom_gpumem = zerooom_gpumem.item()
-    elif hasattr(zerooom_gpumem, '__float__'):
-        zerooom_gpumem = float(zerooom_gpumem)
 
-    return oom, oom_gpumem, oom_zero, zerooom_gpumem
+    return oom, oom_gpumem
 
 
 def get_layer_type(model_type, n, pp):

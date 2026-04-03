@@ -889,33 +889,8 @@ def ILP(
 # =============================================================================
 # Unified interface for --pp-partition-method argument
 # Each function returns: (partition, stage_comp_time_lst, stage_comm_time_lst,
-#                         stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst)
-
-def partition_even(
-    num_layer: int,
-    cost_e_per_gpu: Dict[str, np.ndarray],
-    cost_c: np.ndarray,
-    pp_degree: int,
-    gpu_type_lst: List[str],
-    num_mb: int = 1,
-    verbose: bool = False
-):
-    """
-    Even partition method (Optimus Prime style).
-
-    Distributes layers evenly across stages with minimal rebalancing.
-    Uses minmax() with even_split=True.
-    """
-    return minmax(
-        num_layer=num_layer,
-        cost_e_per_gpu=cost_e_per_gpu,
-        cost_c=cost_c,
-        pp_degree=pp_degree,
-        gpu_type_lst=gpu_type_lst,
-        even_split=True,
-        verbose=verbose
-    )
-
+#                         stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst,
+#                         partition_layers)
 
 def partition_minmax(
     num_layer: int,
@@ -924,23 +899,172 @@ def partition_minmax(
     pp_degree: int,
     gpu_type_lst: List[str],
     num_mb: int = 1,
-    verbose: bool = False
+    verbose: bool = False,
+    **kwargs
 ):
     """
     Min-max partition method.
 
-    Iteratively rebalances layers to minimize the maximum stage latency.
-    Uses minmax() with even_split=False.
+    - TP=1: Op-level minmax (existing behavior, 642 nodes).
+    - TP>1: Layer-level minmax (82 layer units), then convert back to node partition.
+
+    Additional kwargs:
+        tp_degree: Tensor parallel degree (default: 1)
+        num_layers: Number of transformer layers (required when tp_degree > 1)
+
+    Returns:
+        Tuple of (partition, stage_comp_time_lst, stage_comm_time_lst,
+                  stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst,
+                  partition_layers)
     """
-    return minmax(
-        num_layer=num_layer,
-        cost_e_per_gpu=cost_e_per_gpu,
-        cost_c=cost_c,
+    tp_degree = kwargs.get("tp_degree", 1)
+    num_layers = kwargs.get("num_layers", None)
+
+    if hasattr(tp_degree, 'item'):
+        tp_degree = int(tp_degree.item())
+
+    if tp_degree <= 1 or num_layers is None:
+        # TP=1: existing op-level minmax
+        result = minmax(
+            num_layer=num_layer,
+            cost_e_per_gpu=cost_e_per_gpu,
+            cost_c=cost_c,
+            pp_degree=pp_degree,
+            gpu_type_lst=gpu_type_lst,
+            even_split=False,
+            verbose=verbose
+        )
+        return result + (None,)
+
+    # TP>1: layer-level minmax
+    from partition import (
+        node_costs_to_layer_costs,
+        layer_partition_to_node_partition,
+        NODES_PER_LAYER,
+    )
+
+    num_units = num_layers + 2  # embed + layers + lm_head
+
+    # Convert cost_e to layer level for each GPU type
+    layer_cost_e_per_gpu = {}
+    for gpu_type, cost_e in cost_e_per_gpu.items():
+        layer_cost_e_per_gpu[gpu_type] = node_costs_to_layer_costs(cost_e, num_layers)
+
+    # Convert cost_c to layer level
+    # Use the last node position (mlp_down) of each layer for comm cost
+    if cost_c.ndim == 2:
+        layer_cost_c = np.zeros((num_units, cost_c.shape[1]))
+        layer_cost_c[0] = cost_c[0]  # embed
+        for k in range(1, num_layers + 1):
+            node_idx = k * NODES_PER_LAYER  # mlp_down of layer k-1
+            if node_idx < cost_c.shape[0]:
+                layer_cost_c[k] = cost_c[node_idx]
+        layer_cost_c[num_layers + 1] = cost_c[-1]  # lm_head
+    else:
+        layer_cost_c = cost_c
+
+    # Run minmax on layer units (82 units)
+    unit_partition, _, _, _, _, _ = minmax(
+        num_layer=num_units,
+        cost_e_per_gpu=layer_cost_e_per_gpu,
+        cost_c=layer_cost_c,
         pp_degree=pp_degree,
         gpu_type_lst=gpu_type_lst,
         even_split=False,
         verbose=verbose
     )
+
+    # Convert unit partition to layer counts (subtract embed/lm_head units)
+    partition_layers = []
+    for i, up in enumerate(unit_partition):
+        layers = up
+        if i == 0:
+            layers -= 1  # subtract embed unit
+        if i == len(unit_partition) - 1:
+            layers -= 1  # subtract lm_head unit
+        partition_layers.append(layers)
+
+    # Convert layer counts to node partition
+    node_partition = layer_partition_to_node_partition(partition_layers, num_layers)
+
+    # Recalculate stage latencies at node level with original costs
+    stage_latency = get_stage_latency(node_partition, cost_e_per_gpu, cost_c, gpu_type_lst)
+    stage_time_lst, stage_comp_time_lst, stage_comm_time_lst, stage_for_send_time_lst, stage_back_send_time_lst = _extract_stage_times(stage_latency)
+
+    return node_partition, stage_comp_time_lst, stage_comm_time_lst, stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst, partition_layers
+
+
+def partition_optimus_even(
+    num_layer: int,
+    cost_e_per_gpu: Dict[str, np.ndarray],
+    cost_c: np.ndarray,
+    pp_degree: int,
+    gpu_type_lst: List[str],
+    num_mb: int = 1,
+    verbose: bool = False,
+    **kwargs
+):
+    """
+    Optimus-even partition method.
+
+    - TP=1: Even node split (simple_split style) using minmax with even_split=True.
+    - TP>1: Layer-boundary partition (llama_tp_split style) from partition.py.
+
+    Additional kwargs:
+        tp_degree: Tensor parallel degree (default: 1)
+        num_layers: Number of transformer layers (required when tp_degree > 1)
+
+    Returns:
+        Tuple of (partition, stage_comp_time_lst, stage_comm_time_lst,
+                  stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst,
+                  partition_layers)
+    """
+    tp_degree = kwargs.get("tp_degree", 1)
+    num_layers = kwargs.get("num_layers", None)
+
+    if hasattr(tp_degree, 'item'):
+        tp_degree = int(tp_degree.item())
+
+    if tp_degree <= 1:
+        # TP=1: even split (simple_split style, no layer boundary enforcement)
+        result = minmax(
+            num_layer=num_layer,
+            cost_e_per_gpu=cost_e_per_gpu,
+            cost_c=cost_c,
+            pp_degree=pp_degree,
+            gpu_type_lst=gpu_type_lst,
+            even_split=True,
+            verbose=verbose
+        )
+        partition = result[0]
+        # Compute partition_layers from node partition
+        if num_layers is not None:
+            from partition import node_partition_to_layer_counts
+            partition_layers = node_partition_to_layer_counts(partition, num_layers)
+        else:
+            partition_layers = None
+        return result + (partition_layers,)
+
+    # TP>1: layer-boundary partition (llama_tp_split)
+    from partition import get_nodes_per_stage_tp_split, node_partition_to_layer_counts
+
+    if num_layers is None:
+        raise ValueError("num_layers is required for optimus-even with tp_degree > 1")
+
+    # Get layer-boundary stage ranges: [(start_node, end_node), ...]
+    stage_ranges = get_nodes_per_stage_tp_split(num_layers, pp_degree)
+
+    # Convert to partition list (node counts per stage)
+    partition = [end - start + 1 for start, end in stage_ranges]
+
+    # Calculate stage latencies
+    stage_latency = get_stage_latency(partition, cost_e_per_gpu, cost_c, gpu_type_lst)
+    stage_time_lst, stage_comp_time_lst, stage_comm_time_lst, stage_for_send_time_lst, stage_back_send_time_lst = _extract_stage_times(stage_latency)
+
+    # Compute partition_layers from node partition
+    partition_layers = node_partition_to_layer_counts(partition, num_layers)
+
+    return partition, stage_comp_time_lst, stage_comm_time_lst, stage_time_lst, stage_for_send_time_lst, stage_back_send_time_lst, partition_layers
 
 
 def partition_dp(
@@ -950,13 +1074,17 @@ def partition_dp(
     pp_degree: int,
     gpu_type_lst: List[str],
     num_mb: int = 1,
-    verbose: bool = False
+    verbose: bool = False,
+    **kwargs
 ):
     """
     Dynamic programming partition method.
 
     Uses dynamic programming to find optimal partition.
     Internally calls dynamic_programming2().
+
+    Returns:
+        7-tuple with partition_layers=None
     """
     return dynamic_programming2(
         total_layers=num_layer,
@@ -966,7 +1094,7 @@ def partition_dp(
         num_mb=num_mb,
         gpu_type_list=gpu_type_lst,
         verbose=verbose
-    )
+    ) + (None,)
 
 
 def partition_ilp(
@@ -976,7 +1104,8 @@ def partition_ilp(
     pp_degree: int,
     gpu_type_lst: List[str],
     num_mb: int = 1,
-    verbose: bool = False
+    verbose: bool = False,
+    **kwargs
 ):
     """
     ILP (Integer Linear Programming) partition method.
@@ -984,6 +1113,9 @@ def partition_ilp(
     Uses OR-Tools (SCIP/CBC) to solve optimal partition with comp+comm stage costs.
     Supports both FX node-based and legacy layer-based profiling.
     Internally calls ILP().
+
+    Returns:
+        7-tuple with partition_layers=None
     """
     return ILP(
         num_nodes=num_layer,
@@ -993,7 +1125,7 @@ def partition_ilp(
         gpu_type_lst=gpu_type_lst,
         num_mb=num_mb,
         verbose=verbose
-    )
+    ) + (None,)
 
 
 def partition_bruteforce(
@@ -1003,7 +1135,8 @@ def partition_bruteforce(
     pp_degree: int,
     gpu_type_lst: List[str],
     num_mb: int = 1,
-    verbose: bool = False
+    verbose: bool = False,
+    **kwargs
 ):
     """
     Brute-force exhaustive search partition method.
@@ -1011,6 +1144,9 @@ def partition_bruteforce(
     Tries all possible partition combinations and selects the best one.
     WARNING: Exponential complexity - only use for small num_layer and pp_degree.
     Internally calls exhaustive_partition().
+
+    Returns:
+        7-tuple with partition_layers=None
     """
     return exhaustive_partition(
         num_layer=num_layer,
@@ -1018,13 +1154,13 @@ def partition_bruteforce(
         cost_c=cost_c,
         pp_degree=pp_degree,
         gpu_type_lst=gpu_type_lst
-    )
+    ) + (None,)
 
 
 # Mapping from method name to function
 PARTITION_METHODS = {
-    "even": partition_even,
     "minmax": partition_minmax,
+    "optimus-even": partition_optimus_even,
     "dp": partition_dp,
     "ilp": partition_ilp,
     "bruteforce": partition_bruteforce,
@@ -1036,7 +1172,7 @@ def get_partition_function(method: str):
     Get partition function by method name.
 
     Args:
-        method: Partition method name ("even", "minmax", "dp", "ilp", "bruteforce")
+        method: Partition method name ("minmax", "optimus-even", "dp", "ilp", "bruteforce")
 
     Returns:
         Partition function
