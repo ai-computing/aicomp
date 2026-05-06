@@ -347,7 +347,15 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, num_mb, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False):
+    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False):
+
+        if use_gpu is False:
+            logging.critical(
+                "[opt_prime] CPU mode (use_gpu=False) is not supported. "
+                "opt_prime requires CUDA-capable GPUs for distributed parallel "
+                "training. Aborting."
+            )
+            sys.exit(1)
 
         #self.model_ir = []
         self.num_mb = num_mb

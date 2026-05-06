@@ -2,6 +2,7 @@ import torch
 import torch.distributed as dist
 import logging
 import os
+import sys
 from torch import Tensor, Size
 
 from opt_prime.IR import IR_Anal
@@ -17,7 +18,15 @@ NoneType=type(None)
 
 class Comm:
 
-    def __init__(self, use_gpu=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
+    def __init__(self, use_gpu=True, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
+
+        if use_gpu is False:
+            logging.critical(
+                "[opt_prime] CPU mode (use_gpu=False) is not supported. "
+                "opt_prime requires CUDA-capable GPUs for distributed parallel "
+                "training/inference. Aborting."
+            )
+            sys.exit(1)
 
         self.ds_type2id = {
             Tensor: 100,

@@ -98,6 +98,14 @@ class Optimus_Inference:
         use_kv_manager: bool = False,
         dynamo_capture: bool = False,
     ):
+        if use_gpu is False:
+            logging.critical(
+                "[opt_prime] CPU mode (use_gpu=False) is not supported. "
+                "opt_prime requires CUDA-capable GPUs for distributed parallel "
+                "inference. Aborting."
+            )
+            sys.exit(1)
+
         self.use_gpu = use_gpu
         self.dynamo_capture = dynamo_capture
         self.max_batch_size = max_batch_size
