@@ -18,7 +18,8 @@ NoneType=type(None)
 
 class Comm:
 
-    def __init__(self, use_gpu=True, ir_analyze: IR_Anal = IR_Anal.PARALLEL):
+    def __init__(self, use_gpu=True, ir_analyze: IR_Anal = IR_Anal.PARALLEL,
+                 use_mps: bool = False):
 
         if use_gpu is False:
             logging.critical(
@@ -27,6 +28,8 @@ class Comm:
                 "training/inference. Aborting."
             )
             sys.exit(1)
+
+        self.use_mps = use_mps
 
         self.ds_type2id = {
             Tensor: 100,
@@ -76,9 +79,19 @@ class Comm:
             gpu_cnt = torch.cuda.device_count()
             if self.local_rank == 0:
                 print(f"Available GPUs per server: {gpu_cnt}")
-            if self.local_rank + 1 > gpu_cnt:
-                logging.error(f"This program cannot create more processes than the number of available GPUs:{gpu_cnt}")
-                sys.exit(1)
+            # When MPS is enabled, multiple processes per GPU is intentional
+            # (oversubscription); skip the 1-process-per-GPU check.
+            if not self.use_mps:
+                if self.local_rank + 1 > gpu_cnt:
+                    logging.error(
+                        f"This program cannot create more processes than the "
+                        f"number of available GPUs ({gpu_cnt}). "
+                        f"local_rank={self.local_rank}. "
+                        f"Either reduce --nproc_per_node, expose more GPUs via "
+                        f"CUDA_VISIBLE_DEVICES, or enable --use-mps for "
+                        f"oversubscription (inference only)."
+                    )
+                    sys.exit(1)
 
             self.backend = "nccl"
             print(f"GPU mode is used.")
@@ -86,19 +99,40 @@ class Comm:
             self.backend = "gloo"
             print(f"CPU mode is used.")
 
+        # mps_gloo_group: a gloo sub-group used for cross-rank collective ops
+        # (e.g., barrier) that would otherwise fail under MPS oversubscription
+        # because NCCL refuses collectives when multiple ranks share a physical
+        # GPU. Created only when world_size > 1 (collective op).
+        # IMPORTANT: dist.new_group() is itself a collective. All ranks must
+        # call it consistently; we always create it (regardless of use_mps)
+        # so that heterogeneous-MPS deployments still synchronize cleanly.
+        self.mps_gloo_group = None
+
         # Single-process mode: skip distributed initialization
         if self.world_size == 1:
             print(f"Single-process mode (world_size=1), skipping distributed init.")
             return
 
-        if dist.is_initialized():
+        if not dist.is_initialized():
+            init_method = "tcp://" + str(self.master_addr) + ":" + str(self.master_port)
+            dist.init_process_group(backend=self.backend, rank=self.rank,
+                                    world_size=self.world_size, init_method=init_method)
+            logging.info(f" --- rank:{dist.get_rank()}, world_size:{dist.get_world_size()}")
+        else:
             print(f"Communication already initialized")
-            return
 
-        init_method = "tcp://" + str(self.master_addr) + ":" + str(self.master_port)
-        dist.init_process_group(backend=self.backend, rank=self.rank, world_size=self.world_size, init_method=init_method)
-
-        logging.info(f" --- rank:{dist.get_rank()}, world_size:{dist.get_world_size()}")
+        # Create gloo sub-group for MPS-safe barriers. Safe to create multiple
+        # times across multiple Comm() constructions (each call returns a new
+        # group object); all ranks must participate, which is guaranteed
+        # because every rank instantiates Comm() symmetrically.
+        try:
+            self.mps_gloo_group = dist.new_group(backend="gloo")
+        except (RuntimeError, ValueError) as e:
+            # Gloo backend unavailable; degrade gracefully (will fall back to
+            # default NCCL barrier which only works without MPS oversubscribe).
+            logging.warning(f"[opt_prime] Failed to create gloo sub-group "
+                            f"for MPS-safe barriers: {e}")
+            self.mps_gloo_group = None
 
 
 

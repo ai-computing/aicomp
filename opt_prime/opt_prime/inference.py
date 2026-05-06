@@ -60,6 +60,12 @@ class Optimus_Inference:
         max_seq_len: Maximum sequence length for KV cache allocation (default: 2048)
         dtype: Data type for inference (default: torch.bfloat16)
         ir_analyze: IR analysis mode (default: IR_Anal.PARALLEL)
+        use_mps: Enable NVIDIA MPS oversubscription. When True, the number of
+                 processes per node may exceed the number of visible GPUs;
+                 ranks are mapped to GPUs round-robin (local_rank % gpu_count).
+                 Caller must have already started the MPS daemon (typically via
+                 mps_manager.setup_mps_for_inference at the example entry point).
+                 (default: False)
 
     Example:
         >>> from opt_prime.inference import Optimus_Inference
@@ -97,6 +103,7 @@ class Optimus_Inference:
         serving_mode: bool = False,
         use_kv_manager: bool = False,
         dynamo_capture: bool = False,
+        use_mps: bool = False,
     ):
         if use_gpu is False:
             logging.critical(
@@ -107,6 +114,7 @@ class Optimus_Inference:
             sys.exit(1)
 
         self.use_gpu = use_gpu
+        self.use_mps = use_mps
         self.dynamo_capture = dynamo_capture
         self.max_batch_size = max_batch_size
         self.max_seq_len = max_seq_len
@@ -121,11 +129,12 @@ class Optimus_Inference:
         self.model_type = None
 
         # Initialize communication
-        self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
+        self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze, use_mps=use_mps)
 
         rank = self.comm.rank
         world_size = self.comm.world_size
         local_rank = self.comm.local_rank
+        local_world_size = self.comm.local_world_size
 
         # Validate parallelism configuration
         assert tp_size >= 1 and world_size % tp_size == 0, \
@@ -133,7 +142,16 @@ class Optimus_Inference:
         assert dp_size >= 1 and world_size % dp_size == 0, \
             f"world size({world_size}) must be divisible by dp size({dp_size})"
 
+        # Auto-derive pp_size from world_size when caller didn't specify it.
+        # Convention: pp_size=1 (default) means "auto"; explicit pp_size>1
+        # is honored as-is.
         if pp_size == 1:
+            if world_size % (tp_size * dp_size) != 0:
+                raise RuntimeError(
+                    f"Cannot auto-derive pp_size: world_size={world_size} is not "
+                    f"divisible by tp_size({tp_size}) * dp_size({dp_size}). "
+                    f"Either change --nproc_per_node or specify --pp-size explicitly."
+                )
             pp_size = world_size // tp_size // dp_size
 
         assert pp_size >= 1 and world_size == pp_size * dp_size * tp_size, \
@@ -143,6 +161,35 @@ class Optimus_Inference:
             assert "llama" in module.__class__.__name__.lower(), \
                 f"Tensor parallel (size={tp_size}) is only supported for Llama models."
 
+        # Determine GPU id for this rank (modulo mapping when MPS is on).
+        # Use torch.cuda.device_count() which already reflects CUDA_VISIBLE_DEVICES.
+        if use_gpu:
+            gpu_count = torch.cuda.device_count()
+        else:
+            gpu_count = 0
+
+        if use_mps and use_gpu:
+            if gpu_count <= 0:
+                raise RuntimeError(
+                    "use_mps=True but no visible CUDA GPUs were detected. "
+                    "Check CUDA_VISIBLE_DEVICES / driver setup."
+                )
+            gpu_id = local_rank % gpu_count
+            if rank == 0:
+                # Warnings about MPS oversubscription topology
+                if local_world_size <= gpu_count:
+                    print(f"[opt_prime][MPS] WARN: --use-mps is set but "
+                          f"local_world_size({local_world_size}) <= "
+                          f"gpu_count({gpu_count}); MPS adds overhead with "
+                          f"no oversubscription benefit.", file=sys.stderr)
+                elif local_world_size % gpu_count != 0:
+                    print(f"[opt_prime][MPS] WARN: local_world_size"
+                          f"({local_world_size}) is not a multiple of "
+                          f"gpu_count({gpu_count}); colocation will be "
+                          f"uneven across GPUs.", file=sys.stderr)
+        else:
+            gpu_id = local_rank
+
         if rank == 0:
             print(f"> [Inference] World Size: {world_size}")
             print(f"> [Inference] Pipeline Parallel Size: {pp_size}")
@@ -150,15 +197,23 @@ class Optimus_Inference:
                 print(f"> [Inference] Data Parallel Size: {dp_size}")
             if tp_size > 1:
                 print(f"> [Inference] Tensor Parallel Size: {tp_size}")
+            if use_mps:
+                print(f"> [Inference] MPS: enabled "
+                      f"(local_world_size={local_world_size}, "
+                      f"visible_gpus={gpu_count})")
 
         # Initialize topology
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
         # Set device
         if use_gpu:
-            torch.cuda.set_device(local_rank)
-            self.device = torch.device(f"cuda:{local_rank}")
-            print(f">>> [Inference] Using GPU cuda:{local_rank}")
+            torch.cuda.set_device(gpu_id)
+            self.device = torch.device(f"cuda:{gpu_id}")
+            if use_mps and gpu_id != local_rank:
+                print(f">>> [Inference] Using GPU cuda:{gpu_id} "
+                      f"(MPS, local_rank={local_rank})")
+            else:
+                print(f">>> [Inference] Using GPU cuda:{gpu_id}")
         else:
             self.device = torch.device("cpu")
             print(f">>> [Inference] Using CPU")
@@ -492,6 +547,25 @@ class Optimus_Inference:
     def get_world_size(self) -> int:
         """Get world size."""
         return self.tpl.world_size
+
+    def barrier(self) -> None:
+        """Cross-rank barrier that is safe under MPS oversubscription.
+
+        When MPS is enabled, multiple ranks share physical GPUs. NCCL's
+        default-group barrier rejects this configuration with
+        'Duplicate GPU detected'. We route the barrier through a gloo
+        sub-group (created in Comm.init_comm) so the synchronization uses
+        host memory and never touches the duplicate-GPU NCCL path.
+
+        Falls back to dist.barrier() (NCCL) if gloo group is unavailable.
+        Safe no-op when distributed is not initialized.
+        """
+        if not dist.is_initialized():
+            return
+        if self.use_mps and self.comm.mps_gloo_group is not None:
+            dist.barrier(group=self.comm.mps_gloo_group)
+        else:
+            dist.barrier()
 
     @torch.no_grad()
     def forward(
