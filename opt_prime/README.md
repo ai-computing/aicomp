@@ -335,9 +335,9 @@ NVIDIA MPS (Multi-Process Service) lets multiple inference processes share a sin
     export CUDA_VISIBLE_DEVICES=0,1,2,3
     torchrun --nproc_per_node=8 pp_generation_llama.py --use-mps --pp-size 4 --tp-size 2
 
-    # serving_vs_batch_demo with MPS
+    # serving_vs_batch_demo with MPS (PP=8 across 4 GPUs via modulo mapping)
     export CUDA_VISIBLE_DEVICES=0,1,2,3
-    torchrun --nproc_per_node=8 serving_vs_batch_demo.py --use-mps --pp-size 4 --num-requests 10
+    torchrun --nproc_per_node=8 serving_vs_batch_demo.py --use-mps --pp-size 8 --num-requests 10
 
 opt_prime starts the MPS daemon automatically when `--use-mps` is given (per-node, by local rank 0) and shuts it down on exit (`atexit` + signal handlers). Process-local environment variables are snapshotted and restored, so subsequent training/inference runs are not affected.
 
