@@ -346,8 +346,8 @@ opt_prime starts the MPS daemon automatically when `--use-mps` is given (per-nod
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--use-mps` | off | Enable MPS oversubscription. Inference examples only |
-| `--num-gpus N` | (none) | Number of GPUs to expose (sets `CUDA_VISIBLE_DEVICES=0..N-1`). Validated against shell CVD if both set |
-| `--gpu-ids "a,b,c"` | (none) | Explicit GPU IDs. Validated against shell CVD if both set |
+| `--num-gpus N` | (none) | **Validation only with `--use-mps`.** Asserts that shell-set `CUDA_VISIBLE_DEVICES` exposes exactly `N` GPUs; aborts on mismatch or if CVD is unset. Does NOT set CVD itself in MPS mode |
+| `--gpu-ids "a,b,c"` | (none) | **Validation only with `--use-mps`.** Asserts that shell-set `CUDA_VISIBLE_DEVICES` matches the listed IDs; aborts on mismatch or if CVD is unset. Does NOT set CVD itself in MPS mode |
 | `--mps-pipe-dir` | `/tmp/nvidia-mps` | `CUDA_MPS_PIPE_DIRECTORY` (multi-tenant isolation) |
 | `--mps-log-dir` | `/tmp/nvidia-mps-log` | `CUDA_MPS_LOG_DIRECTORY` |
 | `--mps-thread-percentage N` | (none) | `CUDA_MPS_ACTIVE_THREAD_PERCENTAGE` per-client SM cap |
