@@ -32,6 +32,8 @@ OptimusPrime supports major HuggingFace models, and the following models have be
   * **Pipeline parallelism (PP)**: In PP, GPipe/1F1B scheduling algorithms are supported
   * **Data Parallelism (DP)**
   * **Tensor Parallelism (TP)**: For now, TP support is provided only for the Llama model
+  * **Inference engine** (`Optimus_Inference`): autoregressive generation with PP/TP, three KV cache modes (no-cache, CachedSDPA internal, KVCacheManager external), and explicit prefill/decode API
+  * **MPS oversubscription** (inference only): `--use-mps` lets multiple inference processes share a GPU via NVIDIA Multi-Process Service. opt_prime manages the daemon lifecycle and provides a gloo-backed `engine.barrier()` for MPS-safe cross-rank synchronization
 
 ## Installation
 
@@ -309,6 +311,102 @@ engine.eval()
 input_ids = tokenizer("Hello", return_tensors="pt").input_ids.cuda()
 output_ids = engine.generate(input_ids, max_new_tokens=50)
 ```
+
+### MPS Oversubscription (Inference Only)
+
+NVIDIA MPS (Multi-Process Service) lets multiple inference processes share a single GPU. With `--use-mps`, you can run more processes than visible GPUs (oversubscription). Useful for:
+
+- Improving GPU utilization when individual requests under-fill the GPU
+- Pipeline-bubble absorption in PP inference
+- Running multiple replicas of small models on a single GPU
+- Multi-tenancy with process-level fault isolation
+
+**Inference only.** MPS support is intentionally not enabled in the training path (`Optimus_p`) because NCCL training collectives have known incompatibilities with MPS.
+
+#### Quick Start
+
+    cd opt_prime/examples
+
+    # 4 visible GPUs, 8 inference processes (2:1 oversubscription)
+    export CUDA_VISIBLE_DEVICES=0,1,2,3
+    torchrun --nproc_per_node=8 pp_generation_llama.py --use-mps
+
+    # PP=2 + TP=2 with MPS oversubscription (8 procs on 4 GPUs)
+    export CUDA_VISIBLE_DEVICES=0,1,2,3
+    torchrun --nproc_per_node=8 pp_generation_llama.py --use-mps --pp-size 4 --tp-size 2
+
+    # serving_vs_batch_demo with MPS (PP=8 across 4 GPUs via modulo mapping)
+    export CUDA_VISIBLE_DEVICES=0,1,2,3
+    torchrun --nproc_per_node=8 serving_vs_batch_demo.py --use-mps --pp-size 8 --num-requests 10
+
+opt_prime starts the MPS daemon automatically when `--use-mps` is given (per-node, by local rank 0) and shuts it down on exit (`atexit` + signal handlers). Process-local environment variables are snapshotted and restored, so subsequent training/inference runs are not affected.
+
+#### CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--use-mps` | off | Enable MPS oversubscription. Inference examples only |
+| `--num-gpus N` | (none) | **Validation only with `--use-mps`.** Asserts that shell-set `CUDA_VISIBLE_DEVICES` exposes exactly `N` GPUs; aborts on mismatch or if CVD is unset. Does NOT set CVD itself in MPS mode |
+| `--gpu-ids "a,b,c"` | (none) | **Validation only with `--use-mps`.** Asserts that shell-set `CUDA_VISIBLE_DEVICES` matches the listed IDs; aborts on mismatch or if CVD is unset. Does NOT set CVD itself in MPS mode |
+| `--mps-pipe-dir` | `/tmp/nvidia-mps` | `CUDA_MPS_PIPE_DIRECTORY` (multi-tenant isolation) |
+| `--mps-log-dir` | `/tmp/nvidia-mps-log` | `CUDA_MPS_LOG_DIRECTORY` |
+| `--mps-thread-percentage N` | (none) | `CUDA_MPS_ACTIVE_THREAD_PERCENTAGE` per-client SM cap |
+
+#### How It Works
+
+When `--use-mps` is enabled, opt_prime:
+
+1. **CVD pre-resolution** — `_resolve_cvd_pre_torch_import()` runs *before* `import torch`, ensuring the CUDA driver sees the final CVD on first init
+2. **Daemon lifecycle** — local rank 0 starts `nvidia-cuda-mps-control -d` (with the worker's CVD inherited via `subprocess.run(env=...)`). Other ranks wait via a file barrier
+3. **Rank-to-GPU mapping** — `gpu_id = local_rank % visible_gpu_count` (round-robin colocate)
+4. **NCCL safety** — a gloo sub-group is created in `Comm` for cross-rank `barrier()` calls (`engine.barrier()`), since NCCL collective barriers reject multiple ranks per physical GPU
+5. **Cleanup** — `atexit` + SIGINT/SIGTERM handlers shut down the daemon and restore env vars on exit
+
+#### Strict Behavior with `--use-mps`
+
+opt_prime never modifies `CUDA_VISIBLE_DEVICES` from inside the worker process when `--use-mps` is on (env-mutated CVD does not propagate cleanly to MPS-routed libcuda on some driver/container combinations). Instead:
+
+- env CVD set + matching `--num-gpus`/`--gpu-ids` → run as-is (validation only)
+- env CVD set + conflicting args → **abort** with clear instructions
+- env CVD unset + args given → **abort** asking the user to `export` first
+- env CVD unset + no args → run with all visible GPUs
+
+Set CVD in the shell *before* `torchrun`:
+
+    # Recommended
+    export CUDA_VISIBLE_DEVICES=0,1,2,3
+    torchrun --nproc_per_node=8 pp_generation_llama.py --use-mps
+
+#### Known Environment Constraint
+
+Some NVIDIA driver / CUDA Container Toolkit / MPS combinations only honor MPS when `CUDA_VISIBLE_DEVICES` is the **default contiguous form `0,1,…,N-1`**. Non-default patterns (e.g. `4,5,6,7` or `0,2,4,6`) can cause libcuda to report 0 GPUs to NCCL, manifesting as `ProcessGroupNCCL ... no GPUs found` or `device < num_gpus INTERNAL ASSERT FAILED`.
+
+opt_prime detects non-default CVD with MPS and emits a clear warning (does not abort, since some environments do support it). For non-contiguous GPU subsets, use **container-level GPU mapping**:
+
+    # On host: launch the container with only the desired GPUs
+    docker run --gpus '"device=4,5,6,7"' ... my_image
+    # Inside the container, those 4 GPUs are exposed as 0,1,2,3 (default form)
+    export CUDA_VISIBLE_DEVICES=0,1,2,3
+    torchrun --nproc_per_node=8 pp_generation_llama.py --use-mps
+
+#### Python API
+
+```python
+engine = Optimus_Inference(
+    model, use_gpu=True, pp_size=8,
+    use_kv_cache=True,
+    use_mps=True,             # enable MPS oversubscription
+)
+
+# Cross-rank synchronization (MPS-safe — uses gloo sub-group internally)
+engine.barrier()
+```
+
+The example entry points (`pp_inference_llama.py`, `pp_generation_llama.py`, `serving_vs_batch_demo.py`) wire this up via `setup_mps_for_inference()` from `opt_prime.mps_manager` before `Optimus_Inference` is instantiated.
+
+#### Design Document
+
+See `opt_prime/docs/mps_inference_design.md` for the full design (lifecycle, environment-variable management, error matrix, multi-node behavior, heterogeneous-MPS deployment).
 
 ---
 

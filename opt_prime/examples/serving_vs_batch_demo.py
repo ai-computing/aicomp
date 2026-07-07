@@ -31,17 +31,39 @@ Environment:
     - Model: meta-llama/Llama-3.2-1B (or specify via --model)
 """
 
-import torch
-import torch.distributed as dist
 import argparse
 import os
 import sys
+
+# ---------------------------------------------------------------------------
+# CRITICAL ORDERING: CUDA_VISIBLE_DEVICES must be finalized BEFORE
+# `import torch`. See pp_generation_llama.py for the full rationale.
+# ---------------------------------------------------------------------------
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+
+def _resolve_cvd_pre_torch_import() -> None:
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--num-gpus", type=int, default=None)
+    pre.add_argument("--gpu-ids", type=str, default=None)
+    pre.add_argument("--use-mps", action="store_true")
+    pre_args, _ = pre.parse_known_args()
+    from opt_prime.mps_manager import resolve_visible_devices
+    resolve_visible_devices(pre_args.num_gpus, pre_args.gpu_ids,
+                            use_mps=pre_args.use_mps)
+
+
+_resolve_cvd_pre_torch_import()
+
+# NOW safe to import torch and other CUDA-touching modules.
 import time
+import torch
+import torch.distributed as dist
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.inference import Optimus_Inference
+from opt_prime.mps_manager import setup_mps_for_inference
 
 
 def parse_args():
@@ -75,6 +97,33 @@ def parse_args():
     )
     parser.add_argument('--dynamo-capture', action='store_true', default=False,
                         help='Use torch.export.export() instead of HFTracer/symbolic_trace')
+    # ---- MPS / GPU selection ----
+    parser.add_argument(
+        "--use-mps", action="store_true",
+        help="Enable NVIDIA MPS oversubscription (more processes than GPUs)"
+    )
+    parser.add_argument(
+        "--num-gpus", type=int, default=None,
+        help="Number of GPUs to use. Sets CUDA_VISIBLE_DEVICES=0..N-1 if env "
+             "is unset; otherwise must match env CVD."
+    )
+    parser.add_argument(
+        "--gpu-ids", type=str, default=None,
+        help="Explicit GPU IDs to use (e.g., '0,2,4,6'). Sets "
+             "CUDA_VISIBLE_DEVICES if env is unset; otherwise must match."
+    )
+    parser.add_argument(
+        "--mps-pipe-dir", type=str, default="/tmp/nvidia-mps",
+        help="MPS pipe directory (CUDA_MPS_PIPE_DIRECTORY)"
+    )
+    parser.add_argument(
+        "--mps-log-dir", type=str, default="/tmp/nvidia-mps-log",
+        help="MPS log directory (CUDA_MPS_LOG_DIRECTORY)"
+    )
+    parser.add_argument(
+        "--mps-thread-percentage", type=int, default=None,
+        help="Per-client SM cap (CUDA_MPS_ACTIVE_THREAD_PERCENTAGE)"
+    )
     parser.add_argument('token', nargs='?', default=None, help='HuggingFace access token')
     return parser.parse_args()
 
@@ -108,9 +157,9 @@ def run_benchmark(engine, tokenizer, args, serving_mode: bool, rank: int):
     """Run multiple generate() calls and record memory at each step."""
     mode_name = "SERVING" if serving_mode else "BATCH"
 
-    # Synchronize and clear GPU cache before benchmark
-    if dist.is_initialized():
-        dist.barrier()
+    # Synchronize and clear GPU cache before benchmark.
+    # Use engine.barrier() — MPS-safe (gloo group when use_mps=True).
+    engine.barrier()
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
 
@@ -179,8 +228,8 @@ def run_benchmark(engine, tokenizer, args, serving_mode: bool, rank: int):
                   f"{mem_after['reserved']:>11.1f}  {delta:>+10.1f}  "
                   f"{elapsed:>8.2f}  {cache_status}")
 
-        if dist.is_initialized():
-            dist.barrier()
+        # Use engine.barrier() — MPS-safe.
+        engine.barrier()
 
     # Summary
     if engine.is_output_rank() and records:
@@ -203,6 +252,15 @@ def run_benchmark(engine, tokenizer, args, serving_mode: bool, rank: int):
 
 def main():
     args = parse_args()
+
+    # CVD already resolved at module load (before `import torch`).
+    # Only MPS daemon setup remains.
+    setup_mps_for_inference(
+        use_mps=args.use_mps,
+        pipe_dir=args.mps_pipe_dir,
+        log_dir=args.mps_log_dir,
+        thread_pct=args.mps_thread_percentage,
+    )
 
     if args.token:
         os.environ['LLAMA_ACCESS_TOKEN'] = args.token
@@ -247,6 +305,7 @@ def main():
         use_kv_cache=True,
         serving_mode=False,  # batch mode
         dynamo_capture=args.dynamo_capture,
+        use_mps=args.use_mps,
     )
     engine_batch.eval()
 
@@ -254,11 +313,12 @@ def main():
         engine_batch, tokenizer, args, serving_mode=False, rank=rank,
     )
 
-    # Clean up batch engine to get a fair baseline for serving mode
+    # Clean up batch engine to get a fair baseline for serving mode.
+    # Barrier MUST run before del engine_batch, because the gloo sub-group
+    # used for MPS-safe synchronization lives on engine_batch.comm.
+    engine_batch.barrier()
     del engine_batch
     torch.cuda.empty_cache()
-    if dist.is_initialized():
-        dist.barrier()
 
     # ----------------------------------------------------------------
     # Phase 2: SERVING MODE (cache kept between requests)
@@ -276,6 +336,7 @@ def main():
         use_kv_cache=True,
         serving_mode=True,  # serving mode
         dynamo_capture=args.dynamo_capture,
+        use_mps=args.use_mps,
     )
     engine_serving.eval()
 
@@ -342,8 +403,8 @@ def main():
             print(f"      (no cache re-allocation overhead).")
         print()
 
-    if dist.is_initialized():
-        dist.barrier()
+    # Use engine_serving.barrier() — MPS-safe.
+    engine_serving.barrier()
 
     if rank == 0:
         print("Demo completed.")

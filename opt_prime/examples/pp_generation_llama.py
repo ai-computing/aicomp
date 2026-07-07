@@ -41,18 +41,48 @@ Environment:
     - Model: meta-llama/Llama-3.2-1B (or specify via --model)
 """
 
-import torch
-import torch.distributed as dist
 import argparse
 import os
 import sys
+
+# ---------------------------------------------------------------------------
+# CRITICAL ORDERING: CUDA_VISIBLE_DEVICES must be finalized BEFORE
+# `import torch`. PyTorch's import-time C++ extension init can capture some
+# CUDA-related state (cached device_count, lazy-init queue context); changing
+# CVD afterward leaves PyTorch and libcuda with mismatched views, causing
+# obscure "device >= 0 && device < num_gpus" assertion failures during the
+# first real CUDA op.
+#
+# We pre-parse just the CVD-related args (--num-gpus / --gpu-ids), apply
+# resolve_visible_devices(), and only then import torch. The full argparse
+# happens later inside parse_args() with all args.
+# ---------------------------------------------------------------------------
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+
+def _resolve_cvd_pre_torch_import() -> None:
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--num-gpus", type=int, default=None)
+    pre.add_argument("--gpu-ids", type=str, default=None)
+    pre.add_argument("--use-mps", action="store_true")
+    pre_args, _ = pre.parse_known_args()
+    from opt_prime.mps_manager import resolve_visible_devices
+    resolve_visible_devices(pre_args.num_gpus, pre_args.gpu_ids,
+                            use_mps=pre_args.use_mps)
+
+
+_resolve_cvd_pre_torch_import()
+
+# NOW safe to import torch and other CUDA-touching modules.
 import time
+import torch
+import torch.distributed as dist
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.inference import Optimus_Inference
 from opt_prime.schedule_infer import ScheduleGeneration
+from opt_prime.mps_manager import setup_mps_for_inference
 
 
 def parse_args():
@@ -108,6 +138,33 @@ def parse_args():
     )
     parser.add_argument('--dynamo-capture', action='store_true', default=False,
                         help='Use torch.export.export() instead of HFTracer/symbolic_trace')
+    # ---- MPS / GPU selection ----
+    parser.add_argument(
+        "--use-mps", action="store_true",
+        help="Enable NVIDIA MPS oversubscription (more processes than GPUs)"
+    )
+    parser.add_argument(
+        "--num-gpus", type=int, default=None,
+        help="Number of GPUs to use. Sets CUDA_VISIBLE_DEVICES=0..N-1 if env "
+             "is unset; otherwise must match env CVD."
+    )
+    parser.add_argument(
+        "--gpu-ids", type=str, default=None,
+        help="Explicit GPU IDs to use (e.g., '0,2,4,6'). Sets "
+             "CUDA_VISIBLE_DEVICES if env is unset; otherwise must match."
+    )
+    parser.add_argument(
+        "--mps-pipe-dir", type=str, default="/tmp/nvidia-mps",
+        help="MPS pipe directory (CUDA_MPS_PIPE_DIRECTORY)"
+    )
+    parser.add_argument(
+        "--mps-log-dir", type=str, default="/tmp/nvidia-mps-log",
+        help="MPS log directory (CUDA_MPS_LOG_DIRECTORY)"
+    )
+    parser.add_argument(
+        "--mps-thread-percentage", type=int, default=None,
+        help="Per-client SM cap (CUDA_MPS_ACTIVE_THREAD_PERCENTAGE)"
+    )
     parser.add_argument('token', nargs='?', default=None, help='HuggingFace access token')
     return parser.parse_args()
 
@@ -119,6 +176,15 @@ def get_dtype(dtype_str: str) -> torch.dtype:
 
 def main():
     args = parse_args()
+
+    # CVD already resolved at module load (before `import torch`).
+    # Only MPS daemon setup remains.
+    setup_mps_for_inference(
+        use_mps=args.use_mps,
+        pipe_dir=args.mps_pipe_dir,
+        log_dir=args.mps_log_dir,
+        thread_pct=args.mps_thread_percentage,
+    )
 
     if args.token:
         os.environ['LLAMA_ACCESS_TOKEN'] = args.token
@@ -136,12 +202,16 @@ def main():
         print("  (using ScheduleGeneration.prefill + decode_step)")
         print("=" * 60)
         print(f"  Model:          {args.model}")
-        print(f"  PP Size:        {args.pp_size}")
+        print(f"  PP Size:        {args.pp_size if args.pp_size > 1 else 'auto'}")
         print(f"  TP Size:        {args.tp_size}")
         print(f"  Dtype:          {args.dtype}")
         print(f"  Max New Tokens: {args.max_new_tokens}")
         cache_mode = "KVCacheManager (external)" if args.use_kv_manager else "CachedSDPA (internal)"
         print(f"  KV Cache Mode:  {cache_mode}")
+        if args.use_mps:
+            print(f"  MPS:            enabled "
+                  f"(pipe={args.mps_pipe_dir}, "
+                  f"thread%={args.mps_thread_percentage})")
         print("=" * 60)
 
     # ----- Load model & tokenizer -----
@@ -168,6 +238,7 @@ def main():
         use_kv_cache=True,     # must be True for CachedSDPA injection
         use_kv_manager=args.use_kv_manager,
         dynamo_capture=args.dynamo_capture,
+        use_mps=args.use_mps,
     )
     engine.eval()
 
@@ -368,11 +439,11 @@ def main():
             print(f"  Decode tok/s     : {(num_generated - 1) / decode_time:.2f}")
         cache_mode = "KVCacheManager (external)" if args.use_kv_manager else "CachedSDPA (internal)"
         print(f"  KV Cache backend : {cache_mode}")
-        print(f"  PP={args.pp_size}, TP={args.tp_size}")
+        print(f"  PP={engine.tpl.pp_size}, TP={engine.tpl.tp_size}")
         print(f"{'=' * 60}")
 
-    if dist.is_initialized():
-        dist.barrier()
+    # Use engine.barrier() — MPS-safe (gloo group when use_mps=True).
+    engine.barrier()
 
     if rank == 0:
         print("\nCompleted.")
