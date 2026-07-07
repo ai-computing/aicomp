@@ -347,7 +347,37 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False):
+    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False, partitioner: str = "auto", safe_multi_output: bool = False):
+        """
+        Args:
+            partitioner: pipeline partitioning method.
+                - "auto" (default): use "llama-tp-split" for Llama models
+                  with tp_size>1, else "simple".  This preserves the
+                  historical behavior of opt_prime.
+                - "simple": opt_prime's call_module-count-based split.
+                  Works for any module-level FX graph.
+                - "milp": MILP-optimal partitioner that minimizes
+                  cross-stage activation volume on the call_module-
+                  coarsened graph (requires scipy>=1.9; falls back to
+                  "simple" on solver failure).  Recommended for the
+                  --dynamo-capture path on transformer models.
+                - "hierarchical": block-level MILP. Groups call_modules
+                  by enclosing transformer block (model.layers.<i>,
+                  transformer.h.<i>, ...) and runs MILP on the
+                  super-graph.  Solves 14B+ MoE in <1s while
+                  constraining cuts to block boundaries (avoids
+                  unsafe-cut crashes inside attention internals).
+                - "llama-tp-split": layer-aware split for Llama+TP.
+
+            safe_multi_output: opt-in defensive handling for hier-MILP
+                multi-output stages combined with DDP wrapping (PP × DP > 1).
+                Default False keeps the original schedule path used by all
+                32 existing example scripts; set True only for experimental
+                multi-node layouts where extract_tensor_args may otherwise
+                IndexError.  Paper §10 future-work item — see
+                opt_prime/schedule.py:extract_tensor_args for the fallback
+                strategy.
+        """
 
         if use_gpu is False:
             logging.critical(
@@ -364,6 +394,16 @@ class Optimus_p:
 
         self.use_gpu = use_gpu
         self.dynamo_capture = dynamo_capture
+        # Opt-in defensive fallback for hier-MILP multi-output stages under
+        # DDP wrapping (paper §10).  When False (default), preserve historical
+        # behavior of all 32 existing examples bit-for-bit: extract_tensor_args
+        # indexes env[submod][idx] directly and raises IndexError if the
+        # tuple is shorter than expected.  When True, schedule.py catches
+        # that IndexError and applies a best-effort fallback (see
+        # schedule.py:extract_tensor_args).  Enable only for experimental
+        # PP × DP layouts with hier-MILP partitions; existing example scripts
+        # do not need this flag.
+        self.safe_multi_output = safe_multi_output
         self.lora_config = None
 
         self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
@@ -437,8 +477,32 @@ class Optimus_p:
 
         self.clean_module_memory = True
 
-        # TODO
-        split_method = "llama-tp-split" if module.__class__.__name__.startswith("Llama") and tp_size > 1 else "simple"
+        # Resolve partitioner.  "auto" preserves the historical behavior:
+        # Llama-with-TP → llama-tp-split, everyone else → simple.  An
+        # explicit choice overrides "auto"; the Llama+TP case still
+        # forces llama-tp-split since the alternatives don't carry the
+        # required TP-aware metadata.
+        if partitioner == "auto":
+            split_method = ("llama-tp-split"
+                            if module.__class__.__name__.startswith("Llama")
+                            and tp_size > 1
+                            else "simple")
+        else:
+            if partitioner not in ("simple", "milp", "hierarchical", "llama-tp-split"):
+                raise ValueError(
+                    f"Unknown partitioner '{partitioner}'. "
+                    f"Choose from: 'auto', 'simple', 'milp', "
+                    f"'hierarchical', 'llama-tp-split'."
+                )
+            if (module.__class__.__name__.startswith("Llama") and tp_size > 1
+                    and partitioner != "llama-tp-split"):
+                if rank == 0:
+                    print(f">> [opt_prime] partitioner='{partitioner}' "
+                          f"requested with Llama+TP; forcing "
+                          f"'llama-tp-split' (required for TP-aware split).")
+                split_method = "llama-tp-split"
+            else:
+                split_method = partitioner
         print(f">> model class name: {module.__class__.__name__}")
         print(f">> split method: {split_method}")
 

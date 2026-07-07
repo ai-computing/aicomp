@@ -104,6 +104,7 @@ class Optimus_Inference:
         use_kv_manager: bool = False,
         dynamo_capture: bool = False,
         use_mps: bool = False,
+        partitioner: str = "auto",
     ):
         if use_gpu is False:
             logging.critical(
@@ -221,8 +222,31 @@ class Optimus_Inference:
         # Initialize run info (simplified for inference - no gradients/loss)
         self.run_info = Run_Info(device=self.device, num_mb=1, num_classes=-100)
 
-        # Determine split method
-        split_method = "llama-tp-split" if module.__class__.__name__.startswith("Llama") and tp_size > 1 else "simple"
+        # Determine split method.  Mirrors Optimus_p.__init__: "auto"
+        # preserves the historical default (Llama+TP → llama-tp-split,
+        # else simple); an explicit `partitioner` value overrides "auto"
+        # but Llama+TP still forces llama-tp-split since the other
+        # methods don't carry the TP-aware metadata.
+        if partitioner == "auto":
+            split_method = ("llama-tp-split"
+                            if module.__class__.__name__.startswith("Llama")
+                            and tp_size > 1
+                            else "simple")
+        else:
+            if partitioner not in ("simple", "milp", "llama-tp-split"):
+                raise ValueError(
+                    f"Unknown partitioner '{partitioner}'. "
+                    f"Choose from: 'auto', 'simple', 'milp', 'llama-tp-split'."
+                )
+            if (module.__class__.__name__.startswith("Llama") and tp_size > 1
+                    and partitioner != "llama-tp-split"):
+                if rank == 0:
+                    print(f">> [Inference] partitioner='{partitioner}' "
+                          f"requested with Llama+TP; forcing "
+                          f"'llama-tp-split' (required for TP-aware split).")
+                split_method = "llama-tp-split"
+            else:
+                split_method = partitioner
         print(f">> [Inference] model class: {module.__class__.__name__}")
         print(f">> [Inference] split method: {split_method}")
 

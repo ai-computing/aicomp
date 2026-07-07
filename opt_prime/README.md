@@ -32,6 +32,7 @@ OptimusPrime supports major HuggingFace models, and the following models have be
   * **Pipeline parallelism (PP)**: In PP, GPipe/1F1B scheduling algorithms are supported
   * **Data Parallelism (DP)**
   * **Tensor Parallelism (TP)**: For now, TP support is provided only for the Llama model
+  * **Pipeline partitioning**: choose from `simple` (call_module-count balanced; default), `llama-tp-split` (TP-aware), or `milp` (MILP-optimal — minimizes cross-stage activation volume over the call_module-coarsened graph)
   * **Inference engine** (`Optimus_Inference`): autoregressive generation with PP/TP, three KV cache modes (no-cache, CachedSDPA internal, KVCacheManager external), and explicit prefill/decode API
   * **MPS oversubscription** (inference only): `--use-mps` lets multiple inference processes share a GPU via NVIDIA Multi-Process Service. opt_prime manages the daemon lifecycle and provides a gloo-backed `engine.barrier()` for MPS-safe cross-rank synchronization
 
@@ -145,6 +146,41 @@ To apply 3D parallelism with PP+TP+DP, use the 'pp_size', 'tp_size' and 'dp_size
 
     # Example of a 16-GPU setup with pipeline parallel size=4, tensor parallel size=2, and data parallel size=2
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, pp_size=4, tp_size=2, dp_size=2)
+
+### Choosing the pipeline partitioner: `partitioner=`
+
+`Optimus_p` decides which call_modules of the captured FX graph belong to which pipeline stage via its `partitioner` keyword. Three modes are available; `"auto"` is the default and preserves opt_prime's historical behavior.
+
+| `partitioner=` | Algorithm | When to use |
+|---|---|---|
+| `"auto"` (default) | `llama-tp-split` if Llama + tp_size>1, else `simple`. Unchanged from earlier opt_prime releases. | Backwards-compatible default. |
+| `"simple"` | Equal `call_module`-count partition (forces stage boundaries between leaf modules). | The opt_prime baseline. Always feasible on any module-level FX graph. |
+| `"milp"` | MILP-optimal partition that minimizes cross-stage activation volume on the call_module-coarsened graph (auto-expanded memory budget + node-count balance constraints). Requires `scipy>=1.9`; falls back to `"simple"` on solver failure. | Recommended with `--dynamo-capture` — the reconstructed IR exposes ~2–3× more candidate boundaries, which MILP exploits to reach module-cut cost levels not reachable by `simple_split`. |
+| `"llama-tp-split"` | Layer-aware partition for Llama models when TP > 1. Forced automatically by `"auto"` and by the constructor whenever Llama + tp_size>1 is detected. | Required for any Llama+TP configuration. |
+
+Examples:
+
+    # Default — equivalent to omitting the kwarg entirely
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True)
+
+    # Explicitly select simple_split
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True, partitioner="simple")
+
+    # MILP partitioner — most useful with --dynamo-capture on transformer models
+    optimus_p = Optimus_p(model, num_mb, use_gpu=True,
+                          dynamo_capture=True,
+                          partitioner="milp")
+
+Internally, `partitioner="milp"`:
+
+1. Collapses the FX graph to call_module vertices; weights nodes by parameter bytes and edges by producer-output bytes (read from `node.meta['val']` / `tensor_meta` — `build_module_graph_from_export` populates `val` automatically; the HFTracer path triggers an on-demand `ShapeProp`).
+2. Solves a MILP (`scipy.optimize.milp`) with:
+   - per-stage memory budget = `max(total*1.5/K, max_single_cm * 1.05)` (auto-expanded so an outlier module like a tied-embedding `wte` can always be placed),
+   - per-stage call_module count in `[⌊N/K/1.3⌋, ⌈N/K*1.3⌉+1]`,
+   - forward-edge ordering between stages,
+   - objective: minimize total cross-stage edge weight.
+3. Time-limited to 30 s per `Optimus_p()` call; on timeout / infeasibility / missing `scipy`, the partitioner transparently falls back to `simple_split`. Diagnostic lines (`[IR.milp_split] ...`) are emitted by rank 0.
+
 
 ### Configuring memory optimization options
 
