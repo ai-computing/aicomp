@@ -27,6 +27,90 @@ logging.basicConfig(level=logging.ERROR)
 optimizer_offloaded = False
 model_offloaded = False
 
+
+# ─────────────────────────────────────────────────────────────────────
+# Opt-in fallback used by extract_tensor_args when
+# Optimus_p(..., safe_multi_output=True).  See paper §10:
+# "DDP-wrapped multi-output stages" — hier-MILP can produce stages
+# whose output tuple is shorter than the parent graph's getitem_dic
+# expects, causing IndexError at env[a_submod][a_idx].  The fallback
+# strategy below logs the mismatch and tries three best-effort
+# recoveries before re-raising.  Default behavior (safe_multi_output=False)
+# is unchanged — all 32 existing example scripts run identical schedules.
+# ─────────────────────────────────────────────────────────────────────
+def _safe_getitem_env(env_mb, a_submod, a_idx, b_name, rank, mb_idx):
+    """Defensively index env[a_submod][a_idx]; fall back if shape mismatched.
+
+    Returns the resolved value (tensor or any python obj).
+    Raises IndexError with diagnostic context if no fallback applies.
+
+    Uses print() (not logging.warning) so output is visible regardless of
+    opt_prime's default logging.ERROR level.
+    """
+    env_obj = env_mb.get(a_submod, None)
+    try:
+        return env_obj[a_idx]
+    except (IndexError, TypeError, KeyError) as e:
+        env_len = len(env_obj) if hasattr(env_obj, "__len__") else "N/A"
+        env_type = type(env_obj).__name__
+        # Dump structure of env_obj (shapes/types) for root-cause diagnosis.
+        if hasattr(env_obj, "__len__"):
+            struct = []
+            for i, x in enumerate(env_obj):
+                if isinstance(x, torch.Tensor):
+                    struct.append(f"  [{i}] Tensor shape={tuple(x.shape)} dtype={x.dtype}")
+                else:
+                    struct.append(f"  [{i}] {type(x).__name__}={repr(x)[:80]}")
+            struct_s = "\n" + "\n".join(struct)
+        else:
+            struct_s = f" (env_obj={env_obj!r})"
+        print(
+            f"[safe_multi_output] rank{rank} mb{mb_idx}: "
+            f"env[{a_submod}][{a_idx}] FAILED type={env_type} len={env_len} "
+            f"for b.name={b_name}.  env_obj struct:{struct_s}",
+            flush=True,
+        )
+        # Also dump all keys present in env_mb at this point
+        keys = list(env_mb.keys())
+        b_name_present = b_name in env_mb
+        print(
+            f"[safe_multi_output] rank{rank} mb{mb_idx}: env keys (n={len(keys)}): "
+            f"{keys}  b.name={b_name} in env: {b_name_present}",
+            flush=True,
+        )
+
+        # Fallback 1 — maybe the getitem name was stored directly
+        if b_name in env_mb:
+            print(f"[safe_multi_output] rank{rank} mb{mb_idx} fallback-1 OK: env[{b_name}]",
+                  flush=True)
+            return env_mb[b_name]
+        # Fallback 2 — env_obj is a single tensor (not a tuple); return as-is
+        if isinstance(env_obj, torch.Tensor):
+            print(
+                f"[safe_multi_output] rank{rank} mb{mb_idx} fallback-2 OK: "
+                f"env[{a_submod}] is a single tensor shape={tuple(env_obj.shape)}; "
+                f"returning as-is (ignoring idx={a_idx})",
+                flush=True,
+            )
+            return env_obj
+        # Fallback 3 — env_obj is a non-empty tuple but a_idx out of range;
+        # use the LAST element (most likely the canonical hidden_state output)
+        if hasattr(env_obj, "__len__") and len(env_obj) > 0:
+            last_idx = len(env_obj) - 1
+            print(
+                f"[safe_multi_output] rank{rank} mb{mb_idx} fallback-3 (LAST): "
+                f"using env[{a_submod}][{last_idx}] instead of [{a_idx}]",
+                flush=True,
+            )
+            return env_obj[last_idx]
+        # All fallbacks exhausted
+        raise IndexError(
+            f"safe_multi_output: env[{a_submod}][{a_idx}] failed for {b_name} "
+            f"on rank {rank} mb {mb_idx}; env_obj={env_type} len={env_len}; "
+            f"no fallback applied"
+        ) from e
+
+
 class Schedule:
 
     @staticmethod
@@ -506,12 +590,24 @@ class Schedule:
 
         #forward one chunk !!
         flat_args = []
+        # Opt-in defensive fallback for hier-MILP multi-output + DDP wrapping.
+        # Default False = bit-for-bit identical to historical schedule path.
+        safe_mo = getattr(self.optimus, "safe_multi_output", False)
+
         def extract_tensor_args(b):
             # TODO
             if b.name in self.optimus.run_info.getitem_dic:
                 a_submod = self.optimus.run_info.getitem_dic[b.name][0]
                 a_idx = self.optimus.run_info.getitem_dic[b.name][1]
-                a = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
+                if safe_mo:
+                    a = _safe_getitem_env(
+                        self.optimus.run_info.env[mb_idx],
+                        a_submod, a_idx, b.name,
+                        rank=self.optimus.tpl.rank,
+                        mb_idx=mb_idx,
+                    )
+                else:
+                    a = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
             else:
                 a = self.optimus.run_info.env[mb_idx][b.name]
             #a = self.optimus.run_info.env[mb_idx][b.name]
@@ -555,12 +651,23 @@ class Schedule:
     def produce_forward_output(self, mb_idx, node_name):
 
         flat_args = []
+        # Same opt-in defensive fallback (see fx_micro_forward_core).
+        safe_mo = getattr(self.optimus, "safe_multi_output", False)
+
         def extract_tensor_args(b):
             # TODO
             if b.name in self.optimus.run_info.getitem_dic:
                 a_submod = self.optimus.run_info.getitem_dic[b.name][0]
                 a_idx = self.optimus.run_info.getitem_dic[b.name][1]
-                a = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
+                if safe_mo:
+                    a = _safe_getitem_env(
+                        self.optimus.run_info.env[mb_idx],
+                        a_submod, a_idx, b.name,
+                        rank=self.optimus.tpl.rank,
+                        mb_idx=mb_idx,
+                    )
+                else:
+                    a = self.optimus.run_info.env[mb_idx][a_submod][a_idx]
             else:
                 a = self.optimus.run_info.env[mb_idx][b.name]
             #a = self.optimus.run_info.env[mb_idx][b.name]

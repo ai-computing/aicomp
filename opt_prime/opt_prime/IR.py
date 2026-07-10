@@ -815,6 +815,40 @@ def build_module_graph_from_export(exported_program, original_model, input_names
             call_node = new_graph.call_module(fqn, args=call_args)
             call_node.name = call_name
 
+            # Propagate val / tensor_meta from the underlying ATen output(s)
+            # so downstream passes (MILP partitioner, ShapeProp-free
+            # cost models) can read the call_module's output size without
+            # re-tracing.  The "true" output of the call_module equals
+            # the tensor produced by the last node(s) of the region.
+            #   - 1 output: copy meta directly
+            #   - N outputs: meta['val'] / meta['tensor_meta'] become
+            #                tuples so the subsequent getitem nodes can
+            #                index into them (matches the runtime shape)
+            #   - 0 outputs: fall back to nodes[-1]'s meta (rare; the
+            #                module's result is the last region node)
+            _meta_sources = outputs if outputs else ([nodes[-1]] if nodes else [])
+            if len(_meta_sources) == 1:
+                _src_meta = _meta_sources[0].meta or {}
+                if _src_meta:
+                    call_node.meta = dict(_src_meta)
+            elif len(_meta_sources) > 1:
+                _vals, _tms = [], []
+                _have_val, _have_tm = True, True
+                for _s in _meta_sources:
+                    _m = _s.meta or {}
+                    if "val" in _m:
+                        _vals.append(_m["val"])
+                    else:
+                        _have_val = False
+                    if "tensor_meta" in _m:
+                        _tms.append(_m["tensor_meta"])
+                    else:
+                        _have_tm = False
+                if _have_val:
+                    call_node.meta["val"] = tuple(_vals)
+                if _have_tm:
+                    call_node.meta["tensor_meta"] = tuple(_tms)
+
             # Map outputs
             if len(outputs) == 0:
                 if nodes:
@@ -828,6 +862,11 @@ def build_module_graph_from_export(exported_program, original_model, input_names
                         operator.getitem, args=(call_node, i)
                     )
                     gi_node.name = gi_name
+                    # The getitem node selects one element of the tuple
+                    # output; its meta matches the source ATen node it
+                    # replaces.
+                    if out_node.meta:
+                        gi_node.meta = dict(out_node.meta)
                     value_map[out_node] = gi_node
 
         else:
@@ -880,6 +919,425 @@ def build_module_graph_from_export(exported_program, original_model, input_names
         print(f">> [IR] Graph reconstruction: 0 nodes skipped (all inline ops preserved)")
 
     return gm
+
+
+# ─────────────────────────────────────────────────────────────────────
+# MILP-based pipeline partitioner (used by IR.milp_split)
+# ─────────────────────────────────────────────────────────────────────
+# Adapted from PiPPy's `pippy/graphsplit.py::_split_by_milp`, restricted
+# to the call_module-coarsened graph.  Memory weight comes from the
+# leaf-module's parameter/buffer bytes; communication weight comes from
+# `node.meta['val']` / `node.meta['tensor_meta']` (populated by HFTracer
+# + ShapeProp or by `build_module_graph_from_export`'s meta propagation
+# step above).
+#
+# scipy is imported lazily so opt_prime continues to work without it
+# unless the user opts in via `split_method="milp"`.
+
+_DTYPE_BYTES_TABLE = {
+    torch.float32: 4, torch.float64: 8,
+    torch.float16: 2, torch.bfloat16: 2,
+    torch.int8: 1, torch.uint8: 1,
+    torch.int16: 2, torch.int32: 4, torch.int64: 8,
+    torch.bool: 1, torch.complex64: 8, torch.complex128: 16,
+}
+
+
+# Block-FQN patterns used by hierarchical_split to group call_modules by
+# their enclosing transformer block.  Non-matching call_modules form
+# singleton super-nodes.
+import re as _re
+_BLOCK_PATTERNS = [
+    _re.compile(r"^(transformer\.h\.\d+)\b"),
+    _re.compile(r"^(model\.layers\.\d+)\b"),
+    _re.compile(r"^(encoder\.layers\.\d+)\b"),
+    _re.compile(r"^(decoder\.layers\.\d+)\b"),
+    _re.compile(r"^(model\.encoder\.layers\.\d+)\b"),
+    _re.compile(r"^(model\.decoder\.layers\.\d+)\b"),
+    _re.compile(r"^(h\.\d+)\b"),
+]
+
+
+def _block_id_of(fqn):
+    if not fqn:
+        return None
+    for pat in _BLOCK_PATTERNS:
+        m = pat.match(fqn)
+        if m:
+            return m.group(1)
+    return None
+
+
+def _milp_shape_numel(shape):
+    n = 1
+    for s in shape:
+        n *= s if isinstance(s, int) and s > 0 else 1
+    return n
+
+
+def _milp_node_output_bytes(n: torch.fx.Node) -> int:
+    """Best-effort bytes produced by node n.  Reads tensor_meta first
+    (HFTracer / ShapeProp) then falls back to val (torch.export
+    FakeTensor).  Returns 0 if neither is present — that edge's weight
+    is then 0 and the MILP simply ignores it."""
+    meta = n.meta or {}
+    tm = meta.get("tensor_meta")
+    if tm is not None:
+        shape = getattr(tm, "shape", None)
+        dtype = getattr(tm, "dtype", None)
+        if shape is not None and dtype is not None:
+            return _milp_shape_numel(shape) * _DTYPE_BYTES_TABLE.get(dtype, 4)
+    val = meta.get("val")
+    if isinstance(val, torch.Tensor):
+        return _milp_shape_numel(val.shape) * _DTYPE_BYTES_TABLE.get(val.dtype, 4)
+    return 0
+
+
+def _milp_cm_memory_bytes(gm: GraphModule, cm_node: torch.fx.Node) -> int:
+    """Parameter + buffer bytes for the submodule referenced by cm_node."""
+    try:
+        submod = gm.get_submodule(cm_node.target)
+    except Exception:
+        return 0
+    b = 0
+    for p in submod.parameters(recurse=True):
+        b += p.numel() * p.element_size()
+    for buf in submod.buffers(recurse=True):
+        b += buf.numel() * buf.element_size()
+    return b
+
+
+def _milp_build_cm_edges(cm_nodes):
+    """For each ordered pair (cm_a, cm_b) where cm_a's output flows into
+    cm_b through a (possibly empty) chain of call_function/get_attr
+    nodes, return one edge (a_idx, b_idx, comm_weight).  Edge weight =
+    bytes of cm_a's output (under-counted slightly because chain
+    transformations like view/reshape are ignored — they don't change
+    bytes for our purposes)."""
+    cm_idx = {id(n): i for i, n in enumerate(cm_nodes)}
+    edges = {}  # (a, b) -> weight
+    for a in cm_nodes:
+        a_bytes = _milp_node_output_bytes(a)
+        # BFS forward through users; stop at any call_module
+        visited_ids = set()
+        stack = list(a.users)
+        sinks = set()
+        while stack:
+            u = stack.pop()
+            if id(u) in visited_ids:
+                continue
+            visited_ids.add(id(u))
+            if u.op == "call_module":
+                sinks.add(id(u))
+                continue
+            if u.op == "output":
+                continue
+            stack.extend(u.users)
+        for sink_id in sinks:
+            key = (cm_idx[id(a)], cm_idx[sink_id])
+            edges[key] = max(edges.get(key, 0), a_bytes)
+    return [(a, b, w) for (a, b), w in edges.items()]
+
+
+def _milp_presolve(num_cms, edges, mem_bytes):
+    """PiPPy-style chain-merge presolver.  Greedily contracts edges
+    whose endpoints would always live on the same stage anyway:
+
+      * source-only chain start: in_degree==0 and out_degree==1
+      * sink-only chain end:     in_degree==1 and out_degree==0
+      * internal chain:          out_degree[src]==1 AND
+                                 in_degree[dst]==1 AND
+                                 out_degree[dst]==1
+
+    Edges are processed in decreasing comm-weight order so the heaviest
+    intra-stage links get merged first.
+
+    Returns:
+        N_new          : number of contracted nodes
+        edges_new      : list of (a_idx, b_idx, max_weight) for the
+                         contracted graph (parallel edges collapsed
+                         by max).  Self-loops removed.
+        mem_new        : per-cluster memory (sum of cm memory)
+        cluster_map    : list of length num_cms; cluster_map[i] gives
+                         the new cluster index for original cm i
+
+    The post-MILP stage assignment is recovered as
+        stage_of[i] = stage_of_cluster[cluster_map[i]]
+    Cluster indices are assigned in the topological order of their
+    first cm, so the forward-edge constraints in the contracted MILP
+    remain consistent with the original cm topological order.
+    """
+    if num_cms == 0:
+        return 0, [], [], []
+
+    in_degree = [0] * num_cms
+    out_degree = [0] * num_cms
+    for a, b, _ in edges:
+        if a == b:
+            continue
+        out_degree[a] += 1
+        in_degree[b] += 1
+
+    # Union-find over cm indices
+    parent = list(range(num_cms))
+
+    def find(i):
+        # path compression
+        root = i
+        while parent[root] != root:
+            root = parent[root]
+        while parent[i] != root:
+            parent[i], i = root, parent[i]
+        return root
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra == rb:
+            return False
+        # keep the lower index as the canonical root (topological-first)
+        if ra < rb:
+            parent[rb] = ra
+        else:
+            parent[ra] = rb
+        return True
+
+    def should_merge(src, dst):
+        if find(src) == find(dst):
+            return False
+        # always merge sources with a unique successor
+        if in_degree[src] == 0 and out_degree[src] == 1:
+            return True
+        # always merge sinks with a unique predecessor
+        if in_degree[dst] == 1 and out_degree[dst] == 0:
+            return True
+        # internal chain (in=1 / out=1 on both endpoints)
+        if out_degree[src] == 1 and in_degree[dst] == 1 and out_degree[dst] == 1:
+            return True
+        return False
+
+    # Process edges by descending comm weight; merge eligible ones.
+    sorted_edges = sorted(edges, key=lambda e: e[2], reverse=True)
+    for (a, b, _w) in sorted_edges:
+        if a == b:
+            continue
+        if should_merge(a, b):
+            union(a, b)
+
+    # Assign new cluster indices in *topological* order of first cm
+    # in each cluster (cm 0 is first because parent[]==0 cluster is
+    # the root for any chain containing cm 0).
+    root_to_new = {}
+    cluster_map = [0] * num_cms
+    for i in range(num_cms):
+        r = find(i)
+        if r not in root_to_new:
+            root_to_new[r] = len(root_to_new)
+        cluster_map[i] = root_to_new[r]
+    N_new = len(root_to_new)
+
+    # New memory weights
+    mem_new = [0] * N_new
+    for i in range(num_cms):
+        mem_new[cluster_map[i]] += mem_bytes[i]
+
+    # New edges: keep cross-cluster only.  Correct aggregation has two
+    # rules acting together:
+    #   (1) parallel cm→cm paths between the SAME producer-and-target-cluster
+    #       pair represent the SAME tensor crossing once  → max (or first)
+    #   (2) different producer cms in cluster A whose outputs each reach
+    #       cluster B are DISTINCT tensors crossing             → sum
+    # We bucket by (producer cm, target cluster) for rule (1), then sum
+    # over distinct producers for rule (2).
+    per_target = {}   # (na, nb) -> {producer_cm: bytes}
+    for (a, b, w) in edges:
+        na, nb = cluster_map[a], cluster_map[b]
+        if na == nb:
+            continue
+        key = (na, nb)
+        producers = per_target.setdefault(key, {})
+        if w > producers.get(a, 0):
+            producers[a] = w
+    edges_new = [(na, nb, sum(producers.values()))
+                 for (na, nb), producers in per_target.items()]
+
+    return N_new, edges_new, mem_new, cluster_map
+
+
+def _milp_solve(num_cms, edges, mem_bytes, num_stage,
+                mem_imbalance=1.5, count_imbalance=1.3,
+                count_weights=None, count_total=None,
+                time_limit_sec=30.0, mip_rel_gap=0.05):
+    """Solve the call_module-coarsened MILP using sparse constraint
+    encoding.  Returns a list of length num_cms giving the stage of
+    each cm, or None on failure / timeout.
+
+    Memory footprint is O(total_nonzeros) — typically a few MB even for
+    6,000+ call_module graphs (e.g. Qwen-MoE).  An earlier dense
+    formulation (one np.zeros(total_vars) per constraint) required
+    ~60 GB on Qwen-MoE and crashed scipy with OOM.
+    """
+    try:
+        from scipy.optimize import milp, Bounds, LinearConstraint
+        from scipy.sparse import csr_matrix
+        import numpy as np
+    except ImportError:
+        print("[IR.milp_split] scipy is required for MILP partitioning. "
+              "Install it with `pip install scipy>=1.9` or use "
+              "split_method='simple'.")
+        return None
+
+    N, K, M = num_cms, num_stage, len(edges)
+    num_node_vars = N * K
+    num_edge_vars = M * K
+    total = num_node_vars + num_edge_vars
+
+    def x_idx(i, j): return i * K + j
+    def y_idx(e, j): return num_node_vars + e * K + j
+
+    # COO-style triplets for the sparse constraint matrix, plus per-row
+    # bounds.  Each `add_row` appends one constraint that touches only
+    # its non-zero columns.
+    rows = []     # int row indices
+    cols = []     # int column indices
+    data = []     # float coefficients
+    lb_list = []  # one entry per row
+    ub_list = []  # one entry per row
+    INF = np.inf
+
+    def add_row(coeffs, lb=-INF, ub=INF):
+        row_idx = len(lb_list)
+        for col, val in coeffs:
+            rows.append(row_idx)
+            cols.append(col)
+            data.append(float(val))
+        lb_list.append(float(lb))
+        ub_list.append(float(ub))
+
+    # C1: each cm assigned to exactly one stage
+    for i in range(N):
+        add_row([(x_idx(i, j), 1.0) for j in range(K)], lb=1.0, ub=1.0)
+
+    # C2: forward-edge ordering (PiPPy-style multiplier encoding —
+    #     smaller multiplier means later stage)
+    multiplier = [2 ** (K - j - 1) for j in range(K)]
+    for (a, b, _w) in edges:
+        if a == b:
+            continue
+        coeffs = ([(x_idx(b, j), multiplier[j]) for j in range(K)] +
+                  [(x_idx(a, j), -multiplier[j]) for j in range(K)])
+        add_row(coeffs, ub=0.0)
+
+    # C3: memory budget per stage.  Auto-expand to fit the heaviest
+    # single cm — gpt2-style tied-embedding models have one module
+    # (transformer_wte) at ~50% of total parameters; without expansion
+    # the MILP returns infeasible.
+    total_mem = sum(mem_bytes)
+    if total_mem > 0:
+        max_single = max(mem_bytes) if mem_bytes else 0
+        natural_budget = total_mem * mem_imbalance / float(K)
+        max_mem_per_stage = max(natural_budget, max_single * 1.05)
+        for j in range(K):
+            add_row([(x_idx(i, j), mem_bytes[i]) for i in range(N)
+                     if mem_bytes[i] != 0],     # skip zero-mem cms
+                    ub=max_mem_per_stage)
+        if int(os.environ.get("RANK", "0")) == 0 and max_mem_per_stage > natural_budget:
+            print(f"[IR.milp_split] memory budget expanded from "
+                  f"{natural_budget/1024/1024:.1f} MB (imbalance={mem_imbalance}) "
+                  f"to {max_mem_per_stage/1024/1024:.1f} MB to accommodate "
+                  f"heaviest cm ({max_single/1024/1024:.1f} MB)")
+
+    # C3b: call_module count balance per stage.
+    # count_weights[i] = number of original cms represented by node i
+    # (1 when no presolve; sum of merged cms when contracted).
+    # count_total = N_orig (so the per-stage bounds reflect the
+    # original cm count, not the contracted cluster count).
+    if count_weights is None:
+        count_weights = [1] * N
+    if count_total is None:
+        count_total = N
+    min_count = max(1, int(count_total / K / count_imbalance))
+    max_count = int(count_total / K * count_imbalance) + 1
+    for j in range(K):
+        add_row([(x_idx(i, j), float(count_weights[i])) for i in range(N)],
+                lb=float(min_count), ub=float(max_count))
+
+    # C4: y[e,j] = AND(x[a,j], x[b,j]) (3 inequalities per (e, j))
+    for e, (a, b, _w) in enumerate(edges):
+        for j in range(K):
+            # y <= x[a,j]:  y - x[a,j] <= 0
+            add_row([(y_idx(e, j), 1.0), (x_idx(a, j), -1.0)], ub=0.0)
+            # y <= x[b,j]:  y - x[b,j] <= 0
+            add_row([(y_idx(e, j), 1.0), (x_idx(b, j), -1.0)], ub=0.0)
+            # x[a,j] + x[b,j] - y <= 1
+            add_row([(x_idx(a, j), 1.0), (x_idx(b, j), 1.0), (y_idx(e, j), -1.0)],
+                    ub=1.0)
+
+    # Build a single CSR constraint matrix (one LinearConstraint object).
+    n_rows = len(lb_list)
+    if rows:
+        A_sparse = csr_matrix(
+            (np.asarray(data, dtype=np.float64),
+             (np.asarray(rows, dtype=np.int64),
+              np.asarray(cols, dtype=np.int64))),
+            shape=(n_rows, total), dtype=np.float64,
+        )
+    else:
+        A_sparse = csr_matrix((n_rows, total), dtype=np.float64)
+    constraint = LinearConstraint(
+        A=A_sparse,
+        lb=np.asarray(lb_list, dtype=np.float64),
+        ub=np.asarray(ub_list, dtype=np.float64),
+    )
+
+    # Objective: minimize cross-stage edge weight
+    c = np.zeros(total)
+    for e, (_a, _b, w) in enumerate(edges):
+        for j in range(K):
+            c[y_idx(e, j)] = -float(w)
+
+    integrality = np.ones(total)
+    bounds = Bounds(lb=np.zeros(total), ub=np.ones(total))
+
+    if int(os.environ.get("RANK", "0")) == 0:
+        nnz = A_sparse.nnz
+        dense_bytes = n_rows * total * 8
+        sparse_bytes = nnz * (8 + 8) + n_rows * 8  # data+col_idx + indptr
+        print(f"[IR.milp_split] sparse constraint matrix: "
+              f"{n_rows:,} rows × {total:,} cols, nnz={nnz:,} "
+              f"({sparse_bytes/1024/1024:.1f} MB vs "
+              f"{dense_bytes/1024/1024:.0f} MB dense → "
+              f"{dense_bytes/max(1,sparse_bytes):.0f}× smaller)")
+
+    # mip_rel_gap: stop branching when the incumbent is within this
+    # relative fraction of the LP bound.  0.05 (5 %) lets HiGHS exit
+    # as soon as it finds *any* primal that's near-optimal — critical
+    # for large problems where proving exact optimality is intractable.
+    t0 = time.time()
+    result = milp(
+        c=c, constraints=constraint, integrality=integrality,
+        bounds=bounds, options={
+            "time_limit": time_limit_sec,
+            "mip_rel_gap": float(mip_rel_gap),
+        },
+    )
+    t1 = time.time()
+
+    if int(os.environ.get("RANK", "0")) == 0:
+        print(f"[IR.milp_split] solver finished in {t1-t0:.2f}s "
+              f"status={result.status} success={result.success} "
+              f"N={N} M={M} K={K} vars={total} constraint_rows={n_rows}")
+
+    if not result.success:
+        if int(os.environ.get("RANK", "0")) == 0:
+            print(f"[IR.milp_split] MILP infeasible/failed: {result.message}")
+        return None
+
+    stage_of = [0] * N
+    for i in range(N):
+        for j in range(K):
+            if abs(result.x[x_idx(i, j)] - 1.0) < 1e-5:
+                stage_of[i] = j
+    return stage_of
 
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -1288,7 +1746,7 @@ class IR(object):
 
     def split_IR(self, model: nn.Module, method, num_stage):
 
-        if method not in [ "simple", "llama-tp-split", ]:
+        if method not in [ "simple", "llama-tp-split", "milp", "hierarchical", ]:
             print(f"Not supported split method!")
             sys.exit(1)
 
@@ -1304,6 +1762,12 @@ class IR(object):
 
         elif method == "llama-tp-split":
             submods = self.llama_tp_split(model, num_stage)
+
+        elif method == "milp":
+            submods = self.milp_split(model, num_stage)
+
+        elif method == "hierarchical":
+            submods = self.hierarchical_split(model, num_stage)
 
         # TODO: add new split method
         #elif method == ...
@@ -1497,6 +1961,578 @@ class IR(object):
         print(f"  rank:{self.optimus.tpl.rank},  second metadata_range: {self.metadata_range}")
         print(f" ------------------------------------------------------------")
 
+        assert len(self.metadata_range) == num_stage
+
+        return submodules
+
+
+    def milp_split(self, module, num_stage,
+                    mem_imbalance: float = 1.5,
+                    count_imbalance: float = 1.3,
+                    time_limit_sec: float = 30.0,
+                    mip_rel_gap: float = 0.05):
+        """MILP-based pipeline partitioner.
+
+        Minimizes cross-stage activation volume on the call_module-
+        coarsened graph subject to per-stage memory and call_module
+        count balance constraints.  Falls back to ``simple_split`` on
+        any failure (scipy unavailable, MILP infeasible, solver
+        timeout), so the caller never sees a partial result.
+
+        Output is structurally identical to simple_split's: a
+        ``GraphModule`` whose top level contains exactly ``num_stage``
+        ``call_module`` nodes named ``submod_0`` ... ``submod_{num_stage-1}``.
+        """
+        cm_nodes = [n for n in self.gm.graph.nodes if n.op == "call_module"]
+        if len(cm_nodes) < num_stage:
+            if int(os.environ.get("RANK", "0")) == 0:
+                print(f"[IR.milp_split] only {len(cm_nodes)} call_module "
+                      f"nodes; need >= {num_stage}. Falling back to simple_split.")
+            return self.simple_split(module, num_stage)
+
+        # MILP edge weights come from node.meta['val'] / ['tensor_meta'].
+        # The torch.export reconstruction path already propagates these
+        # (build_module_graph_from_export); the HFTracer path leaves
+        # them empty.  Run ShapeProp on demand to fill them — without
+        # size info, every edge weight is 0 and the MILP returns a
+        # degenerate (effectively random) partition.
+        any_meta = any(
+            (n.meta or {}).get("val") is not None
+            or (n.meta or {}).get("tensor_meta") is not None
+            for n in cm_nodes
+        )
+        if not any_meta:
+            try:
+                from torch.fx.passes.shape_prop import ShapeProp
+                placeholder_names = [
+                    n.target for n in self.gm.graph.nodes if n.op == "placeholder"
+                ]
+                example_inputs = self._create_example_inputs(module, placeholder_names)
+                ordered = [example_inputs.get(name) for name in placeholder_names]
+                ShapeProp(self.gm).propagate(*ordered)
+                if int(os.environ.get("RANK", "0")) == 0:
+                    print(f"[IR.milp_split] ran ShapeProp to fill missing "
+                          f"tensor_meta (HFTracer path).")
+            except Exception as e:
+                if int(os.environ.get("RANK", "0")) == 0:
+                    print(f"[IR.milp_split] ShapeProp failed ({e}); MILP "
+                          f"will treat unknown bytes as 0.")
+
+        mem = [_milp_cm_memory_bytes(self.gm, cm) for cm in cm_nodes]
+        edges = _milp_build_cm_edges(cm_nodes)
+
+        if int(os.environ.get("RANK", "0")) == 0:
+            total_w = sum(w for _, _, w in edges)
+            print(f"[IR.milp_split] coarsened graph: |V|={len(cm_nodes)} "
+                  f"|E|={len(edges)} "
+                  f"total_edge_weight={total_w/1024/1024:.2f} MiB "
+                  f"total_node_memory={sum(mem)/1024/1024:.2f} MiB")
+
+        # Presolve: PiPPy-style chain-merge.  Contracts degree-1
+        # chains (cms that always end up on the same stage anyway)
+        # so the MILP problem shrinks dramatically.  On Qwen-MoE 14B
+        # this reduces N from ~6,000 to typically <1,000, moving the
+        # solver wall-clock under the time_limit.
+        N_orig = len(cm_nodes)
+        N_solved, edges_solved, mem_solved, cluster_map = _milp_presolve(
+            num_cms=N_orig, edges=edges, mem_bytes=mem)
+        if int(os.environ.get("RANK", "0")) == 0:
+            merged_nodes = N_orig - N_solved
+            merged_edges = len(edges) - len(edges_solved)
+            print(f"[IR.milp_split] presolve: |V| {N_orig} → {N_solved} "
+                  f"(merged {merged_nodes}, {100*merged_nodes/N_orig:.1f}%); "
+                  f"|E| {len(edges)} → {len(edges_solved)} "
+                  f"(merged {merged_edges})")
+
+        # If presolve compacted to <K clusters, restore to the
+        # original graph (MILP won't find K stages on a smaller V).
+        if N_solved < num_stage:
+            if int(os.environ.get("RANK", "0")) == 0:
+                print(f"[IR.milp_split] presolve over-shrunk "
+                      f"({N_solved} < K={num_stage}); using uncompacted graph")
+            N_solved = N_orig
+            edges_solved = edges
+            mem_solved = mem
+            cluster_map = list(range(N_orig))
+
+        # Compute per-cluster size so the count-balance constraint in
+        # _milp_solve still reflects original cm counts (not cluster
+        # counts) after presolve.
+        cluster_size = [0] * N_solved
+        for orig in range(N_orig):
+            cluster_size[cluster_map[orig]] += 1
+
+        stage_of_cluster = _milp_solve(
+            num_cms=N_solved, edges=edges_solved, mem_bytes=mem_solved,
+            num_stage=num_stage,
+            mem_imbalance=mem_imbalance,
+            count_imbalance=count_imbalance,
+            count_weights=cluster_size,
+            count_total=N_orig,
+            time_limit_sec=time_limit_sec,
+            mip_rel_gap=mip_rel_gap,
+        )
+        if stage_of_cluster is None:
+            if int(os.environ.get("RANK", "0")) == 0:
+                print(f"[IR.milp_split] MILP did not produce a usable "
+                      f"solution; falling back to simple_split.")
+            return self.simple_split(module, num_stage)
+
+        # Map cluster stage back to per-cm stage
+        stage_of = [stage_of_cluster[cluster_map[i]] for i in range(N_orig)]
+
+        # Repair any rare ordering violations (MILP enforces forward
+        # edges on the coarsened graph, but rounding can produce
+        # tiny inconsistencies in topo order).
+        for i in range(1, len(stage_of)):
+            if stage_of[i] < stage_of[i - 1]:
+                stage_of[i] = stage_of[i - 1]
+
+        # Build metadata_range in the format simple_split's part_fn expects:
+        # [(stage_idx, last_cm_name_in_that_stage), ...] of length num_stage.
+        last_in_stage = {}
+        for cm, s in zip(cm_nodes, stage_of):
+            last_in_stage[s] = cm
+        self.metadata_range = []
+        for j in range(num_stage):
+            if j not in last_in_stage:
+                # Empty stage — should never happen given count_imbalance
+                # >= 1.0, but be safe.
+                if int(os.environ.get("RANK", "0")) == 0:
+                    print(f"[IR.milp_split] WARNING: stage {j} is empty; "
+                          f"falling back to simple_split.")
+                return self.simple_split(module, num_stage)
+            self.metadata_range.append((j, last_in_stage[j].name))
+
+        if int(os.environ.get("RANK", "0")) == 0:
+            per_stage = [0] * num_stage
+            for s in stage_of:
+                per_stage[s] += 1
+            cross_bytes = sum(w for (a, b, w) in edges
+                              if stage_of[a] != stage_of[b])
+            print(f"[IR.milp_split] per-stage call_module count: {per_stage}")
+            print(f"[IR.milp_split] cross-stage edge weight: "
+                  f"{cross_bytes/1024/1024:.2f} MiB")
+            print(f"[IR.milp_split] metadata_range = {self.metadata_range}")
+
+        # part_fn mirrors simple_split's part_fn exactly so the
+        # downstream split_module and param-moving pass behave the same.
+        self.last_flag = False
+
+        def part_fn(node):
+            last_idx, last_name = self.metadata_range[-1]
+            if self.last_flag:
+                return last_idx
+            cur = node
+            while cur.name != last_name:
+                for i, m_name in self.metadata_range:
+                    if cur.name == m_name:
+                        return i
+                cur = cur._next
+            if cur.name == last_name:
+                self.last_flag = True
+                return last_idx
+
+        submodules = split_module(self.gm, module, part_fn,
+                                  keep_original_order=True)
+
+        # Replicate simple_split's "move parameters from get_attr into
+        # submodules" pass so the resulting submods are self-contained.
+        def remove_reference(node, user, delete_node=True):
+            assert len(user.kwargs) == 0
+            use_idxs = [i for i, arg in enumerate(user.args) if arg == node]
+            assert len(use_idxs) == 1
+            args_copy = list(user.args)
+            args_copy.pop(use_idxs[0])
+            user.args = tuple(args_copy)
+            if delete_node:
+                node.graph.erase_node(node)
+            return use_idxs[0]
+
+        def move_parameters(split_gm, user_target, parameter_value, use_index, _buffer):
+            assert isinstance(parameter_value, torch.Tensor)
+            target = split_gm.get_submodule(user_target)
+            new_param_name = f"moved_{node.target.replace('.', '_')}"  # noqa
+            if hasattr(target, new_param_name):
+                return None
+            if _buffer:
+                target.register_buffer(new_param_name, parameter_value)
+            else:
+                setattr(target, new_param_name, parameter_value)
+            placeholder_cnt = 0
+            for snode in target.graph.nodes:
+                if snode.op == "placeholder":
+                    if placeholder_cnt == use_index:
+                        with target.graph.inserting_before(snode):
+                            ga = target.graph.get_attr(new_param_name)
+                            snode.replace_all_uses_with(ga)
+                            target.graph.erase_node(snode)
+                    placeholder_cnt += 1
+            target.graph.lint()
+            target.recompile()
+            return True
+
+        has_get_attr = any(n.op == "get_attr" for n in submodules.graph.nodes)
+        if has_get_attr:
+            remove_candidates = []
+            for node in submodules.graph.nodes:
+                if node.op == "get_attr" and len(node.users) == 1:
+                    user = list(node.users)[0]
+                    if user.op in ("call_function", "call_method"):
+                        continue
+                    assert user.op == "call_module", \
+                        f"get_attr '{node.target}' consumed by unexpected op: {user.op}"
+                    atoms = node.target.split(".")
+                    module_itr = submodules
+                    for atom in atoms[:-1]:
+                        module_itr = getattr(module_itr, atom)
+                    parameter_value = getattr(module_itr, atoms[-1])
+                    if not isinstance(parameter_value, torch.Tensor):
+                        continue
+                    _buffer = atoms[-1] in module_itr._buffers
+                    use_index = remove_reference(node, user)
+                    move_parameters(submodules, user.target, parameter_value,
+                                    use_index, _buffer)
+                    remove_candidates.append((module_itr, atoms))
+            for module_itr, atoms in remove_candidates:
+                delattr(module_itr, atoms[-1])
+            submodules.graph.lint()
+            submodules.recompile()
+
+        # Reset metadata_range to the post-split form (one entry per
+        # top-level submod_i) so the rest of opt_prime sees the same
+        # shape simple_split would produce.
+        self.metadata_range = []
+        cnt = 0
+        for n in submodules.graph.nodes:
+            if n.op == "call_module":
+                self.metadata_range.append((cnt, n.name))
+                cnt += 1
+        if int(os.environ.get("RANK", "0")) == 0:
+            print(f"[IR.milp_split] post-split metadata_range = "
+                  f"{self.metadata_range}")
+        assert len(self.metadata_range) == num_stage
+
+        return submodules
+
+
+    def hierarchical_split(self, module, num_stage,
+                            mem_imbalance: float = 1.5,
+                            count_imbalance: float = 1.3,
+                            time_limit_sec: float = 30.0,
+                            mip_rel_gap: float = 0.05):
+        """Block-level (hierarchical) MILP partitioner.
+
+        Groups call_modules by their enclosing transformer block FQN
+        (e.g. ``model.layers.5``).  Builds a SUPER-graph with one
+        super-node per block + one singleton per non-block cm
+        (embed, final norm, lm_head, rotary_emb).  Runs MILP on the
+        super-graph (~30-100 vertices) instead of the original cm
+        graph (~hundreds-thousands).  Expands the super-node stage
+        assignment back to per-cm.
+
+        Two benefits over flat ``milp_split``:
+          (a) solver scales to 14B+ MoE (super-graph is tiny)
+          (b) cuts are constrained to transformer block boundaries,
+              avoiding unsafe cut positions inside attention internals
+              that crash Llama-class models.
+
+        Falls back to ``simple_split`` on simple-split solver failure.
+
+        Environment-variable overrides (opt-in; defaults preserve the
+        historical behavior so the 32 example scripts run bit-for-bit):
+
+        * ``OPT_PRIME_HIER_COUNT_IMBALANCE`` — overrides the
+          ``count_imbalance`` argument (float, default 1.3).  Raise this
+          (e.g. 3.0) to slacken the per-stage cm-count balance constraint
+          when the solver is infeasible at K>=8 on Llama-class super-graphs
+          (paper §10 limitation probe).
+        * ``OPT_PRIME_HIER_MEM_IMBALANCE`` — overrides the
+          ``mem_imbalance`` argument (float, default 1.5).
+        """
+        rank0 = int(os.environ.get("RANK", "0")) == 0
+        try:
+            _env_ci = os.environ.get("OPT_PRIME_HIER_COUNT_IMBALANCE")
+            if _env_ci is not None and _env_ci.strip():
+                count_imbalance = float(_env_ci)
+                if rank0:
+                    print(f"[IR.hierarchical_split] count_imbalance "
+                          f"overridden by env -> {count_imbalance}")
+        except ValueError:
+            if rank0:
+                print(f"[IR.hierarchical_split] ignoring invalid "
+                      f"OPT_PRIME_HIER_COUNT_IMBALANCE={_env_ci!r}")
+        try:
+            _env_mi = os.environ.get("OPT_PRIME_HIER_MEM_IMBALANCE")
+            if _env_mi is not None and _env_mi.strip():
+                mem_imbalance = float(_env_mi)
+                if rank0:
+                    print(f"[IR.hierarchical_split] mem_imbalance "
+                          f"overridden by env -> {mem_imbalance}")
+        except ValueError:
+            if rank0:
+                print(f"[IR.hierarchical_split] ignoring invalid "
+                      f"OPT_PRIME_HIER_MEM_IMBALANCE={_env_mi!r}")
+        cm_nodes = [n for n in self.gm.graph.nodes if n.op == "call_module"]
+        if len(cm_nodes) < num_stage:
+            if rank0:
+                print(f"[IR.hierarchical_split] only {len(cm_nodes)} "
+                      f"call_module nodes; need >= {num_stage}. "
+                      f"Falling back to simple_split.")
+            return self.simple_split(module, num_stage)
+
+        # Ensure node.meta has shape/dtype for the byte computation
+        any_meta = any(
+            (n.meta or {}).get("val") is not None
+            or (n.meta or {}).get("tensor_meta") is not None
+            for n in cm_nodes
+        )
+        if not any_meta:
+            try:
+                from torch.fx.passes.shape_prop import ShapeProp
+                placeholder_names = [
+                    n.target for n in self.gm.graph.nodes if n.op == "placeholder"
+                ]
+                example_inputs = self._create_example_inputs(module, placeholder_names)
+                ordered = [example_inputs.get(name) for name in placeholder_names]
+                ShapeProp(self.gm).propagate(*ordered)
+                if rank0:
+                    print(f"[IR.hierarchical_split] ran ShapeProp to fill "
+                          f"missing tensor_meta (HFTracer path).")
+            except Exception as e:
+                if rank0:
+                    print(f"[IR.hierarchical_split] ShapeProp failed ({e}); "
+                          f"unknown bytes will be treated as 0.")
+
+        # Step 1: group cms by enclosing block
+        cm_idx = {id(c): i for i, c in enumerate(cm_nodes)}
+        group_of = {}
+        for c in cm_nodes:
+            fqn = c.target if isinstance(c.target, str) else None
+            b = _block_id_of(fqn)
+            if b is None:
+                b = f"_unique_{cm_idx[id(c)]}__{fqn or 'unknown'}"
+            group_of[cm_idx[id(c)]] = b
+
+        group_to_super = {}
+        super_of_cm = [0] * len(cm_nodes)
+        for i in range(len(cm_nodes)):
+            g = group_of[i]
+            if g not in group_to_super:
+                group_to_super[g] = len(group_to_super)
+            super_of_cm[i] = group_to_super[g]
+        N_super = len(group_to_super)
+        super_name = [None] * N_super
+        for g, si in group_to_super.items():
+            super_name[si] = g
+        n_block_supers = sum(1 for g in super_name if not g.startswith("_unique_"))
+        n_singleton_supers = N_super - n_block_supers
+
+        if N_super < num_stage:
+            if rank0:
+                print(f"[IR.hierarchical_split] only {N_super} super-nodes "
+                      f"(< K={num_stage}); falling back to simple_split.")
+            return self.simple_split(module, num_stage)
+
+        # Step 2: super-node memory = sum of constituent cm memory
+        super_mem = [0] * N_super
+        for i, c in enumerate(cm_nodes):
+            super_mem[super_of_cm[i]] += _milp_cm_memory_bytes(self.gm, c)
+
+        # Step 3: super-edges with per-producer SUM dedup
+        per_target = {}
+        for i, v in enumerate(cm_nodes):
+            v_super = super_of_cm[i]
+            v_bytes = _milp_node_output_bytes(v)
+            if v_bytes == 0:
+                continue
+            visited = set()
+            sinks = set()
+            stack = list(v.users)
+            while stack:
+                u = stack.pop()
+                if id(u) in visited:
+                    continue
+                visited.add(id(u))
+                if u.op == "call_module":
+                    u_idx = cm_idx.get(id(u))
+                    if u_idx is not None:
+                        u_super = super_of_cm[u_idx]
+                        if u_super != v_super:
+                            sinks.add(u_super)
+                    continue
+                if u.op == "output":
+                    continue
+                stack.extend(u.users)
+            for su in sinks:
+                key = (v_super, su)
+                producers = per_target.setdefault(key, {})
+                if v_bytes > producers.get(i, 0):
+                    producers[i] = v_bytes
+        super_edges = [(a, b, sum(prods.values()))
+                       for (a, b), prods in per_target.items()]
+
+        # Step 4: count_weights = number of constituent cms per super
+        super_size = [0] * N_super
+        for i in range(len(cm_nodes)):
+            super_size[super_of_cm[i]] += 1
+
+        if rank0:
+            total_w = sum(w for _, _, w in super_edges)
+            print(f"[IR.hierarchical_split] super-graph: |V|={N_super} "
+                  f"({n_block_supers} blocks + {n_singleton_supers} singletons) "
+                  f"|E|={len(super_edges)} "
+                  f"super_edge_weight={total_w/1024/1024:.2f} MiB")
+
+        # Step 5: MILP on super-graph
+        import time as _t
+        t0 = _t.time()
+        stage_super = _milp_solve(
+            num_cms=N_super, edges=super_edges, mem_bytes=super_mem,
+            num_stage=num_stage,
+            mem_imbalance=mem_imbalance,
+            count_imbalance=count_imbalance,
+            count_weights=super_size, count_total=len(cm_nodes),
+            time_limit_sec=time_limit_sec,
+            mip_rel_gap=mip_rel_gap,
+        )
+        if rank0:
+            print(f"[IR.hierarchical_split] outer MILP wall-clock "
+                  f"{_t.time()-t0:.2f}s")
+        if stage_super is None:
+            if rank0:
+                print(f"[IR.hierarchical_split] MILP did not produce a usable "
+                      f"solution; falling back to simple_split.")
+            return self.simple_split(module, num_stage)
+
+        # Step 6: expand to per-cm stage assignment
+        stage_of = [stage_super[super_of_cm[i]] for i in range(len(cm_nodes))]
+        # Repair any ordering inversions
+        for i in range(1, len(stage_of)):
+            if stage_of[i] < stage_of[i - 1]:
+                stage_of[i] = stage_of[i - 1]
+
+        # Step 7: build metadata_range (same shape as milp_split)
+        last_in_stage = {}
+        for cm, s in zip(cm_nodes, stage_of):
+            last_in_stage[s] = cm
+        self.metadata_range = []
+        for j in range(num_stage):
+            if j not in last_in_stage:
+                if rank0:
+                    print(f"[IR.hierarchical_split] WARNING: stage {j} empty; "
+                          f"falling back to simple_split.")
+                return self.simple_split(module, num_stage)
+            self.metadata_range.append((j, last_in_stage[j].name))
+
+        if rank0:
+            per_stage = [0] * num_stage
+            for s in stage_of:
+                per_stage[s] += 1
+            edges_orig = _milp_build_cm_edges(cm_nodes)
+            cross_bytes = sum(w for (a, b, w) in edges_orig
+                              if stage_of[a] != stage_of[b])
+            print(f"[IR.hierarchical_split] per-stage cm count: {per_stage}")
+            print(f"[IR.hierarchical_split] cross-stage edge weight on "
+                  f"original cm graph: {cross_bytes/1024/1024:.2f} MiB")
+            print(f"[IR.hierarchical_split] metadata_range = {self.metadata_range}")
+
+        # Step 8: same part_fn / split_module / param-moving pass as milp_split
+        self.last_flag = False
+
+        def part_fn(node):
+            last_idx, last_name = self.metadata_range[-1]
+            if self.last_flag:
+                return last_idx
+            cur = node
+            while cur.name != last_name:
+                for i, m_name in self.metadata_range:
+                    if cur.name == m_name:
+                        return i
+                cur = cur._next
+            if cur.name == last_name:
+                self.last_flag = True
+                return last_idx
+
+        submodules = split_module(self.gm, module, part_fn,
+                                  keep_original_order=True)
+
+        # Same get_attr → moved_<...> pass as milp_split, including
+        # closure-capture of `node.target` for the new_param_name
+        # (so duplicate get_attrs collapse to one moved buffer).
+        def remove_reference(node, user, delete_node=True):
+            assert len(user.kwargs) == 0
+            use_idxs = [i for i, arg in enumerate(user.args) if arg == node]
+            assert len(use_idxs) == 1
+            args_copy = list(user.args)
+            args_copy.pop(use_idxs[0])
+            user.args = tuple(args_copy)
+            if delete_node:
+                node.graph.erase_node(node)
+            return use_idxs[0]
+
+        def move_parameters(split_gm, user_target, parameter_value, use_index, _buffer):
+            assert isinstance(parameter_value, torch.Tensor)
+            target = split_gm.get_submodule(user_target)
+            new_param_name = f"moved_{node.target.replace('.', '_')}"  # noqa: F821
+            if hasattr(target, new_param_name):
+                return None
+            if _buffer:
+                target.register_buffer(new_param_name, parameter_value)
+            else:
+                setattr(target, new_param_name, parameter_value)
+            placeholder_cnt = 0
+            for snode in target.graph.nodes:
+                if snode.op == "placeholder":
+                    if placeholder_cnt == use_index:
+                        with target.graph.inserting_before(snode):
+                            ga = target.graph.get_attr(new_param_name)
+                            snode.replace_all_uses_with(ga)
+                            target.graph.erase_node(snode)
+                    placeholder_cnt += 1
+            target.graph.lint()
+            target.recompile()
+            return True
+
+        has_get_attr = any(n.op == "get_attr" for n in submodules.graph.nodes)
+        if has_get_attr:
+            remove_candidates = []
+            for node in submodules.graph.nodes:
+                if node.op == "get_attr" and len(node.users) == 1:
+                    user = list(node.users)[0]
+                    if user.op in ("call_function", "call_method"):
+                        continue
+                    assert user.op == "call_module", \
+                        f"get_attr '{node.target}' consumed by unexpected op: {user.op}"
+                    atoms = node.target.split(".")
+                    module_itr = submodules
+                    for atom in atoms[:-1]:
+                        module_itr = getattr(module_itr, atom)
+                    parameter_value = getattr(module_itr, atoms[-1])
+                    if not isinstance(parameter_value, torch.Tensor):
+                        continue
+                    _buffer = atoms[-1] in module_itr._buffers
+                    use_index = remove_reference(node, user)
+                    move_parameters(submodules, user.target, parameter_value,
+                                    use_index, _buffer)
+                    remove_candidates.append((module_itr, atoms))
+            for module_itr, atoms in remove_candidates:
+                delattr(module_itr, atoms[-1])
+            submodules.graph.lint()
+            submodules.recompile()
+
+        # Reset metadata_range to the post-split form: one entry per
+        # top-level submod_i (same shape simple_split / milp_split
+        # produce).
+        self.metadata_range = []
+        cnt = 0
+        for n in submodules.graph.nodes:
+            if n.op == "call_module":
+                self.metadata_range.append((cnt, n.name))
+                cnt += 1
+        if rank0:
+            print(f"[IR.hierarchical_split] post-split metadata_range = "
+                  f"{self.metadata_range}")
         assert len(self.metadata_range) == num_stage
 
         return submodules
