@@ -525,9 +525,24 @@ class Schedule:
         result = criterion(output1, target1)
 
 
-        self.optimus.run_info.grads[mb_idx][node.name] = (None,)
+        # Backward seed for the loss node.  Historically (None,) is treated by
+        # torch.autograd as 1.0, so the num_mb microbatch gradients accumulate
+        # as a *sum*.  With the opt-in grad_accum_normalize flag we seed
+        # 1/num_mb instead, so they accumulate as the *mean* over the global
+        # batch (the standard pipeline-parallel / Megatron convention).  This
+        # only affects gradients; the logged loss (result.item() below) is
+        # unchanged, keeping backward-compat for all existing examples.
+        if getattr(self.optimus, "grad_accum_normalize", False) and self.optimus.num_mb > 1:
+            _seed = torch.tensor(
+                1.0 / self.optimus.num_mb,
+                dtype=result.dtype if isinstance(result, torch.Tensor) else torch.float32,
+                device=self.optimus.run_info.device,
+            )
+            self.optimus.run_info.grads[mb_idx][node.name] = (_seed,)
+        else:
+            self.optimus.run_info.grads[mb_idx][node.name] = (None,)
 
-        #self.optimus.run_info.loss[mb_idx] = result 
+        #self.optimus.run_info.loss[mb_idx] = result
         if isinstance(result, torch.Tensor):
             self.optimus.run_info.loss[mb_idx] = result.item()
         else:

@@ -347,7 +347,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False, partitioner: str = "auto", safe_multi_output: bool = False):
+    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False, partitioner: str = "auto", safe_multi_output: bool = False, grad_accum_normalize: bool = False):
         """
         Args:
             partitioner: pipeline partitioning method.
@@ -404,6 +404,15 @@ class Optimus_p:
         # PP × DP layouts with hier-MILP partitions; existing example scripts
         # do not need this flag.
         self.safe_multi_output = safe_multi_output
+        # Opt-in: normalize gradient accumulation across microbatches, i.e.
+        # take the *mean* over num_mb microbatches instead of opt_prime's
+        # historical *sum* (see schedule.py:run_loss, the 1/num_mb backward
+        # seed).  Default False preserves the exact behavior of all existing
+        # example scripts (which are tuned to the summed-gradient convention).
+        # pp_pretrain_llama.py sets this True so a target GBS built purely
+        # from gradient accumulation matches the standard mean-over-GBS
+        # objective used by Megatron/NeMo.
+        self.grad_accum_normalize = grad_accum_normalize
         self.lora_config = None
 
         self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
@@ -763,12 +772,19 @@ class Optimus_p:
                 for j in range(self.num_mb):
                     self.run_info.env[j][target_node_name] = mbatches[j]
 
-            if self.comm.world_size > 1:
+            # Move labels from the first pipeline stage to the last stage only
+            # when they are actually different stages (num_stage > 1). With
+            # pp_size == 1 (e.g. TP-only or DP-only, world_size > 1) the first
+            # and last stage are the SAME rank, so a send would target the
+            # current process itself (dist.send to own rank -> ValueError).
+            # In that case keep labels local and just move them to the device.
+            if self.comm.world_size > 1 and self.tpl.get_num_stage() > 1:
                 for j in range(self.num_mb):
                     obj = self.run_info.env[j][target_node_name]
                     self.comm.send_data(obj, self.tpl.get_last_rank(), self.device)
             else:
-                self.run_info.env[0][target_node_name] = self.run_info.env[0][target_node_name].to(self.device)
+                for j in range(self.num_mb):
+                    self.run_info.env[j][target_node_name] = self.run_info.env[j][target_node_name].to(self.device)
 
 
     def ready_labels(self):
@@ -776,7 +792,10 @@ class Optimus_p:
         if self.tpl.is_last_stage():
             target_node_name = "labels"
 
-            if self.comm.world_size > 1:
+            # Receive labels from the first stage only when it is a different
+            # stage (num_stage > 1). With pp_size == 1 the labels were already
+            # stored locally by prepare_labels (no cross-stage transfer needed).
+            if self.comm.world_size > 1 and self.tpl.get_num_stage() > 1:
                 for j in range(self.num_mb):
                     self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
             if self.num_mb == 1:
