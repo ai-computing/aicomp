@@ -78,6 +78,23 @@
 #
 # ----------------------------------------------------------------------------
 # 3) RUN TRAINING  (torchrun; run from opt_prime/examples/)
+#
+#   PRECONDITION — PREPARE DATA FIRST (§2): --data-prefix must point at an
+#   ALREADY-EXISTING Megatron dataset, i.e. BOTH <prefix>.bin AND <prefix>.idx
+#   must exist on disk. This script only READS the dataset during training; it
+#   never creates it here. If they are missing the run aborts with:
+#       AssertionError: One or both of the .idx and .bin files cannot be found
+#                       at the path prefix <prefix>
+#   For a quick self-contained dataset, run §2(B) (--prepare-tiny) first, then
+#   pass the SAME --data-prefix here.
+#
+#   HF TOKEN & FLAG SYNTAX: "[<token>]" below is the OPTIONAL positional
+#   HuggingFace token; OMIT it if you used `huggingface-cli login` or exported
+#   LLAMA_ACCESS_TOKEN. It is a standalone positional, NOT a value for any
+#   option. In particular --activation-ckpt is a boolean flag that takes NO
+#   value: write "--activation-ckpt" by itself. (Writing "--activation-ckpt
+#   true" is WRONG — "true" would be swallowed as the positional HF token.)
+#
 #     export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True   # recommended (long / large-seq)
 #
 #   IMPORTANT: --seq-len DEFAULT is 8192 (the real MLPerf length). The seq-1024
@@ -87,25 +104,25 @@
 #
 #   (a) BRING-UP smoke (seq 1024) — quickest check that the pipeline runs:
 #       # 8x A40, pure pipeline:
-#       torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py \
+#       torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py [<token>] \
 #           --data-prefix <prefix> --tokenizer <tok> \
 #           --pp-size 8 --tp-size 1 --dp-size 1 \
 #           --gbs 8 --micro-bs 1 --seq-len 1024 --max-steps 200 \
-#           --lr 3e-4 --warmup-steps 30 --dtype bf16 --activation-ckpt <token>
+#           --lr 3e-4 --warmup-steps 30 --dtype bf16 --activation-ckpt
 #
 #   (b) MLPerf WORKLOAD (seq 8192, the real length):
 #       # 8x A40 (48GB): pp=4/tp=2 fits seq 8192 up to gbs<=16 (gbs=32 OOMs here):
-#       torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py \
+#       torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py [<token>] \
 #           --data-prefix <prefix> --tokenizer <tok> --cache-dir <npy_index_dir> \
 #           --pp-size 4 --tp-size 2 --dp-size 1 \
 #           --gbs 16 --micro-bs 1 --seq-len 8192 --max-steps 200 \
-#           --lr 4e-4 --warmup-steps 128 --dtype bf16 --activation-ckpt <token>
+#           --lr 4e-4 --warmup-steps 128 --dtype bf16 --activation-ckpt
 #       # 2x H100 (94GB), MLPerf 2-GPU parity (TP=2 / PP=1); gbs does not change
 #       # peak memory at PP=1 (see NOTES), so the MLPerf RCP gbs=32 is fine:
-#       torchrun --nproc_per_node=2 --master_port=29500 pp_pretrain_llama.py \
+#       torchrun --nproc_per_node=2 --master_port=29500 pp_pretrain_llama.py [<token>] \
 #           --data-prefix <prefix> --tokenizer <tok> --cache-dir <npy_index_dir> \
 #           --tp-size 2 --pp-size 1 --dp-size 1 \
-#           --gbs 32 --micro-bs 1 --seq-len 8192 --dtype bf16 --activation-ckpt <token>
+#           --gbs 32 --micro-bs 1 --seq-len 8192 --dtype bf16 --activation-ckpt
 #
 # ----------------------------------------------------------------------------
 # NOTES
