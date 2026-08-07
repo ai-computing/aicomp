@@ -17,8 +17,6 @@
 #   - Reads a Megatron *indexed* dataset (.bin/.idx) — EITHER the real MLPerf-
 #     preprocessed C4, OR a small self-generated C4 shard (see DATA below).
 #   - Trains with opt_prime: free PP/TP/DP, AdamW + linear-warmup/cosine, bf16.
-#   Deferred to the patch plan (docs/mlperf_pretraining_patch_plan.md,
-#   docs/pp_pretrain_llama_design.md): log-ppl eval, power/energy, mllog, chunked CE.
 #
 # ----------------------------------------------------------------------------
 # 1) PREREQUISITE SOFTWARE
@@ -30,19 +28,18 @@
 #   - megatron-core == 0.10.0   (reads .bin/.idx via GPTDataset for TRAINING, and
 #     writes .bin/.idx via IndexedDatasetBuilder for --prepare-tiny)
 #         pip install --no-deps megatron-core==0.10.0
-#     IMPORTANT: keep "--no-deps" and pin 0.10.x. megatron-core >= 0.16 pins
-#     torch>=2.6 and will UPGRADE/replace torch 2.5 (breaking opt_prime).
+#     Install EXACTLY 0.10.0 with "--no-deps": this version works with torch 2.5,
+#     and "--no-deps" prevents pip from pulling extra packages that would replace
+#     the tested torch. (Do NOT install a newer megatron-core; it requires a
+#     newer torch and would break the opt_prime environment.)
 #     (The datasets C++ helper ships prebuilt in the wheel; needs gcc/g++ if rebuilt.)
 #   - HuggingFace `datasets`   (ONLY for --prepare-tiny; streams C4 from the Hub)
 #         pip install datasets
-#   - scipy >= 1.9   (optional; only for --partitioner milp/hierarchical).
 #   - HuggingFace access token for gated Llama-3.1 — needed even for from_config
 #     (config.json is gated) AND for the Llama-3.1 tokenizer.  Any one of:
 #         huggingface-cli login
 #         export LLAMA_ACCESS_TOKEN=<token>
 #         pass <token> as the positional arg
-#     (For a quick non-gated smoke, use --model-id gpt2 --tokenizer gpt2 with
-#      --tp-size 1 — TP is Llama-only; and prepare tiny data with the SAME gpt2 tokenizer.)
 #
 # ----------------------------------------------------------------------------
 # 2) DATA PREPARATION  (choose ONE; both yield a Megatron .bin/.idx read via --data-prefix)
@@ -81,19 +78,34 @@
 #
 # ----------------------------------------------------------------------------
 # 3) RUN TRAINING  (torchrun; run from opt_prime/examples/)
-#     export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True   # recommended for long / large-seq
+#     export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True   # recommended (long / large-seq)
 #
-#   # 8x A40 (48GB), pure pipeline (simplest memory-safe bring-up):
-#     torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py \
-#         --data-prefix <prefix> --tokenizer <tok> \
-#         --pp-size 8 --tp-size 1 --dp-size 1 \
-#         --gbs 8 --micro-bs 1 --seq-len 1024 --max-steps 200 \
-#         --lr 3e-4 --warmup-steps 30 --dtype bf16 --activation-ckpt <token>
+#   IMPORTANT: --seq-len DEFAULT is 8192 (the real MLPerf length). The seq-1024
+#   commands in (a) are memory-safe BRING-UP smoke tests, NOT the MLPerf workload.
+#   Choose a config whose pp*tp fits your GPUs (see NOTES): e.g. pp=8/tp=1 does
+#   NOT fit seq 8192 on a 48GB A40 -> for seq 8192 use pp*tp >= 4.
 #
-#   # 2 GPU, MLPerf 2-GPU parity (TP=2 / PP=1):
-#     torchrun --nproc_per_node=2 --master_port=29500 pp_pretrain_llama.py \
-#         --data-prefix <prefix> --tokenizer <tok> \
-#         --tp-size 2 --pp-size 1 --dp-size 1 --gbs 8 --seq-len 1024 ... <token>
+#   (a) BRING-UP smoke (seq 1024) — quickest check that the pipeline runs:
+#       # 8x A40, pure pipeline:
+#       torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py \
+#           --data-prefix <prefix> --tokenizer <tok> \
+#           --pp-size 8 --tp-size 1 --dp-size 1 \
+#           --gbs 8 --micro-bs 1 --seq-len 1024 --max-steps 200 \
+#           --lr 3e-4 --warmup-steps 30 --dtype bf16 --activation-ckpt <token>
+#
+#   (b) MLPerf WORKLOAD (seq 8192, the real length):
+#       # 8x A40 (48GB): pp=4/tp=2 fits seq 8192 up to gbs<=16 (gbs=32 OOMs here):
+#       torchrun --nproc_per_node=8 --master_port=29500 pp_pretrain_llama.py \
+#           --data-prefix <prefix> --tokenizer <tok> --cache-dir <npy_index_dir> \
+#           --pp-size 4 --tp-size 2 --dp-size 1 \
+#           --gbs 16 --micro-bs 1 --seq-len 8192 --max-steps 200 \
+#           --lr 4e-4 --warmup-steps 128 --dtype bf16 --activation-ckpt <token>
+#       # 2x H100 (94GB), MLPerf 2-GPU parity (TP=2 / PP=1); gbs does not change
+#       # peak memory at PP=1 (see NOTES), so the MLPerf RCP gbs=32 is fine:
+#       torchrun --nproc_per_node=2 --master_port=29500 pp_pretrain_llama.py \
+#           --data-prefix <prefix> --tokenizer <tok> --cache-dir <npy_index_dir> \
+#           --tp-size 2 --pp-size 1 --dp-size 1 \
+#           --gbs 32 --micro-bs 1 --seq-len 8192 --dtype bf16 --activation-ckpt <token>
 #
 # ----------------------------------------------------------------------------
 # NOTES
@@ -202,9 +214,9 @@ def build_c4_pretrain_dataset(data_prefix, seq_length, num_samples, eod_id,
         )
     except Exception as e:  # pragma: no cover
         raise ImportError(
-            "requires megatron-core (tested 0.10.0). Install: "
+            "requires megatron-core 0.10.0. Install EXACTLY this version: "
             "pip install --no-deps megatron-core==0.10.0  "
-            "(do NOT upgrade torch; >=0.16 needs torch>=2.6). "
+            "(--no-deps keeps the tested torch; do not install a newer megatron-core). "
             f"Original error: {e!r}"
         )
 
@@ -319,9 +331,8 @@ def parse_args():
     p.add_argument("--swap-opt", action="store_true", default=False,
                    help="offload optimizer state to host during fwd/bwd (memory relief)")
     p.add_argument("--partitioner", default="auto",
-                   choices=["auto", "simple", "milp", "hierarchical", "llama-tp-split"],
+                   choices=["auto", "simple", "llama-tp-split"],
                    help="pipeline partitioner. 'auto'=llama-tp-split if Llama+tp>1 else simple. "
-                        "'milp'/'hierarchical' minimize cross-stage activation volume. "
                         "Llama+tp>1 always forces llama-tp-split.")
     # batch / schedule
     p.add_argument("--gbs", type=int, default=8, help="global batch size")
