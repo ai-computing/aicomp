@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from opt_prime.comm import Comm
-from opt_prime.IR import IR, IR_Anal
+from opt_prime.IR import IR, IR_Anal, retarget_device_literals
 from opt_prime.schedule import ScheduleGPipe
 from opt_prime.schedule import Schedule1F1B
 from opt_prime.lora import (LoRAConfig, apply_lora_to_submod, get_lora_parameters,
@@ -530,6 +530,7 @@ class Optimus_p:
                     self.ir.build_getitem_dic()
 
                     self.run_info.submod.to(self.run_info.device)
+                    self._retarget_device_literals()
                     print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
 
                     self.run_info.output_node = self.ir.get_output_node()
@@ -606,6 +607,7 @@ class Optimus_p:
 
             elif ir_analyze == IR_Anal.PARALLEL:
                 self.run_info.submod.to(self.run_info.device)
+                self._retarget_device_literals()
                 print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
 
                 self.run_info.output_node = self.ir.get_output_node()
@@ -648,6 +650,7 @@ class Optimus_p:
 
         if ir_analyze == IR_Anal.SINGLE:
             self.run_info.submod.to(self.run_info.device)
+            self._retarget_device_literals()
             print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
 
             if rank == 0:
@@ -1025,6 +1028,25 @@ class Optimus_p:
 
         self.run_info.submod.recompile()
         self.run_info.submod = parallelize_module(module=self.run_info.submod, device_mesh=self.tpl.tp_mesh, parallelize_plan=tp_plan)
+
+
+    def _retarget_device_literals(self):
+        """Point CPU device literals in the exported graph at this rank's device.
+
+        Only applies to the --dynamo-capture (torch.export) path: export runs on
+        CPU and bakes device(type='cpu') into nodes such as aten.to.device, which
+        would keep producing CPU tensors after the submodule is moved to GPU.
+        The HFTracer path is untouched.
+        """
+        if not getattr(self, "dynamo_capture", False):
+            return
+        if not isinstance(self.run_info.submod, GraphModule):
+            return
+
+        n = retarget_device_literals(self.run_info.submod, self.run_info.device)
+        if n and int(os.environ.get("RANK", "0")) == 0:
+            print(f">> [opt_prime] retargeted {n} cpu device literal(s) in "
+                  f"{self.run_info.name} to {self.run_info.device}")
 
 
     def get_output(self):

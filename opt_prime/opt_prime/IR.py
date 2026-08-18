@@ -23,7 +23,16 @@ import torch.nn as nn
 #from transformers import GPT2ForSequenceClassification
 #from transformers import LlamaForCausalLM
 
-import transformers.utils.fx as hf_fx
+# `transformers.utils.fx` (HFTracer / symbolic_trace) exists in transformers < 5.0
+# but was removed in transformers >= 5.0.  Keep the legacy path working when the
+# module is present, and degrade gracefully (dynamo_capture path only) when not.
+try:
+    import transformers.utils.fx as hf_fx
+    _HF_FX_AVAILABLE = True
+except ImportError:
+    hf_fx = None
+    _HF_FX_AVAILABLE = False
+
 import inspect
 
 from torch import Tensor, Size
@@ -43,7 +52,40 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 import operator
 
-from transformers.utils.fx import _SUPPORTED_MODELS
+if _HF_FX_AVAILABLE:
+    from transformers.utils.fx import _SUPPORTED_MODELS
+else:
+    # transformers >= 5.0: the hand-maintained list is gone.  `_is_hf_model()`
+    # falls back to an isinstance(PreTrainedModel) check instead.
+    _SUPPORTED_MODELS = ()
+
+
+def _transformers_version() -> str:
+    try:
+        import transformers
+        return transformers.__version__
+    except ImportError:
+        return "not installed"
+
+
+def _is_hf_model(model: nn.Module) -> bool:
+    """Is this a HuggingFace transformers model?
+
+    Old transformers: the class name is looked up in `_SUPPORTED_MODELS`
+    (the list of models HFTracer can trace) or in the local `_OTHER_MODELS`.
+    New transformers (>= 5.0): `_SUPPORTED_MODELS` no longer exists, so fall
+    back to a `PreTrainedModel` isinstance check, which covers every HF model.
+    """
+    name = model.__class__.__name__
+    if name in _SUPPORTED_MODELS or name in _OTHER_MODELS:
+        return True
+    if not _HF_FX_AVAILABLE:
+        try:
+            from transformers import PreTrainedModel
+        except ImportError:
+            return False
+        return isinstance(model, PreTrainedModel)
+    return False
 
 
 # Check torch.export availability (requires PyTorch >= 2.4)
@@ -290,7 +332,91 @@ def _inline_higher_order_ops(flat_gm):
     return GraphModule(flat_gm, new_graph)
 
 
-def build_module_graph_from_export(exported_program, original_model, input_names=None):
+def _tensor_output_sig(t):
+    """Identity + dtype/shape signature used to match a module's outputs."""
+    return (id(t), str(t.dtype), str(tuple(t.shape)), t)
+
+
+def register_output_spec_hooks(model):
+    """Record what each leaf module actually returns, during export.
+
+    The reconstruction below collects a module region's outputs in *graph
+    order*, which is not the order the module's forward() returns them in, and
+    a module may also return values the graph never consumes (e.g. transformers
+    5.x `Qwen2MoeTopKRouter` returns (router_logits, router_scores,
+    router_indices) but only the last two are used).  Indexing the call_module
+    result by graph order then reads the wrong tuple element.
+
+    Forward hooks registered for the duration of torch.export see the module
+    outputs as FakeTensors — the exact objects the graph nodes carry in
+    meta['val'] — so the real positions can be recovered without an extra
+    forward pass.
+
+    Returns (specs, handles); the caller must remove the handles after export.
+    """
+    specs = {}
+    handles = []
+
+    def make_hook(fqn):
+        def hook(mod, args, output):
+            if isinstance(output, torch.Tensor):
+                specs[fqn] = [_tensor_output_sig(output)]
+            elif isinstance(output, (tuple, list)):
+                specs[fqn] = [
+                    _tensor_output_sig(o) if isinstance(o, torch.Tensor) else None
+                    for o in output
+                ]
+            # any other structure (dict, dataclass): leave unrecorded so the
+            # caller falls back to graph order
+        return hook
+
+    for fqn, mod in model.named_modules():
+        if fqn and len(list(mod.children())) == 0:
+            handles.append(mod.register_forward_hook(make_hook(fqn)))
+
+    return specs, handles
+
+
+def _resolve_output_indices(fqn, outputs, module_output_specs):
+    """Map region output nodes → the module's real return positions.
+
+    Returns a list of indices (one per node in `outputs`), or None when the
+    mapping cannot be established, in which case the caller keeps the
+    historical graph-order indexing.
+    """
+    if not module_output_specs:
+        return None
+    spec = module_output_specs.get(fqn)
+    if not spec or len(spec) < len(outputs):
+        return None
+
+    used = set()
+    indices = []
+    for n in outputs:
+        val = (n.meta or {}).get('val')
+        if not isinstance(val, torch.Tensor):
+            return None
+        sig = _tensor_output_sig(val)
+        found = None
+        for i, s in enumerate(spec):          # exact object match first
+            if s is not None and i not in used and s[0] == sig[0]:
+                found = i
+                break
+        if found is None:                     # fall back to dtype/shape
+            for i, s in enumerate(spec):
+                if s is not None and i not in used and s[1:3] == sig[1:3]:
+                    found = i
+                    break
+        if found is None:
+            return None
+        used.add(found)
+        indices.append(found)
+
+    return indices
+
+
+def build_module_graph_from_export(exported_program, original_model, input_names=None,
+                                   module_output_specs=None):
     """
     Reconstruct a module-level FX graph from ExportedProgram using
     nn_module_stack metadata, completely bypassing torch.export.unflatten().
@@ -826,6 +952,14 @@ def build_module_graph_from_export(exported_program, original_model, input_names
             #                index into them (matches the runtime shape)
             #   - 0 outputs: fall back to nodes[-1]'s meta (rare; the
             #                module's result is the last region node)
+            # Real return positions of this module's outputs (None → graph order)
+            _out_indices = (_resolve_output_indices(fqn, outputs, module_output_specs)
+                            if len(outputs) > 1 else None)
+            if _out_indices is not None and _out_indices != list(range(len(outputs))):
+                if int(os.environ.get("RANK", "0")) == 0:
+                    print(f">> [IR] '{fqn}' returns {len(module_output_specs[fqn])} value(s); "
+                          f"remapped consumed outputs to indices {_out_indices}")
+
             _meta_sources = outputs if outputs else ([nodes[-1]] if nodes else [])
             if len(_meta_sources) == 1:
                 _src_meta = _meta_sources[0].meta or {}
@@ -844,6 +978,20 @@ def build_module_graph_from_export(exported_program, original_model, input_names
                         _tms.append(_m["tensor_meta"])
                     else:
                         _have_tm = False
+                if _out_indices is not None:
+                    # Align meta with the module's real return tuple so a
+                    # getitem's index and the meta position agree.  Positions
+                    # the graph does not consume are filled from the hook.
+                    _spec = module_output_specs[fqn]
+                    _full = [None] * len(_spec)
+                    for _pos, _s in enumerate(_spec):
+                        if _s is not None:
+                            _full[_pos] = _s[3]
+                    if _have_val:
+                        for _pos, _v in zip(_out_indices, _vals):
+                            _full[_pos] = _v
+                    _vals = _full
+                    _have_tm = False        # no tensor_meta for unconsumed slots
                 if _have_val:
                     call_node.meta["val"] = tuple(_vals)
                 if _have_tm:
@@ -858,8 +1006,9 @@ def build_module_graph_from_export(exported_program, original_model, input_names
             else:
                 for i, out_node in enumerate(outputs):
                     gi_name = _make_name(f"getitem_{fqn}")
+                    gi_idx = _out_indices[i] if _out_indices is not None else i
                     gi_node = new_graph.call_function(
-                        operator.getitem, args=(call_node, i)
+                        operator.getitem, args=(call_node, gi_idx)
                     )
                     gi_node.name = gi_name
                     # The getitem node selects one element of the tuple
@@ -956,6 +1105,45 @@ _BLOCK_PATTERNS = [
     _re.compile(r"^(model\.decoder\.layers\.\d+)\b"),
     _re.compile(r"^(h\.\d+)\b"),
 ]
+
+
+def retarget_device_literals(gm: GraphModule, device) -> int:
+    """Rewrite literal CPU devices baked into a torch.export-captured graph.
+
+    torch.export traces the model on CPU, so nodes such as
+    ``aten.to.device(x, device(type='cpu'), torch.bool)`` carry a hard-coded CPU
+    device.  Moving the stage submodule to its GPU relocates parameters and
+    buffers but not those literals, so such a node keeps producing a CPU tensor
+    inside an otherwise-GPU graph (OPT fails with "indices should be either on
+    cpu or on the same device as the indexed tensor").
+
+    Only literal ``torch.device`` values of type cpu are rewritten; nodes that
+    read the device dynamically (``x.device``) are left alone.  This is a no-op
+    for the HFTracer path, whose graphs carry no such literals.
+
+    Returns the number of rewritten values.
+    """
+    device = torch.device(device)
+    if device.type == "cpu":
+        return 0
+
+    changed = 0
+
+    def convert(v):
+        nonlocal changed
+        if isinstance(v, torch.device) and v.type == "cpu":
+            changed += 1
+            return device
+        return v
+
+    for node in gm.graph.nodes:
+        node.args = torch.fx.node.map_aggregate(node.args, convert)
+        node.kwargs = torch.fx.node.map_aggregate(node.kwargs, convert)
+
+    if changed:
+        gm.recompile()
+
+    return changed
 
 
 def _block_id_of(fqn):
@@ -1394,6 +1582,16 @@ class IR(object):
     def _retrieve_IR_trace(self, model: nn.Module, use_kv_cache: bool = False):
         """Existing HFTracer / symbolic_trace path (unchanged)."""
 
+        if not _HF_FX_AVAILABLE and (
+                model.__class__.__name__ in ["ViTForImageClassification"]
+                or _is_hf_model(model)):
+            print(f"[IR] HFTracer is unavailable: `transformers.utils.fx` was "
+                  f"removed in transformers >= 5.0 "
+                  f"(installed: {_transformers_version()}).")
+            print(f"[IR] Use the --dynamo-capture option (torch.export path), "
+                  f"or install transformers < 5.0.")
+            sys.exit(1)
+
         ##
         if model.__class__.__name__ in [ "ViTForImageClassification" ]:
             input_names = ['pixel_values']
@@ -1412,7 +1610,7 @@ class IR(object):
             self.gm = torch.fx.GraphModule(model, traced_graph)
             return self.optimus.model2type["vt"]
 
-        elif model.__class__.__name__ in _SUPPORTED_MODELS or model.__class__.__name__ in _OTHER_MODELS:
+        elif _is_hf_model(model):
             input_names = list(model.dummy_inputs.keys())
             if use_kv_cache:
                 if 'position_ids' not in input_names:
@@ -1590,6 +1788,11 @@ class IR(object):
                               f"(avoid global mask skip connection)")
                     break
 
+        # Record each leaf module's real return structure while it runs, so the
+        # graph reconstruction can index multi-output modules correctly
+        # (see register_output_spec_hooks).
+        _out_specs, _spec_handles = register_output_spec_hooks(model)
+
         try:
             exported_program = export(
                 model, args=(), kwargs=example_inputs, strict=False,
@@ -1611,6 +1814,9 @@ class IR(object):
                 )
             else:
                 raise
+        finally:
+            for _h in _spec_handles:
+                _h.remove()
         model.train(_was_training)  # Restore original mode
         # Restore original use_cache setting
         if _orig_use_cache is not None:
@@ -1625,7 +1831,8 @@ class IR(object):
 
         # Reconstruct module-level graph from nn_module_stack metadata
         # (bypasses unflatten() which is broken for LLaMA — PyTorch #147348)
-        self.gm = build_module_graph_from_export(exported_program, model, input_names)
+        self.gm = build_module_graph_from_export(exported_program, model, input_names,
+                                                 module_output_specs=_out_specs)
 
         if int(os.environ.get("RANK", "0")) == 0:
             n_call_module = sum(1 for n in self.gm.graph.nodes if n.op == 'call_module')
@@ -1638,8 +1845,7 @@ class IR(object):
         # Determine model type
         if model.__class__.__name__ in ["ViTForImageClassification"]:
             return self.optimus.model2type["vt"]
-        elif (model.__class__.__name__ in _SUPPORTED_MODELS
-              or model.__class__.__name__ in _OTHER_MODELS):
+        elif _is_hf_model(model):
             return self.optimus.model2type["hf"]
         elif isinstance(model, nn.Module):
             return self.optimus.model2type["sy"]
@@ -1654,8 +1860,7 @@ class IR(object):
         """Determine input names for torch.export based on model type."""
         if model.__class__.__name__ in ["ViTForImageClassification"]:
             return ['pixel_values']
-        elif (model.__class__.__name__ in _SUPPORTED_MODELS
-              or model.__class__.__name__ in _OTHER_MODELS):
+        elif _is_hf_model(model):
             input_names = list(model.dummy_inputs.keys())
             if use_kv_cache:
                 if 'position_ids' not in input_names:

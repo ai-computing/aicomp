@@ -347,6 +347,9 @@ def parse_args():
     p.add_argument("--activation-ckpt", action="store_true", default=False)
     p.add_argument("--swap-opt", action="store_true", default=False,
                    help="offload optimizer state to host during fwd/bwd (memory relief)")
+    p.add_argument("--dynamo-capture", action="store_true", default=False,
+                   help="use TorchDynamo capture (torch.export) instead of HFTracer "
+                        "(required with transformers >= 5.0, which removed transformers.utils.fx)")
     p.add_argument("--partitioner", default="auto",
                    choices=["auto", "simple", "llama-tp-split"],
                    help="pipeline partitioner. 'auto'=llama-tp-split if Llama+tp>1 else simple. "
@@ -464,6 +467,7 @@ optimus_p = Optimus_p(
     activation_ckpt=args.activation_ckpt,
     swap_opt_in_fwdbwd=args.swap_opt,
     partitioner=args.partitioner,
+    dynamo_capture=args.dynamo_capture,
     force_free_mem=True,         # REQUIRED for long runs: gates clean_run_info()
                                  # (frees per-step buffers; else OOM after ~100s of steps).
     grad_accum_normalize=True,   # mean over num_mb (standard PP convention)

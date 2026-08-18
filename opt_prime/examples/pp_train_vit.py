@@ -35,7 +35,9 @@ batch_size = 32
 num_mb = int(os.environ["WORLD_SIZE"]) // 2 # TODO
 
 # Load only a small portion of cifar10 dataset
-train_ds = load_dataset('cifar10', split=['train[:5000]'])[0]
+# 'cifar10' (bare id) is rejected by datasets >= 4.0, which requires
+# 'namespace/name'.  'uoft-cs/cifar10' is the same dataset, canonical id.
+train_ds = load_dataset('uoft-cs/cifar10', split=['train[:5000]'])[0]
 
 #print(f"> train_ds: {train_ds}")
 #print(f"> train_ds.features: {train_ds.features}")

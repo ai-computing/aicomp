@@ -677,8 +677,8 @@ When `--use-mps` is enabled, opt_prime:
 
 1. **CVD pre-resolution** — `_resolve_cvd_pre_torch_import()` runs *before* `import torch`, ensuring the CUDA driver sees the final CVD on first init
 2. **Daemon lifecycle** — local rank 0 starts `nvidia-cuda-mps-control -d` (with the worker's CVD inherited via `subprocess.run(env=...)`). Other ranks wait via a file barrier
-3. **Rank-to-GPU mapping** — `gpu_id = local_rank % visible_gpu_count` (round-robin colocate)
-4. **NCCL safety** — a gloo sub-group is created in `Comm` for cross-rank `barrier()` calls (`engine.barrier()`), since NCCL collective barriers reject multiple ranks per physical GPU
+3. **Rank-to-GPU mapping** — `gpu_id = local_rank % visible_gpu_count` (round-robin colocate). `torch.cuda.set_device(gpu_id)` runs *before* the `DeviceMesh` is built, so PyTorch keeps that choice instead of falling back to `LOCAL_RANK` (which exceeds the visible GPU count under oversubscription)
+4. **NCCL safety** — `Comm.get_mps_gloo_group()` creates a gloo sub-group on first use for cross-rank `barrier()` calls (`engine.barrier()`), since NCCL collective barriers reject multiple ranks per physical GPU. Creation is deferred because `dist.new_group()` is itself a collective and `Comm()` is not always constructed by all ranks at the same time (sequential-loading training examples)
 5. **Cleanup** — `atexit` + SIGINT/SIGTERM handlers shut down the daemon and restore env vars on exit
 
 ### Strict Behavior with `--use-mps`
