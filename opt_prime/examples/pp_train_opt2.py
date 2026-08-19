@@ -34,6 +34,15 @@ tokenizer.pad_token_id = tokenizer.eos_token_id
 config = OPTConfig(use_cache=False)
 model = OPTForCausalLM(config)
 model = model.from_pretrained("facebook/opt-13b")
+# Only fp16 needs the cast: transformers 5.x keeps the checkpoint dtype (fp16 for
+# the OPT checkpoints) while 4.x always loaded fp32.  Training fp16 weights with
+# Adam gives NaN on the very first optimizer.step() — Adam's eps=1e-8 is below the
+# smallest fp16 subnormal, so the update divides by ~0 (forward and gradients stay
+# finite; only the parameters blow up).  The guard makes this a no-op on 4.x, so
+# the old behavior is preserved exactly.  Use .bfloat16() instead of .float() if
+# memory is tight (no NaN either, at the cost of update precision).
+if next(model.parameters()).dtype == torch.float16:
+    model = model.float()
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0

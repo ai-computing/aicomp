@@ -68,6 +68,15 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
 model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-13b-chat-hf", token=access_token, use_cache=False)
+# Only fp16 needs the cast: transformers 5.x keeps the checkpoint dtype (fp16 here)
+# and training fp16 weights with Adam gives NaN on the first optimizer.step()
+# (Adam eps=1e-8 < smallest fp16 subnormal).  transformers 4.x loads fp32, and
+# the guard makes this a no-op there, so the old behavior is preserved exactly.
+# bfloat16 keeps the 13B model at 16-bit (fp32 would need ~52GB of host RAM per
+# rank); .float() works too since the fp32 RMSNorm alias issue was fixed
+# (see CLAUDE.md 3-G), it just costs twice the memory and compute.
+if next(model.parameters()).dtype == torch.float16:
+    model = model.bfloat16()
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0

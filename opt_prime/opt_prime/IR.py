@@ -377,6 +377,53 @@ def register_output_spec_hooks(model):
     return specs, handles
 
 
+_ALIAS_OPS = ("aten.to.dtype", "aten.to.dtype_layout", "aten._to_copy",
+              "aten.alias.default", "aten.clone.default", "aten.detach.default")
+
+
+def _aliases_input(node, region_nodes) -> bool:
+    """Is `node` a no-op cast/alias of a tensor produced outside the region?
+
+    Only then can the node be replaced by its source: same dtype and shape, one
+    tensor argument, and that argument comes from outside the module region (so
+    a value for it already exists in the reconstructed graph).
+    """
+    if node.op != 'call_function':
+        return False
+    if not any(op in str(node.target) for op in _ALIAS_OPS):
+        return False
+    if not node.args or not isinstance(node.args[0], torch.fx.Node):
+        return False
+    src = node.args[0]
+    if src in region_nodes:
+        return False
+    out_val = (node.meta or {}).get('val')
+    src_val = (src.meta or {}).get('val')
+    if not (isinstance(out_val, torch.Tensor) and isinstance(src_val, torch.Tensor)):
+        return False
+    return (out_val.dtype == src_val.dtype
+            and str(tuple(out_val.shape)) == str(tuple(src_val.shape)))
+
+
+def _sigs_match(nodes, spec) -> bool:
+    """Do these nodes carry exactly the dtypes/shapes the module returns?
+
+    Compared as a multiset, since the order is resolved separately by
+    _resolve_output_indices().  Identity cannot be used: the tensor the forward
+    hook sees is not the same object as the node's meta['val'].
+    """
+    want = sorted(s[1:3] for s in spec if s is not None)
+    if len(want) != len(spec):
+        return False
+    got = []
+    for n in nodes:
+        v = (n.meta or {}).get('val')
+        if not isinstance(v, torch.Tensor):
+            return False
+        got.append((str(v.dtype), str(tuple(v.shape))))
+    return sorted(got) == want
+
+
 def _resolve_output_indices(fqn, outputs, module_output_specs):
     """Map region output nodes → the module's real return positions.
 
@@ -924,6 +971,37 @@ def build_module_graph_from_export(exported_program, original_model, input_names
                             outputs.append(n)
                             seen_outputs.add(id(n))
                             break
+
+            # Drop "outputs" that are really aliases of a value from outside.
+            #
+            # A module whose forward starts with a dtype round-trip — e.g.
+            # LlamaRMSNorm's `hidden_states.to(torch.float32)` — produces a
+            # NO-OP cast when the model is already in that dtype, and
+            # Tensor.to() then returns the *same object*.  torch.export still
+            # emits the aten.to node inside the module's scope, and the parent
+            # module's reuse of the same tensor (the residual connection) ends
+            # up referencing that in-scope node.  The region then looks like it
+            # has two externally-consumed values although the module returns
+            # one, and the getitem(call_module, i) pair below would index the
+            # returned *tensor* instead of a tuple (fp32 LLaMA crashed with
+            # "mat1 and mat2 shapes cannot be multiplied").
+            #
+            # The forward-hook specs tell us how many values the module really
+            # returns; any surplus must be an alias, which we redirect to the
+            # value it aliases.  If anything cannot be resolved that way, keep
+            # the historical behavior untouched.
+            _spec = (module_output_specs or {}).get(fqn)
+            if _spec is not None and len(outputs) > len(_spec):
+                _extra = [n for n in outputs if _aliases_input(n, node_set)]
+                _real = [n for n in outputs if n not in _extra]
+                if _extra and len(_real) == len(_spec) and _sigs_match(_real, _spec):
+                    for n in _extra:
+                        value_map[n] = _remap(n.args[0])
+                    outputs = _real
+                    if int(os.environ.get("RANK", "0")) == 0:
+                        print(f">> [IR] '{fqn}': {len(_extra)} no-op alias output(s) "
+                              f"folded into the aliased value "
+                              f"(module returns {len(_spec)})")
 
             # Create call_module node
             # _padded_inputs contains new-graph nodes for the substitute(s)
