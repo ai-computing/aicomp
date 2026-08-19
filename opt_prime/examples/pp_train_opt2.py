@@ -59,8 +59,8 @@ parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use TorchDynamo capture (torch.export) instead of HFTracer')
 args = parser.parse_args()
 
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True)
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 

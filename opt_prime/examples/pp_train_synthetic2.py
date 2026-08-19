@@ -94,14 +94,14 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"num of mbatch: {num_mb}")
 
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
 parser = argparse.ArgumentParser()
 parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use TorchDynamo capture (torch.export) instead of HFTracer')
 args = parser.parse_args()
 
 optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, preserve_output=True, dynamo_capture=args.dynamo_capture)
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
