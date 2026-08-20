@@ -199,15 +199,15 @@ logFile.close()
 
 print(f"logFile closed...")
 
-if dist.is_initialized():
-    try:
-        dist.barrier()
-        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
-        torch.cuda.synchronize()
-        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
-        dist.destroy_process_group()
-    except Exception as e:
-        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
+#if dist.is_initialized():
+#    try:
+#        dist.barrier()
+#        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
+#        torch.cuda.synchronize()
+#        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
+#        dist.destroy_process_group()
+#    except Exception as e:
+#        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
 
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
 

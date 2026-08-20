@@ -298,8 +298,8 @@ def main():
         print("=" * 60)
 
     # Synchronize at the end
-    if dist.is_initialized():
-        dist.barrier()
+#    if dist.is_initialized():
+#        dist.barrier()
 
     if rank == 0:
         print(f"\n[Rank {rank}] Inference completed successfully!")

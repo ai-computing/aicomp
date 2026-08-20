@@ -134,9 +134,9 @@ for i in range(local_world_size):
         if int(os.environ["RANK"]) == 0:
             print('Total parameters in model: {:,}'.format(get_total_params(model)))
 
-        #optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL
+        #optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, dynamo_capture=args.dynamo_capture) ## IR_Anal.PARALLEL
         optimus_p = Optimus_p(model, num_mb, use_gpu=True, tp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo, dynamo_capture=args.dynamo_capture) ## IR_Anal.PARALLEL
-        #optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
+        #optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo, dynamo_capture=args.dynamo_capture) ## IR_Anal.PARALLEL
         print(f" rank={optimus_p.get_rank()} ...")
 
     if local_rank > i:
@@ -235,15 +235,15 @@ if optimus_p.get_rank() == 0:
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
-if dist.is_initialized():
-    try:
-        dist.barrier()
-        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
-        torch.cuda.synchronize()
-        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
-        dist.destroy_process_group()
-    except Exception as e:
-        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
+#if dist.is_initialized():
+#    try:
+#        dist.barrier()
+#        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
+#        torch.cuda.synchronize()
+#        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
+#        dist.destroy_process_group()
+#    except Exception as e:
+#        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
 
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
 
