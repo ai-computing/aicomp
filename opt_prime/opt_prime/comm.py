@@ -1,3 +1,4 @@
+import atexit
 import torch
 import torch.distributed as dist
 import logging
@@ -63,6 +64,52 @@ class Comm:
 
         if ir_analyze == IR_Anal.SINGLE:
             self.setup_ctrl_group()
+
+        # Tear the process group down while the interpreter (and the CUDA
+        # context) is still alive.  Registered here so every example benefits,
+        # since most of them never call destroy_process_group() themselves.
+        atexit.register(self.shutdown)
+
+
+    def shutdown(self):
+        """Destroy the process group explicitly; safe to call more than once.
+
+        If nobody destroys the group, the C++ ProcessGroupNCCL destructor runs
+        during interpreter finalization instead, and its abort path can throw
+        ("CUDA error: invalid device ordinal" inside
+        ProcessGroupNCCL::abortCommsFromMap → c10::cuda::ExchangeDevice).  An
+        exception from a destructor calls std::terminate, so the process dies
+        with SIGABRT and the launcher reports a failure even though the run
+        itself finished — exactly what torch >= 2.4 warns about with "process
+        group has NOT been destroyed before we destruct ProcessGroupNCCL".
+        Whether it triggers depends on finalization order, hence the flakiness.
+
+        No collective is issued here: a barrier would need to be MPS-safe and
+        every rank reaches this point on its own anyway.  Failures are
+        swallowed — teardown must never turn a successful run into an error.
+        """
+        if getattr(self, "_shutdown_done", False):
+            return
+        self._shutdown_done = True
+
+        # Skip under MPS oversubscription: several ranks share one physical GPU
+        # and destroy_process_group() then hangs waiting on NCCL work that can
+        # never complete (observed on torch 2.5 — the run finished, only the
+        # teardown blocked until the launcher timed out).  MPS runs keep the
+        # historical noisy-but-working teardown.
+        if getattr(self, "use_mps", False):
+            return
+
+        try:
+            if torch.cuda.is_available() and torch.cuda.is_initialized():
+                torch.cuda.synchronize()
+        except Exception:
+            pass
+        try:
+            if dist.is_available() and dist.is_initialized():
+                dist.destroy_process_group()
+        except Exception as e:
+            logging.warning(f"[opt_prime] process group teardown: {e}")
 
 
     def init_comm(self, use_gpu):
