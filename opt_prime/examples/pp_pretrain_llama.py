@@ -568,13 +568,4 @@ if torch.cuda.is_available():
           f"peak_alloc={torch.cuda.max_memory_allocated()/1e9:.2f}GB "
           f"peak_reserved={torch.cuda.max_memory_reserved()/1e9:.2f}GB", flush=True)
 
-# ---- cleanup ----
-#if dist.is_initialized():
-#    try:
-#        dist.barrier()
-#        torch.cuda.synchronize()
-#        dist.destroy_process_group()
-#    except Exception as e:
-#        print(f"Cleanup on rank {rank}: {e}", flush=True)
-
 rank0("[done] pp_pretrain_llama.py")

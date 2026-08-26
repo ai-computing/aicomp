@@ -302,14 +302,4 @@ if optimus_p.get_rank() == 0:
     print(f"  torchrun --nproc_per_node={total_gpus} pp_inference_llama_lora.py"
           f"{tp_flag} --lora-step {args.max_steps} --lora-epoch 1")
 
-#if dist.is_initialized():
-#    try:
-#        dist.barrier()
-#        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
-#        torch.cuda.synchronize()
-#        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
-#        dist.destroy_process_group()
-#    except Exception as e:
-#        print(f"Cleanup on rank {optimus_p.get_rank()}: {e}")
-
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
