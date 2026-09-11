@@ -14,6 +14,7 @@ import os
 import sys
 import math
 import time
+import argparse
 
 from transformers import GPT2Tokenizer, GPT2ForSequenceClassification, GPT2Config
 from datasets import load_dataset
@@ -53,8 +54,13 @@ if int(os.environ["RANK"]) == 0:
     print(f"batch size: {batch_size}")
     print(f"num of mbatch: {num_mb}")
 
-optimus_p = Optimus_p(model, num_mb, use_gpu=True)
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2)
+parser = argparse.ArgumentParser()
+parser.add_argument('--dynamo-capture', action='store_true', default=False,
+                    help='Use TorchDynamo capture (torch.export) instead of HFTracer')
+args = parser.parse_args()
+
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dp_size=2, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()
@@ -62,7 +68,8 @@ optimus_p.train()
 optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 
-datasets = load_dataset("multi_nli").data["train"]
+# bare 'multi_nli' is rejected by datasets >= 4.0 (needs 'namespace/name')
+datasets = load_dataset("nyu-mll/multi_nli").data["train"]
 premise, hypothesis, label = datasets[2], datasets[5], datasets[9]
 datasets = [ {"text": str(p) + tokenizer.eos_token + str(h), "label": l.as_py()} for p, h, l in zip(premise, hypothesis, label) ]
 dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)

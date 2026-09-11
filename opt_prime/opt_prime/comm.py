@@ -1,3 +1,4 @@
+import atexit
 import torch
 import torch.distributed as dist
 import logging
@@ -64,6 +65,52 @@ class Comm:
         if ir_analyze == IR_Anal.SINGLE:
             self.setup_ctrl_group()
 
+        # Tear the process group down while the interpreter (and the CUDA
+        # context) is still alive.  Registered here so every example benefits,
+        # since most of them never call destroy_process_group() themselves.
+        atexit.register(self.shutdown)
+
+
+    def shutdown(self):
+        """Destroy the process group explicitly; safe to call more than once.
+
+        If nobody destroys the group, the C++ ProcessGroupNCCL destructor runs
+        during interpreter finalization instead, and its abort path can throw
+        ("CUDA error: invalid device ordinal" inside
+        ProcessGroupNCCL::abortCommsFromMap → c10::cuda::ExchangeDevice).  An
+        exception from a destructor calls std::terminate, so the process dies
+        with SIGABRT and the launcher reports a failure even though the run
+        itself finished — exactly what torch >= 2.4 warns about with "process
+        group has NOT been destroyed before we destruct ProcessGroupNCCL".
+        Whether it triggers depends on finalization order, hence the flakiness.
+
+        No collective is issued here: a barrier would need to be MPS-safe and
+        every rank reaches this point on its own anyway.  Failures are
+        swallowed — teardown must never turn a successful run into an error.
+        """
+        if getattr(self, "_shutdown_done", False):
+            return
+        self._shutdown_done = True
+
+        # Skip under MPS oversubscription: several ranks share one physical GPU
+        # and destroy_process_group() then hangs waiting on NCCL work that can
+        # never complete (observed on torch 2.5 — the run finished, only the
+        # teardown blocked until the launcher timed out).  MPS runs keep the
+        # historical noisy-but-working teardown.
+        if getattr(self, "use_mps", False):
+            return
+
+        try:
+            if torch.cuda.is_available() and torch.cuda.is_initialized():
+                torch.cuda.synchronize()
+        except Exception:
+            pass
+        try:
+            if dist.is_available() and dist.is_initialized():
+                dist.destroy_process_group()
+        except Exception as e:
+            logging.warning(f"[opt_prime] process group teardown: {e}")
+
 
     def init_comm(self, use_gpu):
         torch.manual_seed(42)
@@ -102,10 +149,8 @@ class Comm:
         # mps_gloo_group: a gloo sub-group used for cross-rank collective ops
         # (e.g., barrier) that would otherwise fail under MPS oversubscription
         # because NCCL refuses collectives when multiple ranks share a physical
-        # GPU. Created only when world_size > 1 (collective op).
-        # IMPORTANT: dist.new_group() is itself a collective. All ranks must
-        # call it consistently; we always create it (regardless of use_mps)
-        # so that heterogeneous-MPS deployments still synchronize cleanly.
+        # GPU.  Populated lazily by get_mps_gloo_group() — see the note after
+        # process-group init below for why it is not created here.
         self.mps_gloo_group = None
 
         # Single-process mode: skip distributed initialization
@@ -121,19 +166,38 @@ class Comm:
         else:
             print(f"Communication already initialized")
 
-        # Create gloo sub-group for MPS-safe barriers. Safe to create multiple
-        # times across multiple Comm() constructions (each call returns a new
-        # group object); all ranks must participate, which is guaranteed
-        # because every rank instantiates Comm() symmetrically.
+        # NOTE: the gloo sub-group is NOT created here.  dist.new_group() is a
+        # collective that every rank must call, but Comm() is not always
+        # constructed symmetrically: the sequential-loading examples
+        # (pp_train_llama7.py, pp_train_llama_lora_big.py) build Optimus_p one
+        # local_rank at a time while the other ranks wait on their own gloo
+        # barrier, so a rank reaching new_group() here would block forever
+        # (with PyTorch >= 2.x the process group is initialized eagerly).
+        # It is created on demand instead — see get_mps_gloo_group(), which is
+        # only reached from the MPS barrier path where all ranks do participate.
+
+
+
+    def get_mps_gloo_group(self):
+        """Gloo sub-group for MPS-safe barriers, created on first use.
+
+        Under MPS oversubscription several ranks share one physical GPU and
+        NCCL refuses collectives, so barriers must run over gloo.  Creation is
+        a collective: only call this from a point every rank reaches (the MPS
+        barrier in inference).  Returns None when gloo is unavailable, in which
+        case the caller falls back to the default barrier.
+        """
+        if self.mps_gloo_group is not None:
+            return self.mps_gloo_group
+        if self.world_size == 1 or not dist.is_initialized():
+            return None
         try:
             self.mps_gloo_group = dist.new_group(backend="gloo")
         except (RuntimeError, ValueError) as e:
-            # Gloo backend unavailable; degrade gracefully (will fall back to
-            # default NCCL barrier which only works without MPS oversubscribe).
             logging.warning(f"[opt_prime] Failed to create gloo sub-group "
                             f"for MPS-safe barriers: {e}")
             self.mps_gloo_group = None
-
+        return self.mps_gloo_group
 
 
     def receive_data(self, from_rank, device):

@@ -203,10 +203,15 @@ class Optimus_Inference:
                       f"(local_world_size={local_world_size}, "
                       f"visible_gpus={gpu_count})")
 
-        # Initialize topology
-        self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
-
-        # Set device
+        # Set device BEFORE building the topology.  Topology() creates the
+        # DeviceMesh, and DeviceMesh only picks a device itself when the process
+        # has not selected one — "if user already set the device before
+        # DeviceMesh init, we respect the user's choice".  Newer PyTorch takes
+        # LOCAL_RANK verbatim in that fallback (older releases used
+        # rank % device_count), so under MPS oversubscription — more ranks than
+        # visible GPUs — local_rank 4..7 with 4 GPUs raised
+        # "CUDA error: invalid device ordinal".  Selecting the round-robin GPU
+        # first makes the mesh follow it on every version.
         if use_gpu:
             torch.cuda.set_device(gpu_id)
             self.device = torch.device(f"cuda:{gpu_id}")
@@ -218,6 +223,9 @@ class Optimus_Inference:
         else:
             self.device = torch.device("cpu")
             print(f">>> [Inference] Using CPU")
+
+        # Initialize topology (builds the DeviceMesh)
+        self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
         # Initialize run info (simplified for inference - no gradients/loss)
         self.run_info = Run_Info(device=self.device, num_mb=1, num_classes=-100)
@@ -586,8 +594,9 @@ class Optimus_Inference:
         """
         if not dist.is_initialized():
             return
-        if self.use_mps and self.comm.mps_gloo_group is not None:
-            dist.barrier(group=self.comm.mps_gloo_group)
+        mps_group = self.comm.get_mps_gloo_group() if self.use_mps else None
+        if mps_group is not None:
+            dist.barrier(group=mps_group)
         else:
             dist.barrier()
 

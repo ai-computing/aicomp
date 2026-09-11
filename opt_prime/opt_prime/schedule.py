@@ -764,8 +764,41 @@ class Schedule:
 
     def core_backward(self, forward_output, forward_output_gradient, forward_input, valid_index: List[int],):
 
-        forward_output_with_grads = [forward_output[i] for i in valid_index]
-        forward_output_gradient_with_grads = [forward_output_gradient[i] for i in valid_index]
+        # The next stage sends back (input_gradient_list, None), where entry i of
+        # input_gradient_list is the gradient of this stage's boundary output i
+        # (see _reorder_grads_for_producer).  Historically only output 0 was
+        # seeded, which is correct while a stage boundary carries a single
+        # differentiable tensor.  Newer HuggingFace models (e.g. LLaMA on
+        # transformers >= 5.0) cut across a residual connection, so a boundary
+        # carries two differentiable tensors: dropping the second one loses its
+        # gradient and — under TP — leaves that branch with a None gradient,
+        # which the autograd engine materializes as a plain zero Tensor and
+        # feeds into DTensor's Redistribute backward ('Tensor' object has no
+        # attribute '_local_tensor').  Pair every boundary output with its own
+        # gradient when the per-output list is available.
+        _grad_list = None
+        if (isinstance(forward_output_gradient, (tuple, list))
+                and len(forward_output_gradient) > 0
+                and isinstance(forward_output_gradient[0], list)):
+            _grad_list = forward_output_gradient[0]
+
+        if (_grad_list is not None
+                and isinstance(forward_output, (tuple, list))
+                and len(forward_output) > 1):
+            forward_output_with_grads = []
+            forward_output_gradient_with_grads = []
+            for i, out_val in enumerate(forward_output):
+                grad_val = _grad_list[i] if i < len(_grad_list) else None
+                if grad_val is None or not isinstance(out_val, torch.Tensor):
+                    continue
+                if not out_val.requires_grad and out_val.grad_fn is None:
+                    # e.g. rotary cos/sin caches: detached at the boundary
+                    continue
+                forward_output_with_grads.append(out_val)
+                forward_output_gradient_with_grads.append(grad_val)
+        else:
+            forward_output_with_grads = [forward_output[i] for i in valid_index]
+            forward_output_gradient_with_grads = [forward_output_gradient[i] for i in valid_index]
 
         forward_output_list = []
         forward_output_gradient_list = []
@@ -799,6 +832,10 @@ class Schedule:
 
         extract_tensor_for_gradients(forward_output_with_grads, forward_output_gradient_with_grads)
 
+
+        if not forward_output_list:
+            return [None if not isinstance(v, torch.Tensor) else v.grad
+                    for v in forward_input], None
 
         if isinstance(forward_output_gradient_list[0], list):
             forward_output_gradient_list[0] = forward_output_gradient_list[0][0]
@@ -899,6 +936,49 @@ class Schedule:
         return grads
 
 
+    def _reorder_grads_for_producer(self, node, input_gradient, producer_name):
+        """Order per-input gradients by the producing submodule's output index.
+
+        `input_gradient[j]` is the gradient of `node`'s j-th flattened input.
+        Consumers may take their inputs in any order and may also take skip
+        connections from earlier stages, so position j does not necessarily
+        match the producer's output index.  getitem_dic maps a boundary node
+        name to (producing submod, output index), which gives the exact
+        mapping.  Returns the list unchanged when no mapping applies (single
+        tensor boundaries, output nodes), preserving the historical layout.
+        """
+        getitem_dic = getattr(self.optimus.run_info, "getitem_dic", None)
+        if not getitem_dic or producer_name is None or node is None:
+            return input_gradient
+
+        arg_names = []
+
+        def collect(b):
+            arg_names.append(b.name)
+            return b
+
+        fx.graph.map_arg(node.args, collect)
+        fx.graph.map_arg(node.kwargs, collect)
+
+        by_index = {}
+        for name, grad in zip(arg_names, input_gradient):
+            entry = getitem_dic.get(name)
+            if entry is not None and entry[0] == producer_name:
+                by_index[entry[1]] = grad
+
+        if not by_index:
+            return input_gradient
+
+        return [by_index.get(i) for i in range(max(by_index) + 1)]
+
+
+    def _reordered_result(self, result, node, producer_name):
+        """Apply _reorder_grads_for_producer to a core_backward() result."""
+        if not isinstance(result, tuple) or not result or not isinstance(result[0], list):
+            return result
+        return (self._reorder_grads_for_producer(node, result[0], producer_name),) + result[1:]
+
+
     def fx_micro_backward_core(self, mb_idx, grads):
 
         #self.init_env_grad_mark(mb_idx)
@@ -910,14 +990,23 @@ class Schedule:
             grads = self.optimus.run_info.grads[mb_idx][node.name]
             result = self.run_core_backward(mb_idx, node, grads)
             result = ((result,) if not isinstance(result, tuple) else result)
-            #self.optimus.run_info.grads[mb_idx][node.name] = result 
-            #grads = self.optimus.run_info.grads[mb_idx][node.name] 
+            # gradients of this stage's own submodule outputs
+            result = self._reordered_result(result, node, self.optimus.run_info.name)
+            #self.optimus.run_info.grads[mb_idx][node.name] = result
+            #grads = self.optimus.run_info.grads[mb_idx][node.name]
             grads = result
 
         node = self.optimus.run_info.node
         result = self.run_core_backward(mb_idx, node, grads)
 
         result = ((result,) if not isinstance(result, tuple) else result)
+
+        # gradients sent back to the previous stage, ordered by that stage's
+        # boundary output index
+        if self.optimus.tpl.get_stage() > 0:
+            prev_name = self.optimus.run_info.metadata_range[
+                self.optimus.tpl.get_stage() - 1][1]
+            result = self._reordered_result(result, node, prev_name)
 
         self.optimus.run_info.grads[mb_idx][node.name] = result
 

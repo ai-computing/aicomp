@@ -238,7 +238,4 @@ if engine.is_output_rank() and output_ids is not None:
     print(f"\nLoRA mode: {mode_str}")
     print(f"Tokens: {num_gen}, Time: {gen_time:.2f}s, Speed: {num_gen/gen_time:.1f} tok/s")
 
-if dist.is_initialized():
-    dist.barrier()
-
 print(f"[rank:{rank}] done.")

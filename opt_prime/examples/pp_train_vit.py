@@ -35,7 +35,9 @@ batch_size = 32
 num_mb = int(os.environ["WORLD_SIZE"]) // 2 # TODO
 
 # Load only a small portion of cifar10 dataset
-train_ds = load_dataset('cifar10', split=['train[:5000]'])[0]
+# 'cifar10' (bare id) is rejected by datasets >= 4.0, which requires
+# 'namespace/name'.  'uoft-cs/cifar10' is the same dataset, canonical id.
+train_ds = load_dataset('uoft-cs/cifar10', split=['train[:5000]'])[0]
 
 #print(f"> train_ds: {train_ds}")
 #print(f"> train_ds.features: {train_ds.features}")
@@ -92,7 +94,7 @@ parser.add_argument('--dynamo-capture', action='store_true', default=False,
 args = parser.parse_args()
 
 optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 optimus_p.train()

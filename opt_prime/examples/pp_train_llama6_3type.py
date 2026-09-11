@@ -104,7 +104,7 @@ if int(os.environ["RANK"]) == 0:
     print(f"num of mbatch: {num_mb}")
 
 
-optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, swap_use_disk=True)
+optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, swap_use_disk=True, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 
 
@@ -195,16 +195,6 @@ if optimus_p.get_rank() == 0:
     elapsed_time = tock - tick
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
-
-if dist.is_initialized():
-    try:
-        dist.barrier()
-        print(f"[rank:{optimus_p.get_rank()} >> barrier ...")
-        torch.cuda.synchronize()
-        print(f"[rank:{optimus_p.get_rank()} >> synchronize...")
-        dist.destroy_process_group()
-    except Exception as e:
-        print(f"Cleanp on rank {optimus_p.get_rank()}: {e}")
 
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
 

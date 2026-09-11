@@ -34,6 +34,15 @@ tokenizer.pad_token_id = tokenizer.eos_token_id
 config = OPTConfig(use_cache=False)
 model = OPTForCausalLM(config)
 model = model.from_pretrained("facebook/opt-13b")
+# Only fp16 needs the cast: transformers 5.x keeps the checkpoint dtype (fp16 for
+# the OPT checkpoints) while 4.x always loaded fp32.  Training fp16 weights with
+# Adam gives NaN on the very first optimizer.step() — Adam's eps=1e-8 is below the
+# smallest fp16 subnormal, so the update divides by ~0 (forward and gradients stay
+# finite; only the parameters blow up).  The guard makes this a no-op on 4.x, so
+# the old behavior is preserved exactly.  Use .bfloat16() instead of .float() if
+# memory is tight (no NaN either, at the cost of update precision).
+if next(model.parameters()).dtype == torch.float16:
+    model = model.float()
 
 def get_total_params(module: torch.nn.Module):
     total_params = 0
@@ -59,8 +68,8 @@ parser.add_argument('--dynamo-capture', action='store_true', default=False,
                     help='Use TorchDynamo capture (torch.export) instead of HFTracer')
 args = parser.parse_args()
 
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True)
-#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=args.dynamo_capture)
+#optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 optimus_p = Optimus_p(model, num_mb, use_gpu=True, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=args.dynamo_capture)
 print(f" rank={optimus_p.get_rank()} ...")
 

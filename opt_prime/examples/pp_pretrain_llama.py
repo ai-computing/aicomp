@@ -347,6 +347,9 @@ def parse_args():
     p.add_argument("--activation-ckpt", action="store_true", default=False)
     p.add_argument("--swap-opt", action="store_true", default=False,
                    help="offload optimizer state to host during fwd/bwd (memory relief)")
+    p.add_argument("--dynamo-capture", action="store_true", default=False,
+                   help="use TorchDynamo capture (torch.export) instead of HFTracer "
+                        "(required with transformers >= 5.0, which removed transformers.utils.fx)")
     p.add_argument("--partitioner", default="auto",
                    choices=["auto", "simple", "llama-tp-split"],
                    help="pipeline partitioner. 'auto'=llama-tp-split if Llama+tp>1 else simple. "
@@ -464,6 +467,7 @@ optimus_p = Optimus_p(
     activation_ckpt=args.activation_ckpt,
     swap_opt_in_fwdbwd=args.swap_opt,
     partitioner=args.partitioner,
+    dynamo_capture=args.dynamo_capture,
     force_free_mem=True,         # REQUIRED for long runs: gates clean_run_info()
                                  # (frees per-step buffers; else OOM after ~100s of steps).
     grad_accum_normalize=True,   # mean over num_mb (standard PP convention)
@@ -563,14 +567,5 @@ if torch.cuda.is_available():
     print(f"[mem] rank {rank} cuda:{torch.cuda.current_device()} "
           f"peak_alloc={torch.cuda.max_memory_allocated()/1e9:.2f}GB "
           f"peak_reserved={torch.cuda.max_memory_reserved()/1e9:.2f}GB", flush=True)
-
-# ---- cleanup ----
-if dist.is_initialized():
-    try:
-        dist.barrier()
-        torch.cuda.synchronize()
-        dist.destroy_process_group()
-    except Exception as e:
-        print(f"Cleanup on rank {rank}: {e}", flush=True)
 
 rank0("[done] pp_pretrain_llama.py")

@@ -297,10 +297,6 @@ def main():
             print(f"  Method           : full-sequence recomputation (O(n^2) decode)")
         print("=" * 60)
 
-    # Synchronize at the end
-    if dist.is_initialized():
-        dist.barrier()
-
     if rank == 0:
         print(f"\n[Rank {rank}] Inference completed successfully!")
 
