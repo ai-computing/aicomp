@@ -731,3 +731,11 @@ The example entry points (`pp_inference_llama.py`, `pp_generation_llama.py`, `se
 ## License
 
 The results of the AIcomp project are distributed under the 3-clause BSD license.
+
+## Experimental heterogeneous prefill/decode integration
+
+An optional `opt_prime.pd` layer separates prefill and decode engines from KV
+transport, with explicit model/layout compatibility and buffer lifetime contracts.
+It includes a bridge to the separately installed `hetero-npu-p2p` transport.
+This is an integration foundation; hardware engine adapters and llm-d service
+integration are not yet bundled. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).

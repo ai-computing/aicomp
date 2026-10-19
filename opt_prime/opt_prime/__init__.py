@@ -24,10 +24,13 @@
 #   from opt_prime.mps_manager import ...       # NO torch import (mps_manager
 #                                                 has no torch at module level)
 
-__all__ = ["Optimus_p", "Optimus_Inference"]
+__all__ = ["Optimus_p", "Optimus_Inference", "PDRuntime"]
 
 
 def __getattr__(name):
+    if name == "PDRuntime":
+        from opt_prime.pd import PDRuntime
+        return PDRuntime
     if name == "Optimus_p":
         from opt_prime.opti_pri import Optimus_p
         return Optimus_p
