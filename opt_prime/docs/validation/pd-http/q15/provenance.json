@@ -1,0 +1,44 @@
+{
+  "argv": [
+    "aicomp-llmd/opt_prime/examples/pd/validate_qwen_pd.py",
+    "--config",
+    "experiments/pd_http_20261019/q15.json"
+  ],
+  "python": "/home/gspark/venvs/furiosa-2026.4/bin/python",
+  "cwd": "/home/gspark/workspace/01_pd_disag",
+  "started_utc": "2026-10-19T07:07:03Z",
+  "versions": {
+    "torch": "2.10.0+cpu",
+    "furiosa-torch": "2026.4.0",
+    "furiosa-llm": "2026.4.0",
+    "transformers": "5.19.0"
+  },
+  "sources": {
+    "opt_prime/opt_prime/pd/__init__.py": "a83d9c5dd553bddcd97becf99ec71449143567c999b6577667aa87cef58b3106",
+    "opt_prime/opt_prime/pd/capabilities.py": "d7f5aca335aae432e21b1afb37f87cce67842996e5b4fe0ddb02247e2698598d",
+    "opt_prime/opt_prime/pd/contracts.py": "ee05432a655eb479e510f16ab8819b55d314e9a10f18accdbd9afff2d8933980",
+    "opt_prime/opt_prime/pd/hetero_p2p.py": "371e6c21cf53b57c37119f20d4011806393618d403ab53a9e4cb7bb6fb7900a4",
+    "opt_prime/opt_prime/pd/koni.py": "667a5205196e0b5104705ccb3e4e64397b7c01764f4e8b23f68e075f7f6362dd",
+    "opt_prime/opt_prime/pd/llmd.py": "3048ad7847b8a6c0c57226b5d89b50d014ba351b373bf6dde7f2986722bc95ff",
+    "opt_prime/opt_prime/pd/npu/__init__.py": "d44730b4416c036d8e929f2f6d0a98b9adbcce8be1e5f8b93bab35dd8eda51eb",
+    "opt_prime/opt_prime/pd/npu/atom.py": "be78e27c105a5b6d1de288f2c205bf18bbc3804e130546b29e4f350fb063980d",
+    "opt_prime/opt_prime/pd/npu/atom_device.py": "129efcd123995f03f55895848eb272cdfaacc9c49f9785fd672ec7d9e85d3116",
+    "opt_prime/opt_prime/pd/npu/atom_runtime.py": "0e25819a56a99305f4a49c941cfe1094d2e22060c310ff5e83904473661e8018",
+    "opt_prime/opt_prime/pd/npu/engines.py": "58dbaa0ab34449aa26f10c331de6e8550ac292eedec8dc4d0a8d5d52b228cfba",
+    "opt_prime/opt_prime/pd/npu/factory.py": "20d390a8a23b974c74dd1d6a217561dbb2dce4c3044282c98dbd31f286c69774",
+    "opt_prime/opt_prime/pd/npu/model.py": "973c0b105b3890f286b4bca160844432b42beb67587f8c7db7232be60ff2a384",
+    "opt_prime/opt_prime/pd/npu/native_atom.py": "662ebfdaa874988fda0b4f367b273dadd98174a4aab28409fd1e0fcc2bf3ec4a",
+    "opt_prime/opt_prime/pd/npu/packing.py": "c015a1d742decee36f212cbc7841e5da6eddd9f0f0a0732f33da0fd0ff170491",
+    "opt_prime/opt_prime/pd/npu/provenance.py": "6222654b7ccaf284458f69c17be1e4fe809b2ce70479d836f2aaac8362f30891",
+    "opt_prime/opt_prime/pd/npu/rngd.py": "74a06401eb48c9bd850271c6b16074916cbe92893a83b3a8638397d68a9f90aa",
+    "opt_prime/opt_prime/pd/npu/shared_kv.py": "6b6a1fb1744f02ccd93f394ef7dd309ce506e7c148f6f61fa6ec8fddaa6e8905",
+    "opt_prime/opt_prime/pd/npu/worker.py": "1f31f843aeba21736e3bc883f15dfb25758da8c74c8abdd9cb2ed9d6cb927274",
+    "opt_prime/opt_prime/pd/runtime.py": "daa4d232506e14cbaa169658371dbdebed52e59a59ff6e10930c706c6250b342",
+    "opt_prime/opt_prime/pd/torch_cache.py": "f57d2004b43f98ed611bf145c576d14ef56d34857e46bf6ed48c8cff45300610",
+    "opt_prime/opt_prime/pd/torch_engine.py": "bf63ec761409e2ed6dbe86aa020126e86bf283ccc95d0c0cb698b9b8946b8230",
+    "opt_prime/opt_prime/pd/torch_models.py": "0476af7eccac04e1051bc7e163cc9e7fd2b554798d97996b2447344f5df3c81b",
+    "opt_prime/examples/pd/validate_qwen_pd.py": "228d2ec06a9a71b11768049964f46d8063f65c474db1738a832c3789d0dd2c3d"
+  },
+  "commit": "3b405d851369bb5221aca51ee2d236c1ba190db4",
+  "status": " M opt_prime/examples/pd/validate_qwen_pd.py\n M opt_prime/opt_prime/pd/contracts.py\n M opt_prime/opt_prime/pd/llmd.py\n M opt_prime/opt_prime/pd/npu/engines.py\n?? opt_prime/examples/pd/validate_http_cancel.py\n?? opt_prime/tests/test_pd_http_cancel.py\n"
+}

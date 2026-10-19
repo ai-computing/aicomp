@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "cancel_receipt": {
+    "cqe_result": 0,
+    "completed": 56,
+    "requested": 56,
+    "bytes_requested": 917504,
+    "dma_seconds": 0.00209092
+  },
+  "accepted_status": 202,
+  "completion_status": 499,
+  "decode_skipped": true,
+  "reused_tokens_exact": true
+}

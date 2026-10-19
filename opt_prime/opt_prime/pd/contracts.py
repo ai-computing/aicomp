@@ -11,8 +11,11 @@ class KVSpec:
     representation: str  # Physical encoding, e.g. dlfloat16; not nominal model dtype.
     layout: str  # Versioned physical layout, including shard/head ordering.
     shape: tuple[int, ...]
+    semantic_id: str = ""  # Optional legacy default; versioned model/geometry digest.
 
     def __post_init__(self):
+        if not isinstance(self.semantic_id, str):
+            raise ValueError("semantic_id must be a string")
         if not all(
             isinstance(x, str) and x.strip()
             for x in (self.model_id, self.revision, self.representation, self.layout)

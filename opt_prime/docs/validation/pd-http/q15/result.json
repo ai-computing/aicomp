@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "sidecar": {
+    "passed": true,
+    "requests": 8,
+    "output_tokens": 160,
+    "exact_direct_tokens": true,
+    "owner_state": "idle",
+    "sidecar_exit": 0
+  },
+  "http_cancel": {
+    "passed": true,
+    "cancel_receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 917504,
+      "dma_seconds": 0.00209092
+    },
+    "accepted_status": 202,
+    "completion_status": 499,
+    "decode_skipped": true,
+    "reused_tokens_exact": true
+  },
+  "requests": 16,
+  "tokens": 320,
+  "commands": 896,
+  "worker_exit": 0,
+  "scope": "actual P2P vs same-decoder host admission full logits; FP32 quality separate"
+}

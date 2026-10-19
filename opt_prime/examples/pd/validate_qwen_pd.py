@@ -235,6 +235,23 @@ def main():
                 max_output=32,
                 render=lambda ids: tokenizer.decode(ids, skip_special_tokens=True),
             )
+        if cfg.get("http_cancel_test"):
+            from validate_http_cancel import validate_http_cancel
+
+            first = rows[0]
+            status["http_cancel"] = validate_http_cancel(
+                source,
+                decoder,
+                transport,
+                dict(
+                    prompt=first["prompt"],
+                    count=first["output_length"],
+                    expected=first["tokens"],
+                ),
+                output=out / "http-cancel",
+                spec=spec,
+                render=lambda ids: tokenizer.decode(ids, skip_special_tokens=True),
+            )
         session.close()
         live = False
         code = session.worker.process.returncode

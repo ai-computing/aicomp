@@ -1,6 +1,7 @@
 """Qwen endpoint adapters; common runtime and transport remain model independent."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+import hashlib
 import json
 from ..contracts import KVSpec, KVLease, PrefillResult
 from ..capabilities import EngineCapabilities
@@ -29,6 +30,10 @@ class QwenRngdEngine:
             "dlfloat16-token-major-v1",
             "dense-cache-head-token-dim-v1",
             (s.caches, s.kv_heads, 512, s.head_dim),
+            semantic_id="dense-v1:"
+            + hashlib.sha256(
+                json.dumps(asdict(s), sort_keys=True).encode()
+            ).hexdigest(),
         )
         self._owned = {}
 

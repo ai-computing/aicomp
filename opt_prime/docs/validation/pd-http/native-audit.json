@@ -1,0 +1,26 @@
+{
+  "installed": {
+    "rebel-compiler": "0.11.0",
+    "torch-rbln": "0.2.2",
+    "vllm-rbln": "0.11.0",
+    "nixl-rbln": null,
+    "nixl": null
+  },
+  "rdma_devices": [],
+  "gpu_available": false,
+  "download_attempts": [
+    {
+      "index": "default pip index",
+      "result": "no matching distribution"
+    },
+    {
+      "index": "https://pypi.rbln.ai/simple",
+      "result": "authentication required; keyring unlock failed; EOF on username prompt; no install"
+    }
+  ],
+  "sources": {
+    "rebel/kv_cache.py": "6100d6599246dcbfccff7fdfa93abf6a8993596e15295adce319b811501f2839",
+    "rebel/base_runtime.py": "9da2b3f68a32963ab8f4f0834aed06337cec28aa1fa4df6bd694642187af78e5",
+    "vllm_rbln/distributed/kv_transfer/kv_connector/v1/rbln_nixl_connector.py": "560daf054579b45717965234c821dc58ffbabae8f3d7a0f0fc77d45b324e11de"
+  }
+}
