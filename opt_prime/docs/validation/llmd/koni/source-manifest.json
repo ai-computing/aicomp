@@ -1,0 +1,16 @@
+{
+  "base_commit": "0c54548315acab3c76b2aba5b85f78991d73d014",
+  "dirty": true,
+  "files": {
+    "opt_prime/opt_prime/pd/llmd.py": "9eee49c4f031d78aa4f088500ad845c9c199f137a1868f494c6afbedcde9bb12",
+    "opt_prime/opt_prime/pd/hetero_p2p.py": "371e6c21cf53b57c37119f20d4011806393618d403ab53a9e4cb7bb6fb7900a4",
+    "opt_prime/opt_prime/pd/koni.py": "667a5205196e0b5104705ccb3e4e64397b7c01764f4e8b23f68e075f7f6362dd",
+    "opt_prime/opt_prime/pd/torch_engine.py": "45ef60e731489eb49b07e7287d944c3e42698212aa64cd3ee0fbfe22cdbccc6f",
+    "opt_prime/opt_prime/pd/__init__.py": "e0e1e89865d18622e6f2a37231de09433513ae8703cde76187b832bf91209a92",
+    "opt_prime/opt_prime/pd/runtime.py": "4222c61ee5a9e8f6dd0aac95184ab17c58ef8d91c1d42b3e7e9d5900c886e8c9",
+    "opt_prime/examples/pd/validate_torch_sidecar.py": "aeb05fb119b2a4d0eb6ca690fbaa92db713a3ae536036caed0a99c210348b797",
+    "opt_prime/examples/pd/torch_demo.py": "a430598f2fcaeef3cf58439059df10366a5b9931092c9d66969575c13d1caf42",
+    "opt_prime/examples/pd/validate_koni.py": "6c2adf56628f3521677a6d2b47079a88c2505688100e3121912d512c519cbbd0",
+    "opt_prime/examples/pd/sidecar_validation.py": "c5234ed97682f9071fea6dcb8d58181db81b64b7688fb96e3a20acae2e65b017"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "../hetero-npu-p2p": {
+    "commit": "5cbce714e6f4ca4de3f8b8ed3500a487684effcf",
+    "status": "?? .omc/\n"
+  },
+  "../rngd_llmd": {
+    "commit": "b2e107a8795c8d29878cc9ba5d555c8a3c2bfef2",
+    "status": ""
+  },
+  "../experiments/native_pd_2026_4/llmd_integration/inference-scheduler": {
+    "commit": "5f4e762f341a5196393ce79f8a57c3e1900c4a6b",
+    "status": " M pkg/sidecar/proxy/proxy_helpers.go\n"
+  }
+}

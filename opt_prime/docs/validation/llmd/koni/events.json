@@ -1,0 +1,122 @@
+[
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-0",
+    "time": 347422.431763844
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-0",
+    "time": 347422.433693756
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-0",
+    "time": 347422.518550219
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-1",
+    "time": 347422.573383805
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-1",
+    "time": 347422.575144745
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-1",
+    "time": 347424.95273982
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-2",
+    "time": 347425.011924525
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-2",
+    "time": 347425.013872267
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-2",
+    "time": 347425.105624157
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-3",
+    "time": 347425.167812196
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-3",
+    "time": 347425.169615066
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-3",
+    "time": 347427.550853262
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-4",
+    "time": 347427.614104303
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-4",
+    "time": 347427.616067395
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-4",
+    "time": 347427.707693194
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-5",
+    "time": 347427.771180037
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-5",
+    "time": 347427.77321076
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-5",
+    "time": 347430.147948173
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-6",
+    "time": 347430.213770142
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-6",
+    "time": 347430.215760854
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-6",
+    "time": 347430.306253231
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-7",
+    "time": 347430.37203189
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-7",
+    "time": 347430.374062073
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-7",
+    "time": 347432.772806935
+  }
+]

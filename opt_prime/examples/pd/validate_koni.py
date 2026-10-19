@@ -20,6 +20,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=Path, required=True)
     parser.add_argument('--hetero-repo', type=Path, required=True)
+    parser.add_argument('--llmd-sidecar', type=Path)
     args = parser.parse_args()
     cfg = json.loads(args.config.read_text())
     out = Path(cfg['out']).resolve()
@@ -162,6 +163,16 @@ def main():
                 with (out / 'requests.jsonl').open('a') as stream:
                     stream.write(json.dumps(row) + '\n')
                 print('PASS', request.request_id, flush=True)
+    if args.llmd_sidecar:
+        from sidecar_validation import validate_sidecar
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(cfg['model'], local_files_only=True)
+        cases = [dict(prompt=prompts[int(row['request_id'].split('-')[1][1:])],
+                      count=row['output_length'], expected=row['tokens']) for row in rows]
+        validate_sidecar(source, decoder, transport, cases, binary=args.llmd_sidecar,
+                         output=out/'llmd', model='optimus-koni', vocab_size=128256,
+                         context=512, max_output=128,
+                         render=lambda tokens: tokenizer.decode(tokens, skip_special_tokens=True))
     # Successful runtime returns prove all copy/decode accesses are fenced.
     conn.send(json.dumps(dict(cmd='stop')).encode())
     code = worker.wait(timeout=60)

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/llmd_integration/pd-sidecar",
+    "--port",
+    "52435",
+    "--vllm-port",
+    "45697",
+    "--kv-connector",
+    "shared-storage",
+    "--secure-proxy=false"
+  ],
+  "sha256": "2e5e7a0eabe5e2b770ac48f875c62dd075da6f7fc1b6745baf147b3a40560274",
+  "pid": 683737
+}

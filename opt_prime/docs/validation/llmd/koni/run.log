@@ -1,0 +1,23 @@
+ATOM_READY
+WEIGHTS_LOADED
+[full-engine] C=272 compiled in 1s
+RNGD_READY
+REFERENCES_READY
+PASS r0-p0-o1
+PASS r0-p0-o32
+PASS r0-p1-o1
+PASS r0-p1-o32
+PASS r0-p2-o1
+PASS r0-p2-o32
+PASS r0-p3-o1
+PASS r0-p3-o32
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+SIDECAR_PASS llmd-0
+SIDECAR_PASS llmd-1
+SIDECAR_PASS llmd-2
+SIDECAR_PASS llmd-3
+SIDECAR_PASS llmd-4
+SIDECAR_PASS llmd-5
+SIDECAR_PASS llmd-6
+SIDECAR_PASS llmd-7
+{"passed": true, "requests": 8, "output_tokens": 132, "full_logit_exact": true, "worker_exit": 0, "scope": "same decoder host-admission parity; no native model parity claim"}

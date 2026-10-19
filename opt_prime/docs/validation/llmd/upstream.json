@@ -1,0 +1,6 @@
+{
+  "commit": "5f4e762f341a5196393ce79f8a57c3e1900c4a6b",
+  "patch": "loopback-only.patch",
+  "patch_sha256": "275074053f2150dd1babcc2fc452976abe262e34eea5c31765cb1285afaef36b",
+  "patch_matches": true
+}

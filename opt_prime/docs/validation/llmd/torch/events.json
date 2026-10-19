@@ -1,0 +1,47 @@
+[
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-0",
+    "time": 347350.331318787
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-0",
+    "time": 347350.33336263
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-0",
+    "time": 347350.336494035
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-1",
+    "time": 347350.340026125
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-1",
+    "time": 347350.341194718
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-1",
+    "time": 347350.344188742
+  },
+  {
+    "stage": "prefill_ready",
+    "request_id": "llmd-2",
+    "time": 347350.347804382
+  },
+  {
+    "stage": "decode_start",
+    "request_id": "llmd-2",
+    "time": 347350.348746493
+  },
+  {
+    "stage": "decode_complete",
+    "request_id": "llmd-2",
+    "time": 347350.351683526
+  }
+]

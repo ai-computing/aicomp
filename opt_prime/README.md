@@ -740,3 +740,9 @@ It includes a bridge to the separately installed `hetero-npu-p2p` transport.
 Torch causal-model and KONI RNGD/ATOM endpoint adapters are included. llm-d
 service integration is a separate feature; hardware support is limited to explicitly
 validated routes and SDK versions. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).
+
+### llm-d feature branch
+
+`feat/optimus-llmd` adds an optional local shared-storage-sidecar adapter on top of
+the tested engine. It serializes device work through the owning process and keeps
+KV off the HTTP path. See [service contracts and validation](docs/LLMD_FEATURE.md).

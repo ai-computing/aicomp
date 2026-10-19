@@ -1,0 +1,10 @@
+{
+  "sidecar_requests": 8,
+  "sidecar_tokens": 132,
+  "sidecar_dma_commands": 512,
+  "all_full_logits_exact": true,
+  "direct_requests": 8,
+  "direct_tokens": 132,
+  "total_dma_commands": 1024,
+  "all_stage_order_valid": true
+}
