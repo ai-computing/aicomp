@@ -11,6 +11,9 @@
 #         torchrun --nproc_per_node=2 train_probe.py --family qwen3_moe --pp-size 2
 import argparse, copy, os, sys
 
+# an installed NPU torch backend (furiosa-torch) autoloads with torch and breaks CUDA autograd streams
+os.environ.setdefault("TORCH_DEVICE_BACKEND_AUTOLOAD", "0")
+
 import torch
 import torch.nn.functional as F
 
