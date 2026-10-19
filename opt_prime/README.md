@@ -740,3 +740,11 @@ It includes a bridge to the separately installed `hetero-npu-p2p` transport.
 Torch causal-model and KONI RNGD/ATOM endpoint adapters are included. llm-d
 service integration is a separate feature; hardware support is limited to explicitly
 validated routes and SDK versions. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).
+
+### Extending models and backends
+
+The PD package separates SDK-free contracts, execution state, model-family
+capabilities, cache transport and device adapters. Dense GPT-2/Llama/Qwen2/Qwen3/
+Mistral Torch models are covered by the model matrix; NPU support remains scoped
+to the validated KONI RNGD→ATOM path. See the [contributor guide](docs/CONTRIBUTING_PD.md)
+and [model/performance validation](docs/validation/model-expansion/RESULTS.md).

@@ -6,7 +6,9 @@ from pathlib import Path
 import unittest
 try:
     import torch
-    from transformers import GPT2Config, GPT2LMHeadModel, LlamaConfig, LlamaForCausalLM
+    from transformers import (GPT2Config, GPT2LMHeadModel, LlamaConfig, LlamaForCausalLM,
+                              Qwen2Config, Qwen2ForCausalLM, Qwen3Config, Qwen3ForCausalLM,
+                              MistralConfig, MistralForCausalLM)
 except ImportError as error:
     raise unittest.SkipTest("optional torch-pd dependencies missing") from error
 from opt_prime.pd import PDRequest, PDRuntime
@@ -20,25 +22,32 @@ class TorchParityTests(unittest.TestCase):
         cls.rows = []
 
     def test_dense_models_full_and_prefix_prefill(self):
-        for kind in ('gpt2', 'llama'):
+        for kind in ('gpt2', 'llama', 'qwen2', 'qwen3', 'mistral'):
             torch.manual_seed(17)
             if kind == 'gpt2':
-                model = GPT2LMHeadModel(GPT2Config(vocab_size=41, n_positions=64,
+                model = GPT2LMHeadModel(GPT2Config(vocab_size=41, n_positions=128,
                     n_embd=32, n_layer=2, n_head=4, attn_pdrop=0, resid_pdrop=0, embd_pdrop=0))
             else:
-                model = LlamaForCausalLM(LlamaConfig(vocab_size=41, max_position_embeddings=64,
-                    hidden_size=32, intermediate_size=64, num_hidden_layers=2,
-                    num_attention_heads=4, num_key_value_heads=2, attention_dropout=0))
+                config_cls, model_cls = {
+                    'llama': (LlamaConfig, LlamaForCausalLM),
+                    'qwen2': (Qwen2Config, Qwen2ForCausalLM),
+                    'qwen3': (Qwen3Config, Qwen3ForCausalLM),
+                    'mistral': (MistralConfig, MistralForCausalLM),
+                }[kind]
+                model = model_cls(config_cls(vocab_size=41, max_position_embeddings=128,
+                    hidden_size=32, intermediate_size=64, num_hidden_layers=2, head_dim=8,
+                    num_attention_heads=4, num_key_value_heads=2, attention_dropout=0,
+                    sliding_window=None, use_sliding_window=False))
             model.eval()
             for prefix in (False, True):
                 source = TorchCausalLMEngine(copy.deepcopy(model), model_id=kind,
-                    revision='random-seed17', max_context=64, endpoint='source', prefix_only=prefix)
+                    revision='random-seed17', max_context=128, endpoint='source', prefix_only=prefix, capture_logits=True)
                 dest = TorchCausalLMEngine(copy.deepcopy(model), model_id=kind,
-                    revision='random-seed17', max_context=64, endpoint='destination')
+                    revision='random-seed17', max_context=128, endpoint='destination', capture_logits=True)
                 runtime = PDRuntime(source, dest, TorchCacheTransport(source='source',
                     destination='destination', spec=source.spec))
-                for length in (2, 7, 19):
-                    for count in (1, 6):
+                for length in (2, 7, 19, 63):
+                    for count in (1, 6, 16):
                         with self.subTest(model=kind, prefix=prefix, length=length, count=count):
                             prompt = tuple(1 + i % 39 for i in range(length))
                             full = list(prompt)

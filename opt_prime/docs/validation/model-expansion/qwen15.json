@@ -1,0 +1,91 @@
+{
+  "passed": true,
+  "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+  "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "device": "cpu",
+  "dtype": "float32",
+  "threads": 8,
+  "atol": 0.0002,
+  "rtol": 0.0002,
+  "weights_sha256": {
+    "model.safetensors": "dd924a11b4c220f385b51ffa522daea7c9f3d850e31b162bb5661df483c6d3ee"
+  },
+  "cases": [
+    {
+      "prompt": "한국의 수도는 어디인가요? 간단히 답해주세요.",
+      "input_length": 18,
+      "prefix_only": false,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 3.24249267578125e-05,
+      "tokens": [
+        130092,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        136905
+      ],
+      "text": " 한국의 수도는 서울입니다. 서울"
+    },
+    {
+      "prompt": "한국의 수도는 어디인가요? 간단히 답해주세요.",
+      "input_length": 18,
+      "prefix_only": true,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 5.245208740234375e-05,
+      "tokens": [
+        130092,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        136905
+      ],
+      "text": " 한국의 수도는 서울입니다. 서울"
+    },
+    {
+      "prompt": "Explain why the sky appears blue in one sentence.",
+      "input_length": 11,
+      "prefix_only": false,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 4.9233436584472656e-05,
+      "tokens": [
+        576,
+        12884,
+        7952,
+        6303,
+        1576,
+        279,
+        9237,
+        594
+      ],
+      "text": " The sky appears blue because the Earth's"
+    },
+    {
+      "prompt": "Explain why the sky appears blue in one sentence.",
+      "input_length": 11,
+      "prefix_only": true,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 5.125999450683594e-05,
+      "tokens": [
+        576,
+        12884,
+        7952,
+        6303,
+        1576,
+        279,
+        9237,
+        594
+      ],
+      "text": " The sky appears blue because the Earth's"
+    }
+  ]
+}
