@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "compiled_only": true,
+  "seconds": 77.76839056797326,
+  "artifacts": [
+    "experiments/qwen3b_pd_20261019/atom-build-r1/compiled/3ecd287b3e26015d.rbln"
+  ]
+}

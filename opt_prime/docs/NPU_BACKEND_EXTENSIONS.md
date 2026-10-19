@@ -133,3 +133,16 @@ new config, replace paths and select an idle physical card before running.
 Compilation artifacts are matched against `model.json` before runtime creation.
 Adding a backend should not add an unconditional vendor dependency to the public
 package. Verify a clean SDK-free install separately from device execution.
+
+## Explicit device selection in validation
+
+`validate_qwen_rngd.py` accepts `--rngd-device-path` and
+`--rngd-logical-index`; both must describe the same real device. It checks active
+processes and opened device channels. Higher-precision attention now defaults
+on, matching the PD engine; use `--no-accurate-attention` only to reproduce the
+older BF16 diagnostic path. Historical runs retain their recorded setting.
+ATOM selection accepts canonical physical names from the reported host group,
+including indices above3, rather than assuming a four-card server. Idle/status,
+active-context and actual opened-FD checks still apply. This naming extension
+has offline tests; only physicalATOM1 was used in the new hardware validation.
+Neither option changes driver groups or selects a busy card automatically.

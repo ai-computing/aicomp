@@ -757,9 +757,14 @@ and [model/performance validation](docs/validation/model-expansion/RESULTS.md).
 
 Actual NPU tests additionally cover native ATOM execution of Qwen2.5-0.5B and
 1.5B, prefill chunk64/128 comparisons, and stage profiling of KONI RNGD→ATOM PD.
-Qwen2.5-0.5B and 1.5B now also pass actual RNGD→ATOM P2P validation at B1,
+Qwen2.5-0.5B, 1.5B and 3B now also pass actual RNGD→ATOM P2P validation at B1,
 context512. These new adapters are experimental and use a pinned external-KV
 ABI; they do not establish arbitrary NPU/GPU support. See the
 [backend extension guide](docs/NPU_BACKEND_EXTENSIONS.md),
 [Qwen P2P validation](docs/QWEN_PD_VALIDATION.md), and the earlier
 [native NPU validation record](docs/NPU_MODEL_VALIDATION.md).
+
+The [3B extension record](docs/QWEN_3B_VALIDATION.md) covers additional model
+geometry, explicit device selection and actual local llm-d verification. The3B transfer
+path passes, but FP32 teacher-forced agreement is147/160; broader model quality
+is not cleared.

@@ -13,7 +13,11 @@ def main():
     p.add_argument("--model", type=Path, required=True)
     p.add_argument("--model-id", required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--accurate-attention", action="store_true")
+    p.add_argument(
+        "--accurate-attention", action=argparse.BooleanOptionalAction, default=True
+    )
+    p.add_argument("--rngd-device-path", default="/dev/rngd/npu3ch0")
+    p.add_argument("--rngd-logical-index", type=int, default=2)
     a = p.parse_args()
     a.out.mkdir(parents=True, exist_ok=False)
     status = {"passed": False, "accurate_attention": a.accurate_attention}
@@ -27,11 +31,11 @@ def main():
         from opt_prime.pd.npu.model import DenseModel, load_weights
         from hetero_p2p.serving import RngdBinding
 
-        binding = RngdBinding.from_path("/dev/rngd/npu3ch0", 2)
+        binding = RngdBinding.from_path(a.rngd_device_path, a.rngd_logical_index)
         state = subprocess.check_output(["furiosa-smi", "ps"], text=True)
         (a.out / "device-before.txt").write_text(state)
-        if "npu3:" in state:
-            raise RuntimeError("RNGD3 is in use")
+        if f"npu{binding.index}:" in state:
+            raise RuntimeError("selected RNGD is in use")
         torch.set_num_threads(8)
         spec = DenseModel.load(a.model, a.model_id)
         weights = load_weights(a.model, spec)
@@ -54,7 +58,11 @@ def main():
 
         start = time.perf_counter()
         engine = QwenRngdPrefill(
-            spec, weights, width=32, accurate_attention=a.accurate_attention
+            spec,
+            weights,
+            width=32,
+            chip=binding.compute_index,
+            accurate_attention=a.accurate_attention,
         )
         status["build_seconds"] = time.perf_counter() - start
         import os

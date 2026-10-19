@@ -1,0 +1,493 @@
+{
+  "model": "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct/snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1",
+  "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+  "reference": "CPU FP32 eager attention, teacher forced on each unique native trajectory",
+  "weights_sha256": {
+    "model-00001-of-00002.safetensors": "67347b23fb4165b652eb6611f5e1f2a06dfcddba8e909df1b2b0b1857bee06c2",
+    "model-00002-of-00002.safetensors": "a40d941d0e7e0b966ad8b62bb6d6b7c88cce1299197b599d9d0a4ce59aabfc1d"
+  },
+  "matches": 147,
+  "total": 160,
+  "cases": [
+    {
+      "input_length": 32,
+      "output_length": 8,
+      "matches": 8,
+      "total": 8,
+      "native_tokens": [
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        382,
+        37332,
+        4938
+      ],
+      "teacher_forced_reference_tokens": [
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        382,
+        37332,
+        4938
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 32,
+      "output_length": 32,
+      "matches": 31,
+      "total": 32,
+      "native_tokens": [
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        382,
+        37332,
+        4938,
+        11,
+        1083,
+        3881,
+        438,
+        22038,
+        320,
+        13999,
+        9549,
+        13850,
+        701,
+        374,
+        264,
+        943,
+        315,
+        17072,
+        4938,
+        429,
+        10533,
+        821,
+        323,
+        11221,
+        27092,
+        369,
+        279
+      ],
+      "teacher_forced_reference_tokens": [
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        382,
+        37332,
+        4938,
+        11,
+        1083,
+        3881,
+        438,
+        22038,
+        320,
+        13999,
+        9549,
+        13850,
+        701,
+        374,
+        264,
+        16587,
+        315,
+        17072,
+        4938,
+        429,
+        10533,
+        821,
+        323,
+        11221,
+        27092,
+        369,
+        279
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 64,
+      "output_length": 8,
+      "matches": 6,
+      "total": 8,
+      "native_tokens": [
+        1374,
+        19991,
+        279,
+        2155,
+        4494,
+        315,
+        6366,
+        4938
+      ],
+      "teacher_forced_reference_tokens": [
+        81917,
+        19991,
+        279,
+        3476,
+        4494,
+        315,
+        6366,
+        4938
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 64,
+      "output_length": 32,
+      "matches": 29,
+      "total": 32,
+      "native_tokens": [
+        1374,
+        19991,
+        279,
+        2155,
+        4494,
+        315,
+        6366,
+        4938,
+        11,
+        2670,
+        22038,
+        11,
+        30686,
+        11,
+        323,
+        6500,
+        11,
+        323,
+        862,
+        5746,
+        13,
+        65279,
+        279,
+        12650,
+        315,
+        4938,
+        304,
+        24231,
+        323,
+        1246,
+        432,
+        21501
+      ],
+      "teacher_forced_reference_tokens": [
+        81917,
+        19991,
+        279,
+        3476,
+        4494,
+        315,
+        6366,
+        4938,
+        323,
+        2670,
+        22038,
+        11,
+        30686,
+        11,
+        323,
+        6500,
+        11,
+        323,
+        862,
+        5746,
+        13,
+        65279,
+        279,
+        12650,
+        315,
+        4938,
+        304,
+        24231,
+        323,
+        1246,
+        432,
+        21501
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 41,
+      "output_length": 8,
+      "matches": 8,
+      "total": 8,
+      "native_tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905
+      ],
+      "teacher_forced_reference_tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 41,
+      "output_length": 32,
+      "matches": 27,
+      "total": 32,
+      "native_tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        151645,
+        198,
+        151644,
+        872,
+        198,
+        26698,
+        126893,
+        20401,
+        37195,
+        254,
+        135562,
+        16560,
+        126537,
+        254,
+        82528,
+        19969,
+        35711,
+        30,
+        715,
+        7,
+        34759,
+        79879
+      ],
+      "teacher_forced_reference_tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        151645,
+        198,
+        151644,
+        872,
+        198,
+        26698,
+        126893,
+        20401,
+        61298,
+        254,
+        135562,
+        16560,
+        130108,
+        254,
+        23573,
+        19969,
+        35711,
+        30,
+        715,
+        21329,
+        126952,
+        79879
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 37,
+      "output_length": 8,
+      "matches": 8,
+      "total": 8,
+      "native_tokens": [
+        82707,
+        47430,
+        374,
+        264,
+        1714,
+        315,
+        27572,
+        323
+      ],
+      "teacher_forced_reference_tokens": [
+        82707,
+        47430,
+        374,
+        264,
+        1714,
+        315,
+        27572,
+        323
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    },
+    {
+      "input_length": 37,
+      "output_length": 32,
+      "matches": 30,
+      "total": 32,
+      "native_tokens": [
+        82707,
+        47430,
+        374,
+        264,
+        1714,
+        315,
+        27572,
+        323,
+        48224,
+        1376,
+        19083,
+        13530,
+        6157,
+        11,
+        3545,
+        1483,
+        311,
+        29436,
+        4625,
+        2615,
+        323,
+        7269,
+        3766,
+        5068,
+        13,
+        151645,
+        198,
+        151644,
+        872,
+        198,
+        6713,
+        498
+      ],
+      "teacher_forced_reference_tokens": [
+        82707,
+        47430,
+        374,
+        264,
+        1714,
+        315,
+        27572,
+        323,
+        48224,
+        1376,
+        19083,
+        13530,
+        6157,
+        11,
+        3545,
+        1483,
+        311,
+        29436,
+        5068,
+        2615,
+        323,
+        5068,
+        3766,
+        5068,
+        13,
+        151645,
+        198,
+        151644,
+        872,
+        198,
+        6713,
+        498
+      ],
+      "origins": [
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/qwen3b_pd_20261019/pd-llmd-r1/runs.jsonl",
+          "repeat": 1
+        }
+      ]
+    }
+  ]
+}

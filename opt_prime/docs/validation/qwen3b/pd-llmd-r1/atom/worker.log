@@ -1,0 +1,13 @@
+Function "rblnCreateContext" not defined.
+Breakpoint 1 (rblnCreateContext) pending.
+Function "rblnAllocateDeviceMemory" not defined.
+Breakpoint 2 (rblnAllocateDeviceMemory) pending.
+Breakpoint 3 at 0x706f0
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[Detaching after vfork from child process 1176121]
+[Detaching after vfork from child process 1176122]
+[Detaching after vfork from child process 1176125]
+[Detaching after vfork from child process 1176691]
+[Detaching after vfork from child process 1176976]
+[Inferior 1 (process 1176092) exited normally]

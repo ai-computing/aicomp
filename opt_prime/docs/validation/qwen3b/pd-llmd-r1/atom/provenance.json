@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "/home/gspark/workspace/01_pd_disag/aicomp-llmd/opt_prime/examples/pd/qwen_atom_worker.py",
+    "--config",
+    "/home/gspark/workspace/01_pd_disag/experiments/qwen3b_pd_20261019/pd-llmd-r1/config.json",
+    "--directory",
+    "/home/gspark/workspace/01_pd_disag/experiments/qwen3b_pd_20261019/pd-llmd-r1/atom"
+  ],
+  "python": "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+  "cwd": "/home/gspark/workspace/01_pd_disag",
+  "started_utc": "2026-10-19T05:06:55Z",
+  "versions": {
+    "torch": "2.11.0+cpu",
+    "rebel-compiler": "0.11.0",
+    "torch-rbln": "0.2.2",
+    "optimum-rbln": "0.11.0.post1",
+    "transformers": "5.8.1"
+  },
+  "sources": {
+    "opt_prime/opt_prime/pd/__init__.py": "a83d9c5dd553bddcd97becf99ec71449143567c999b6577667aa87cef58b3106",
+    "opt_prime/opt_prime/pd/contracts.py": "24a7fe5d21c82b03faaceece6967d29578e55040df6d04a81b3709bc00441dd7",
+    "opt_prime/opt_prime/pd/hetero_p2p.py": "371e6c21cf53b57c37119f20d4011806393618d403ab53a9e4cb7bb6fb7900a4",
+    "opt_prime/opt_prime/pd/koni.py": "667a5205196e0b5104705ccb3e4e64397b7c01764f4e8b23f68e075f7f6362dd",
+    "opt_prime/opt_prime/pd/llmd.py": "9eee49c4f031d78aa4f088500ad845c9c199f137a1868f494c6afbedcde9bb12",
+    "opt_prime/opt_prime/pd/npu/__init__.py": "d44730b4416c036d8e929f2f6d0a98b9adbcce8be1e5f8b93bab35dd8eda51eb",
+    "opt_prime/opt_prime/pd/npu/atom.py": "be78e27c105a5b6d1de288f2c205bf18bbc3804e130546b29e4f350fb063980d",
+    "opt_prime/opt_prime/pd/npu/atom_device.py": "129efcd123995f03f55895848eb272cdfaacc9c49f9785fd672ec7d9e85d3116",
+    "opt_prime/opt_prime/pd/npu/atom_runtime.py": "6a7ef456fd79fe237a3307e38c9d32abc46f61f80e07dcad2f091e9c61d3a87c",
+    "opt_prime/opt_prime/pd/npu/engines.py": "51e622d72367b7868ae8ad8075ca8cd5cd35924c3699f1d3820a919582023ff5",
+    "opt_prime/opt_prime/pd/npu/model.py": "973c0b105b3890f286b4bca160844432b42beb67587f8c7db7232be60ff2a384",
+    "opt_prime/opt_prime/pd/npu/provenance.py": "6222654b7ccaf284458f69c17be1e4fe809b2ce70479d836f2aaac8362f30891",
+    "opt_prime/opt_prime/pd/npu/rngd.py": "80b302c2870a03a695fe727e4595979e08917b774629b486877c09ddc46f9a2f",
+    "opt_prime/opt_prime/pd/runtime.py": "d2d9c2a0b3224d22be68b4f611a9774875de720a6fc04d1f4ea5c9b656c4d488",
+    "opt_prime/opt_prime/pd/torch_cache.py": "f57d2004b43f98ed611bf145c576d14ef56d34857e46bf6ed48c8cff45300610",
+    "opt_prime/opt_prime/pd/torch_engine.py": "bf63ec761409e2ed6dbe86aa020126e86bf283ccc95d0c0cb698b9b8946b8230",
+    "opt_prime/opt_prime/pd/torch_models.py": "0476af7eccac04e1051bc7e163cc9e7fd2b554798d97996b2447344f5df3c81b",
+    "opt_prime/examples/pd/qwen_atom_worker.py": "eee5de0635f8c9d6163f6a96e5daf1949da412e471c4eb81d60fd45c2d583f17"
+  },
+  "commit": "a6144029ed3ea636ce846eed3a49afccf22cded4",
+  "status": " M opt_prime/docs/NPU_BACKEND_EXTENSIONS.md\n M opt_prime/examples/pd/validate_qwen_rngd.py\n M opt_prime/opt_prime/pd/npu/atom_device.py\n?? opt_prime/tests/test_pd_npu_device.py\n"
+}

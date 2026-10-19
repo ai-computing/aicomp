@@ -1,0 +1,6 @@
+reformatted aicomp-llmd/opt_prime/tests/test_pd_npu_device.py
+reformatted aicomp-llmd/opt_prime/opt_prime/pd/npu/atom_device.py
+reformatted aicomp-llmd/opt_prime/examples/pd/validate_qwen_rngd.py
+
+All done! ✨ 🍰 ✨
+3 files reformatted.

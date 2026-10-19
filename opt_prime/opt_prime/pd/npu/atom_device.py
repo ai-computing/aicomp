@@ -4,12 +4,15 @@ import csv
 import io
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 
 
 def select_idle_atom(physical="rbln3"):
-    if physical not in ("rbln0", "rbln1", "rbln2", "rbln3"):
+    if not isinstance(physical, str) or not re.fullmatch(
+        r"rbln(?:0|[1-9][0-9]*)", physical
+    ):
         raise ValueError("unknown physical ATOM device")
     group_text = Path("/sys/class/rebellions/rsd/rsd_group").read_text()
     rows = list(csv.DictReader(io.StringIO(group_text)))
