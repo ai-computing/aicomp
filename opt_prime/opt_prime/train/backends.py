@@ -221,8 +221,11 @@ class NpuLoraTrainBackend(TrainBackend):
         tc = TrainConfig(seq_len=job.seq_len, lr=job.lr, steps=job.steps, seed=job.seed, full=job.method == "full")
         lora = LoRAConfig(r=job.lora_r, alpha=job.lora_alpha,
                           targets=tuple(_NPU_LORA_TARGETS[t] for t in job.lora_targets))
-        log = []
-        tr = LoRATrainer(job.model, backends.make(dev), lora, tc, log=log.append)
+        import sys
+
+        def log(line):                     # npu-lora's JSON events (compile progress, steps) -> stderr
+            print(line, file=sys.stderr, flush=True)
+        tr = LoRATrainer(job.model, backends.make(dev), lora, tc, log=log)
         tok = AutoTokenizer.from_pretrained(tr.path)
         ds = PackedDataset(job.data, tok, job.seq_len, seed=job.seed)
         t0 = time.time()
