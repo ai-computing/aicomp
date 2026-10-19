@@ -1,32 +1,26 @@
-"""Greedy, single-sequence Torch adapter using OptimusPrime KVCacheManager.
+"""Greedy single-sequence Torch execution; model/cache policy lives in adapters.
 
-Supports dense full-attention GPT-2/Llama DynamicCache models. Model loading and
-weights provenance are caller responsibilities. No vendor SDK is imported here.
+Models are supplied by the caller. No downloads or vendor SDK imports occur here.
 """
-from dataclasses import dataclass
+import inspect
 import torch
 from transformers.cache_utils import DynamicCache
 from opt_prime.kv_cache import KVCacheManager
-from .runtime import KVLease, KVSpec, PrefillResult
-
-
-@dataclass
-class TorchCache:
-    manager: KVCacheManager
-
-
-def fence(device):
-    if torch.device(device).type == 'cuda':
-        torch.cuda.synchronize(device)
+from .contracts import KVLease, KVSpec, PrefillResult
+from .torch_models import describe_model
+# Compatibility exports: existing users may import transport from this module.
+from .torch_cache import TorchCache, TorchCacheTransport, fence
 
 
 class TorchCausalLMEngine:
-    def __init__(self, model, *, model_id, revision, max_context, endpoint, prefix_only=False):
+    def __init__(self, model, *, model_id, revision, max_context, endpoint, prefix_only=False,
+                 optimize_prefill=True, capture_logits=False):
         config = model.config
-        if config.model_type not in ('gpt2', 'llama'):
-            raise ValueError('adapter supports full-attention GPT-2 and Llama only')
-        if getattr(config, 'sliding_window', None):
-            raise ValueError('sliding window cache is not supported')
+        self.geometry = describe_model(config)
+        self.optimize_prefill = optimize_prefill
+        self.capture_logits = capture_logits
+        if optimize_prefill and 'logits_to_keep' not in inspect.signature(model.forward).parameters:
+            raise ValueError('model forward does not support last-token logits optimization')
         devices = {p.device for p in model.parameters()}
         dtypes = {p.dtype for p in model.parameters() if p.is_floating_point()}
         if len(devices) != 1 or len(dtypes) != 1:
@@ -37,11 +31,11 @@ class TorchCausalLMEngine:
             raise ValueError('this adapter supports torch CPU/CUDA devices')
         if type(max_context) is not int or max_context < 2 or max_context > config.max_position_embeddings:
             raise ValueError('context exceeds model capacity')
-        self.layers = config.num_hidden_layers
-        self.heads = getattr(config, 'num_key_value_heads', config.num_attention_heads)
-        self.head_dim = getattr(config, 'head_dim', config.hidden_size // config.num_attention_heads)
+        self.layers = self.geometry.layers
+        self.heads = self.geometry.kv_heads
+        self.head_dim = self.geometry.head_dim
         self.spec = KVSpec(model_id, revision, str(self.dtype),
-                           'torch-bhsd-full-attention-v1',
+                           f'torch-bhsd-full-attention-v1:{self.geometry.model_type}',
                            (self.layers, 2, 1, self.heads, max_context, self.head_dim))
         self.model = model.eval()
         self.max_context, self.endpoint = max_context, endpoint
@@ -68,7 +62,8 @@ class TorchCausalLMEngine:
     def prefill(self, request):
         lease = self.reserve(request)
         tokens = request.input_ids[:-1] if self.prefix_only else request.input_ids
-        output = self.model(torch.tensor([tokens], device=self.device), use_cache=True)
+        kwargs = {'logits_to_keep': 1} if self.optimize_prefill else {}
+        output = self.model(torch.tensor([tokens], device=self.device), use_cache=True, **kwargs)
         cache = output.past_key_values
         if not isinstance(cache, DynamicCache) or len(cache.layers) != self.layers:
             raise ValueError('expected complete DynamicCache')
@@ -76,7 +71,9 @@ class TorchCausalLMEngine:
             lease.payload.manager.update(i, layer.keys, layer.values, position=0)
         lease.payload.manager.set_seq_len(len(tokens))
         fence(self.device)
-        self.last_logits = [] if self.prefix_only else [output.logits[0, -1].detach().cpu().clone()]
+        self.last_logits = []
+        if self.capture_logits and not self.prefix_only:
+            self.last_logits.append(output.logits[0, -1].detach().cpu().clone())
         if self.prefix_only:
             return PrefillResult(lease, request.input_ids[-1], len(tokens))
         token = int(output.logits[0, -1].argmax())
@@ -98,39 +95,10 @@ class TorchCausalLMEngine:
             output = self.model(torch.tensor([[token]], device=self.device),
                                 past_key_values=dynamic, use_cache=True)
             dynamic = output.past_key_values
-            logits = output.logits[0, -1].detach().cpu().clone()
-            self.last_logits.append(logits)
+            logits = output.logits[0, -1]
+            if self.capture_logits:
+                self.last_logits.append(logits.detach().cpu().clone())
             token = int(logits.argmax())
             generated.append(token)
         fence(self.device)
         return generated
-
-
-class TorchCacheTransport:
-    """Explicit tensor-copy transport; never selected as a P2P fallback."""
-    def __init__(self, *, source, destination, spec):
-        self.source, self.destination, self.spec = source, destination, spec
-
-    def supports(self, source, destination, spec):
-        return (source, destination, spec) == (self.source, self.destination, self.spec)
-
-    @torch.inference_mode()
-    def transfer(self, request_id, source, destination):
-        if source.spec != destination.spec or not self.supports(source.endpoint, destination.endpoint, source.spec):
-            raise ValueError('unconfigured tensor-copy route')
-        src, dst = source.payload.manager, destination.payload.manager
-        position = src.get_seq_len()
-        if not 0 < position <= dst.max_seq_len:
-            raise ValueError('invalid source sequence length')
-        copied = 0
-        for i in range(src.layer_start, src.layer_end):
-            keys, values = src.get(i)
-            dst.update(i, keys.to(dst.device), values.to(dst.device), position=0)
-            copied += keys.numel() * keys.element_size() + values.numel() * values.element_size()
-        dst.set_seq_len(position)
-        fence(src.device)
-        fence(dst.device)
-        return dict(transport='torch-copy', bytes=copied, cache_position=position, completed=True)
-
-    def finish(self, request_id):
-        pass

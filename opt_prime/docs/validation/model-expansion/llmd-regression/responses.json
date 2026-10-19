@@ -1,0 +1,107 @@
+[
+  {
+    "request_id": "llmd-0",
+    "response": {
+      "id": "llmd-0",
+      "object": "text_completion",
+      "model": "tiny-llama",
+      "choices": [
+        {
+          "index": 0,
+          "text": "[7, 6, 23, 39, 3, 18]",
+          "token_ids": [
+            7,
+            6,
+            23,
+            39,
+            3,
+            18
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 2,
+        "completion_tokens": 6,
+        "total_tokens": 8
+      }
+    },
+    "receipt": {
+      "transport": "torch-copy",
+      "bytes": 512,
+      "cache_position": 2,
+      "completed": true
+    },
+    "decoder_reply": null
+  },
+  {
+    "request_id": "llmd-1",
+    "response": {
+      "id": "llmd-1",
+      "object": "text_completion",
+      "model": "tiny-llama",
+      "choices": [
+        {
+          "index": 0,
+          "text": "[6, 23, 39, 3, 18, 37]",
+          "token_ids": [
+            6,
+            23,
+            39,
+            3,
+            18,
+            37
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 7,
+        "completion_tokens": 6,
+        "total_tokens": 13
+      }
+    },
+    "receipt": {
+      "transport": "torch-copy",
+      "bytes": 1792,
+      "cache_position": 7,
+      "completed": true
+    },
+    "decoder_reply": null
+  },
+  {
+    "request_id": "llmd-2",
+    "response": {
+      "id": "llmd-2",
+      "object": "text_completion",
+      "model": "tiny-llama",
+      "choices": [
+        {
+          "index": 0,
+          "text": "[19, 19, 19, 19, 19, 19]",
+          "token_ids": [
+            19,
+            19,
+            19,
+            19,
+            19,
+            19
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 19,
+        "completion_tokens": 6,
+        "total_tokens": 25
+      }
+    },
+    "receipt": {
+      "transport": "torch-copy",
+      "bytes": 4864,
+      "cache_position": 19,
+      "completed": true
+    },
+    "decoder_reply": null
+  }
+]

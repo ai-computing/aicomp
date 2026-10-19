@@ -90,7 +90,7 @@ require implementations and hardware validation. No automatic host fallback exis
 
 ## Implemented engine adapters
 
-`TorchCausalLMEngine` wraps an already loaded dense GPT-2 or Llama causal model.
+`TorchCausalLMEngine` wraps an already loaded dense GPT-2, Llama, Qwen2, Qwen3 or Mistral causal model.
 It exports/imports actual KV through OptimusPrime's existing `KVCacheManager` and
 uses explicit `TorchCacheTransport` tensor copies. This transport is selected by
 the caller, never substituted for failed P2P. It supports single unpadded requests,
@@ -161,3 +161,5 @@ P2P completion-before-notify ordering. The small randomly initialized CPU models
 Contract fixtures and CPU tests do not measure NPU performance, MFU or power.
 
 Measured results and exact scope: [validation record](validation/RESULTS.md).
+
+Contributor guide and module boundaries: [CONTRIBUTING_PD.md](CONTRIBUTING_PD.md).

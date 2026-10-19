@@ -1,0 +1,1689 @@
+{
+  "torch": "2.11.0+cpu",
+  "transformers": "5.8.1",
+  "cases": [
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 1.4901161193847656e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1024,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1024,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.7881393432617188e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1024,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3584,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3584,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3584,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9728,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9728,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9728,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 32256,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 32256,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.4901161193847656e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 32256,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 1.4901161193847656e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.7881393432617188e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3072,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3072,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3072,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9216,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 1.7881393432617188e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9216,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.7881393432617188e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9216,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 31744,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.078051567077637e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 31744,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.4901161193847656e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 31744,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 3.91155481338501e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.21540641784668e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.2351741790771484e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.6333298087120056e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.043081283569336e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.078051567077637e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen2",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.2351741790771484e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.195638656616211e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.21540641784668e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.21540641784668e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.195638656616211e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.195638656616211e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 3.725290298461914e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.842877388000488e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 3.91155481338501e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "qwen3",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 3.91155481338501e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": false,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 16128,
+        "cache_position": 63,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.21540641784668e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    },
+    {
+      "model": "mistral",
+      "prefix_only": true,
+      "input_length": 63,
+      "output_length": 16,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 15872,
+        "cache_position": 62,
+        "completed": true
+      }
+    }
+  ],
+  "seed": 17,
+  "atol": 1e-06,
+  "rtol": 1e-05
+}

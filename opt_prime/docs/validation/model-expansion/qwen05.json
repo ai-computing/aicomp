@@ -1,0 +1,91 @@
+{
+  "passed": true,
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "device": "cpu",
+  "dtype": "float32",
+  "threads": 8,
+  "atol": 0.0002,
+  "rtol": 0.0002,
+  "weights_sha256": {
+    "model.safetensors": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe"
+  },
+  "cases": [
+    {
+      "prompt": "한국의 수도는 어디인가요? 간단히 답해주세요.",
+      "input_length": 18,
+      "prefix_only": false,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 2.6941299438476562e-05,
+      "tokens": [
+        130092,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        136905
+      ],
+      "text": " 한국의 수도는 서울입니다. 서울"
+    },
+    {
+      "prompt": "한국의 수도는 어디인가요? 간단히 답해주세요.",
+      "input_length": 18,
+      "prefix_only": true,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 2.8133392333984375e-05,
+      "tokens": [
+        130092,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        136905
+      ],
+      "text": " 한국의 수도는 서울입니다. 서울"
+    },
+    {
+      "prompt": "Explain why the sky appears blue in one sentence.",
+      "input_length": 11,
+      "prefix_only": false,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 3.0517578125e-05,
+      "tokens": [
+        576,
+        12884,
+        7952,
+        6303,
+        1576,
+        315,
+        279,
+        71816
+      ],
+      "text": " The sky appears blue because of the scattering"
+    },
+    {
+      "prompt": "Explain why the sky appears blue in one sentence.",
+      "input_length": 11,
+      "prefix_only": true,
+      "output_length": 8,
+      "tokens_exact": true,
+      "max_abs_diff": 3.4332275390625e-05,
+      "tokens": [
+        576,
+        12884,
+        7952,
+        6303,
+        1576,
+        315,
+        279,
+        71816
+      ],
+      "text": " The sky appears blue because of the scattering"
+    }
+  ]
+}

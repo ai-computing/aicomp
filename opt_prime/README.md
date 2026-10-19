@@ -746,3 +746,11 @@ validated routes and SDK versions. See [architecture, contracts and validation](
 `feat/optimus-llmd` adds an optional local shared-storage-sidecar adapter on top of
 the tested engine. It serializes device work through the owning process and keeps
 KV off the HTTP path. See [service contracts and validation](docs/LLMD_FEATURE.md).
+
+### Extending models and backends
+
+The PD package separates SDK-free contracts, execution state, model-family
+capabilities, cache transport and device adapters. Dense GPT-2/Llama/Qwen2/Qwen3/
+Mistral Torch models are covered by the model matrix; NPU support remains scoped
+to the validated KONI RNGD→ATOM path. See the [contributor guide](docs/CONTRIBUTING_PD.md)
+and [model/performance validation](docs/validation/model-expansion/RESULTS.md).
