@@ -26,8 +26,12 @@ def test_selection_by_model_and_device():
     job = lambda dev: TrainJob(model="x", data="x", device=dev)
     assert select_train_backend(llama, job("cuda:0"))[0].name == "optimus"
     assert select_train_backend(qwen3_moe, job("cuda:0"))[0].name == "optimus"
+    qwen3 = model_spec(AutoModelForCausalLM.from_config(AutoConfig.for_model(
+        "qwen3", hidden_size=64, intermediate_size=128, num_hidden_layers=2, num_attention_heads=4,
+        num_key_value_heads=2, head_dim=32, vocab_size=128)))
     if NpuLoraTrainBackend().supports(llama, job("rngd:0")) == []:      # npu-lora installed
         assert select_train_backend(llama, job("rngd:0"))[0].name == "npu-lora"
+        assert select_train_backend(qwen3, job("rngd:0"))[0].name == "npu-lora"
     with pytest.raises(ValueError, match="npu-lora|optimus"):
         select_train_backend(qwen3_moe, job("rngd:0"))                   # no backend trains MoE on RNGD yet
 
