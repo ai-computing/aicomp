@@ -1,0 +1,18 @@
+{
+  "atom_artifact": {
+    "sha256": "78a2e79bc6d14176e2df01e972f2938381f9ecbc57140bc6ecc000de772cc5e2",
+    "bytes": 15071994976
+  },
+  "tables": {
+    "sha256": "17504330a990a46dabcd7c4de97daa9eace5f6f2e1728e887e745ade42429041",
+    "bytes": 4202694738
+  },
+  "helper": {
+    "sha256": "ee1a52c704c4ab1dc4dbdefdefe237c30a481492aad3863b9f59f0b3dc81fbfe",
+    "bytes": 36488
+  },
+  "workload": {
+    "sha256": "0b589306016fc2be3b1b15fdb521b23a8954f48400c6340fb56e1baaaeebe0bd",
+    "bytes": 13781
+  }
+}

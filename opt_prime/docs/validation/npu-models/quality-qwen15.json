@@ -1,0 +1,708 @@
+{
+  "model": "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "reference": "CPU FP32 eager attention, teacher forced on each unique native trajectory",
+  "weights_sha256": {
+    "model.safetensors": "dd924a11b4c220f385b51ffa522daea7c9f3d850e31b162bb5661df483c6d3ee"
+  },
+  "matches": 120,
+  "total": 120,
+  "cases": [
+    {
+      "input_length": 32,
+      "output_length": 8,
+      "matches": 8,
+      "total": 8,
+      "native_tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019
+      ],
+      "teacher_forced_reference_tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019
+      ],
+      "origins": [
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 2
+        }
+      ]
+    },
+    {
+      "input_length": 32,
+      "output_length": 32,
+      "matches": 32,
+      "total": 32,
+      "native_tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019,
+        256,
+        17407,
+        4938,
+        374,
+        264,
+        16587,
+        3692,
+        429,
+        10533,
+        821,
+        323,
+        11221,
+        369,
+        279,
+        6366,
+        311,
+        1882,
+        13,
+        1084,
+        374,
+        7565,
+        369,
+        279,
+        6366
+      ],
+      "teacher_forced_reference_tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019,
+        256,
+        17407,
+        4938,
+        374,
+        264,
+        16587,
+        3692,
+        429,
+        10533,
+        821,
+        323,
+        11221,
+        369,
+        279,
+        6366,
+        311,
+        1882,
+        13,
+        1084,
+        374,
+        7565,
+        369,
+        279,
+        6366
+      ],
+      "origins": [
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 2
+        }
+      ]
+    },
+    {
+      "input_length": 128,
+      "output_length": 8,
+      "matches": 8,
+      "total": 8,
+      "native_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "teacher_forced_reference_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "origins": [
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 2
+        }
+      ]
+    },
+    {
+      "input_length": 128,
+      "output_length": 32,
+      "matches": 32,
+      "total": 32,
+      "native_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "teacher_forced_reference_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "origins": [
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 2
+        }
+      ]
+    },
+    {
+      "input_length": 256,
+      "output_length": 8,
+      "matches": 8,
+      "total": 8,
+      "native_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "teacher_forced_reference_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "origins": [
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 2
+        }
+      ]
+    },
+    {
+      "input_length": 256,
+      "output_length": 32,
+      "matches": 32,
+      "total": 32,
+      "native_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "teacher_forced_reference_tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "origins": [
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128/runs.jsonl",
+          "repeat": 2
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": -1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 0
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 1
+        },
+        {
+          "file": "experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64/runs.jsonl",
+          "repeat": 2
+        }
+      ]
+    }
+  ]
+}

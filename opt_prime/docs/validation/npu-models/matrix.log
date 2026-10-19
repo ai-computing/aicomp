@@ -1,0 +1,16 @@
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-0-c64.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-0-c64.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-1-c128.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-1-c128.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-2-c128.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-2-c128.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-3-c64.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-3-c64.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128.log
+START /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64.log
+PASS /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64.log

@@ -1,0 +1,26 @@
+[
+  {
+    "output_length": 1,
+    "requests": 12,
+    "median_ms": {
+      "prefill_seconds": 59.62181501672603,
+      "reserve_validate_seconds": 0.02281501656398177,
+      "transfer_seconds": 17.254000471439213,
+      "decode_seconds": 74.01915901573375,
+      "finish_seconds": 0.17884798580780625,
+      "total_seconds": 150.66892802133225
+    }
+  },
+  {
+    "output_length": 32,
+    "requests": 12,
+    "median_ms": {
+      "prefill_seconds": 57.21407651435584,
+      "reserve_validate_seconds": 0.020560022676363587,
+      "transfer_seconds": 16.446797002572566,
+      "decode_seconds": 2348.695561522618,
+      "finish_seconds": 0.22455299040302634,
+      "total_seconds": 2425.441471976228
+    }
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "model": "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "config": {
+    "num_devices": 1,
+    "batch_size": 1,
+    "max_seq_len": 512,
+    "decoder_batch_sizes": [
+      1
+    ],
+    "prefill_chunk_size": 64,
+    "kvcache_num_blocks": 1,
+    "npu": "RBLN-CA22",
+    "create_runtimes": false
+  }
+}

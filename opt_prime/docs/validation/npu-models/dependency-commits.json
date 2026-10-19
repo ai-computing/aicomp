@@ -1,0 +1,14 @@
+{
+  "aicomp-integration": {
+    "head": "143e6180fc86fb0edc644df6e6a0ac7186d00964",
+    "status": "M opt_prime/docs/CONTRIBUTING_PD.md\n M opt_prime/examples/pd/validate_koni.py\n M opt_prime/opt_prime/pd/runtime.py\n M opt_prime/tests/test_pd.py\n?? opt_prime/examples/pd/check_native_quality.py\n?? opt_prime/examples/pd/summarize_atom_matrix.py\n?? opt_prime/examples/pd/validate_atom_checkpoint.py"
+  },
+  "hetero-npu-p2p": {
+    "head": "5cbce714e6f4ca4de3f8b8ed3500a487684effcf",
+    "status": "?? .omc/"
+  },
+  "rngd_llmd": {
+    "head": "b2e107a8795c8d29878cc9ba5d555c8a3c2bfef2",
+    "status": ""
+  }
+}

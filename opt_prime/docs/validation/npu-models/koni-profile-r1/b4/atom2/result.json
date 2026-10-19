@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "device": 2,
+  "batch": 4,
+  "waves": 24,
+  "reference": "same batch, per-slot prompt, host admission"
+}

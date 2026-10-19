@@ -1,0 +1,2 @@
+2026-10-19T01:35:25.050695559Z  INFO furiosa_generator::fxb::metadata: Using architecture Qwen2ForCausalLM from config.json
+error: no model registry entry for architecture=Qwen2ForCausalLM, hidden_size=1536, intermediate_size=8960, num_hidden_layers=Some(28), quant_method=None

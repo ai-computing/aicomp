@@ -1,0 +1,32 @@
+[
+  {
+    "argv": [
+      "/home/gspark/venvs/furiosa-2026.4/bin/fxb",
+      "build",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+      "/tmp/qwen05-native-test.fxb",
+      "--max-model-len",
+      "512",
+      "-O",
+      "O0",
+      "--dry-run"
+    ],
+    "exit_code": 1,
+    "log": "rngd-qwen05-dryrun.log"
+  },
+  {
+    "argv": [
+      "/home/gspark/venvs/furiosa-2026.4/bin/fxb",
+      "build",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "/tmp/qwen15-native-test.fxb",
+      "--max-model-len",
+      "512",
+      "-O",
+      "O0",
+      "--dry-run"
+    ],
+    "exit_code": 1,
+    "log": "rngd-qwen15-dryrun.log"
+  }
+]

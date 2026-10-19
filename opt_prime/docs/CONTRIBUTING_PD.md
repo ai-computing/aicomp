@@ -83,3 +83,39 @@ PYTHONPATH=opt_prime python3 opt_prime/examples/pd/benchmark_torch.py \
 Keep raw repetitions, compare identical weights/prompts/precision and balance run
 order. Report prefill, transfer, decode and total timing separately. An improvement
 on the small CPU models does not establish an improvement on the NPU testbed.
+
+`PDRuntime.last_timings` reports seconds for fenced host calls: prefill,
+reserve/validation, transfer, decode, finish, and total. The prefill adapter may
+include KV packing; decode may include IPC and diagnostic logits checks. These
+are not accelerator kernel times. A failed request leaves only completed stage
+timings and no successful total; it still poisons and retains the lane.
+
+## Validate a new checkpoint on actual NPUs
+
+First establish native vendor execution independently from external-KV PD:
+
+```bash
+<atom-sdk-python> opt_prime/examples/pd/validate_atom_checkpoint.py \
+  --model-dir /path/to/local/snapshot --out /path/to/new-run \
+  --preflight-module-dir /path/to/hetero-npu-p2p/examples/koni \
+  --chunk 64
+```
+
+This testbed runner uses physical ATOM2, vendor-owned KV, B1/context512, and
+preserves source/artifact identity, physical ownership, warmups, repetitions and
+failures. It loads only local weights. `--compile-only` does not open an NPU.
+For measurements without compilation, pass `--artifact <build-run>/compiled`;
+the runner rejects mismatched checkpoint, chunk, context or batch metadata.
+Compare chunk64/128 in balanced order after compilation has finished.
+
+Use `check_native_quality.py --model-dir ... --runs <run>/runs.jsonl ... --out ...`
+for offline FP32 teacher-forced agreement on the saved NPU trajectories. Its CPU
+reference time must not enter any NPU timing result. Repeatable tokens alone do
+not establish numerical agreement or task accuracy.
+
+A native checkpoint success does **not** register it with `KoniRngdEngine` or
+`KoniAtomWorkerEngine`. Qwen requires Q/K/V projection biases, tied embedding
+handling, checkpoint-specific layer/head dimensions and cache layouts in both
+compiled graphs. Each new physical layout needs export/import/packing and fence
+validation before it can use `HeteroP2PTransport`. Keep vendor-native baseline
+support and end-to-end heterogeneous PD support as separate evidence columns.

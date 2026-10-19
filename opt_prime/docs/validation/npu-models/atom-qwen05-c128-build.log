@@ -1,0 +1,30 @@
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 9013.06it/s]
+2026-10-19 01:36:39,767 INFO [rebel-compiler] -- Target NPU: RBLN-CA22
+2026-10-19 01:36:39,768 INFO [rebel-compiler] -- Number of devices: 1
+2026-10-19 01:36:41,571 INFO [rebel-compiler] Export done. Elapsed time: 0:00:01
+/usr/lib/python3.10/copyreg.py:101: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+2026-10-19 01:36:52,340 INFO [rebel-compiler] Exported model conversion done. Elapsed time: 0:00:08, Memory change: 3.00 MB
+2026-10-19 01:36:52,425 INFO [rebel-compiler] RBLN SDK compiler version: 0.11.0
+2026-10-19 01:36:52,426 INFO [rebel-compiler] -- Target NPU: RBLN-CA22
+2026-10-19 01:36:52,426 INFO [rebel-compiler] -- Number of devices: 1
+2026-10-19 01:36:52,426 INFO [rebel-compiler] +------------------------------------------------+
+2026-10-19 01:36:52,427 INFO [rebel-compiler] |Compile(#0), mod_name=fea925, input_info_index=0|
+2026-10-19 01:36:52,427 INFO [rebel-compiler] +------------------------------------------------+
+Computation graph generation                                          0% 00:00Computation graph generation ████████                                 20% 00:00Computation graph generation ████████████████                         40% 00:00Computation graph generation ████████████████████████                 60% 00:00Computation graph generation ████████████████████████████████████████ 100% 00:00
+[KComputation graph optimization                                            0%  00:00[KComputation graph optimization ██████                                    17%  00:00[KComputation graph optimization ████████                                  21%  00:00[KComputation graph optimization ██████████                                26%  00:00[KComputation graph optimization █████████████████████████████████████     93%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ████████████████████████████████████████ 100%  00:01
+2026-10-19 01:37:03,709 INFO [rebel-compiler] -- Target NPU: RBLN-CA22
+2026-10-19 01:37:03,709 INFO [rebel-compiler] -- Number of devices: 1
+2026-10-19 01:37:05,131 INFO [rebel-compiler] Export done. Elapsed time: 0:00:01
+/usr/lib/python3.10/copyreg.py:101: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+2026-10-19 01:37:15,915 INFO [rebel-compiler] Exported model conversion done. Elapsed time: 0:00:08, Memory change: 0.00 MB
+2026-10-19 01:37:15,998 INFO [rebel-compiler] RBLN SDK compiler version: 0.11.0
+2026-10-19 01:37:15,999 INFO [rebel-compiler] -- Target NPU: RBLN-CA22
+2026-10-19 01:37:15,999 INFO [rebel-compiler] -- Number of devices: 1
+2026-10-19 01:37:15,999 INFO [rebel-compiler] +------------------------------------------------+
+2026-10-19 01:37:15,999 INFO [rebel-compiler] |Compile(#1), mod_name=fea925, input_info_index=1|
+2026-10-19 01:37:15,999 INFO [rebel-compiler] +------------------------------------------------+
+Computation graph generation                                          0% 00:00Computation graph generation ████████                                 20% 00:00Computation graph generation ████████████████                         40% 00:00Computation graph generation ████████████████████████████████         80% 00:00Computation graph generation ████████████████████████████████████████ 100% 00:00
+[KComputation graph optimization                                            0%  00:00[KComputation graph optimization ██████                                    17%  00:00[KComputation graph optimization ██████████                                25%  00:00[KComputation graph optimization ██████████                                26%  00:00[KComputation graph optimization ██████████████████████████████████████    96%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ████████████████████████████████████████ 100%  00:01
+COMPILED /home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-c128-build/compiled

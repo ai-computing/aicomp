@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "scope": "vendor native ATOM baseline; no external KV or PD",
+  "compile_seconds": 50.93961290002335,
+  "measured_runs": 18,
+  "timing": "host synchronous SDK calls including finite checks and argmax; no HTTP or queue",
+  "quality": "finite and repeatable; reference quality must be checked separately"
+}

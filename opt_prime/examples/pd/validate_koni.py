@@ -158,6 +158,7 @@ def main():
                 row = dict(request_id=request.request_id, input_length=len(prompt), output_length=count,
                            seconds=time.perf_counter()-start, tokens=tokens, receipt=runtime.last_receipt,
                            decoder_reply=decoder.last_reply, state=runtime.state)
+                row['stage_timings'] = dict(runtime.last_timings)
                 rows.append(row)
                 with (out / 'requests.jsonl').open('a') as stream:
                     stream.write(json.dumps(row) + '\n')
