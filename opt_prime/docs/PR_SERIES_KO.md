@@ -33,6 +33,6 @@ PD. PD 팀 브랜치에 대한 PR. 기존 dense 계열 동작 불변, 새 계열
 
 - offload: Qwen3-30B-A3B exact 15.4 tok/s(compile 18.4), Solar-Open-100B exact 8.6–10.2, Gemma-4-26B fp32 logits 9.2e-5
 - 엔진 선택: Solar-Open-100B → RNGD layer 엔진 29.4 tok/s decode
-- 학습(GPU): Llama·Qwen2/3·Gemma3·Qwen3-MoE·Solar·Gemma4 tiny FT/LoRA PASS(pp=1,2), Llama-3.2-1B LoRA loss 3.11→1.26
-- 학습(RNGD): npu-lora 경유(Llama) — 진행 상황은 HETERO_MODEL_FEATURE_PLAN_KO.md 체크리스트
+- 학습(GPU): Llama·Qwen2/3·Gemma3·Qwen3-MoE·Solar·Gemma4 tiny FT/LoRA PASS(pp=1,2), Llama-3.2-1B LoRA loss 3.11→1.26; 실모델 expert offload LoRA — Qwen3-30B-A3B 3.21→0.38, gemma-4-26B-A4B 6.42→0.72 (GPU 20 GB + CPU)
+- 학습(RNGD): Optimus train() → npu-lora, Llama-3.2-1B LoRA loss 3.75→0.59/30 step (첫 컴파일 2.2 h 후 캐시)
 - PD: dense + Qwen3-MoE·Solar·Gemma3·Gemma4 parity
