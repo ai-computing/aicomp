@@ -28,6 +28,7 @@ class TrainJob:
     lora_targets: Tuple[str, ...] = ("q_proj", "v_proj")
     out: Optional[str] = None               # adapter (LoRA, PEFT format) or weights (full) directory
     seed: int = 0
+    offload_gpu_gb: Optional[float] = None  # MoE models: experts beyond this GPU budget stay frozen on the host
 
     @property
     def device_kind(self) -> str:
@@ -140,8 +141,16 @@ class OptimusTrainBackend(TrainBackend):
         tok = AutoTokenizer.from_pretrained(job.model)
         model = AutoModelForCausalLM.from_pretrained(job.model, dtype=torch.bfloat16)
         model.config.use_cache = False
+        offload = None
+        if job.offload_gpu_gb is not None and any(l.is_moe for l in spec.layers):
+            from ..moe_offload import ExpertProfiler, MoEOffloadConfig
+            sample = [torch.tensor([ids[:-1]]) for ids, _ in _examples(job.data, tok, job.seq_len)[:4]]
+            with ExpertProfiler(model) as prof, torch.no_grad():
+                for x in sample:
+                    model(x)
+            offload = MoEOffloadConfig(gpu_budget_gb=job.offload_gpu_gb, profile=prof.as_lists())
         opt = Optimus_p(model, 1, use_gpu=True, pp_size=int(os.environ.get("WORLD_SIZE", "1")),
-                        ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=True)
+                        ir_analyze=IR_Anal.SEQUENTIAL, dynamo_capture=True, moe_offload=offload)
         if job.method == "lora":
             opt.apply_lora(LoRAConfig(r=job.lora_r, alpha=job.lora_alpha, dropout=0.0,
                                       target_modules=list(job.lora_targets)))
@@ -167,7 +176,9 @@ class OptimusTrainBackend(TrainBackend):
             out = job.out
             state = {n: p.detach().cpu() for n, p in opt.run_info.submod.named_parameters() if p.requires_grad}
             torch.save(state, os.path.join(out, f"stage{opt.tpl.stage}_trainable.pt"))
-        return TrainResult(self.name, losses, out, time.time() - t0, dict(stage=opt.tpl.stage))
+        return TrainResult(self.name, losses, out, time.time() - t0,
+                           dict(stage=opt.tpl.stage, offload=None if opt.moe_offload_report is None else
+                                [(t["tier"], t["experts"]) for t in opt.moe_offload_report.tiers]))
 
 
 class NpuLoraTrainBackend(TrainBackend):

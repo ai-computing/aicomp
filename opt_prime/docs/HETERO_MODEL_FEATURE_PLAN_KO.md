@@ -8,10 +8,10 @@
 
 | 계열 (대표 체크포인트) | MoE offload | PD 분리 (torch 엔진) | LoRA 학습 | fine-tuning |
 |---|---|---|---|---|
-| Solar (Solar-Open-100B) | [x] 실모델 exact, RNGD×2+CPU 8.6 tok/s · PoC 엔진 29.4 tok/s | [x] tiny parity | [x] GPU tiny fp32/bf16 · [ ] RNGD | [x] GPU tiny · [ ] RNGD |
-| Qwen (Qwen3-30B-A3B, Qwen2.5) | [x] 실모델 exact, 최고 18.4 tok/s | [x] dense·MoE tiny parity | [x] GPU tiny · [ ] RNGD | [x] GPU tiny · [ ] RNGD |
-| Llama (Llama-3.2-1B / 3.1-8B) | 해당 없음(dense) · [ ] Llama 4 MoE 어댑터 | [x] tiny parity | [x] GPU 실모델 1B · [~] RNGD 1B 실행 중 | [x] GPU tiny · [ ] RNGD |
-| Gemma (gemma-4-26B-A4B) | [x] 실모델 fp32 exact(9e-5) · bf16은 모델 자체가 장치별로 갈림 | [x] Gemma3·4 tiny parity | [x] GPU tiny fp32/bf16 · [ ] RNGD | [x] GPU tiny · [ ] RNGD |
+| Solar (Solar-Open-100B) | [x] 실모델 exact, RNGD×2+CPU 8.6 tok/s · PoC 엔진 29.4 tok/s | [x] tiny parity | [x] GPU tiny fp32/bf16, offload 상태 학습 · [ ] RNGD(MoE) | [x] GPU tiny, offload 상태 · [ ] RNGD |
+| Qwen (Qwen3-30B-A3B, Qwen2.5) | [x] 실모델 exact, 최고 18.4 tok/s | [x] dense·MoE tiny parity | [x] GPU tiny, offload 상태 · [~] Qwen3-30B 실모델 offload 학습 실행 중 · [~] RNGD Qwen2.5-0.5B 실행 중 (npu-lora qwen2/3 추가, CPU HF 동등) | [x] GPU tiny · [ ] RNGD |
+| Llama (Llama-3.2-1B / 3.1-8B, Llama 4) | [x] Llama 4 MoE tiny (어댑터: 입력 쪽 가중 블록 재작성) · dense는 해당 없음 | [x] tiny parity | [x] GPU 실모델 1B · [~] RNGD 1B 실행 중 · [x] Llama 4 offload 상태 학습 | [x] GPU tiny · [ ] RNGD |
+| Gemma (gemma-4-26B-A4B) | [x] 실모델 fp32 exact(9e-5) · bf16은 모델 자체가 장치별로 갈림 | [x] Gemma3·4 tiny parity | [x] GPU tiny fp32/bf16 · [ ] RNGD(Gemma4는 MoE, Gemma3는 npu-lora 미구현) | [x] GPU tiny · [ ] RNGD |
 
 ### 장치별 지원
 
@@ -27,14 +27,15 @@
 - [x] kernels: (블록, 장치) provider registry
 - [x] exec: 엔진 선택(optimus / rngd-layer)
 - [x] train: TrainJob/TrainBackend(optimus / npu-lora)
-- [x] moe_offload: N-tier planner, 네이티브 dispatcher, 적응형 재배치, offload backward 없이 학습 경로(opt_batched_mm)
+- [x] moe_offload: N-tier planner, 네이티브 dispatcher, 적응형 재배치, Llama 4 어댑터, **offload expert 역전파**(expert 고정 학습)
+- [x] 학습: opt_batched_mm(모든 dtype, transformers 5.1/5.8), Optimus_p(moe_offload=...) — offload 상태 파이프라인 학습
 - [x] PD: 칩 lease 연동, MoE·hybrid 계열 torch 엔진
 
 ### 라이브러리 (데이터 플레인)
 
 - [x] hetero-npu-p2p (기존, PD 팀)
 - [~] npu-kernels: 로컬 저장소, RNGD expert/GEMV 생성기 이전 완료 · [ ] GitHub 위치 결정·push
-- [~] npu-lora → npu-train: Optimus 어댑터 완료(Llama) · [ ] Qwen/Gemma/Solar 함수형 모델 · [ ] 이름·저장소 정리
+- [~] npu-lora → npu-train: Optimus 어댑터 완료 · Llama/Mistral/Qwen2/Qwen3 함수형 블록(CPU에서 HF 동등) · [ ] Gemma3 블록 · [ ] MoE(장치 gather 부재로 보류) · [ ] 이름·저장소 정리
 
 ### 성능
 
@@ -46,12 +47,12 @@
 ### PR
 
 - [x] 계획(아래 3절)
-- [ ] main 기준 PR 브랜치 분할·push
+- [x] main 기준 PR 브랜치 분할·push: feature/transformers5-ir → devices → moe-offload → moe-training → model-exec-train, feature/pd-families-leases (각각 단독 테스트 통과, docs/PR_SERIES_KO.md)
 - [ ] PR 생성(공개 저장소: 생성 전 확인)
 
 ### 남은 문제
 
-- [ ] Llama 4 MoE: 입력 쪽 라우팅 가중(sigmoid top-1) 어댑터
+- [x] Llama 4 MoE: 입력 쪽 라우팅 가중 어댑터
 - [ ] RNGD 학습 계열 확장(Qwen q/k norm, MoE, Gemma sliding)
 - [ ] ATOM dense 엔진(RBLN 그래프 ~60 µs/호출) ↔ PD decode 엔진 통합
 - [ ] 네이티브 CPU expert 커널 반올림 차이(동률 토큰 갈림)
