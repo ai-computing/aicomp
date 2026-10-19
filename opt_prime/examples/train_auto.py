@@ -7,6 +7,9 @@
 # Data: JSONL with {"text"} | {"prompt","response"} | {"messages"}. --make-data writes a small synthetic set.
 import argparse, json, os, sys
 
+# an installed NPU torch backend (furiosa-torch) autoloads with torch and breaks CUDA autograd; RNGD jobs need it
+if not any(a.startswith("rngd") for a in sys.argv):
+    os.environ.setdefault("TORCH_DEVICE_BACKEND_AUTOLOAD", "0")
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.train import TrainJob, train  # noqa: E402
 

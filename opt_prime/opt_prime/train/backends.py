@@ -133,7 +133,11 @@ class OptimusTrainBackend(TrainBackend):
         return reasons
 
     def run(self, job, spec):
+        import sys
         import torch
+        if "furiosa.torch" in sys.modules:
+            raise RuntimeError("furiosa-torch is loaded in this process (torch device-backend autoload); it breaks CUDA "
+                               "autograd streams. Set TORCH_DEVICE_BACKEND_AUTOLOAD=0 before importing torch.")
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from ..IR import IR_Anal
         from ..lora import LoRAConfig
