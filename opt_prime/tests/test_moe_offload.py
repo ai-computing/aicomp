@@ -339,3 +339,28 @@ def test_adaptive_replacement_promotes_hot_host_experts():
     assert frac_after > 0.2                        # the hottest experts now run on the hot tier
     for o in (first, out):                         # results unchanged by moving experts
         assert (o - ref).abs().max().item() <= 1e-4 * ref.abs().max().item()
+
+
+@pytest.mark.parametrize("family", ["qwen3_moe", "solar_open", "llama4_text"])
+@pytest.mark.parametrize("frac", [0.0, 0.5])
+def test_backward_through_offloaded_experts(family, frac):
+    """training with offloaded (frozen) experts: gradients of the non-expert parameters equal the original model's"""
+    base, ids, _ = _tiny_or_skip(family)
+    ref = copy.deepcopy(base)
+    for c in {id(c): c for c in (ref.config, ref.config.get_text_config())}.values():
+        c._experts_implementation = "eager"
+    m = copy.deepcopy(base)
+    with ExpertProfiler(m) as prof, torch.no_grad():
+        m(ids)
+    hot = [sorted(range(NUM_EXPERTS), key=lambda e: -c[e])[:int(NUM_EXPERTS * frac)] for c in prof.as_lists()]
+    apply_moe_offload(m, MoEOffloadConfig(hot=hot))
+    grads = []
+    for model in (ref, m.to(DEV)):
+        model = model.to(DEV)
+        model.zero_grad()
+        model(ids.to(DEV)).logits.float().pow(2).mean().backward()
+        grads.append({n: p.grad.detach().float().cpu() for n, p in model.named_parameters()
+                      if p.grad is not None and "experts." not in n})
+    assert grads[1].keys() == {n for n in grads[0] if "experts." not in n} and grads[1]
+    for n, g in grads[1].items():
+        torch.testing.assert_close(g, grads[0][n], atol=1e-5, rtol=1e-3, msg=n)

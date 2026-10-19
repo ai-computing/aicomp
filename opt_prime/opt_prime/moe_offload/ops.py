@@ -48,6 +48,23 @@ def _(hidden, top_k_index, top_k_weights, layer_id):
     return torch.empty_like(hidden)
 
 
+# Training through offloaded experts (experts frozen): gradients w.r.t. hidden and routing weights, computed by the
+# layer from the host tier's copy of the experts the call used (OffloadedLayer.backward).
+def _setup_context(ctx, inputs, output):
+    hidden, top_k_index, top_k_weights, layer_id = inputs
+    ctx.save_for_backward(hidden, top_k_index, top_k_weights)
+    ctx.layer_id = layer_id
+
+
+def _backward(ctx, grad_out):
+    hidden, top_k_index, top_k_weights = ctx.saved_tensors
+    gx, gw = _LAYERS[ctx.layer_id].backward(hidden, top_k_index, top_k_weights, grad_out)
+    return gx, None, gw, None
+
+
+offloaded_experts.register_autograd(_backward, setup_context=_setup_context)
+
+
 class OffloadedExperts(nn.Module):
     """Drop-in replacement for an experts module: same call signature, no parameters."""
 
