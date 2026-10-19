@@ -1,0 +1,5 @@
+{
+  "passed": false,
+  "error": "NameError(\"name 'NativeAtomDecodeLane' is not defined\")",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/gspark/workspace/01_pd_disag/aicomp-llmd/opt_prime/examples/pd/validate_native_no_primer.py\", line 94, in main\n    lane = NativeAtomDecodeLane(model, config, spec)\nNameError: name 'NativeAtomDecodeLane' is not defined\n"
+}

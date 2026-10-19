@@ -86,3 +86,9 @@ The A/B/B/A results and raw per-step timings are recorded separately. These
 intervals are host wall times, not NPU kernel profiler measurements. Async work
 may be charged to output materialization; don't remove required fences based on
 the apparent cost of one host interval.
+
+## Native decode follow-up
+
+[No-primer native adapter](NATIVE_NO_PRIMER.md) validates host-admitted RNGD KV
+on ATOM 0.5B and 1.5B without redundant native prefill. Live serving integration
+and native DMA remain separate follow-up work.
