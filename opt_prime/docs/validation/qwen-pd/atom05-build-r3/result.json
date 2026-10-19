@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "compiled_only": true,
+  "seconds": 29.37250606698217,
+  "artifacts": [
+    "experiments/qwen_pd_extension_20261019/atom05-build-r3/compiled/5b56af3a4f38a124.rbln"
+  ]
+}

@@ -1,0 +1,19 @@
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 4221.12it/s]
+Traceback (most recent call last):
+  File "/home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/examples/pd/validate_qwen_rngd.py", line 73, in <module>
+    if __name__=='__main__':main()
+  File "/home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/examples/pd/validate_qwen_rngd.py", line 48, in main
+    start=time.perf_counter();keys,values,hidden=engine.prefill_device(prompt)
+  File "/home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/rngd.py", line 109, in prefill_device
+    k = torch.cat((k, torch.zeros(self.spec.layers,self.spec.kv_heads,self.spec.head_dim,tail,dtype=BF).to(self.device)),dim=-1)
+  File "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/furiosa/torch/_backend/_autograd.py", line 293, in dispatcher
+    return original_op(*args, **kwargs)
+  File "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/torch/_ops.py", line 819, in __call__
+    return self._op(*args, **kwargs)
+  File "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/furiosa/torch/profiler/__init__.py", line 59, in wrapped
+    return f(*args, **kwargs)
+  File "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/furiosa/torch/_custom_ops/cat_stack.py", line 147, in aten_cat
+    return _CatRunner(tensors, dim, "cat.out").run()
+  File "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/furiosa/torch/_custom_ops/cat_stack.py", line 85, in __init__
+    assert shape_others == self.output_shape
+AssertionError

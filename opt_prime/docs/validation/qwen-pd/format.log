@@ -1,0 +1,16 @@
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/provenance.py
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/atom_device.py
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/atom_runtime.py
+reformatted aicomp-integration/opt_prime/examples/pd/build_qwen_atom.py
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/atom.py
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/model.py
+reformatted aicomp-integration/opt_prime/examples/pd/validate_qwen_atom.py
+reformatted aicomp-integration/opt_prime/tests/test_pd_npu.py
+reformatted aicomp-integration/opt_prime/examples/pd/validate_qwen_rngd.py
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/engines.py
+reformatted aicomp-integration/opt_prime/examples/pd/qwen_atom_worker.py
+reformatted /home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/rngd.py
+reformatted aicomp-integration/opt_prime/examples/pd/validate_qwen_pd.py
+
+All done! ✨ 🍰 ✨
+13 files reformatted, 1 file left unchanged.

@@ -1,0 +1,7 @@
+{
+  "passed": false,
+  "error": "RuntimeError('selected visible NPU ID has an active context')",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/examples/pd/build_qwen_atom.py\", line 16, in main\n    selection=select_idle_atom(a.physical)\n  File \"/home/gspark/workspace/01_pd_disag/aicomp-integration/opt_prime/opt_prime/pd/npu/atom_device.py\", line 23, in select_idle_atom\n    raise RuntimeError('selected visible NPU ID has an active context')\nRuntimeError: selected visible NPU ID has an active context\n",
+  "seconds": 0.2688080809894018,
+  "artifacts": []
+}

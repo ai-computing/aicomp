@@ -4,6 +4,9 @@ The public entry point is `opt_prime.pd`. Its import must remain independent of
 Torch, CUDA and vendor SDKs. A new model family is not automatically a new NPU
 backend: compiled graph, cache representation and ownership need separate proof.
 
+For the model-sized RNGD/ATOM graphs, extension boundaries and remaining vendor
+dependencies, see [NPU backend extensions](NPU_BACKEND_EXTENSIONS.md).
+
 ## Module ownership
 
 | Module | Responsibility | Must not do |

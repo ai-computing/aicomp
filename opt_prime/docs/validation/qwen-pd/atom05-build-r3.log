@@ -1,0 +1,16 @@
+2026-10-19 02:14:33,590 WARNING [rebel-compiler] torch.compile options: `tensor_parallel_size` is deprecated; use `num_devices` instead.
+2026-10-19 02:14:33,627 INFO [rebel-compiler] -- Target NPU: RBLN-CA22
+2026-10-19 02:14:33,627 INFO [rebel-compiler] -- Number of devices: 1
+2026-10-19 02:14:35,156 INFO [rebel-compiler] Export done. Elapsed time: 0:00:01
+/usr/lib/python3.10/copyreg.py:101: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+2026-10-19 02:14:47,130 INFO [rebel-compiler] Exported model conversion done. Elapsed time: 0:00:08, Memory change: 843.75 MB
+2026-10-19 02:14:47,204 INFO [rebel-compiler] RBLN SDK compiler version: 0.11.0
+2026-10-19 02:14:47,206 INFO [rebel-compiler] -- Target NPU: RBLN-CA22
+2026-10-19 02:14:47,206 INFO [rebel-compiler] -- Number of devices: 1
+2026-10-19 02:14:47,206 INFO [rebel-compiler] +------------------------------------------------+
+2026-10-19 02:14:47,206 INFO [rebel-compiler] |Compile(#0), mod_name=1d4041, input_info_index=0|
+2026-10-19 02:14:47,206 INFO [rebel-compiler] +------------------------------------------------+
+Computation graph generation                                          0% 00:00Computation graph generation ████████                                 20% 00:00Computation graph generation ████████████████                         40% 00:00Computation graph generation ████████████████████████                 60% 00:01Computation graph generation ████████████████████████████████████████ 100% 00:01Computation graph generation ████████████████████████████████████████ 100% 00:01
+[KComputation graph optimization                                            0%  00:00[KComputation graph optimization ██████                                    17%  00:00[KComputation graph optimization ██████████                                26%  00:00[KComputation graph optimization ██████████████████████████████████████    97%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:00[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ███████████████████████████████████████   99%  00:01[KComputation graph optimization ████████████████████████████████████████ 100%  00:01
+{"passed": true, "compiled_only": true, "seconds": 29.37250606698217, "artifacts": ["experiments/qwen_pd_extension_20261019/atom05-build-r3/compiled/5b56af3a4f38a124.rbln"]}

@@ -1,0 +1,15 @@
+{
+  "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+  "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "hidden": 1536,
+  "intermediate": 8960,
+  "layers": 28,
+  "heads": 12,
+  "kv_heads": 2,
+  "head_dim": 128,
+  "vocabulary": 151936,
+  "epsilon": 1e-06,
+  "rope_theta": 1000000.0,
+  "tied_embeddings": true,
+  "qkv_bias": true
+}
