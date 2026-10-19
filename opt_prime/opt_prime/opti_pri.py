@@ -522,6 +522,8 @@ class Optimus_p:
                 if local_rank == i:
                     self.ir = IR(module, self)
 
+                    from .moe_train import prepare_moe_for_training
+                    prepare_moe_for_training(module)        # export/autograd-safe experts (MoE models)
                     self.model_type = self.ir.retrieve_IR(module, dynamo_capture=dynamo_capture)
                     #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
                     self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
@@ -568,6 +570,8 @@ class Optimus_p:
             self.ir = IR(module, self)
             #self.model_ir.append(IR(module))
 
+            from .moe_train import prepare_moe_for_training
+            prepare_moe_for_training(module)        # export/autograd-safe experts (MoE models)
             self.model_type = self.ir.retrieve_IR(module, dynamo_capture=dynamo_capture)
             #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
             self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
