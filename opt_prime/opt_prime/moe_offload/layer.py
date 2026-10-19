@@ -333,7 +333,7 @@ class OffloadedLayer:
         """gradients of the layer's output w.r.t. hidden and the routing weights (experts are frozen): the experts
         the call used are taken from the host tier (it holds every expert), moved to the gradient's device and run
         again under autograd with opt_prime.moe_train's batched form."""
-        from ..moe_train import opt_batched_mm
+        from .batched import opt_batched_mm
         from .backends.cuda import skeleton_with
         dev = grad_out.device
         used = torch.unique(top_k_index).tolist()
