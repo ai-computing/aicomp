@@ -99,8 +99,9 @@ def apply_moe_offload(model: nn.Module, cfg: MoEOffloadConfig) -> OffloadReport:
             handles.append(tiers[-1].load(a.weights(info.module, list(range(E)))))
             lid = register_layer(OffloadedLayer(E, tiers, handles, pl, names, cfg, adapter=a, source=info.module))
             parent, _, child = info.name.rpartition(".")
-            setattr(model.get_submodule(parent) if parent else model, child,
-                    OffloadedExperts(lid, E, [e for r in pl[:-1] for e in r]))
+            parent_mod = model.get_submodule(parent) if parent else model
+            setattr(parent_mod, child, OffloadedExperts(lid, E, [e for r in pl[:-1] for e in r]))
+            a.wrap_parent(parent_mod)
         per_tier = [sum(len(pl[t]) for pl in placement) for t in range(len(tiers))]
         rep = OffloadReport(len(infos), E, specs[0].signature(),
                             [dict(tier=n, experts=c, gib=round(c * specs[0].expert_bytes / GiB, 3))

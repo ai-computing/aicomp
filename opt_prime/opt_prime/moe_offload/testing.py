@@ -30,7 +30,7 @@ _EXTRA = {
 
 FAMILIES = ["qwen2_moe", "qwen3_moe", "mixtral", "deepseek_v2", "deepseek_v3", "glm4_moe", "solar_open", "olmoe",
             "phimoe", "ernie4_5_moe", "hunyuan_v1_moe", "gpt_oss", "minimax", "dots1", "exaone_moe", "lfm2_moe",
-            "qwen3_next", "jamba", "flex_olmo", "glm4_moe_lite", "minimax_m2"]
+            "qwen3_next", "jamba", "flex_olmo", "glm4_moe_lite", "minimax_m2", "llama4_text"]
 
 
 def _mixed(lt, n):

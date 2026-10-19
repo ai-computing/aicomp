@@ -40,6 +40,10 @@ class ModelAdapter:
     def weights(self, module: nn.Module, ids: List[int]) -> ExpertWeights:
         raise NotImplementedError
 
+    def wrap_parent(self, parent: nn.Module) -> None:
+        """optional: adapt the module that calls the experts (its MoE block) to the offloaded experts' call
+        signature (hidden [T,H], top_k_index [T,k], top_k_weights [T,k]). Default: nothing to do."""
+
 
 def _activation_name(m):
     n = type(getattr(m, "act_fn", None)).__name__.lower()
@@ -87,6 +91,70 @@ class GenericAdapter(ModelAdapter):
         return ExpertWeights(self.spec(m), list(ids), sub("gate_up_proj"), sub("down_proj"),
                              sub("gate_up_proj_bias") if has_bias else None, sub("down_proj_bias") if has_bias else None,
                              module=self._shell(m))
+
+
+class _StdExperts(nn.Module):
+    """transformers >= 5 experts interface over another layout (used as the weightless shell backends copy)."""
+
+    def __init__(self, num_experts, act_fn, transposed):
+        super().__init__()
+        self.num_experts, self.act_fn, self.is_transposed = num_experts, act_fn, transposed
+        self.has_bias, self.has_gate = False, True
+        self.gate_up_proj = nn.Parameter(torch.empty(0), requires_grad=False)
+        self.down_proj = nn.Parameter(torch.empty(0), requires_grad=False)
+
+    def _apply_gate(self, gate_up):
+        gate, up = gate_up.chunk(2, dim=-1)
+        return self.act_fn(gate) * up
+
+    def forward(self, hidden, top_k_index, top_k_weights):
+        out = torch.zeros_like(hidden)
+        for j in range(top_k_index.shape[1]):
+            for e in top_k_index[:, j].unique().tolist():
+                rows = (top_k_index[:, j] == e).nonzero().squeeze(-1)
+                x = hidden[rows]
+                gu, dn = self.gate_up_proj[e], self.down_proj[e]
+                h = self._apply_gate(x @ gu if self.is_transposed else x @ gu.t())
+                y = h @ dn if self.is_transposed else h @ dn.t()
+                out.index_add_(0, rows, (y * top_k_weights[rows, j, None]).to(out.dtype))
+        return out
+
+
+@register_adapter
+class Llama4Adapter(ModelAdapter):
+    """Llama 4 text MoE: experts stored [E, H, 2F] / [E, F, H] and called with every expert's input already scaled
+    by its routing score (routed_in = x * sigmoid(score), zero for experts outside the top-k). Since expert(0) = 0
+    (no biases), that equals sum over the top-k of expert_e(w_e * x). The MoE block is rewritten to that form -
+    each (token, expert) pair becomes a row holding w * x, offloaded with weight 1 - so every backend runs it."""
+
+    def matches(self, module):
+        return type(module).__name__ == "Llama4TextExperts"
+
+    def spec(self, m):
+        E, H, F2 = m.gate_up_proj.shape
+        return ExpertSpec(E, H, F2 // 2, _activation_name(m), "swiglu", False, True, m.gate_up_proj.dtype)
+
+    def weights(self, m, ids):
+        t = torch.tensor(list(ids), dtype=torch.long)
+        shell = _StdExperts(m.num_experts, m.act_fn, True)
+        return ExpertWeights(self.spec(m), list(ids), m.gate_up_proj.data[t], m.down_proj.data[t], module=shell)
+
+    def wrap_parent(self, block):
+        import types
+        import torch.nn.functional as F
+
+        def forward(self, hidden_states):
+            h = hidden_states.reshape(-1, self.hidden_dim)
+            logits = F.linear(h, self.router.weight)
+            top_v, idx = torch.topk(logits, self.router.top_k, dim=1)
+            w = torch.sigmoid(top_v.float()).to(h.dtype)
+            k = idx.shape[1]
+            rows = (h.unsqueeze(1) * w.unsqueeze(-1)).reshape(-1, h.shape[-1])          # one row per pair
+            y = self.experts(rows, idx.reshape(-1, 1), torch.ones(rows.shape[0], 1, dtype=h.dtype, device=h.device))
+            out = self.shared_expert(h) + y.view(-1, k, h.shape[-1]).sum(dim=1)
+            return out, logits
+
+        block.forward = types.MethodType(forward, block)
 
 
 def adapter_for(module: nn.Module) -> ModelAdapter:

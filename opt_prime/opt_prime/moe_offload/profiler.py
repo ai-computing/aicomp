@@ -25,8 +25,13 @@ class ExpertProfiler:
     def __enter__(self):
         for i, m in enumerate(self.mods):
             def hook(mod, args, i=i):
-                idx = args[1].detach().reshape(-1).to("cpu", torch.long)
-                self.counts[i] += torch.bincount(idx, minlength=self.counts[i].numel())[: self.counts[i].numel()]
+                E = self.counts[i].numel()
+                if len(args) >= 2:                  # experts(hidden, top_k_index, top_k_weights)
+                    idx = args[1].detach().reshape(-1).to("cpu", torch.long)
+                    self.counts[i] += torch.bincount(idx, minlength=E)[:E]
+                else:                               # dense dispatch (Llama 4): [E * T, H], rows of unrouted pairs are 0
+                    x = args[0].detach()
+                    self.counts[i] += (x.reshape(E, -1, x.shape[-1]).abs().sum(-1) > 0).sum(-1).to("cpu", torch.long)
             self._h.append(m.register_forward_pre_hook(hook))
         return self
 
