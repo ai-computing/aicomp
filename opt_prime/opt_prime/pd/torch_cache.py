@@ -9,6 +9,38 @@ class TorchCache:
     manager: KVCacheManager
 
 
+class LayeredKVCache:
+    """Single-request K/V storage with its own shape per layer (models whose layers keep differently shaped K/V,
+    e.g. Gemma 4). Same interface as the parts of KVCacheManager the PD engine and transport use."""
+
+    def __init__(self, layer_dims, max_seq_len, dtype, device):
+        self.layer_start, self.layer_end = 0, len(layer_dims)
+        self.max_seq_len, self.dtype, self.device = max_seq_len, dtype, torch.device(device)
+        self.k = [torch.zeros(1, h, max_seq_len, d, dtype=dtype, device=self.device) for h, d in layer_dims]
+        self.v = [torch.zeros(1, h, max_seq_len, d, dtype=dtype, device=self.device) for h, d in layer_dims]
+        self._len = 0
+
+    def allocate(self, batch_size=1):
+        if batch_size != 1:
+            raise ValueError('one request per layered cache')
+
+    def update(self, layer, keys, values, position=0):
+        n = keys.shape[2]
+        if position + n > self.max_seq_len:
+            raise ValueError('cache capacity exceeded')
+        self.k[layer][:, :, position:position + n] = keys
+        self.v[layer][:, :, position:position + n] = values
+
+    def get(self, layer):
+        return self.k[layer][:, :, :self._len], self.v[layer][:, :, :self._len]
+
+    def set_seq_len(self, n):
+        self._len = n
+
+    def get_seq_len(self):
+        return self._len
+
+
 def fence(device):
     if torch.device(device).type == 'cuda':
         torch.cuda.synchronize(device)

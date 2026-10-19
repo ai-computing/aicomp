@@ -9,7 +9,7 @@ from opt_prime.kv_cache import KVCacheManager
 from .contracts import KVLease, KVSpec, PrefillResult
 from .torch_models import describe_model
 # Compatibility exports: existing users may import transport from this module.
-from .torch_cache import TorchCache, TorchCacheTransport, fence
+from .torch_cache import LayeredKVCache, TorchCache, TorchCacheTransport, fence
 
 
 class TorchCausalLMEngine:
@@ -29,13 +29,20 @@ class TorchCausalLMEngine:
         self.dtype, = dtypes
         if self.device.type not in ('cpu', 'cuda'):
             raise ValueError('this adapter supports torch CPU/CUDA devices')
-        if type(max_context) is not int or max_context < 2 or max_context > config.max_position_embeddings:
+        text = config.get_text_config() if hasattr(config, 'get_text_config') else config
+        if type(max_context) is not int or max_context < 2 or max_context > text.max_position_embeddings:
             raise ValueError('context exceeds model capacity')
+        if self.geometry.window is not None and max_context > self.geometry.window:
+            raise ValueError('context exceeds the sliding window: sliding layers would drop tokens')
         self.layers = self.geometry.layers
         self.heads = self.geometry.kv_heads
         self.head_dim = self.geometry.head_dim
-        self.spec = KVSpec(model_id, revision, str(self.dtype),
-                           f'torch-bhsd-full-attention-v1:{self.geometry.model_type}',
+        if self.geometry.uniform:
+            layout = f'torch-bhsd-full-attention-v1:{self.geometry.model_type}'
+        else:                         # per-layer shapes are part of the contract
+            dims = ','.join(f'{h}x{d}' for h, d in self.geometry.layer_dims)
+            layout = f'torch-bhsd-per-layer-v1:{self.geometry.model_type}:{dims}'
+        self.spec = KVSpec(model_id, revision, str(self.dtype), layout,
                            (self.layers, 2, 1, self.heads, max_context, self.head_dim))
         self.model = model.eval()
         self.max_context, self.endpoint = max_context, endpoint
@@ -45,15 +52,20 @@ class TorchCausalLMEngine:
     def _validate(self, request):
         if len(request.input_ids) + request.max_new_tokens > self.max_context:
             raise ValueError('request exceeds cache capacity')
-        if any(t >= self.model.config.vocab_size for t in request.input_ids):
+        vocab = (self.model.config.get_text_config() if hasattr(self.model.config, 'get_text_config')
+                 else self.model.config).vocab_size
+        if any(t >= vocab for t in request.input_ids):
             raise ValueError('token outside model vocabulary')
         if self.prefix_only and len(request.input_ids) < 2:
             raise ValueError('prefix prefill requires at least two prompt tokens')
 
     def reserve(self, request):
         self._validate(request)
-        manager = KVCacheManager(self.layers, 1, self.max_context, self.heads,
-                                 self.head_dim, dtype=self.dtype, device=self.device)
+        if self.geometry.uniform:
+            manager = KVCacheManager(self.layers, 1, self.max_context, self.heads,
+                                     self.head_dim, dtype=self.dtype, device=self.device)
+        else:
+            manager = LayeredKVCache(self.geometry.layer_dims, self.max_context, self.dtype, self.device)
         self._pending_manager = manager
         manager.allocate(1)
         return KVLease(self.spec, manager, TorchCache(manager), self.endpoint)
@@ -87,6 +99,9 @@ class TorchCausalLMEngine:
         if cache.spec != self.spec or manager.get_seq_len() != continuation.cache_position:
             raise ValueError('cache position or specification mismatch')
         pairs = [manager.get(i) for i in range(self.layers)]
+        # Plain layers for every layer: sliding layers hold the whole context (max_context <= window is enforced), so
+        # they behave like full ones. (Passing config= is also broken in transformers 5.8 for num_kv_shared_layers=0:
+        # layer_types[:-0] is empty.)
         dynamic = DynamicCache(ddp_cache_data=pairs)
         token = continuation.next_token
         generated = []

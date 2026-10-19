@@ -129,13 +129,42 @@ class P2PWorkerClient:
 
 
 class P2PSession:
-    def __init__(self, worker, runtime):
+    def __init__(self, worker, runtime, leases=()):
         self.worker, self.runtime = worker, runtime
+        self.leases = list(leases)       # opt_prime.devices leases of the RNGD (prefill) and ATOM (decode) chips
 
     def close(self):
         if self.runtime.state != "idle":
             raise RuntimeError("cannot release active or poisoned P2P lane")
         self.worker.close()
+        # chips are given back only after a normal shutdown; a failed close keeps them leased (quarantine)
+        for lease in self.leases:
+            lease.release()
+
+
+def lease_p2p_devices(binding, cfg, owner):
+    """Lease the RNGD prefill chip and the ATOM decode card in opt_prime.devices, so no other Optimus component (e.g.
+    a MoE expert tier) drives them while the lane exists. The RNGD chip is already opened by the caller's engine,
+    so its occupancy probe is skipped; the ATOM card is probed (rbln-smi) before the worker opens it."""
+    import re
+    try:
+        from ...devices import acquire
+    except ImportError:              # opt_prime.devices not present (PD used on its own): no leases
+        return []
+
+    leases = []
+    try:
+        m = re.fullmatch(r"/dev/rngd/npu(\d+)ch\d+", str(getattr(binding, "device_path", "")))
+        if m:
+            leases.append(acquire(f"rngd:{m.group(1)}", "prefill", owner, probe=None))
+        a = re.fullmatch(r"rbln(\d+)", str(cfg.get("physical_atom", "")))
+        if a:
+            leases.append(acquire(f"atom:{a.group(1)}", "decode", owner))
+    except BaseException:
+        for lease in leases:
+            lease.release()
+        raise
+    return leases
 
 
 def create_qwen_p2p(config_path, engine, binding, packer, backend, directory):
@@ -156,7 +185,17 @@ def create_qwen_p2p(config_path, engine, binding, packer, backend, directory):
     source = QwenRngdEngine(
         engine, packer, binding, compact_cache=cfg.get("rngd_compact_cache", False)
     )
-    worker = P2PWorkerClient(config_path, engine.spec, directory)
+    leases = (
+        lease_p2p_devices(binding, cfg, f"PD qwen P2P lane {directory}")
+        if cfg.get("lease_devices", True)
+        else []
+    )
+    try:
+        worker = P2PWorkerClient(config_path, engine.spec, directory)
+    except BaseException:
+        for lease in leases:
+            lease.release()      # no DMA was submitted: the worker constructor fails before any transfer
+        raise
     decoder = QwenAtomWorkerEngine(
         worker.owner,
         source.spec,
@@ -174,4 +213,4 @@ def create_qwen_p2p(config_path, engine, binding, packer, backend, directory):
         destination=f"atom:{cfg['physical_atom']}",
         spec=source.spec,
     )
-    return P2PSession(worker, PDRuntime(source, decoder, transport))
+    return P2PSession(worker, PDRuntime(source, decoder, transport), leases)
