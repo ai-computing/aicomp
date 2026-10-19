@@ -163,6 +163,9 @@ def create_qwen_p2p(config_path, engine, binding, packer, backend, directory):
         cfg["physical_atom"],
         require_reference=bool(cfg.get("validation_hook")),
     )
+    from ..capabilities import negotiate
+
+    negotiate(source.capabilities, decoder.capabilities, "p2p")
     transport = HeteroP2PTransport(
         backend,
         decoder.build_plan,

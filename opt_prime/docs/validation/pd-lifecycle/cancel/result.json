@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "cancel_drain": {
+    "passed": true,
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 393216,
+      "dma_seconds": 0.001605557
+    },
+    "decode_skipped": true
+  },
+  "requests": 16,
+  "tokens": 320,
+  "commands": 768,
+  "worker_exit": 0,
+  "scope": "actual P2P vs same-decoder host admission full logits; FP32 quality separate"
+}

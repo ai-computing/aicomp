@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import json
 from ..contracts import KVSpec, KVLease, PrefillResult
+from ..capabilities import EngineCapabilities
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,9 @@ class QwenRngdEngine:
         if type(compact_cache) is not bool:
             raise ValueError("compact_cache must be boolean")
         self.compact_cache = compact_cache
+        self.capabilities = EngineCapabilities(
+            "prefill", engine.width + 1, 512, frozenset({"p2p"}), True
+        )
         self.model = engine.spec
         s = self.model
         self.spec = KVSpec(
@@ -77,6 +81,9 @@ class QwenRngdEngine:
 class QwenAtomWorkerEngine:
     def __init__(self, owner, spec, physical, *, require_reference=True):
         self.owner, self.spec, self.physical = owner, spec, physical
+        self.capabilities = EngineCapabilities(
+            "decode", 512, 512, frozenset({"p2p"}), True
+        )
         self.require_reference = require_reference
         self.generation = 0
         self.last_reply = None

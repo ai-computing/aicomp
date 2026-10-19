@@ -17,6 +17,7 @@ def main():
         type=Path,
         help="Run without worker oracle; compare tokens with a prior validated runs.jsonl",
     )
+    p.add_argument("--test-cancel-drain", action="store_true")
     a = p.parse_args()
     cfg = json.loads(a.config.read_text())
     out = Path(cfg["out"]).resolve()
@@ -151,6 +152,39 @@ def main():
             ):
                 raise RuntimeError("reference failed")
             (out / f"reference-{i}.json").write_text(json.dumps(reply, indent=2))
+        if a.test_cancel_drain:
+            from opt_prime.pd.runtime import CancellationToken, RequestCancelled
+
+            token = CancellationToken()
+            original_transfer = transport.transfer
+            before_generation = decoder.generation
+
+            def cancel_after_fence(*args):
+                receipt = original_transfer(*args)
+                token.cancel()
+                return receipt
+
+            transport.transfer = cancel_after_fence
+            try:
+                try:
+                    runtime.generate(
+                        PDRequest("cancel-fenced", tuple(prompts[0]), 8),
+                        cancellation=token,
+                    )
+                except RequestCancelled:
+                    if (
+                        runtime.state != "idle"
+                        or runtime.retained
+                        or decoder.generation != before_generation
+                    ):
+                        raise RuntimeError("cancelled DMA did not drain without decode")
+                    status["cancel_drain"] = dict(
+                        passed=True, receipt=runtime.last_receipt, decode_skipped=True
+                    )
+                else:
+                    raise RuntimeError("cancellation was not observed")
+            finally:
+                transport.transfer = original_transfer
         rows = []
         for repeat in range(2):
             for i, prompt in enumerate(prompts):

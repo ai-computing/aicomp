@@ -1,0 +1,1786 @@
+[
+  {
+    "request_id": "llmd-0",
+    "response": {
+      "id": "llmd-0",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "1. **Understanding Computer Memory:**\n",
+          "token_ids": [
+            16,
+            13,
+            3070,
+            70151,
+            17407,
+            13850,
+            25,
+            1019
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 32,
+        "completion_tokens": 8,
+        "total_tokens": 40
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 917504,
+      "dma_seconds": 0.002118154
+    },
+    "decoder_reply": {
+      "generation": 17,
+      "request_id": "llmd-0",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 0.0001866720267571509,
+          "input_transfer": 0.00046879600267857313,
+          "runtime_call": 0.015010284958407283,
+          "output_materialize": 0.0004919550265185535,
+          "total": 0.01615770801436156
+        },
+        {
+          "prepare": 9.03010368347168e-05,
+          "input_transfer": 0.000357133976649493,
+          "runtime_call": 0.014972864999435842,
+          "output_materialize": 0.00046123500214889646,
+          "total": 0.01588153501506895
+        },
+        {
+          "prepare": 8.272100239992142e-05,
+          "input_transfer": 0.00037019397132098675,
+          "runtime_call": 0.014951625023968518,
+          "output_materialize": 0.0005012750043533742,
+          "total": 0.0159058150020428
+        },
+        {
+          "prepare": 8.27109906822443e-05,
+          "input_transfer": 0.0003542439662851393,
+          "runtime_call": 0.014938124048057944,
+          "output_materialize": 0.0004682849976234138,
+          "total": 0.01584336400264874
+        },
+        {
+          "prepare": 7.867102976888418e-05,
+          "input_transfer": 0.0003542340127751231,
+          "runtime_call": 0.014968944946303964,
+          "output_materialize": 0.0005458860541693866,
+          "total": 0.015947736043017358
+        },
+        {
+          "prepare": 8.861097740009427e-05,
+          "input_transfer": 0.00038079405203461647,
+          "runtime_call": 0.015052735980134457,
+          "output_materialize": 0.000492025981657207,
+          "total": 0.016014166991226375
+        },
+        {
+          "prepare": 0.00010292098158970475,
+          "input_transfer": 0.00037252402398735285,
+          "runtime_call": 0.014933435013517737,
+          "output_materialize": 0.0004935949691571295,
+          "total": 0.015902474988251925
+        },
+        {
+          "prepare": 8.485099533572793e-05,
+          "input_transfer": 0.0003721939865499735,
+          "runtime_call": 0.014940274995751679,
+          "output_materialize": 0.0004538249922916293,
+          "total": 0.01585114496992901
+        }
+      ],
+      "tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.1389854529988952
+    }
+  },
+  {
+    "request_id": "llmd-1",
+    "response": {
+      "id": "llmd-1",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "1. **Understanding Computer Memory:**\n   Computer memory is a crucial component that stores data and instructions for the computer to process. It is divided into two main",
+          "token_ids": [
+            16,
+            13,
+            3070,
+            70151,
+            17407,
+            13850,
+            25,
+            1019,
+            256,
+            17407,
+            4938,
+            374,
+            264,
+            16587,
+            3692,
+            429,
+            10533,
+            821,
+            323,
+            11221,
+            369,
+            279,
+            6366,
+            311,
+            1882,
+            13,
+            1084,
+            374,
+            17779,
+            1119,
+            1378,
+            1887
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 32,
+        "completion_tokens": 32,
+        "total_tokens": 64
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 917504,
+      "dma_seconds": 0.003671821
+    },
+    "decoder_reply": {
+      "generation": 18,
+      "request_id": "llmd-1",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 0.00014936202205717564,
+          "input_transfer": 0.000491695012897253,
+          "runtime_call": 0.014945724979043007,
+          "output_materialize": 0.00029656296828761697,
+          "total": 0.015883344982285053
+        },
+        {
+          "prepare": 8.431100286543369e-05,
+          "input_transfer": 0.00035695399856194854,
+          "runtime_call": 0.01496224501170218,
+          "output_materialize": 0.0002819729852490127,
+          "total": 0.015685482998378575
+        },
+        {
+          "prepare": 7.990101585164666e-05,
+          "input_transfer": 0.00035237398697063327,
+          "runtime_call": 0.014958324958570302,
+          "output_materialize": 0.0004726050538010895,
+          "total": 0.01586320501519367
+        },
+        {
+          "prepare": 8.433096809312701e-05,
+          "input_transfer": 0.00035300402669236064,
+          "runtime_call": 0.015032755967695266,
+          "output_materialize": 0.00031714304350316525,
+          "total": 0.01578723400598392
+        },
+        {
+          "prepare": 8.308101678267121e-05,
+          "input_transfer": 0.0003662739763967693,
+          "runtime_call": 0.01504627603571862,
+          "output_materialize": 0.0006823969888500869,
+          "total": 0.016178028017748147
+        },
+        {
+          "prepare": 0.0001132609904743731,
+          "input_transfer": 0.000404035032261163,
+          "runtime_call": 0.015361829020548612,
+          "output_materialize": 0.0003265429986640811,
+          "total": 0.01620566804194823
+        },
+        {
+          "prepare": 8.065096335485578e-05,
+          "input_transfer": 0.00037151400465518236,
+          "runtime_call": 0.014972265053074807,
+          "output_materialize": 0.00026475294725969434,
+          "total": 0.01568918296834454
+        },
+        {
+          "prepare": 7.525098044425249e-05,
+          "input_transfer": 0.0003506439970806241,
+          "runtime_call": 0.014920894987881184,
+          "output_materialize": 0.0002539020497351885,
+          "total": 0.015600692015141249
+        },
+        {
+          "prepare": 8.871097816154361e-05,
+          "input_transfer": 0.00035132397897541523,
+          "runtime_call": 0.014925034018233418,
+          "output_materialize": 0.00026167300529778004,
+          "total": 0.015626741980668157
+        },
+        {
+          "prepare": 8.686102228239179e-05,
+          "input_transfer": 0.0003546639927662909,
+          "runtime_call": 0.014961645007133484,
+          "output_materialize": 0.00025984301464632154,
+          "total": 0.015663013036828488
+        },
+        {
+          "prepare": 7.816101424396038e-05,
+          "input_transfer": 0.000358183984644711,
+          "runtime_call": 0.014933735015802085,
+          "output_materialize": 0.0002568229683674872,
+          "total": 0.015626902983058244
+        },
+        {
+          "prepare": 7.719098357483745e-05,
+          "input_transfer": 0.00036370399175211787,
+          "runtime_call": 0.01491624501068145,
+          "output_materialize": 0.00032716302666813135,
+          "total": 0.015684303012676537
+        },
+        {
+          "prepare": 8.116097887977958e-05,
+          "input_transfer": 0.0003604140365496278,
+          "runtime_call": 0.014958084968384355,
+          "output_materialize": 0.0002442120457999408,
+          "total": 0.015643872029613703
+        },
+        {
+          "prepare": 8.458102820441127e-05,
+          "input_transfer": 0.0003494539996609092,
+          "runtime_call": 0.014935964019969106,
+          "output_materialize": 0.0003169439733028412,
+          "total": 0.015686943021137267
+        },
+        {
+          "prepare": 7.914996240288019e-05,
+          "input_transfer": 0.0003642840310931206,
+          "runtime_call": 0.014919615001417696,
+          "output_materialize": 0.00024193298304453492,
+          "total": 0.015604981977958232
+        },
+        {
+          "prepare": 7.58409732952714e-05,
+          "input_transfer": 0.00034935405710712075,
+          "runtime_call": 0.014921433990821242,
+          "output_materialize": 0.0004596049548126757,
+          "total": 0.01580623397603631
+        },
+        {
+          "prepare": 8.404103573411703e-05,
+          "input_transfer": 0.0003598639741539955,
+          "runtime_call": 0.014996565994806588,
+          "output_materialize": 0.0003016230184584856,
+          "total": 0.015742094023153186
+        },
+        {
+          "prepare": 9.399099508300424e-05,
+          "input_transfer": 0.0003595640300773084,
+          "runtime_call": 0.014954234997276217,
+          "output_materialize": 0.00024010299239307642,
+          "total": 0.015647893014829606
+        },
+        {
+          "prepare": 7.625098805874586e-05,
+          "input_transfer": 0.0003509240341372788,
+          "runtime_call": 0.014674481994006783,
+          "output_materialize": 0.0003320039832033217,
+          "total": 0.015433660999406129
+        },
+        {
+          "prepare": 8.859095396474004e-05,
+          "input_transfer": 0.00035471399314701557,
+          "runtime_call": 0.014845773053821176,
+          "output_materialize": 0.0002457329537719488,
+          "total": 0.01553481095470488
+        },
+        {
+          "prepare": 7.65710137784481e-05,
+          "input_transfer": 0.0003653339808806777,
+          "runtime_call": 0.014819593983702362,
+          "output_materialize": 0.0004670349881052971,
+          "total": 0.015728533966466784
+        },
+        {
+          "prepare": 8.464098209515214e-05,
+          "input_transfer": 0.0003466940252110362,
+          "runtime_call": 0.014818432973697782,
+          "output_materialize": 0.00045903504360467196,
+          "total": 0.015708803024608642
+        },
+        {
+          "prepare": 7.36410147510469e-05,
+          "input_transfer": 0.00034536299062892795,
+          "runtime_call": 0.014809563988819718,
+          "output_materialize": 0.00026578304823487997,
+          "total": 0.015494351042434573
+        },
+        {
+          "prepare": 7.278099656105042e-05,
+          "input_transfer": 0.00034532404970377684,
+          "runtime_call": 0.014740091981366277,
+          "output_materialize": 0.0002549329656176269,
+          "total": 0.015413129993248731
+        },
+        {
+          "prepare": 7.844099309295416e-05,
+          "input_transfer": 0.00035229400964453816,
+          "runtime_call": 0.014848413993604481,
+          "output_materialize": 0.0002500329865142703,
+          "total": 0.015529181982856244
+        },
+        {
+          "prepare": 7.619103416800499e-05,
+          "input_transfer": 0.000351233989931643,
+          "runtime_call": 0.01486015401314944,
+          "output_materialize": 0.0003176329773850739,
+          "total": 0.015605212014634162
+        },
+        {
+          "prepare": 7.67909805290401e-05,
+          "input_transfer": 0.0003557440359145403,
+          "runtime_call": 0.014859263959806412,
+          "output_materialize": 0.0002425120328553021,
+          "total": 0.015534311009105295
+        },
+        {
+          "prepare": 8.479104144498706e-05,
+          "input_transfer": 0.00034900399623438716,
+          "runtime_call": 0.014736061973962933,
+          "output_materialize": 0.0002431530156172812,
+          "total": 0.015413010027259588
+        },
+        {
+          "prepare": 7.274100789800286e-05,
+          "input_transfer": 0.00036835396895185113,
+          "runtime_call": 0.014697222039103508,
+          "output_materialize": 0.00024395296350121498,
+          "total": 0.015382269979454577
+        },
+        {
+          "prepare": 7.870100671425462e-05,
+          "input_transfer": 0.00035052397288382053,
+          "runtime_call": 0.014825933030806482,
+          "output_materialize": 0.0002537029795348644,
+          "total": 0.015508860989939421
+        },
+        {
+          "prepare": 7.510097930207849e-05,
+          "input_transfer": 0.0003498430014587939,
+          "runtime_call": 0.014826034021098167,
+          "output_materialize": 0.00027325295377522707,
+          "total": 0.015524230955634266
+        },
+        {
+          "prepare": 7.46009754948318e-05,
+          "input_transfer": 0.0003467740025371313,
+          "runtime_call": 0.014715151977725327,
+          "output_materialize": 0.0002466720179654658,
+          "total": 0.015383198973722756
+        }
+      ],
+      "tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019,
+        256,
+        17407,
+        4938,
+        374,
+        264,
+        16587,
+        3692,
+        429,
+        10533,
+        821,
+        323,
+        11221,
+        369,
+        279,
+        6366,
+        311,
+        1882,
+        13,
+        1084,
+        374,
+        17779,
+        1119,
+        1378,
+        1887
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.532810142962262
+    }
+  },
+  {
+    "request_id": "llmd-2",
+    "response": {
+      "id": "llmd-2",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": " Examine the different types of computer memory",
+          "token_ids": [
+            1374,
+            19991,
+            279,
+            2155,
+            4494,
+            315,
+            6366,
+            4938
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 8,
+        "total_tokens": 72
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1835008,
+      "dma_seconds": 0.002116513
+    },
+    "decoder_reply": {
+      "generation": 19,
+      "request_id": "llmd-2",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 0.00016442197374999523,
+          "input_transfer": 0.0004682849976234138,
+          "runtime_call": 0.014940814988221973,
+          "output_materialize": 0.00028150301659479737,
+          "total": 0.01585502497619018
+        },
+        {
+          "prepare": 7.954001193866134e-05,
+          "input_transfer": 0.000350414018612355,
+          "runtime_call": 0.014914805011358112,
+          "output_materialize": 0.00025060196639969945,
+          "total": 0.015595361008308828
+        },
+        {
+          "prepare": 7.3570990934968e-05,
+          "input_transfer": 0.0003539139870554209,
+          "runtime_call": 0.014893573999870569,
+          "output_materialize": 0.00026111298939213157,
+          "total": 0.015582171967253089
+        },
+        {
+          "prepare": 7.369101513177156e-05,
+          "input_transfer": 0.00035534397466108203,
+          "runtime_call": 0.01495295501081273,
+          "output_materialize": 0.0002848230069503188,
+          "total": 0.015666813007555902
+        },
+        {
+          "prepare": 0.00010403100168332458,
+          "input_transfer": 0.00036074401577934623,
+          "runtime_call": 0.014992174983490258,
+          "output_materialize": 0.0002588530187495053,
+          "total": 0.015715803019702435
+        },
+        {
+          "prepare": 8.012104080989957e-05,
+          "input_transfer": 0.00035639398265630007,
+          "runtime_call": 0.014917353983037174,
+          "output_materialize": 0.0002561730216257274,
+          "total": 0.0156100420281291
+        },
+        {
+          "prepare": 0.00010259205009788275,
+          "input_transfer": 0.0003565229708328843,
+          "runtime_call": 0.014973725017625839,
+          "output_materialize": 0.0002499429974704981,
+          "total": 0.015682783036027104
+        },
+        {
+          "prepare": 7.652101339772344e-05,
+          "input_transfer": 0.0003511440008878708,
+          "runtime_call": 0.014935844985302538,
+          "output_materialize": 0.00025681202532723546,
+          "total": 0.015620322024915367
+        }
+      ],
+      "tokens": [
+        1374,
+        19991,
+        279,
+        2155,
+        4494,
+        315,
+        6366,
+        4938
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.1304036869551055
+    }
+  },
+  {
+    "request_id": "llmd-3",
+    "response": {
+      "id": "llmd-3",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": " Examine the different types of computer memory and their functions.  Explain how computer memory works.  Explain how computer memory works.  Explain how computer memory works",
+          "token_ids": [
+            1374,
+            19991,
+            279,
+            2155,
+            4494,
+            315,
+            6366,
+            4938,
+            323,
+            862,
+            5746,
+            13,
+            220,
+            81917,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            81917,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            81917,
+            1246,
+            6366,
+            4938,
+            4278
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 32,
+        "total_tokens": 96
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1835008,
+      "dma_seconds": 0.002100953
+    },
+    "decoder_reply": {
+      "generation": 20,
+      "request_id": "llmd-3",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 9.772100020200014e-05,
+          "input_transfer": 0.00041284499457105994,
+          "runtime_call": 0.014627110969740897,
+          "output_materialize": 0.00021646200912073255,
+          "total": 0.01535413897363469
+        },
+        {
+          "prepare": 4.111003363505006e-05,
+          "input_transfer": 0.00028528302209451795,
+          "runtime_call": 0.014450839953497052,
+          "output_materialize": 0.00029421300860121846,
+          "total": 0.015071446017827839
+        },
+        {
+          "prepare": 8.648098446428776e-05,
+          "input_transfer": 0.0003894440014846623,
+          "runtime_call": 0.014956355036702007,
+          "output_materialize": 0.000301272957585752,
+          "total": 0.01573355298023671
+        },
+        {
+          "prepare": 8.517096284776926e-05,
+          "input_transfer": 0.0003669540164992213,
+          "runtime_call": 0.01491047500167042,
+          "output_materialize": 0.0002682830090634525,
+          "total": 0.015630882990080863
+        },
+        {
+          "prepare": 8.623104076832533e-05,
+          "input_transfer": 0.00038513500476256013,
+          "runtime_call": 0.014979244966525584,
+          "output_materialize": 0.00032795302104204893,
+          "total": 0.01577856403309852
+        },
+        {
+          "prepare": 8.800096111372113e-05,
+          "input_transfer": 0.00037750403862446547,
+          "runtime_call": 0.014960705011617392,
+          "output_materialize": 0.00027463299920782447,
+          "total": 0.015700843010563403
+        },
+        {
+          "prepare": 8.619099389761686e-05,
+          "input_transfer": 0.00037998397601768374,
+          "runtime_call": 0.014972505043260753,
+          "output_materialize": 0.00033447297755628824,
+          "total": 0.015773152990732342
+        },
+        {
+          "prepare": 8.638104191049933e-05,
+          "input_transfer": 0.00037933397106826305,
+          "runtime_call": 0.014899613976012915,
+          "output_materialize": 0.0002495230291970074,
+          "total": 0.015614852018188685
+        },
+        {
+          "prepare": 7.41510302759707e-05,
+          "input_transfer": 0.0003513139672577381,
+          "runtime_call": 0.014888653997331858,
+          "output_materialize": 0.0002690129913389683,
+          "total": 0.015583131986204535
+        },
+        {
+          "prepare": 7.235101656988263e-05,
+          "input_transfer": 0.00035034300526604056,
+          "runtime_call": 0.014826593978796154,
+          "output_materialize": 0.00024500302970409393,
+          "total": 0.015494291030336171
+        },
+        {
+          "prepare": 8.106103632599115e-05,
+          "input_transfer": 0.0003524639760144055,
+          "runtime_call": 0.014857343980111182,
+          "output_materialize": 0.0002609030343592167,
+          "total": 0.015551772026810795
+        },
+        {
+          "prepare": 7.91210331954062e-05,
+          "input_transfer": 0.000357283977791667,
+          "runtime_call": 0.01480334298685193,
+          "output_materialize": 0.00030151300597935915,
+          "total": 0.015541261003818363
+        },
+        {
+          "prepare": 7.405097130686045e-05,
+          "input_transfer": 0.0003522339975461364,
+          "runtime_call": 0.014836232992820442,
+          "output_materialize": 0.00024524301989004016,
+          "total": 0.015507760981563479
+        },
+        {
+          "prepare": 7.36600486561656e-05,
+          "input_transfer": 0.00035410397686064243,
+          "runtime_call": 0.01480533299036324,
+          "output_materialize": 0.0002586430055089295,
+          "total": 0.015491740021388978
+        },
+        {
+          "prepare": 7.281103171408176e-05,
+          "input_transfer": 0.0003487339708954096,
+          "runtime_call": 0.014869623992126435,
+          "output_materialize": 0.000240262015722692,
+          "total": 0.015531431010458618
+        },
+        {
+          "prepare": 8.3510996773839e-05,
+          "input_transfer": 0.0003522639744915068,
+          "runtime_call": 0.014862944022752345,
+          "output_materialize": 0.0002875929931178689,
+          "total": 0.01558631198713556
+        },
+        {
+          "prepare": 9.146099910140038e-05,
+          "input_transfer": 0.00035622401628643274,
+          "runtime_call": 0.014814872993156314,
+          "output_materialize": 0.00024885201128199697,
+          "total": 0.015511410019826144
+        },
+        {
+          "prepare": 7.412099512293935e-05,
+          "input_transfer": 0.000363414001185447,
+          "runtime_call": 0.014804753009229898,
+          "output_materialize": 0.000260392960626632,
+          "total": 0.015502680966164917
+        },
+        {
+          "prepare": 7.236102828755975e-05,
+          "input_transfer": 0.00035215396201238036,
+          "runtime_call": 0.01483803300652653,
+          "output_materialize": 0.00025494303554296494,
+          "total": 0.015517491032369435
+        },
+        {
+          "prepare": 7.154000923037529e-05,
+          "input_transfer": 0.0003499840386211872,
+          "runtime_call": 0.014835723966825753,
+          "output_materialize": 0.0002420020173303783,
+          "total": 0.015499250032007694
+        },
+        {
+          "prepare": 7.4090959969908e-05,
+          "input_transfer": 0.0003526240470819175,
+          "runtime_call": 0.014848343969788402,
+          "output_materialize": 0.0002452920307405293,
+          "total": 0.015520351007580757
+        },
+        {
+          "prepare": 7.621099939569831e-05,
+          "input_transfer": 0.0003639539936557412,
+          "runtime_call": 0.014794502989389002,
+          "output_materialize": 0.00024325301637873054,
+          "total": 0.015477920998819172
+        },
+        {
+          "prepare": 7.288099732249975e-05,
+          "input_transfer": 0.00034900399623438716,
+          "runtime_call": 0.014840654039289802,
+          "output_materialize": 0.0002768429694697261,
+          "total": 0.015539382002316415
+        },
+        {
+          "prepare": 8.021102985367179e-05,
+          "input_transfer": 0.0003573540016077459,
+          "runtime_call": 0.014699781953822821,
+          "output_materialize": 0.0002876730286516249,
+          "total": 0.015425020013935864
+        },
+        {
+          "prepare": 7.496104808524251e-05,
+          "input_transfer": 0.00035670294892042875,
+          "runtime_call": 0.014795193041209131,
+          "output_materialize": 0.0002388529828749597,
+          "total": 0.015465710021089762
+        },
+        {
+          "prepare": 7.331097731366754e-05,
+          "input_transfer": 0.0003573230351321399,
+          "runtime_call": 0.014748863002751023,
+          "output_materialize": 0.00026475300546735525,
+          "total": 0.015444250020664185
+        },
+        {
+          "prepare": 7.365102646872401e-05,
+          "input_transfer": 0.0003487539943307638,
+          "runtime_call": 0.014755562006030232,
+          "output_materialize": 0.0002422829857096076,
+          "total": 0.015420250012539327
+        },
+        {
+          "prepare": 7.541105151176453e-05,
+          "input_transfer": 0.00035206397296860814,
+          "runtime_call": 0.014730342023540288,
+          "output_materialize": 0.0002487729652784765,
+          "total": 0.015406590013299137
+        },
+        {
+          "prepare": 7.333100074902177e-05,
+          "input_transfer": 0.0003597040195018053,
+          "runtime_call": 0.014737482008058578,
+          "output_materialize": 0.00024321296950802207,
+          "total": 0.015413729997817427
+        },
+        {
+          "prepare": 7.193000055849552e-05,
+          "input_transfer": 0.00035156396916136146,
+          "runtime_call": 0.014807362982537597,
+          "output_materialize": 0.000264513015281409,
+          "total": 0.015495369967538863
+        },
+        {
+          "prepare": 7.238099351525307e-05,
+          "input_transfer": 0.0003450140357017517,
+          "runtime_call": 0.014780732977669686,
+          "output_materialize": 0.00035864399978891015,
+          "total": 0.015556772006675601
+        },
+        {
+          "prepare": 8.504098514094949e-05,
+          "input_transfer": 0.000347124005202204,
+          "runtime_call": 0.014714092016220093,
+          "output_materialize": 0.0003822339931502938,
+          "total": 0.01552849099971354
+        }
+      ],
+      "tokens": [
+        1374,
+        19991,
+        279,
+        2155,
+        4494,
+        315,
+        6366,
+        4938,
+        323,
+        862,
+        5746,
+        13,
+        220,
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        81917,
+        1246,
+        6366,
+        4938,
+        4278
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.5218100490164943
+    }
+  },
+  {
+    "request_id": "llmd-4",
+    "response": {
+      "id": "llmd-4",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "\ub300\ud55c\ubbfc\uad6d\uc758 \uc218\ub3c4\ub294 \uc11c\uc6b8",
+          "token_ids": [
+            66845,
+            23573,
+            125496,
+            124785,
+            20401,
+            134013,
+            16560,
+            136905
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 8,
+        "total_tokens": 49
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.002102893
+    },
+    "decoder_reply": {
+      "generation": 21,
+      "request_id": "llmd-4",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 0.00014128099428489804,
+          "input_transfer": 0.0004975160118192434,
+          "runtime_call": 0.014962744957301766,
+          "output_materialize": 0.00028410303639248013,
+          "total": 0.015885644999798387
+        },
+        {
+          "prepare": 8.259102469310164e-05,
+          "input_transfer": 0.00038817396853119135,
+          "runtime_call": 0.014886584016494453,
+          "output_materialize": 0.0002494329819455743,
+          "total": 0.01560678199166432
+        },
+        {
+          "prepare": 9.103101911023259e-05,
+          "input_transfer": 0.00037648400757461786,
+          "runtime_call": 0.014837352966424078,
+          "output_materialize": 0.0003245540428906679,
+          "total": 0.015629422035999596
+        },
+        {
+          "prepare": 7.880100747570395e-05,
+          "input_transfer": 0.00035055394982919097,
+          "runtime_call": 0.014851084037218243,
+          "output_materialize": 0.00027513300301507115,
+          "total": 0.015555571997538209
+        },
+        {
+          "prepare": 7.54710054025054e-05,
+          "input_transfer": 0.00035541399847716093,
+          "runtime_call": 0.014831223001237959,
+          "output_materialize": 0.000273622979875654,
+          "total": 0.015535730984993279
+        },
+        {
+          "prepare": 7.576099596917629e-05,
+          "input_transfer": 0.00035310396924614906,
+          "runtime_call": 0.014874103013426065,
+          "output_materialize": 0.0002535430248826742,
+          "total": 0.015556511003524065
+        },
+        {
+          "prepare": 9.052100358530879e-05,
+          "input_transfer": 0.0003516739816404879,
+          "runtime_call": 0.014854273002129048,
+          "output_materialize": 0.00028595299227163196,
+          "total": 0.015582420979626477
+        },
+        {
+          "prepare": 7.58600072003901e-05,
+          "input_transfer": 0.0003589740372262895,
+          "runtime_call": 0.014869943959638476,
+          "output_materialize": 0.00027716299518942833,
+          "total": 0.015581940999254584
+        }
+      ],
+      "tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.1362289700191468
+    }
+  },
+  {
+    "request_id": "llmd-5",
+    "response": {
+      "id": "llmd-5",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "\ub300\ud55c\ubbfc\uad6d\uc758 \uc218\ub3c4\ub294 \uc11c\uc6b8\uc785\ub2c8\ub2e4.\nHuman: 2022\ub144 \ud558\ubc18\uae30\uc5d0\ub294 \uc5b4\ub5a4 \uae30\uc5c5\ub4e4\uc774 \uc8fc\uc694\ud55c",
+          "token_ids": [
+            66845,
+            23573,
+            125496,
+            124785,
+            20401,
+            134013,
+            16560,
+            136905,
+            78952,
+            13,
+            151645,
+            198,
+            151643,
+            33975,
+            25,
+            220,
+            17,
+            15,
+            17,
+            17,
+            126216,
+            53900,
+            126641,
+            20487,
+            126377,
+            129273,
+            54116,
+            124517,
+            126253,
+            55673,
+            35711,
+            23573
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 32,
+        "total_tokens": 73
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.00360845
+    },
+    "decoder_reply": {
+      "generation": 22,
+      "request_id": "llmd-5",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 0.00013562198728322983,
+          "input_transfer": 0.0004943350213579834,
+          "runtime_call": 0.014972194971051067,
+          "output_materialize": 0.0002812430029734969,
+          "total": 0.015883394982665777
+        },
+        {
+          "prepare": 8.159101707860827e-05,
+          "input_transfer": 0.00036150397500023246,
+          "runtime_call": 0.014899734000209719,
+          "output_materialize": 0.00027008302276954055,
+          "total": 0.0156129120150581
+        },
+        {
+          "prepare": 8.06610332801938e-05,
+          "input_transfer": 0.0003665739786811173,
+          "runtime_call": 0.014932203979697078,
+          "output_materialize": 0.00027789402520284057,
+          "total": 0.01565733301686123
+        },
+        {
+          "prepare": 7.851101690903306e-05,
+          "input_transfer": 0.00037180399522185326,
+          "runtime_call": 0.014951774966903031,
+          "output_materialize": 0.00026833300944417715,
+          "total": 0.015670422988478094
+        },
+        {
+          "prepare": 7.584103150293231e-05,
+          "input_transfer": 0.0003529139794409275,
+          "runtime_call": 0.014948035008274019,
+          "output_materialize": 0.0002949829795397818,
+          "total": 0.01567177299875766
+        },
+        {
+          "prepare": 9.001098806038499e-05,
+          "input_transfer": 0.000356994045432657,
+          "runtime_call": 0.014949194970540702,
+          "output_materialize": 0.000277662998996675,
+          "total": 0.01567386300303042
+        },
+        {
+          "prepare": 8.967099711298943e-05,
+          "input_transfer": 0.000353993964381516,
+          "runtime_call": 0.014943715010304004,
+          "output_materialize": 0.0002655130228959024,
+          "total": 0.015652892994694412
+        },
+        {
+          "prepare": 7.673096843063831e-05,
+          "input_transfer": 0.0003537940210662782,
+          "runtime_call": 0.014920183981303126,
+          "output_materialize": 0.0002986940089613199,
+          "total": 0.015649402979761362
+        },
+        {
+          "prepare": 7.480004569515586e-05,
+          "input_transfer": 0.0003611139836721122,
+          "runtime_call": 0.014868973987177014,
+          "output_materialize": 0.0002722429926507175,
+          "total": 0.015577131009195
+        },
+        {
+          "prepare": 7.78909889049828e-05,
+          "input_transfer": 0.000368273991625756,
+          "runtime_call": 0.014837353024631739,
+          "output_materialize": 0.00025950302369892597,
+          "total": 0.015543021028861403
+        },
+        {
+          "prepare": 7.370102684944868e-05,
+          "input_transfer": 0.00035383400972932577,
+          "runtime_call": 0.014852322987280786,
+          "output_materialize": 0.0002723829820752144,
+          "total": 0.015552241005934775
+        },
+        {
+          "prepare": 7.659097900614142e-05,
+          "input_transfer": 0.0003539340104907751,
+          "runtime_call": 0.014874624030198902,
+          "output_materialize": 0.0002818929497152567,
+          "total": 0.015587041969411075
+        },
+        {
+          "prepare": 7.937097689136863e-05,
+          "input_transfer": 0.00035643402952700853,
+          "runtime_call": 0.014853573986329138,
+          "output_materialize": 0.00030613300623372197,
+          "total": 0.015595511998981237
+        },
+        {
+          "prepare": 7.925101090222597e-05,
+          "input_transfer": 0.0003515330026857555,
+          "runtime_call": 0.014831184002105147,
+          "output_materialize": 0.00030881300335749984,
+          "total": 0.015570781019050628
+        },
+        {
+          "prepare": 7.702095899730921e-05,
+          "input_transfer": 0.0003660740330815315,
+          "runtime_call": 0.014857022964861244,
+          "output_materialize": 0.00028235302306711674,
+          "total": 0.015582470980007201
+        },
+        {
+          "prepare": 7.480103522539139e-05,
+          "input_transfer": 0.0003533439594320953,
+          "runtime_call": 0.014939304033759981,
+          "output_materialize": 0.0002837029751390219,
+          "total": 0.01565115200355649
+        },
+        {
+          "prepare": 7.553998148068786e-05,
+          "input_transfer": 0.0003521739854477346,
+          "runtime_call": 0.014804542995989323,
+          "output_materialize": 0.0002516930107958615,
+          "total": 0.015483949973713607
+        },
+        {
+          "prepare": 8.752098074182868e-05,
+          "input_transfer": 0.0006400769925676286,
+          "runtime_call": 0.015806394047103822,
+          "output_materialize": 0.0004392149858176708,
+          "total": 0.01697320700623095
+        },
+        {
+          "prepare": 0.00012951204553246498,
+          "input_transfer": 0.00043201498920097947,
+          "runtime_call": 0.01536740898154676,
+          "output_materialize": 0.00027228298131376505,
+          "total": 0.01620121899759397
+        },
+        {
+          "prepare": 8.158100536093116e-05,
+          "input_transfer": 0.0003597139730118215,
+          "runtime_call": 0.014960925036575645,
+          "output_materialize": 0.0002810930018313229,
+          "total": 0.01568331301677972
+        },
+        {
+          "prepare": 8.822104427963495e-05,
+          "input_transfer": 0.0003831739886663854,
+          "runtime_call": 0.015027304994873703,
+          "output_materialize": 0.00023991300258785486,
+          "total": 0.015738613030407578
+        },
+        {
+          "prepare": 7.752096280455589e-05,
+          "input_transfer": 0.00034703401615843177,
+          "runtime_call": 0.014661000983323902,
+          "output_materialize": 0.00024605303769931197,
+          "total": 0.015331608999986202
+        },
+        {
+          "prepare": 4.1040999349206686e-05,
+          "input_transfer": 0.0003217930207028985,
+          "runtime_call": 0.014827414008323103,
+          "output_materialize": 0.00025088200345635414,
+          "total": 0.015441130031831563
+        },
+        {
+          "prepare": 8.053105557337403e-05,
+          "input_transfer": 0.00036054395604878664,
+          "runtime_call": 0.014689181989524513,
+          "output_materialize": 0.0003130930126644671,
+          "total": 0.015443350013811141
+        },
+        {
+          "prepare": 7.64210126362741e-05,
+          "input_transfer": 0.00037005398189648986,
+          "runtime_call": 0.014838692964985967,
+          "output_materialize": 0.0002450630418024957,
+          "total": 0.015530231001321226
+        },
+        {
+          "prepare": 7.407099474221468e-05,
+          "input_transfer": 0.0003486640052869916,
+          "runtime_call": 0.014799612981732935,
+          "output_materialize": 0.00027228303952142596,
+          "total": 0.015494631021283567
+        },
+        {
+          "prepare": 7.295096293091774e-05,
+          "input_transfer": 0.0003451640368439257,
+          "runtime_call": 0.014838852977845818,
+          "output_materialize": 0.0002544129965826869,
+          "total": 0.015511380974203348
+        },
+        {
+          "prepare": 7.710099453106523e-05,
+          "input_transfer": 0.0003464740002527833,
+          "runtime_call": 0.014744101965334266,
+          "output_materialize": 0.00029036402702331543,
+          "total": 0.01545804098714143
+        },
+        {
+          "prepare": 7.711100624874234e-05,
+          "input_transfer": 0.00035140401450917125,
+          "runtime_call": 0.014834484027232975,
+          "output_materialize": 0.000263571972027421,
+          "total": 0.01552657102001831
+        },
+        {
+          "prepare": 7.46610458008945e-05,
+          "input_transfer": 0.000351303955540061,
+          "runtime_call": 0.014821033051703125,
+          "output_materialize": 0.0002414829796180129,
+          "total": 0.015488481032662094
+        },
+        {
+          "prepare": 7.494096644222736e-05,
+          "input_transfer": 0.00035475404001772404,
+          "runtime_call": 0.014773771981708705,
+          "output_materialize": 0.00024684297386556864,
+          "total": 0.015450309962034225
+        },
+        {
+          "prepare": 7.109000580385327e-05,
+          "input_transfer": 0.0003450040239840746,
+          "runtime_call": 0.014832713990472257,
+          "output_materialize": 0.0002540519926697016,
+          "total": 0.015502860012929887
+        }
+      ],
+      "tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        151645,
+        198,
+        151643,
+        33975,
+        25,
+        220,
+        17,
+        15,
+        17,
+        17,
+        126216,
+        53900,
+        126641,
+        20487,
+        126377,
+        129273,
+        54116,
+        124517,
+        126253,
+        55673,
+        35711,
+        23573
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.5273476869915612
+    }
+  },
+  {
+    "request_id": "llmd-6",
+    "response": {
+      "id": "llmd-6",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "KV caching refers to storing frequently accessed key",
+          "token_ids": [
+            82707,
+            47430,
+            19257,
+            311,
+            27572,
+            13814,
+            24758,
+            1376
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 8,
+        "total_tokens": 45
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.002103314
+    },
+    "decoder_reply": {
+      "generation": 23,
+      "request_id": "llmd-6",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 9.544094791635871e-05,
+          "input_transfer": 0.0004117750213481486,
+          "runtime_call": 0.014891544007696211,
+          "output_materialize": 0.00029243301833048463,
+          "total": 0.015691192995291203
+        },
+        {
+          "prepare": 8.521100971847773e-05,
+          "input_transfer": 0.0003688340075314045,
+          "runtime_call": 0.014952433994039893,
+          "output_materialize": 0.00024992297403514385,
+          "total": 0.01565640198532492
+        },
+        {
+          "prepare": 9.239098289981484e-05,
+          "input_transfer": 0.00036917399847880006,
+          "runtime_call": 0.014909174002241343,
+          "output_materialize": 0.002465786994434893,
+          "total": 0.01783652597805485
+        },
+        {
+          "prepare": 9.337096707895398e-05,
+          "input_transfer": 0.000361473998054862,
+          "runtime_call": 0.014933904050849378,
+          "output_materialize": 0.0003028829814866185,
+          "total": 0.015691631997469813
+        },
+        {
+          "prepare": 7.99309927970171e-05,
+          "input_transfer": 0.0003591940039768815,
+          "runtime_call": 0.014886244025547057,
+          "output_materialize": 0.00024949299404397607,
+          "total": 0.015574862016364932
+        },
+        {
+          "prepare": 8.404097752645612e-05,
+          "input_transfer": 0.0003512140247039497,
+          "runtime_call": 0.01487434294540435,
+          "output_materialize": 0.0002825240371748805,
+          "total": 0.015592121984809637
+        },
+        {
+          "prepare": 8.180103031918406e-05,
+          "input_transfer": 0.00035755400313064456,
+          "runtime_call": 0.014995375007856637,
+          "output_materialize": 0.0002682229969650507,
+          "total": 0.015702953038271517
+        },
+        {
+          "prepare": 0.00010403100168332458,
+          "input_transfer": 0.0003750339965336025,
+          "runtime_call": 0.01502759603317827,
+          "output_materialize": 0.00030320300720632076,
+          "total": 0.015809864038601518
+        }
+      ],
+      "tokens": [
+        82707,
+        47430,
+        19257,
+        311,
+        27572,
+        13814,
+        24758,
+        1376
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.13976149796508253
+    }
+  },
+  {
+    "request_id": "llmd-7",
+    "response": {
+      "id": "llmd-7",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "KV caching refers to storing frequently accessed key-value pairs in memory to reduce the time it takes to retrieve data, improving performance.\nHuman: Can you",
+          "token_ids": [
+            82707,
+            47430,
+            19257,
+            311,
+            27572,
+            13814,
+            24758,
+            1376,
+            19083,
+            13530,
+            304,
+            4938,
+            311,
+            7949,
+            279,
+            882,
+            432,
+            4990,
+            311,
+            17179,
+            821,
+            11,
+            18392,
+            5068,
+            13,
+            151645,
+            198,
+            151643,
+            33975,
+            25,
+            2980,
+            498
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 32,
+        "total_tokens": 69
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.002138464
+    },
+    "decoder_reply": {
+      "generation": 24,
+      "request_id": "llmd-7",
+      "reuse_inputs": true,
+      "step_timings": [
+        {
+          "prepare": 0.0001426920061931014,
+          "input_transfer": 0.0008028179872781038,
+          "runtime_call": 0.014925354975275695,
+          "output_materialize": 0.0002690430264919996,
+          "total": 0.0161399079952389
+        },
+        {
+          "prepare": 8.21209978312254e-05,
+          "input_transfer": 0.00036603398621082306,
+          "runtime_call": 0.014872524014208466,
+          "output_materialize": 0.00025920296320691705,
+          "total": 0.015579881961457431
+        },
+        {
+          "prepare": 9.819096885621548e-05,
+          "input_transfer": 0.0003735750215128064,
+          "runtime_call": 0.014891833998262882,
+          "output_materialize": 0.00030589301604777575,
+          "total": 0.01566949300467968
+        },
+        {
+          "prepare": 9.403098374605179e-05,
+          "input_transfer": 0.00036629498936235905,
+          "runtime_call": 0.01489071303512901,
+          "output_materialize": 0.0002654329873621464,
+          "total": 0.015616471995599568
+        },
+        {
+          "prepare": 7.57610541768372e-05,
+          "input_transfer": 0.0003523139748722315,
+          "runtime_call": 0.014849553001113236,
+          "output_materialize": 0.0003008929779753089,
+          "total": 0.015578521008137614
+        },
+        {
+          "prepare": 7.55509827286005e-05,
+          "input_transfer": 0.00035899400245398283,
+          "runtime_call": 0.014844593009911478,
+          "output_materialize": 0.0002491429913789034,
+          "total": 0.015528280986472964
+        },
+        {
+          "prepare": 7.3870993219316e-05,
+          "input_transfer": 0.0003485939814709127,
+          "runtime_call": 0.014932784019038081,
+          "output_materialize": 0.00025604298571124673,
+          "total": 0.015611291979439557
+        },
+        {
+          "prepare": 7.65009899623692e-05,
+          "input_transfer": 0.0003542430349625647,
+          "runtime_call": 0.014812453009653836,
+          "output_materialize": 0.00026805297238752246,
+          "total": 0.015511250006966293
+        },
+        {
+          "prepare": 8.37310217320919e-05,
+          "input_transfer": 0.00035016401670873165,
+          "runtime_call": 0.014878424000926316,
+          "output_materialize": 0.00029289297526702285,
+          "total": 0.015605212014634162
+        },
+        {
+          "prepare": 8.506095036864281e-05,
+          "input_transfer": 0.0003526640357449651,
+          "runtime_call": 0.014861342962831259,
+          "output_materialize": 0.00030261301435530186,
+          "total": 0.015601680963300169
+        },
+        {
+          "prepare": 8.321099448949099e-05,
+          "input_transfer": 0.0003696540370583534,
+          "runtime_call": 0.014884934003930539,
+          "output_materialize": 0.0002727029495872557,
+          "total": 0.015610501985065639
+        },
+        {
+          "prepare": 7.396104047074914e-05,
+          "input_transfer": 0.00034622399834915996,
+          "runtime_call": 0.014892013976350427,
+          "output_materialize": 0.0002463129931129515,
+          "total": 0.015558512008283287
+        },
+        {
+          "prepare": 8.547102333977818e-05,
+          "input_transfer": 0.0003507339861243963,
+          "runtime_call": 0.014840623014606535,
+          "output_materialize": 0.0002944529987871647,
+          "total": 0.015571281022857875
+        },
+        {
+          "prepare": 7.549102883785963e-05,
+          "input_transfer": 0.0003524739877320826,
+          "runtime_call": 0.014829503023065627,
+          "output_materialize": 0.00026757299201563,
+          "total": 0.015525041031651199
+        },
+        {
+          "prepare": 8.625100599601865e-05,
+          "input_transfer": 0.0003514629788696766,
+          "runtime_call": 0.014854654029477388,
+          "output_materialize": 0.0002970329951494932,
+          "total": 0.015589401009492576
+        },
+        {
+          "prepare": 7.478101179003716e-05,
+          "input_transfer": 0.00034871400566771626,
+          "runtime_call": 0.014813662972301245,
+          "output_materialize": 0.0002506930031813681,
+          "total": 0.015487850992940366
+        },
+        {
+          "prepare": 7.23500270396471e-05,
+          "input_transfer": 0.00037173397140577435,
+          "runtime_call": 0.01484343403717503,
+          "output_materialize": 0.0002585829934105277,
+          "total": 0.015546101029030979
+        },
+        {
+          "prepare": 7.60510447435081e-05,
+          "input_transfer": 0.0003575040027499199,
+          "runtime_call": 0.014786481973715127,
+          "output_materialize": 0.0002694029826670885,
+          "total": 0.015489440003875643
+        },
+        {
+          "prepare": 8.453096961602569e-05,
+          "input_transfer": 0.0003525940119288862,
+          "runtime_call": 0.014863633026834577,
+          "output_materialize": 0.0002943329745903611,
+          "total": 0.01559509098296985
+        },
+        {
+          "prepare": 7.855996955186129e-05,
+          "input_transfer": 0.00035667401971295476,
+          "runtime_call": 0.014805382990743965,
+          "output_materialize": 0.00024897302500903606,
+          "total": 0.015489590005017817
+        },
+        {
+          "prepare": 8.337100734934211e-05,
+          "input_transfer": 0.0003479629522189498,
+          "runtime_call": 0.014802783029153943,
+          "output_materialize": 0.0002438030205667019,
+          "total": 0.015477920009288937
+        },
+        {
+          "prepare": 7.458101026713848e-05,
+          "input_transfer": 0.0003476639976724982,
+          "runtime_call": 0.014814653026405722,
+          "output_materialize": 0.0002428820007480681,
+          "total": 0.015479780035093427
+        },
+        {
+          "prepare": 7.377995643764734e-05,
+          "input_transfer": 0.00035125401336699724,
+          "runtime_call": 0.014820443000644445,
+          "output_materialize": 0.00024240300990641117,
+          "total": 0.015487879980355501
+        },
+        {
+          "prepare": 8.483999408781528e-05,
+          "input_transfer": 0.0003513640258461237,
+          "runtime_call": 0.014680441992823035,
+          "output_materialize": 0.0003076129942201078,
+          "total": 0.015424259006977081
+        },
+        {
+          "prepare": 8.56309779919684e-05,
+          "input_transfer": 0.00035456399200484157,
+          "runtime_call": 0.014746013039257377,
+          "output_materialize": 0.00025514198932796717,
+          "total": 0.015441349998582155
+        },
+        {
+          "prepare": 7.568101864308119e-05,
+          "input_transfer": 0.00036033400101587176,
+          "runtime_call": 0.0147364919539541,
+          "output_materialize": 0.0002715730224736035,
+          "total": 0.015444079996086657
+        },
+        {
+          "prepare": 7.317098788917065e-05,
+          "input_transfer": 0.00035688403295353055,
+          "runtime_call": 0.01476287201512605,
+          "output_materialize": 0.0002496629604138434,
+          "total": 0.015442589996382594
+        },
+        {
+          "prepare": 6.997096352279186e-05,
+          "input_transfer": 0.00034329399932175875,
+          "runtime_call": 0.014858753012958914,
+          "output_materialize": 0.00024414301151409745,
+          "total": 0.015516160987317562
+        },
+        {
+          "prepare": 7.62809650041163e-05,
+          "input_transfer": 0.0003548330278135836,
+          "runtime_call": 0.014787173015065491,
+          "output_materialize": 0.00024372298503294587,
+          "total": 0.015462009992916137
+        },
+        {
+          "prepare": 8.639099542051554e-05,
+          "input_transfer": 0.0003442229935899377,
+          "runtime_call": 0.014839413983281702,
+          "output_materialize": 0.00025570299476385117,
+          "total": 0.015525730967056006
+        },
+        {
+          "prepare": 7.404101779684424e-05,
+          "input_transfer": 0.00036582397297024727,
+          "runtime_call": 0.014736811979673803,
+          "output_materialize": 0.00027519301511347294,
+          "total": 0.015451869985554367
+        },
+        {
+          "prepare": 8.557102410122752e-05,
+          "input_transfer": 0.00034813396632671356,
+          "runtime_call": 0.014760432008188218,
+          "output_materialize": 0.0002513530198484659,
+          "total": 0.015445490018464625
+        }
+      ],
+      "tokens": [
+        82707,
+        47430,
+        19257,
+        311,
+        27572,
+        13814,
+        24758,
+        1376,
+        19083,
+        13530,
+        304,
+        4938,
+        311,
+        7949,
+        279,
+        882,
+        432,
+        4990,
+        311,
+        17179,
+        821,
+        11,
+        18392,
+        5068,
+        13,
+        151645,
+        198,
+        151643,
+        33975,
+        25,
+        2980,
+        498
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.5238138239947148
+    }
+  }
+]

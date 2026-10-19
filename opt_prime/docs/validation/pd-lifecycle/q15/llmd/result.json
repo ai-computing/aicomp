@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "requests": 8,
+  "output_tokens": 160,
+  "exact_direct_tokens": true,
+  "owner_state": "idle",
+  "sidecar_exit": 0
+}
