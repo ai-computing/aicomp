@@ -347,7 +347,7 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False, partitioner: str = "auto", safe_multi_output: bool = False, grad_accum_normalize: bool = False):
+    def __init__(self, module:nn.Module, num_mb, use_gpu=True, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, dynamo_capture=False, partitioner: str = "auto", safe_multi_output: bool = False, grad_accum_normalize: bool = False, moe_offload=None):
         """
         Args:
             partitioner: pipeline partitioning method.
@@ -394,6 +394,7 @@ class Optimus_p:
 
         self.use_gpu = use_gpu
         self.dynamo_capture = dynamo_capture
+        self.moe_offload_report = None
         # Opt-in defensive fallback for hier-MILP multi-output stages under
         # DDP wrapping (paper §10).  When False (default), preserve historical
         # behavior of all 32 existing examples bit-for-bit: extract_tensor_args
@@ -524,6 +525,9 @@ class Optimus_p:
 
                     from .moe_train import prepare_moe_for_training
                     prepare_moe_for_training(module)        # export/autograd-safe experts (MoE models)
+                    if moe_offload is not None and self.moe_offload_report is None:   # experts frozen on offload tiers
+                        from .moe_offload import apply_moe_offload
+                        self.moe_offload_report = apply_moe_offload(module, moe_offload)
                     self.model_type = self.ir.retrieve_IR(module, dynamo_capture=dynamo_capture)
                     #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
                     self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
@@ -572,6 +576,9 @@ class Optimus_p:
 
             from .moe_train import prepare_moe_for_training
             prepare_moe_for_training(module)        # export/autograd-safe experts (MoE models)
+            if moe_offload is not None and self.moe_offload_report is None:   # experts frozen on offload tiers
+                from .moe_offload import apply_moe_offload
+                self.moe_offload_report = apply_moe_offload(module, moe_offload)
             self.model_type = self.ir.retrieve_IR(module, dynamo_capture=dynamo_capture)
             #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
             self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())

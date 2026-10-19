@@ -30,6 +30,9 @@ def main():
     ap.add_argument("--dynamo-capture", action="store_true")
     ap.add_argument("--lr", type=float, default=None)
     ap.add_argument("--dtype", default="float32", help="bfloat16 for MoE families (transformers' grouped_mm experts)")
+    ap.add_argument("--offload-hot", type=float, default=None,
+                    help="MoE models: keep this fraction of each layer's experts on the GPU, the rest on the host "
+                         "(experts frozen; non-expert parameters train)")
     a = ap.parse_args()
     rank = int(os.environ.get("RANK", "0"))
 
@@ -47,8 +50,16 @@ def main():
         ref_logits = copy.deepcopy(model)(data).logits.float()
     ref_loss = F.cross_entropy(ref_logits.reshape(-1, ref_logits.shape[-1]), labels.reshape(-1), ignore_index=-100).item()
 
+    offload = None
+    if a.offload_hot is not None:
+        from opt_prime.moe_offload import ExpertProfiler, MoEOffloadConfig
+        with ExpertProfiler(model) as prof, torch.no_grad():
+            model(data)
+        counts = prof.as_lists()
+        E = len(counts[0])
+        offload = MoEOffloadConfig(hot=[sorted(range(E), key=lambda e: -c[e])[:int(E * a.offload_hot)] for c in counts])
     opt = Optimus_p(model, 1, use_gpu=True, pp_size=a.pp_size, ir_analyze=IR_Anal.SEQUENTIAL,
-                    dynamo_capture=a.dynamo_capture)
+                    dynamo_capture=a.dynamo_capture, moe_offload=offload)
     if a.lora:
         opt.apply_lora(LoRAConfig(r=4, alpha=8.0, dropout=0.0,
                                   target_modules=["q_proj", "k_proj", "v_proj", "o_proj"]))
@@ -72,7 +83,8 @@ def main():
         dec_ok = losses[-1] < losses[0]
         lora_ok = (not a.lora) or unchanged
         ok = first_ok and dec_ok and lora_ok
-        print(f"[probe] {a.family} {'lora' if a.lora else 'ft'} pp={a.pp_size}: ref {ref_loss:.5f} first {losses[0]:.5f} "
+        print(f"[probe] {a.family} {'lora' if a.lora else 'ft'} pp={a.pp_size}"
+              f"{'' if a.offload_hot is None else f' offload-hot={a.offload_hot}'}: ref {ref_loss:.5f} first {losses[0]:.5f} "
               f"last {losses[-1]:.5f} trainable {sum(p.numel() for p in params)} base unchanged {unchanged} -> "
               f"{'PASS' if ok else 'FAIL'}", flush=True)
 
