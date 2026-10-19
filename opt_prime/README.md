@@ -731,3 +731,102 @@ The example entry points (`pp_inference_llama.py`, `pp_generation_llama.py`, `se
 ## License
 
 The results of the AIcomp project are distributed under the 3-clause BSD license.
+
+## MoE Expert Offloading (experimental)
+
+Runs mixture-of-experts models whose experts do not fit in GPU memory. Every MoE layer keeps its most frequently
+routed ("hot") experts on the GPU; the remaining ("cold") experts stay in host memory and are computed on the CPU in
+parallel with the GPU part. Routers, shared experts and attention are untouched.
+
+Each experts module is replaced by one opaque custom op (`opt_prime::offloaded_experts`), so `torch.export` never
+traces the data-dependent routing and the expert weights are not graph parameters: pipeline stages keep only their own
+layers' hot experts (uploaded on first use). Nothing is model specific: experts modules are found by structure
+(`num_experts` plus stacked `gate_up_proj` / `down_proj`), and both halves reuse the model's own experts class, so
+biases, transposed weights, activations and custom gating come from the model code.
+
+**Requirements**: transformers >= 5.0 (experts interface `experts(hidden, top_k_index, top_k_weights)`; transformers
+4.x keeps experts in an `nn.ModuleList` and is not supported), torch >= 2.4, `dynamo_capture=True`.
+Validated with **transformers 5.1.0, torch 2.10.0+cu128, NVIDIA A100 80GB, CUDA 12.8**. The other examples in this
+document target transformers 4.46.2.
+
+```python
+from opt_prime.inference import Optimus_Inference
+from opt_prime.moe_offload import MoEOffloadConfig, ExpertProfiler
+
+with ExpertProfiler(model) as prof, torch.no_grad():   # routing counts from calibration text (on the host)
+    model(calib_ids)
+cfg = MoEOffloadConfig(gpu_budget_gb=20, profile=prof.as_lists())   # hottest experts model-wide within 20 GB
+
+engine = Optimus_Inference(model, use_gpu=True, dtype=torch.bfloat16, dynamo_capture=True,
+                           use_kv_cache=True, moe_offload=cfg)
+out = engine.generate(input_ids, max_new_tokens=64, do_sample=False)
+print(engine.moe_offload_report, cfg.stats.device_fraction)   # what is where; share of routed pairs on the GPU
+```
+
+Heterogeneous tiers: pass a list of `TierSpec` (fastest first, host last) to mix devices; the planner balances
+each layer across them by cost, and `adapt_every` re-places experts from the served routing:
+
+```python
+from opt_prime.moe_offload import MoEOffloadConfig, TierSpec
+cfg = MoEOffloadConfig(
+    tiers=[TierSpec("gpu", budget_gb=20),              # CUDA / ROCm / XPU through PyTorch
+           TierSpec("rngd", device=0, budget_gb=40),   # FuriosaAI RNGD through furiosa-torch
+           # or TierSpec("rngd-opt", budget_gb=40): generated per-shape furiosa-opt kernel, ~1 TB/s, decode
+           TierSpec("cpu", options={"threads": 12})],  # host: native AVX-512 BF16 kernel
+    profile=prof.as_lists(), adapt_every=8)
+```
+
+Code layout (`opt_prime/moe_offload/`, design and extension guide in `DESIGN.md`):
+
+| file | role |
+|---|---|
+| `spec.py` | `ExpertSpec` (shape, gate, bias, layout, dtype): the contract between models and devices |
+| `adapters.py` | model side: `GenericAdapter` for the transformers >= 5 experts interface; `register_adapter` for others |
+| `backends/` | device side: `gpu` (aliases `cuda`, `xpu`), `cpu` (native kernel / torch), `rngd` (furiosa-torch graphs), `rngd-opt` (per-shape furiosa-opt kernel + expert server from the npu-kernels package, `pip install npu-kernels`); `npu_graph.GraphNPUBackend` is the base for graph-compiled NPUs (three vendor hooks); `register_backend` for new devices |
+| `planner.py` | per-layer LPT over all tiers by cost (call overhead x P(used) + traffic x bytes / bandwidth) |
+| `layer.py` | N-tier execution: one host sync per layer, device tiers async, blocking tiers in workers; adaptive re-placement |
+| `ops.py`, `api.py` | the `opt_prime::offloaded_experts` custom op; `apply_moe_offload` |
+| `config.py`, `profiler.py`, `placement.py`, `discover.py`, `native.py`, `csrc/` | options/stats, routing profile, budget fill, module discovery, host kernel |
+| `testing.py` | tiny random models of every family (tests, examples) |
+
+Checks:
+
+    pytest opt_prime/tests/test_moe_offload.py                     # placement, pair selection, every family, export
+    python3 examples/moe_offload_check.py                          # same per family, with a summary table
+    torchrun --nproc_per_node=1 examples/moe_offload_generate.py --tiny solar_open --hot-fraction 0.5 --experts-impl eager --check --kv-cache
+    torchrun --nproc_per_node=2 examples/moe_offload_generate.py --tiny solar_open --hot-fraction 0.5 --experts-impl eager --check --pp-size 2
+    torchrun --nproc_per_node=1 examples/moe_offload_generate.py --model Qwen/Qwen3-30B-A3B-Instruct-2507 --gpu-budget-gb 20 --kv-cache
+
+Validation (transformers 5.1.0, torch 2.10.0, A100; tiny random models):
+
+| families | offloaded logits vs original (0/50/100 % hot) | `torch.export` | `Optimus_Inference.generate` vs HF (16 tokens, 50 % hot) |
+|---|---|---|---|
+| Qwen2-MoE, Qwen3-MoE, Mixtral, GLM-4-MoE, Solar-Open, OLMoE, PhiMoE, Ernie-4.5-MoE, HunYuan-MoE, MiniMax, dots1, EXAONE-MoE, FlexOlmo, MiniMax-M2 | match (<= 1e-4 rel., fp32) | OK | Qwen3-MoE, Mixtral, Solar-Open checked: identical, also with KV cache and PP=2 |
+| GPT-OSS (transposed weights, biases, custom gate) | match | OK | identical without KV cache (OptimusPrime's CachedSDPA lacks GPT-OSS attention sinks); without offload the IR cannot rebuild its experts |
+| DeepSeek-V2/V3, GLM-4-MoE-Lite (MLA), Qwen3-Next, Jamba | match | original model not exportable | n/a |
+| LFM2-MoE | not built by the tiny-model helper yet | | |
+
+Performance (Qwen3-30B-A3B bf16 = 57 GB of experts, one A100 80GB, 2x Xeon 4410Y, KV cache, greedy, 64 tokens,
+adaptive re-placement on; `examples/moe_offload_generate.py --kv-cache`):
+
+| expert budget on the GPU | routed pairs on the GPU | tok/s |
+|---|---:|---:|
+| HF `generate` (whole model on the GPU, reference) | 1.00 | 30.2 |
+| OptimusPrime without offload | 1.00 | 15.8 |
+| offload, all experts fit (60 GB) | 1.00 | 20.2 |
+| offload, 30 GB | 0.98 | 13.2 |
+| offload, 15 GB | 0.83 | 11.5 |
+
+Per MoE layer, one decode token (Qwen3-30B-A3B shapes): 0.33 ms with all 8 routed experts on the GPU
+(transformers' grouped_mm: ~0.7 ms on A100), 0.88 ms with half on the host, 1.32 ms with all on the host.
+
+Without offload, Qwen2/3-MoE, Mixtral, GLM-4-MoE, Solar-Open and Llama-3.2-1B also generate identically through the
+IR (they failed to export before the transformers 5.x fixes above).
+
+Numerics: the GPU half runs the model's configured experts implementation on the hot experts and the CPU half runs
+the eager implementation on the cold pairs; the two partial sums are added in the hidden dtype. Results match the
+unmodified model to fp32 precision; in bf16 they can differ by rounding (greedy tokens of near-tied tiny random models
+may then differ). Compare with `config._experts_implementation = "eager"` for the closest reference.
+
+Limits: RNGD is verified in emulation (same graphs on the host) until a silicon run; ATOM is not implemented yet
+(GraphNPUBackend subclass planned); adaptive re-placement copies swapped experts synchronously.
