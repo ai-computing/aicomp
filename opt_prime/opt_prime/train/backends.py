@@ -184,7 +184,7 @@ class OptimusTrainBackend(TrainBackend):
 class NpuLoraTrainBackend(TrainBackend):
     """The npu-lora library: its functional model, backward graphs compiled for the NPU, host optimizer. Supports the
     families npu-lora implements: dense full-attention GQA blocks with a gated SiLU MLP - Llama, Mistral (no sliding
-    window), Qwen2 (q/k/v biases), Qwen3 (per-head q/k norm)."""
+    window), Qwen2 (q/k/v biases), Qwen3 (per-head q/k norm), Gemma 3 text (sequence within the sliding window)."""
     name = "npu-lora"
     device_kinds = ("rngd", "cuda", "cpu")
 
@@ -194,14 +194,16 @@ class NpuLoraTrainBackend(TrainBackend):
             import npu_lora  # noqa: F401
         except ImportError:
             return reasons + ["npu-lora not installed (pip install npu-lora)"]
-        families = {"llama": (False, False), "mistral": (False, False), "qwen2": (True, False), "qwen3": (False, True)}
+        families = {"llama": (False, False), "mistral": (False, False), "qwen2": (True, False), "qwen3": (False, True),
+                    "gemma3_text": (False, True)}
         if spec.model_type not in families:
             reasons.append(f"npu-lora implements {sorted(families)}, not {spec.model_type}")
         else:
             bias, qkn = families[spec.model_type]
             for l in spec.layers:
                 a = l.attention
-                if (a.kind != "gqa" or a.sliding_window or l.is_moe or (l.mlp and l.mlp.kind != "gated")
+                window_ok = not a.sliding_window or (spec.model_type == "gemma3_text" and job.seq_len <= a.sliding_window)
+                if (a.kind != "gqa" or not window_ok or l.is_moe or (l.mlp and l.mlp.kind != "gated")
                         or a.qk_norm != qkn or (a.qkv_bias and not bias)):
                     reasons.append(f"layer {l.index} is not a {spec.model_type} block npu-lora implements")
                     break
