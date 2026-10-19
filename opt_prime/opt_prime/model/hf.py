@@ -111,7 +111,8 @@ def _router(cfg, moe, experts_spec) -> RouterSpec:
     has_bias = any("e_score_correction_bias" in n for n in names)
     if has_bias != bias:
         scoring = "custom"                                   # the module does not match the checked semantics
-    top_k = getattr(cfg, "num_experts_per_tok", None) or getattr(cfg, "moe_k", None) or 0
+    top_k = (getattr(cfg, "num_experts_per_tok", None) or getattr(cfg, "moe_k", None)
+             or getattr(cfg, "top_k_experts", None) or 0)
     return RouterSpec(E, int(top_k), scoring, bool(getattr(cfg, "norm_topk_prob", True)), bias,
                       int(getattr(cfg, "n_group", None) or 1), int(getattr(cfg, "topk_group", None) or 1),
                       float(getattr(cfg, "routed_scaling_factor", None) or 1.0), cls)
@@ -129,6 +130,11 @@ def _mlp(cfg, layer):
     from ..moe_offload.adapters import adapter_for
     from ..moe_offload.discover import is_experts_module
     _, m = _child(layer, _MLP_NAMES)
+    side = next((x for _, x in layer.named_children() if is_experts_module(x)), None)
+    if side is not None:                                     # experts beside a dense MLP on the layer (Gemma 4)
+        es = adapter_for(side).spec(side)
+        dense = _mlp(cfg, nn.ModuleDict({"mlp": m}))[0] if m is not None else None
+        return dense, MoESpec(_router(cfg, layer, es), es, 0, False, type(layer).__name__)
     if m is None:
         return None, None
     experts = next((x for x in m.modules() if is_experts_module(x)), None)

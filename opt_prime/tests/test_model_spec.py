@@ -98,3 +98,10 @@ def test_real_configs(model_id, expect, monkeypatch):
     assert (l.attention.kv_heads, l.attention.head_dim, l.moe.shared_ffn) == (expect["kvh"], expect["hd"],
                                                                               expect["shared"])
     assert not s.custom_blocks
+
+
+def test_layer_level_experts_beside_dense_mlp():
+    """Gemma 4: router + experts are children of the decoder layer next to a dense MLP; both are described."""
+    s = model_spec(_tiny("gemma4_text"))
+    assert s.moe_layers and all(l.mlp is not None and l.mlp.kind == "gated" for l in s.moe_layers)
+    assert all(l.moe.router.top_k > 0 for l in s.moe_layers)
