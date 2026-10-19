@@ -9,14 +9,14 @@
 | 계열 (대표 체크포인트) | MoE offload | PD 분리 (torch 엔진) | LoRA 학습 | fine-tuning |
 |---|---|---|---|---|
 | Solar (Solar-Open-100B) | [x] 실모델 exact, RNGD×2+CPU 8.6 tok/s · PoC 엔진 29.4 tok/s | [x] tiny parity | [x] GPU tiny fp32/bf16, offload 상태 학습 · [ ] RNGD(MoE) | [x] GPU tiny, offload 상태 · [ ] RNGD |
-| Qwen (Qwen3-30B-A3B, Qwen2.5) | [x] 실모델 exact, 최고 18.4 tok/s | [x] dense·MoE tiny parity | [x] GPU tiny, offload 상태 · [x] **Qwen3-30B-A3B 실모델 offload LoRA**(GPU 20 GB: expert 2275 GPU / 3869 CPU, loss 3.21→0.38/20 step, 184 s) · [~] RNGD Qwen2.5-0.5B 실행 중 (npu-lora qwen2/3 추가, CPU HF 동등) | [x] GPU tiny · [ ] RNGD |
+| Qwen (Qwen3-30B-A3B, Qwen2.5) | [x] 실모델 exact, 최고 18.4 tok/s | [x] dense·MoE tiny parity | [x] GPU tiny, offload 상태 · [x] **Qwen3-30B-A3B 실모델 offload LoRA**(GPU 20 GB: expert 2275 GPU / 3869 CPU, loss 3.21→0.38/20 step, 184 s) · [x] **RNGD 실모델 Qwen2.5-0.5B**(train() → npu-lora qwen2 블록, loss 2.41→0.49/30 step, step ≈1.7 s, 컴파일은 부분 캐시 재개) | [x] GPU tiny · [ ] RNGD |
 | Llama (Llama-3.2-1B / 3.1-8B, Llama 4) | [x] Llama 4 MoE tiny (어댑터: 입력 쪽 가중 블록 재작성) · dense는 해당 없음 | [x] tiny parity | [x] GPU 실모델 1B · [x] **RNGD 실모델 1B**(Optimus train() → npu-lora, loss 3.75→0.59/30 step, 첫 컴파일 2.2 h 후 캐시, step ≈1.2 s) · [x] Llama 4 offload 상태 학습 | [x] GPU tiny · [ ] RNGD |
 | Gemma (gemma-4-26B-A4B) | [x] 실모델 fp32 exact(9e-5) · bf16은 모델 자체가 장치별로 갈림 | [x] Gemma3·4 tiny parity | [x] GPU tiny fp32/bf16 · [x] **gemma-4-26B-A4B 실모델 offload LoRA**(GPU 20 GB: expert 1805 GPU / 2035 CPU, loss 6.42→0.72/20 step, 202 s) · [~] RNGD: Gemma3 블록 npu-lora 추가(CPU에서 HF 동등, 체크포인트 없어 실칩 미검증) · Gemma4는 MoE라 보류 | [x] GPU tiny · [ ] RNGD |
 
 ### 장치별 지원
 
 - [x] GPU: expert tier, 전체 실행(Optimus + torch.compile), 학습(Optimus_p)
-- [x] RNGD: expert tier(rngd, rngd-opt 실칩), 전체 실행(PoC 엔진, Solar 형상), 학습(npu-lora, Llama)
+- [x] RNGD: expert tier(rngd, rngd-opt 실칩), 전체 실행(PoC 엔진, Solar 형상), 학습(npu-lora, Llama·Qwen2 실모델)
 - [x] ATOM: expert tier(atom, 실칩) · [ ] dense/전체 실행 엔진 · [ ] 커스텀 커널(SDK 0.11 미지원) · 학습 범위 밖
 - [x] CPU: expert tier(native 커널), 학습 기준 백엔드(npu-lora cpu)
 
@@ -53,7 +53,7 @@
 ### 남은 문제
 
 - [x] Llama 4 MoE: 입력 쪽 라우팅 가중 어댑터
-- [~] RNGD 학습 계열 확장: Qwen2/3·Gemma3 블록 완료(실칩 검증 진행) · [ ] MoE(장치 gather 부재: attention은 NPU, expert는 host 역전파로 나누는 설계 필요)
+- [~] RNGD 학습 계열 확장: Qwen2 실칩 검증 · Qwen3·Gemma3 블록(CPU HF 동등, 실칩 미검증) · [ ] MoE(장치 gather 부재: attention은 NPU, expert는 host 역전파로 나누는 설계 필요)
 - [ ] ATOM dense 엔진(RBLN 그래프 ~60 µs/호출) ↔ PD decode 엔진 통합
 - [ ] 네이티브 CPU expert 커널 반올림 차이(동률 토큰 갈림)
 - [x] Gemma 4 실 config에서 MoE 미검출(expert가 layer 직속) → 스펙 수정
