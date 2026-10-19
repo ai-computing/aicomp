@@ -768,3 +768,8 @@ The [3B extension record](docs/QWEN_3B_VALIDATION.md) covers additional model
 geometry, explicit device selection and actual local llm-d verification. The3B transfer
 path passes, but FP32 teacher-forced agreement is147/160; broader model quality
 is not cleared.
+
+For the [vendor-engine reuse strategy](docs/NATIVE_ENGINE_INTEGRATION.md) and
+[measured ATOM input-buffer optimization](docs/ATOM_INPUT_REUSE.md), see the
+linked assessments. The Qwen runner accepts opt-in `atom_reuse_inputs: true`;
+the original path remains available for full-logit reference checks.

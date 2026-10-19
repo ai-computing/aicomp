@@ -40,6 +40,9 @@ def main():
         ) != asdict(spec):
             raise ValueError("compiled checkpoint identity differs")
         engine = QwenExternalDecoder(cfg["artifact"], cfg["model"], spec)
+        engine.profile_steps = True
+        if type(cfg.get("atom_reuse_inputs", False)) is not bool:
+            raise ValueError("atom_reuse_inputs must be boolean")
         engine.step_batch([0], [0])
         torch.rbln.synchronize()
         (directory / "binding.json").write_text(
@@ -100,6 +103,10 @@ def main():
                     if cmd.get("dma_completed") is not True or key not in refs:
                         raise ValueError("no verified DMA/reference")
                     engine.notify_cache_write(range(spec.caches))
+                engine.reuse_inputs = cmd["cmd"] == "decode" and cfg.get(
+                    "atom_reuse_inputs", False
+                )
+                engine.step_profile.clear()
                 logits = []
                 tokens = []
                 current = prompt[-1]
@@ -119,6 +126,8 @@ def main():
                 passed = bool(np.array_equal(actual, expected))
                 reply = dict(
                     generation=cmd["generation"],
+                    reuse_inputs=engine.reuse_inputs,
+                    step_timings=list(engine.step_profile),
                     tokens=tokens,
                     passed=passed,
                     reference_checked=True,

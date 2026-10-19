@@ -1,0 +1,129 @@
+{
+  "baseline": {
+    "requests": 32,
+    "tokens": 640,
+    "decode_seconds": 5.722572850121651,
+    "total_seconds": 9.07888039527461,
+    "step_median_ms": {
+      "prepare": 0.09587299427948892,
+      "input_transfer": 0.6911119853612036,
+      "runtime_call": 6.934442499186844,
+      "output_materialize": 0.3162194916512817,
+      "total": 8.058387989876792
+    }
+  },
+  "reuse": {
+    "requests": 32,
+    "tokens": 640,
+    "decode_seconds": 4.69328341097571,
+    "total_seconds": 7.965826825064141,
+    "step_median_ms": {
+      "prepare": 0.07204897701740265,
+      "input_transfer": 0.3504754859022796,
+      "runtime_call": 5.939902504906058,
+      "output_materialize": 0.3146754752378911,
+      "total": 6.685687490971759
+    }
+  },
+  "cases": [
+    {
+      "input_length": 32,
+      "output_length": 8,
+      "baseline": {
+        "decode_ms": 67.46610850677826,
+        "total_ms": 457.1197050099727
+      },
+      "reuse": {
+        "decode_ms": 57.17872150125913,
+        "total_ms": 439.8013000318315
+      }
+    },
+    {
+      "input_length": 32,
+      "output_length": 32,
+      "baseline": {
+        "decode_ms": 287.8616125090048,
+        "total_ms": 350.4830740275793
+      },
+      "reuse": {
+        "decode_ms": 238.8281550083775,
+        "total_ms": 296.9264829880558
+      }
+    },
+    {
+      "input_length": 64,
+      "output_length": 8,
+      "baseline": {
+        "decode_ms": 72.35806304379366,
+        "total_ms": 135.49378750030883
+      },
+      "reuse": {
+        "decode_ms": 57.320368505315855,
+        "total_ms": 119.34325098991394
+      }
+    },
+    {
+      "input_length": 64,
+      "output_length": 32,
+      "baseline": {
+        "decode_ms": 291.9857169908937,
+        "total_ms": 356.3563830393832
+      },
+      "reuse": {
+        "decode_ms": 234.0046280005481,
+        "total_ms": 297.2367824986577
+      }
+    },
+    {
+      "input_length": 37,
+      "output_length": 8,
+      "baseline": {
+        "decode_ms": 70.93317748513073,
+        "total_ms": 132.88255501538515
+      },
+      "reuse": {
+        "decode_ms": 58.18779149558395,
+        "total_ms": 119.78487050510012
+      }
+    },
+    {
+      "input_length": 37,
+      "output_length": 32,
+      "baseline": {
+        "decode_ms": 288.27075150911696,
+        "total_ms": 350.0723670294974
+      },
+      "reuse": {
+        "decode_ms": 237.169623025693,
+        "total_ms": 299.1376545105595
+      }
+    },
+    {
+      "input_length": 41,
+      "output_length": 8,
+      "baseline": {
+        "decode_ms": 71.40776896267198,
+        "total_ms": 134.57180149271153
+      },
+      "reuse": {
+        "decode_ms": 54.522167512914166,
+        "total_ms": 115.71570401429199
+      }
+    },
+    {
+      "input_length": 41,
+      "output_length": 32,
+      "baseline": {
+        "decode_ms": 292.2790080192499,
+        "total_ms": 355.12585402466357
+      },
+      "reuse": {
+        "decode_ms": 239.25219647935592,
+        "total_ms": 302.20466549508274
+      }
+    }
+  ],
+  "decode_reduction_pct": 17.98648031407867,
+  "total_reduction_pct": 12.259810921066784,
+  "scope": "finite B1 validation, full logits retained; no vendor-native baseline or saturation claim"
+}

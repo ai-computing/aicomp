@@ -1,0 +1,8 @@
+{
+  "/home/gspark/.local/lib/python3.10/site-packages/vllm_rbln/distributed/kv_transfer/kv_connector/v1/rbln_nixl_connector.py": "560daf054579b45717965234c821dc58ffbabae8f3d7a0f0fc77d45b324e11de",
+  "/home/gspark/.local/lib/python3.10/site-packages/rebel/base_runtime.py": "9da2b3f68a32963ab8f4f0834aed06337cec28aa1fa4df6bd694642187af78e5",
+  "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/furiosa/llm_native/llm.pyi": "00263a50745406c9144f30d4ae5e7ed6fd709e96552a9124fc6c32262c515ba5",
+  "/home/gspark/venvs/furiosa-2026.4/lib/python3.10/site-packages/furiosa_llm/api.py": "bd08717620856a1a64a1a6e17b7437a51ba54b50f0d01e7a18ad03a8ac0e24ba",
+  "rdma_devices": [],
+  "atom_groups": "GROUP,NPU ID,DEVICE\n0,0,rbln0\n1,0,rbln2\n3,0,rbln1\n2,0,rbln3\n"
+}

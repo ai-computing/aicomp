@@ -1,0 +1,5 @@
+{
+  "passed": false,
+  "error": "OSError('AF_UNIX path too long')",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/gspark/workspace/01_pd_disag/aicomp-llmd/opt_prime/examples/pd/validate_qwen_pd.py\", line 86, in main\n    server.bind(cfg[\"socket\"])\nOSError: AF_UNIX path too long\n"
+}

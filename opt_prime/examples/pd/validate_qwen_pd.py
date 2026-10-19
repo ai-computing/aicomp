@@ -19,8 +19,12 @@ def main():
     a = p.parse_args()
     cfg = json.loads(a.config.read_text())
     out = Path(cfg["out"]).resolve()
-    out.mkdir(parents=True, exist_ok=False)
     cfg["socket"] = str(out / "bridge.sock")
+    if len(os.fsencode(cfg["socket"])) >= 108:
+        raise ValueError(
+            "output directory is too long for Linux AF_UNIX; choose a shorter path"
+        )
+    out.mkdir(parents=True, exist_ok=False)
     config_path = out / "config.json"
     config_path.write_text(json.dumps(cfg, indent=2))
     from opt_prime.pd.npu.provenance import record_run

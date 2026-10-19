@@ -7,6 +7,8 @@ Loading a graph never exports memory or submits P2P operations.
 from pathlib import Path
 from dataclasses import asdict
 import json
+import time
+from collections import deque
 import numpy as np
 from hetero_p2p.adapters.atom_koni_external import ExternalCacheDecoder
 
@@ -29,6 +31,9 @@ class QwenExternalDecoder(ExternalCacheDecoder):
         self.torch, self.rebel, self.spec = torch, rebel, spec
         self.context, self.batch_size, self.device = 512, 1, "rbln:0"
         self.profile_steps = False
+        self.step_profile = deque(maxlen=4096)
+        self.reuse_inputs = False
+        self._step_inputs = None
         self._device_owner = torch.zeros(1).to(self.device)
         self.compiled = rebel.RBLNCompiledModel(str(artifact))
         self.runtime = self.compiled.create_runtime(device=0, tensor_type="pt")
@@ -79,3 +84,75 @@ class QwenExternalDecoder(ExternalCacheDecoder):
             raise ValueError("invalid KV tensor index")
         for i in indices:
             self.rebel._C.vmem.mark_device_memory_is_updated(self.caches[i].data_ptr())
+
+    def step_batch(self, token_ids, positions):
+        """Optional persistent input buffers; full logits and completion retained.
+
+        One synchronous owner only. Output materialization completes each call
+        before the next one can overwrite inputs. KV tensors are never replaced.
+        """
+        if not self.reuse_inputs:
+            return super().step_batch(token_ids, positions)
+        begin = time.perf_counter()
+        tokens, pos = np.asarray(token_ids), np.asarray(positions)
+        if (
+            tokens.shape != (1,)
+            or pos.shape != (1,)
+            or tokens.dtype.kind not in "iu"
+            or pos.dtype.kind not in "iu"
+            or np.any(tokens < 0)
+            or np.any(tokens >= len(self.embed))
+            or np.any(pos < 0)
+            or np.any(pos >= self.context)
+        ):
+            raise ValueError("expected valid B1 token and cache position")
+        torch = self.torch
+        if self._step_inputs is None:
+            angle = (
+                np.arange(self.context, dtype=np.float32)[:, None] * self.inv[None, :]
+            )
+            self._cos_table = np.cos(angle).astype(np.float32)
+            self._sin_table = np.sin(angle).astype(np.float32)
+            self._mask_table = (
+                np.arange(self.context)[None, :] <= np.arange(self.context)[:, None]
+            ).astype(np.float32)
+            self._step_inputs = [
+                torch.zeros(1, self.spec.hidden).to(self.device),
+                torch.zeros(1, self.spec.head_dim // 2).to(self.device),
+                torch.zeros(1, self.spec.head_dim // 2).to(self.device),
+                torch.zeros(1, self.context).to(self.device),
+                torch.zeros(1, 1, dtype=torch.int32).to(self.device),
+                torch.zeros(1, 1, dtype=torch.int16).to(self.device),
+            ]
+        host = [
+            self.embed[tokens],
+            self._cos_table[pos],
+            self._sin_table[pos],
+            self._mask_table[pos],
+            pos.astype(np.int32)[:, None],
+        ]
+        prepared = time.perf_counter()
+        with torch.no_grad():
+            for target, value in zip(self._step_inputs[:5], host):
+                target.copy_(torch.from_numpy(value))
+            # Block zero is fixed for this exclusively-owned B1 lane.
+            inputs = self._step_inputs
+            args = inputs[:4] + self.caches[:2] + inputs[4:] + self.caches[2:]
+            transferred = time.perf_counter()
+            outputs = self.runner(*args, out=None)
+            called = time.perf_counter()
+            if not isinstance(outputs, (list, tuple)) or len(outputs) != 1:
+                raise RuntimeError("unexpected decoder output structure")
+            result = outputs[0].cpu().float().numpy()
+            if self.profile_steps:
+                end = time.perf_counter()
+                self.step_profile.append(
+                    dict(
+                        prepare=prepared - begin,
+                        input_transfer=transferred - prepared,
+                        runtime_call=called - transferred,
+                        output_materialize=end - called,
+                        total=end - begin,
+                    )
+                )
+            return result

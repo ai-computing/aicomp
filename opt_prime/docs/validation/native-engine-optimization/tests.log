@@ -1,0 +1,37 @@
+test_decode_failure_retains_owners (test_pd.PDTests) ... ok
+test_failed_finish_retains_leases (test_pd.PDTests) ... ok
+test_failed_request_does_not_report_previous_success_timings (test_pd.PDTests) ... ok
+test_incompatible_revision (test_pd.PDTests) ... ok
+test_no_eager_sdk_or_torch_import (test_pd.PDTests) ... ok
+test_p2p_bridge_fence_and_notify (test_pd.PDTests) ... ok
+test_reentrant_request_is_rejected (test_pd.PDTests) ... ok
+test_roundtrip_and_reuse (test_pd.PDTests) ... ok
+test_transfer_failure_retains_owners_and_blocks_decode (test_pd.PDTests) ... ok
+test_unsupported_route (test_pd.PDTests) ... ok
+test_buffers_reused_with_changed_values (test_pd_atom_reuse.InputReuseTests) ... ok
+test_invalid_inputs_fail_before_allocating (test_pd_atom_reuse.InputReuseTests) ... ok
+test_invalid_prompt_boundary (test_pd_koni.KoniTests) ... ok
+test_prefix_continuation_and_fence (test_pd_koni.KoniTests) ... ok
+test_failure_keeps_runtime_and_prepared (test_pd_llmd.ServiceTests) ... ok
+test_http_owner_queue (test_pd_llmd.ServiceTests) ... ok
+test_mismatch_capacity_and_cancel (test_pd_llmd.ServiceTests) ... ok
+test_sidecar_rewrite_reuses_prefill (test_pd_llmd.ServiceTests) ... ok
+test_ttl_expires_only_ready (test_pd_llmd.ServiceTests) ... ok
+test_disabled_window_is_not_sliding_attention (test_pd_models.ModelCapabilityTests) ... ok
+test_historical_contract_imports_are_same_types (test_pd_models.ModelCapabilityTests) ... ok
+test_unsupported_cache_and_attention_fail_closed (test_pd_models.ModelCapabilityTests) ... ok
+test_4k_segment_plan_covers_exact_prefix_without_overlap (test_pd_npu.DenseNpuTests) ... ok
+test_alignment_differs_by_head_dimension (test_pd_npu.DenseNpuTests) ... ok
+test_artifact_identity_rejected_before_runtime_creation (test_pd_npu.DenseNpuTests) ... ok
+test_geometry_import_is_sdk_free (test_pd_npu.DenseNpuTests) ... ok
+test_rejects_incompatible_graph_semantics (test_pd_npu.DenseNpuTests) ... ok
+test_invalid_names_never_read_devices (test_pd_npu_device.AtomSelectionTests) ... ok
+test_reported_higher_index_is_selected_and_active_context_rejected (test_pd_npu_device.AtomSelectionTests) ... ok
+test_unreported_or_nonhost_device_rejected (test_pd_npu_device.AtomSelectionTests) ... ok
+test_context_rejection_before_model_execution (test_pd_torch.TorchParityTests) ... ok
+test_dense_models_full_and_prefix_prefill (test_pd_torch.TorchParityTests) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 1.969s
+
+OK

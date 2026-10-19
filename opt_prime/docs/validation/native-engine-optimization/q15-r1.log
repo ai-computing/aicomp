@@ -1,0 +1,25 @@
+PASS r0-p0-o8
+PASS r0-p0-o32
+PASS r0-p1-o8
+PASS r0-p1-o32
+PASS r0-p2-o8
+PASS r0-p2-o32
+PASS r0-p3-o8
+PASS r0-p3-o32
+PASS r1-p0-o8
+PASS r1-p0-o32
+PASS r1-p1-o8
+PASS r1-p1-o32
+PASS r1-p2-o8
+PASS r1-p2-o32
+PASS r1-p3-o8
+PASS r1-p3-o32
+SIDECAR_PASS llmd-0
+SIDECAR_PASS llmd-1
+SIDECAR_PASS llmd-2
+SIDECAR_PASS llmd-3
+SIDECAR_PASS llmd-4
+SIDECAR_PASS llmd-5
+SIDECAR_PASS llmd-6
+SIDECAR_PASS llmd-7
+{"passed": true, "sidecar": {"passed": true, "requests": 8, "output_tokens": 160, "exact_direct_tokens": true, "owner_state": "idle", "sidecar_exit": 0}, "requests": 16, "tokens": 320, "commands": 896, "worker_exit": 0, "scope": "actual P2P vs same-decoder host admission full logits; FP32 quality separate"}

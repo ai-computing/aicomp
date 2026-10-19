@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/gspark/workspace/01_pd_disag/aicomp-llmd/opt_prime/examples/pd/validate_qwen_pd.py", line 263, in <module>
+    main()
+  File "/home/gspark/workspace/01_pd_disag/aicomp-llmd/opt_prime/examples/pd/validate_qwen_pd.py", line 86, in main
+    server.bind(cfg["socket"])
+OSError: AF_UNIX path too long
