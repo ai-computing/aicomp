@@ -1,0 +1,21 @@
+{
+  "full": {
+    "requests": 32,
+    "tokens": 640,
+    "total_seconds": 8.004685693129431,
+    "prefill_seconds": 3.0500855852733366,
+    "repeat1_total_seconds": 3.3228383441455662,
+    "repeat1_prefill_seconds": 0.8473975451779552
+  },
+  "compact": {
+    "requests": 32,
+    "tokens": 640,
+    "total_seconds": 8.087265820009634,
+    "prefill_seconds": 3.1460017660283484,
+    "repeat1_total_seconds": 3.2978639979846776,
+    "repeat1_prefill_seconds": 0.8119220759836026
+  },
+  "change_pct": 1.0316473381469793,
+  "repeat1_change_pct": -0.7515967848658822,
+  "scope": "positive change is regression; repeat1 is separate warmed diagnostic, all requests retained"
+}

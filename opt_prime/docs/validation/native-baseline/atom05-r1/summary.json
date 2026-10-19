@@ -1,0 +1,90 @@
+[
+  {
+    "input_length": 32,
+    "output_length": 8,
+    "tokens_stable": true,
+    "prefill_ms": 6.905795977218077,
+    "decode_ms": 39.058609545463696,
+    "tpot_ms": 5.579801363637671,
+    "total_ms": 45.96967049292289,
+    "output_tok_s": 174.02779235090875,
+    "decode_tok_s": 179.21788685744764
+  },
+  {
+    "input_length": 32,
+    "output_length": 32,
+    "tokens_stable": true,
+    "prefill_ms": 6.984457984799519,
+    "decode_ms": 174.76838850416243,
+    "tpot_ms": 5.637689951747175,
+    "total_ms": 181.77151348209009,
+    "output_tok_s": 176.04528695053148,
+    "decode_tok_s": 177.37775937651145
+  },
+  {
+    "input_length": 64,
+    "output_length": 8,
+    "tokens_stable": true,
+    "prefill_ms": 6.919291481608525,
+    "decode_ms": 39.50816497672349,
+    "tpot_ms": 5.644023568103356,
+    "total_ms": 46.432517003268,
+    "output_tok_s": 172.29309791871657,
+    "decode_tok_s": 177.17864350484825
+  },
+  {
+    "input_length": 64,
+    "output_length": 32,
+    "tokens_stable": true,
+    "prefill_ms": 6.9463339750654995,
+    "decode_ms": 174.79278711834922,
+    "tpot_ms": 5.638477003817717,
+    "total_ms": 181.75860197516158,
+    "output_tok_s": 176.05775225905336,
+    "decode_tok_s": 177.35291411939804
+  },
+  {
+    "input_length": 41,
+    "output_length": 8,
+    "tokens_stable": true,
+    "prefill_ms": 6.925522000528872,
+    "decode_ms": 39.49623412336223,
+    "tpot_ms": 5.642319160480318,
+    "total_ms": 46.42767150653526,
+    "output_tok_s": 172.3112678105045,
+    "decode_tok_s": 177.232422670721
+  },
+  {
+    "input_length": 41,
+    "output_length": 32,
+    "tokens_stable": true,
+    "prefill_ms": 6.999977980740368,
+    "decode_ms": 174.96073694201186,
+    "tpot_ms": 5.643894740064899,
+    "total_ms": 181.98104796465486,
+    "output_tok_s": 175.8436025424387,
+    "decode_tok_s": 177.18373236584983
+  },
+  {
+    "input_length": 37,
+    "output_length": 8,
+    "tokens_stable": true,
+    "prefill_ms": 6.900933512952179,
+    "decode_ms": 39.46529107633978,
+    "tpot_ms": 5.637898725191397,
+    "total_ms": 46.371779491892084,
+    "output_tok_s": 172.51925976889288,
+    "decode_tok_s": 177.37140781717596
+  },
+  {
+    "input_length": 37,
+    "output_length": 32,
+    "tokens_stable": true,
+    "prefill_ms": 8.014927007025108,
+    "decode_ms": 175.93243360170163,
+    "tpot_ms": 5.675239793603279,
+    "total_ms": 183.9683580037672,
+    "output_tok_s": 173.94304420081102,
+    "decode_tok_s": 176.20813395833792
+  }
+]

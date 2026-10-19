@@ -75,7 +75,16 @@ def main():
                 pass
         binding.verify_open_channels(descriptors)
         (out / "rngd-binding.json").write_text(json.dumps(descriptors))
-        packer = BoundedPrefixPacker(
+        compact_cache = cfg.get("rngd_compact_cache", False)
+        if type(compact_cache) is not bool:
+            raise ValueError("rngd_compact_cache must be boolean")
+        if compact_cache:
+            from opt_prime.pd.npu.packing import CompactPrefixPacker
+
+            packer_class = CompactPrefixPacker
+        else:
+            packer_class = BoundedPrefixPacker
+        packer = packer_class(
             binding.torch_device, spec.layers, spec.kv_heads, spec.head_dim
         )
         backend = RngdPdmaBackend(cfg["helper"], binding.device_path)
@@ -172,7 +181,7 @@ def main():
             ):
                 raise RuntimeError("reference failed")
             (out / f"reference-{i}.json").write_text(json.dumps(reply, indent=2))
-        source = QwenRngdEngine(engine, packer, binding)
+        source = QwenRngdEngine(engine, packer, binding, compact_cache=compact_cache)
         decoder = QwenAtomWorkerEngine(owner, source.spec, cfg["physical_atom"])
         transport = HeteroP2PTransport(
             backend,

@@ -773,3 +773,7 @@ For the [vendor-engine reuse strategy](docs/NATIVE_ENGINE_INTEGRATION.md) and
 [measured ATOM input-buffer optimization](docs/ATOM_INPUT_REUSE.md), see the
 linked assessments. The Qwen runner accepts opt-in `atom_reuse_inputs: true`;
 the original path remains available for full-logit reference checks.
+
+[Native baseline and KV resume](docs/NATIVE_BASELINE_AND_KV_RESUME.md) records
+the vendor ATOM comparison, public KV API feasibility probe, numerical limits
+and the compact-prefix ablation (not promoted to default).

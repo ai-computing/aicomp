@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "requests": 4,
+  "scope": "native KV roundtrip exact; RNGD host-admitted native decode finite; metadata primer retained; not production PD"
+}

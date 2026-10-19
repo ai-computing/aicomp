@@ -11,5 +11,6 @@
   "atom_python": "/absolute/path/to/atom-venv/bin/python",
   "accurate_attention": true,
   "sidecar_binary": "/absolute/path/to/pd-sidecar",
-  "atom_reuse_inputs": false
+  "atom_reuse_inputs": false,
+  "rngd_compact_cache": false
 }

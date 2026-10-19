@@ -12,8 +12,11 @@ class PrefixPayload:
 
 
 class QwenRngdEngine:
-    def __init__(self, engine, packer, binding):
+    def __init__(self, engine, packer, binding, *, compact_cache=False):
         self.engine, self.packer, self.binding = engine, packer, binding
+        if type(compact_cache) is not bool:
+            raise ValueError("compact_cache must be boolean")
+        self.compact_cache = compact_cache
         self.model = engine.spec
         s = self.model
         self.spec = KVSpec(
@@ -40,7 +43,9 @@ class QwenRngdEngine:
         from furiosa.torch._C.ir import FlatDramShape
         from hetero_p2p import SourceAllocation
 
-        keys, values, _ = self.engine.prefill_device(list(request.input_ids[:-1]))
+        keys, values, _ = self.engine.prefill_device(
+            list(request.input_ids[:-1]), full_context=not self.compact_cache
+        )
         self._owned = dict(keys=keys, values=values)
         padded = s.padded_prefix(len(request.input_ids) - 1)
         payload, _ = self.packer.encode(keys, values, padded)

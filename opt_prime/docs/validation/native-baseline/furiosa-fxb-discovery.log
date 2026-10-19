@@ -1,0 +1,2 @@
+2026-10-19T05:52:22.380095016Z  INFO hf_hub: Using token file found "/home/gspark/.cache/huggingface/token"
+{'error': 'RuntimeError("repo \'furiosa-ai/Qwen2.5-0.5B-Instruct\' contains no .fxb file; is this a Furiosa FXB repo?")'}

@@ -157,7 +157,7 @@ class QwenRngdPrefill:
         self.module.to(self.device)
         sync(chip)
 
-    def prefill_device(self, tokens):
+    def prefill_device(self, tokens, *, full_context=True):
         if (
             not tokens
             or len(tokens) > self.width
@@ -188,7 +188,7 @@ class QwenRngdPrefill:
             values.append(cache[1].transpose(-1, -2))
         k, v = torch.stack(keys), torch.stack(values)
         tail = self.context - self.width
-        if tail:
+        if tail and full_context:
             k = torch.cat(
                 (
                     k,

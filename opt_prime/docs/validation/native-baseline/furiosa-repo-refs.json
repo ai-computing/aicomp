@@ -1,0 +1,37 @@
+{
+  "tags": [
+    {
+      "name": "v2026.4.0b9",
+      "ref": "refs/tags/v2026.4.0b9",
+      "targetCommit": "ae03de7e713961fd31b7405381f99481b33231d5"
+    },
+    {
+      "name": "v2026.4.0b8",
+      "ref": "refs/tags/v2026.4.0b8",
+      "targetCommit": "9ca4c1208a52f812178cad1f553feb4cb22d0a24"
+    },
+    {
+      "name": "v2026.3",
+      "ref": "refs/tags/v2026.3",
+      "targetCommit": "ca96a4eadd7398ac1d00b647c195f3aba8d4b9be"
+    },
+    {
+      "name": "v2026.2",
+      "ref": "refs/tags/v2026.2",
+      "targetCommit": "6e120907c1457d94a6386f32b199ab7adfd362f9"
+    },
+    {
+      "name": "v2026.1",
+      "ref": "refs/tags/v2026.1",
+      "targetCommit": "3203aca14c0e0a482c65a8758cd6b9a2d08b1bee"
+    }
+  ],
+  "branches": [
+    {
+      "name": "main",
+      "ref": "refs/heads/main",
+      "targetCommit": "ae03de7e713961fd31b7405381f99481b33231d5"
+    }
+  ],
+  "converts": []
+}
