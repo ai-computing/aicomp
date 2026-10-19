@@ -6,6 +6,9 @@ import importlib.metadata
 from pathlib import Path
 import time
 import traceback
+import subprocess
+import selectors
+import time as clock
 
 
 def main():
@@ -14,6 +17,7 @@ def main():
     p.add_argument("--native-artifact", type=Path, required=True)
     p.add_argument("--prefix-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--live-rngd-python", type=Path)
     a = p.parse_args()
     a.out.mkdir(parents=True, exist_ok=False)
     cfg = json.loads(a.config.read_text())
@@ -21,7 +25,49 @@ def main():
     from opt_prime.pd.npu.provenance import record_run
 
     record_run(a.out, __file__)
+    producer = None
+    producer_log = None
+
+    def receive(marker):
+        deadline = clock.monotonic() + 300
+        # Read unbuffered bytes to avoid readline buffering versus select races.
+        line = bytearray()
+        with selectors.DefaultSelector() as selector:
+            selector.register(producer.stdout, selectors.EVENT_READ)
+            while clock.monotonic() < deadline:
+                if not selector.select(timeout=1):
+                    continue
+                chunk = producer.stdout.read(1)
+                if not chunk:
+                    raise RuntimeError("RNGD worker exited; inspect producer.log")
+                line.extend(chunk)
+                if chunk == b"\n":
+                    text = line.decode(errors="replace").strip()
+                    producer_log.write(bytes(line))
+                    producer_log.flush()
+                    line.clear()
+                    if text.startswith(marker):
+                        return text[len(marker) :].strip()
+        raise TimeoutError("RNGD prefix timed out")
+
     try:
+        if a.live_rngd_python:
+            producer_log = (a.out / "producer.log").open("wb")
+            producer = subprocess.Popen(
+                [
+                    str(a.live_rngd_python),
+                    str(Path(__file__).with_name("native_rngd_prefix_worker.py")),
+                    "--config",
+                    str(a.config),
+                    "--out",
+                    str(a.out / "live-prefixes"),
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=producer_log,
+                bufsize=0,
+            )
+            receive("PREFIX_READY")
         from opt_prime.pd.npu.atom_device import select_idle_atom, verify_atom_binding
 
         selection = select_idle_atom(cfg["physical_atom"])
@@ -120,7 +166,14 @@ def main():
         # The first generation runs before ANY native prefill execution.
         for repeat in range(2):
             for i, prompt in enumerate(cfg["prompt_token_ids"]):
-                with np.load(a.prefix_dir / f"prefix-{i}.npz") as kv:
+                prefix_path = a.prefix_dir / f"prefix-{i}.npz"
+                if producer:
+                    producer.stdin.write(
+                        (json.dumps(dict(index=i, sequence=len(rows))) + "\n").encode()
+                    )
+                    producer.stdin.flush()
+                    prefix_path = Path(receive("PREFIX_RESULT "))
+                with np.load(prefix_path) as kv:
                     values = np.stack(
                         (kv["keys"].transpose(0, 1, 3, 2), kv["values"]), axis=1
                     ).reshape(spec.caches, spec.kv_heads, 512, spec.head_dim)
@@ -164,12 +217,26 @@ def main():
             tokens=len(rows) * 32,
             forbidden_prefill_calls=len(forbidden_calls),
             fresh_first_decode=True,
-            scope="saved RNGD host KV; B1 context512; full-logit parity; no live RNGD/P2P/HTTP",
+            scope=("live RNGD host KV" if producer else "saved RNGD host KV")
+            + "; B1 context512; full-logit parity; no P2P/HTTP",
         )
     except BaseException as e:
         status.update(error=repr(e), traceback=traceback.format_exc())
         raise
     finally:
+        if producer:
+            producer.stdin.close()
+            try:
+                producer.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                producer.terminate()
+                try:
+                    producer.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    producer.kill()
+                    producer.wait()
+        if producer_log:
+            producer_log.close()
         (a.out / "result.json").write_text(json.dumps(status, indent=2))
 
 
