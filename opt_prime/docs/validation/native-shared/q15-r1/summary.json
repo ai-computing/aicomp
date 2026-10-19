@@ -1,0 +1,20 @@
+{
+  "all_requests": 24,
+  "all_tokens": 768,
+  "measured": {
+    "npz": {
+      "requests": 8,
+      "prefix_seconds": 1.6989548660931177,
+      "request_seconds": 5.964625975000672
+    },
+    "shared": {
+      "requests": 8,
+      "prefix_seconds": 0.8769358659046702,
+      "request_seconds": 5.018920050992165
+    }
+  },
+  "reduction_percent": {
+    "prefix_seconds": 48.38380445495564,
+    "request_seconds": 15.855242692034865
+  }
+}

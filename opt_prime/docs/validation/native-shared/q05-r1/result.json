@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "requests": 16,
+  "tokens": 512,
+  "forbidden_prefill_calls": 0,
+  "fresh_first_decode": true,
+  "scope": "live RNGD host KV; B1 context512; full-logit parity; no P2P/HTTP"
+}

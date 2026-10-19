@@ -18,7 +18,10 @@ def main():
     p.add_argument("--prefix-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--live-rngd-python", type=Path)
+    p.add_argument("--compare-shared", action="store_true")
     a = p.parse_args()
+    if a.compare_shared and not a.live_rngd_python:
+        p.error("--compare-shared requires live RNGD")
     a.out.mkdir(parents=True, exist_ok=False)
     cfg = json.loads(a.config.read_text())
     status = {"passed": False}
@@ -27,6 +30,8 @@ def main():
     record_run(a.out, __file__)
     producer = None
     producer_log = None
+    shared_fd = None
+    slab = None
 
     def receive(marker):
         deadline = clock.monotonic() + 300
@@ -53,6 +58,18 @@ def main():
     try:
         if a.live_rngd_python:
             producer_log = (a.out / "producer.log").open("wb")
+            extra = []
+            if a.compare_shared:
+                from opt_prime.pd.npu.model import DenseModel
+
+                geometry = DenseModel.load(cfg["model"], cfg["model_id"])
+                from opt_prime.pd.npu.shared_kv import SharedKVSlab
+
+                slab = SharedKVSlab.create(
+                    (geometry.caches, geometry.kv_heads, 512, geometry.head_dim)
+                )
+                shared_fd = slab.fd
+                extra = ["--shared-fd", str(shared_fd)]
             producer = subprocess.Popen(
                 [
                     str(a.live_rngd_python),
@@ -61,7 +78,9 @@ def main():
                     str(a.config),
                     "--out",
                     str(a.out / "live-prefixes"),
-                ],
+                ]
+                + extra,
+                pass_fds=(() if shared_fd is None else (shared_fd,)),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=producer_log,
@@ -164,24 +183,43 @@ def main():
 
         rows = []
         # The first generation runs before ANY native prefill execution.
-        for repeat in range(2):
+        for repeat in range(6 if a.compare_shared else 2):
             for i, prompt in enumerate(cfg["prompt_token_ids"]):
+                transport = (
+                    "shared" if a.compare_shared and repeat in (1, 3, 4) else "npz"
+                )
+                request_start = time.perf_counter()
                 prefix_path = a.prefix_dir / f"prefix-{i}.npz"
                 if producer:
                     producer.stdin.write(
-                        (json.dumps(dict(index=i, sequence=len(rows))) + "\n").encode()
+                        (
+                            json.dumps(
+                                dict(index=i, sequence=len(rows), transport=transport)
+                            )
+                            + "\n"
+                        ).encode()
                     )
                     producer.stdin.flush()
-                    prefix_path = Path(receive("PREFIX_RESULT "))
-                with np.load(prefix_path) as kv:
-                    values = np.stack(
-                        (kv["keys"].transpose(0, 1, 3, 2), kv["values"]), axis=1
-                    ).reshape(spec.caches, spec.kv_heads, 512, spec.head_dim)
+                    reply = receive("PREFIX_RESULT ")
+                    if transport == "shared":
+                        if json.loads(reply) != dict(sequence=len(rows), index=i):
+                            raise ValueError("shared KV response/request mismatch")
+                    else:
+                        prefix_path = Path(reply)
+                if transport == "shared":
+                    values = slab.view()
+                else:
+                    with np.load(prefix_path) as kv:
+                        values = np.stack(
+                            (kv["keys"].transpose(0, 1, 3, 2), kv["values"]), axis=1
+                        ).reshape(spec.caches, spec.kv_heads, 512, spec.head_dim)
+                prefix_seconds = time.perf_counter() - request_start
                 model.prefill_decoder = forbidden_prefill
                 try:
                     tokens, candidate, timing = lane.generate(prompt, values, 32)
                 finally:
                     model.prefill_decoder = original_prefill
+                request_seconds = time.perf_counter() - request_start
                 start = time.perf_counter()
                 prime(prompt)
                 primer_seconds = time.perf_counter() - start
@@ -192,6 +230,10 @@ def main():
                 baseline_seconds = time.perf_counter() - start
                 exact = bool(np.array_equal(reference, candidate))
                 row = dict(
+                    warmup=a.compare_shared and repeat < 2,
+                    transport=transport,
+                    prefix_seconds=prefix_seconds,
+                    request_seconds=request_seconds,
                     prompt_index=i,
                     repeat=repeat,
                     input_length=len(prompt),
@@ -237,6 +279,9 @@ def main():
                     producer.wait()
         if producer_log:
             producer_log.close()
+        if slab is not None:
+            values = None
+            slab.close()
         (a.out / "result.json").write_text(json.dumps(status, indent=2))
 
 
