@@ -1,0 +1,30 @@
+ATOM_READY
+WEIGHTS_LOADED
+[full-engine] C=272 compiled in 1s
+RNGD_READY
+REFERENCES_READY
+PASS r0-p0-o1
+PASS r0-p0-o32
+PASS r0-p0-o128
+PASS r0-p1-o1
+PASS r0-p1-o32
+PASS r0-p1-o128
+PASS r0-p2-o1
+PASS r0-p2-o32
+PASS r0-p2-o128
+PASS r0-p3-o1
+PASS r0-p3-o32
+PASS r0-p3-o128
+PASS r1-p0-o1
+PASS r1-p0-o32
+PASS r1-p0-o128
+PASS r1-p1-o1
+PASS r1-p1-o32
+PASS r1-p1-o128
+PASS r1-p2-o1
+PASS r1-p2-o32
+PASS r1-p2-o128
+PASS r1-p3-o1
+PASS r1-p3-o32
+PASS r1-p3-o128
+{"passed": true, "requests": 24, "output_tokens": 1288, "full_logit_exact": true, "worker_exit": 0, "scope": "same decoder host-admission parity; no native model parity claim"}

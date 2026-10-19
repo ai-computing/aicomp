@@ -16,7 +16,7 @@ class KVSpec:
         if not all(isinstance(x, str) and x.strip() for x in
                    (self.model_id, self.revision, self.representation, self.layout)):
             raise ValueError('explicit model revision and physical KV format required')
-        if not self.shape or any(type(x) is not int or x <= 0 for x in self.shape):
+        if not isinstance(self.shape, tuple) or not self.shape or any(type(x) is not int or x <= 0 for x in self.shape):
             raise ValueError('positive physical KV dimensions required')
 
 
@@ -27,7 +27,7 @@ class PDRequest:
     max_new_tokens: int
 
     def __post_init__(self):
-        if not self.request_id or not self.input_ids:
+        if not isinstance(self.request_id, str) or not self.request_id.strip() or not isinstance(self.input_ids, tuple) or not self.input_ids:
             raise ValueError('request ID and prompt required')
         if any(type(x) is not int or x < 0 for x in self.input_ids):
             raise ValueError('nonnegative token IDs required')
@@ -50,7 +50,24 @@ class KVLease:
 @dataclass(frozen=True)
 class PrefillResult:
     cache: KVLease
-    first_token: int  # Prefill samples token 1; decoder emits only remaining tokens.
+    next_token: int
+    cache_position: int
+    output_prefix: tuple[int, ...] = ()
+
+    def validate(self, request):
+        # Support both full-prompt prefill and KV-only prefix prefill. The latter
+        # is used by KONI: ATOM consumes the last prompt token itself.
+        if type(self.next_token) is not int or self.next_token < 0:
+            raise ValueError('invalid continuation token')
+        if type(self.cache_position) is not int:
+            raise ValueError('integer cache position required')
+        prefix_mode = (self.output_prefix == () and
+                       self.cache_position == len(request.input_ids) - 1 and
+                       self.next_token == request.input_ids[-1])
+        full_mode = (self.output_prefix == (self.next_token,) and
+                     self.cache_position == len(request.input_ids))
+        if not (prefix_mode or full_mode):
+            raise ValueError('continuation does not match prompt boundary')
 
 
 class PrefillEngine(Protocol):
@@ -61,7 +78,7 @@ class PrefillEngine(Protocol):
 class DecodeEngine(Protocol):
     spec: KVSpec
     def reserve(self, request: PDRequest) -> KVLease: ...
-    def decode(self, request: PDRequest, cache: KVLease, first_token: int) -> list[int]:
+    def decode(self, request: PDRequest, cache: KVLease, continuation: PrefillResult) -> list[int]:
         """Return remaining tokens, after all cache accesses have completed."""
         ...
 
@@ -104,21 +121,20 @@ class PDRuntime:
                 self.retained.append(destination)
                 if result.cache.spec != self.prefill.spec or destination.spec != self.prefill.spec:
                     raise ValueError('allocation does not match negotiated KV specification')
-                if type(result.first_token) is not int or result.first_token < 0:
-                    raise ValueError('invalid first token')
+                result.validate(request)
                 if not self.transport.supports(result.cache.endpoint, destination.endpoint, result.cache.spec):
                     raise ValueError('unsupported transport route')
                 self.state = 'transferring'
                 self.last_receipt = self.transport.transfer(request.request_id, result.cache, destination)
                 self.state = 'decoding'
-                tail = self.decode.decode(request, destination, result.first_token)
-                if (not isinstance(tail, list) or len(tail) > request.max_new_tokens - 1
+                tail = self.decode.decode(request, destination, result)
+                if (not isinstance(tail, list) or len(tail) > request.max_new_tokens - len(result.output_prefix)
                         or any(type(x) is not int or x < 0 for x in tail)):
                     raise ValueError('decoder must return only remaining output tokens')
                 self.transport.finish(request.request_id)
                 self.retained.clear()
                 self.state = 'idle'
-                return [result.first_token, *tail]
+                return [*result.output_prefix, *tail]
             except BaseException:
                 self.state = 'poisoned'
                 raise

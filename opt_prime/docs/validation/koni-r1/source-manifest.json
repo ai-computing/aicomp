@@ -1,0 +1,12 @@
+{
+  "base_commit": "9b40907b4b19629b963418bb8130afb3064d4a89",
+  "dirty": true,
+  "files": {
+    "opt_prime/opt_prime/pd/runtime.py": "8aa580cdf3c38ba2b7ce9dd43155247a98c937bdae165fab44dda65a6b4a0ca5",
+    "opt_prime/opt_prime/pd/koni.py": "667a5205196e0b5104705ccb3e4e64397b7c01764f4e8b23f68e075f7f6362dd",
+    "opt_prime/opt_prime/pd/hetero_p2p.py": "371e6c21cf53b57c37119f20d4011806393618d403ab53a9e4cb7bb6fb7900a4",
+    "opt_prime/examples/pd/validate_koni.py": "fdb35e0ed8dd90dadf51d5ad9f099a283d61bc14f4e3687c0ee7a9fe964d1193"
+  },
+  "hetero_commit": "5cbce714e6f4ca4de3f8b8ed3500a487684effcf",
+  "note": "runtime snapshot reconstructs loaded version before two additional immutable-input validation checks were edited during hardware startup; inference/transport code unchanged"
+}

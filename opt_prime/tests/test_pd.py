@@ -9,7 +9,7 @@ SPEC = KVSpec('test-model', 'immutable-revision', 'test-int', 'linear-v1', (4,))
 class Prefill:
     spec = SPEC
     def prefill(self, request):
-        return PrefillResult(KVLease(self.spec, self, list(request.input_ids), 'cpu:source'), 7)
+        return PrefillResult(KVLease(self.spec, self, list(request.input_ids), 'cpu:source'), 7, len(request.input_ids), (7,))
 
 
 class Decode:
@@ -17,10 +17,10 @@ class Decode:
     called = False
     def reserve(self, request):
         return KVLease(self.spec, self, [], 'cpu:destination')
-    def decode(self, request, cache, first_token):
+    def decode(self, request, cache, continuation):
         self.called = True
         assert cache.payload == list(request.input_ids)
-        return [first_token + 1] * (request.max_new_tokens - 1)
+        return [continuation.next_token + 1] * (request.max_new_tokens - 1)
 
 
 class Transport:
@@ -45,10 +45,13 @@ class PDTests(unittest.TestCase):
             self.assertEqual(runtime.retained, [])
 
     def test_incompatible_revision(self):
-        decoder = Decode()
-        decoder.spec = KVSpec('test-model', 'other', 'test-int', 'linear-v1', (4,))
-        with self.assertRaises(ValueError):
-            PDRuntime(Prefill(), decoder, Transport())
+        from dataclasses import replace
+        for change in ({'revision':'other'}, {'representation':'bf16'},
+                       {'layout':'other-layout'}, {'shape':(8,)}, {'model_id':'other-model'}):
+            decoder = Decode()
+            decoder.spec = replace(SPEC, **change)
+            with self.assertRaises(ValueError):
+                PDRuntime(Prefill(), decoder, Transport())
 
     def test_transfer_failure_retains_owners_and_blocks_decode(self):
         class Broken(Transport):
@@ -83,6 +86,26 @@ class PDTests(unittest.TestCase):
             runtime.generate(PDRequest('x', (1,), 3))
         self.assertEqual(runtime.state, 'poisoned')
         self.assertEqual(len(runtime.retained), 2)
+
+    def test_failed_finish_retains_leases(self):
+        class Broken(Transport):
+            def finish(self, request_id):
+                raise RuntimeError('completion not established')
+        runtime = self.runtime(Broken())
+        with self.assertRaises(RuntimeError):
+            runtime.generate(PDRequest('x', (1,), 3))
+        self.assertEqual(runtime.state, 'poisoned')
+        self.assertEqual(len(runtime.retained), 2)
+
+    def test_reentrant_request_is_rejected(self):
+        runtime = self.runtime()
+        runtime._lock.acquire()
+        try:
+            with self.assertRaises(RuntimeError):
+                runtime.generate(PDRequest('x', (1,), 3))
+            self.assertFalse(runtime.decode.called)
+        finally:
+            runtime._lock.release()
 
     def test_no_eager_sdk_or_torch_import(self):
         subprocess.run([sys.executable, '-c',

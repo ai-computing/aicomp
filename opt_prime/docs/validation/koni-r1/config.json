@@ -1,0 +1,27 @@
+{
+  "out": "/tmp/optimus-koni-r1",
+  "model": "/home/gspark/.cache/huggingface/hub/models--KISTI-KONI--KONI-Llama3.1-8B-Instruct-20241024/snapshots/0172bf7e73977ae213613529f3d2d5400a33f678",
+  "atom_artifact": "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/koni-integration-20261015/koni-b4-build-r49/compiled/6463347b9a988e0e.rbln",
+  "tables": "/home/gspark/workspace/01_pd_disag/experiments/npu_pd_extended_20261014/pd_atom/tables.npz",
+  "workload": "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/real_workload_20261015/workload.json",
+  "helper": "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/build/rngd-pdma",
+  "atom_python": "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+  "atom_devices": [
+    2
+  ],
+  "rngd_device_path": "/dev/rngd/npu3ch0",
+  "output_lengths": [
+    1,
+    32,
+    128
+  ],
+  "warmups": 1,
+  "repeats": 2,
+  "prefill_port": 18821,
+  "decode_port": 18822,
+  "batch_wait_ms": 10,
+  "admission_ttl_seconds": 60,
+  "rngd_logical_index": 2,
+  "batch_size": 4,
+  "context": 512
+}

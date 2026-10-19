@@ -1,0 +1,8 @@
+{
+  "requests": 24,
+  "tokens": 1288,
+  "dma_commands": 1536,
+  "all_cqe_zero": true,
+  "all_full_logits_exact": true,
+  "all_runtime_idle": true
+}

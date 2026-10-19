@@ -737,5 +737,6 @@ The results of the AIcomp project are distributed under the 3-clause BSD license
 An optional `opt_prime.pd` layer separates prefill and decode engines from KV
 transport, with explicit model/layout compatibility and buffer lifetime contracts.
 It includes a bridge to the separately installed `hetero-npu-p2p` transport.
-This is an integration foundation; hardware engine adapters and llm-d service
-integration are not yet bundled. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).
+Torch causal-model and KONI RNGD/ATOM endpoint adapters are included. llm-d
+service integration is a separate feature; hardware support is limited to explicitly
+validated routes and SDK versions. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).

@@ -1,0 +1,345 @@
+{
+  "torch": "2.11.0+cpu",
+  "transformers": "5.8.1",
+  "cases": [
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 0.0,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1024,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1024,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 0.0,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3584,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 9.685754776000977e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3584,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 0.0,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9728,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 1.1920928955078125e-07,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9728,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 2.9802322387695312e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3072,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 9.685754776000977e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 3072,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9216,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "gpt2",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 8.940696716308594e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 9216,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 0.0,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 512,
+        "cache_position": 2,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 0.0,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1792,
+        "cache_position": 7,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 0.0,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": false,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4864,
+        "cache_position": 19,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.21540641784668e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 2,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 256,
+        "cache_position": 1,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 7,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 5.960464477539063e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 1536,
+        "cache_position": 6,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 1,
+      "tokens_exact": true,
+      "max_abs_diff": 4.470348358154297e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    },
+    {
+      "model": "llama",
+      "prefix_only": true,
+      "input_length": 19,
+      "output_length": 6,
+      "tokens_exact": true,
+      "max_abs_diff": 7.450580596923828e-08,
+      "receipt": {
+        "transport": "torch-copy",
+        "bytes": 4608,
+        "cache_position": 18,
+        "completed": true
+      }
+    }
+  ],
+  "seed": 17,
+  "atol": 1e-06,
+  "rtol": 1e-05
+}

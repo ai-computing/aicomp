@@ -1,0 +1,20 @@
+Processing ./opt_prime
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: optimus-prime-engine
+  Building wheel for optimus-prime-engine (pyproject.toml): started
+  Building wheel for optimus-prime-engine (pyproject.toml): finished with status 'done'
+  Created wheel for optimus-prime-engine: filename=optimus_prime_engine-0.1.0-py3-none-any.whl size=107448 sha256=75e24cae9400caf145ab1357fcb45754f4be919cafa4f997f01a14ac3780bc7c
+  Stored in directory: /tmp/pip-ephem-wheel-cache-boyiyw13/wheels/b4/fb/1a/16535e9444ceb757ddf3411efa2d56e2c3370b1213955b47d7
+Successfully built optimus-prime-engine
+
+[notice] A new release of pip is available: 26.0.1 -> 26.2.1
+[notice] To update, run: python3 -m pip install --upgrade pip
+Processing /tmp/optimus-wheels-final/optimus_prime_engine-0.1.0-py3-none-any.whl
+Installing collected packages: optimus-prime-engine
+Successfully installed optimus-prime-engine-0.1.0
+
+[notice] A new release of pip is available: 26.0.1 -> 26.2.1
+[notice] To update, run: python3 -m pip install --upgrade pip
+
+Installed SDK-free imports: PASS (python3 -S, no site packages)
