@@ -1,6 +1,6 @@
 # Local llm-d integration feature
 
-Branch: `feat/optimus-llmd`, based on engine commit `0c54548` from
+Branch: `feat/optimus-llmd`, incorporating engine commit `a2740f1` from
 `feat/optimus-heterogeneous-pd`. This feature does not change the engine branch.
 
 ## Implemented path
@@ -88,3 +88,24 @@ manifests, streaming, sampling and multi-node operation remain separate work.
 Unsupported modes are not silently represented as working distributed serving.
 
 Completed run results: [sidecar validation](validation/llmd/RESULTS.md).
+
+## Qwen NPU endpoints
+
+Qwen2.5 uses the same service and owner queue as KONI; the llm-d module does not
+need model-specific code. Copy `examples/pd/qwen_pd_config.example.json` and
+replace every path with your local checkout, pinned model, compiled artifact,
+SDK interpreter and sidecar binary. Device indices in the example are illustrative:
+choose an idle physical card and verify its corresponding logical RNGD index.
+Keep each run's output directory new. Remove `sidecar_binary` for direct-only runs.
+
+```sh
+PYTHONPATH=opt_prime:/path/to/hetero-npu-p2p/src:/path/to/rngd_llmd/src \
+ /path/to/furiosa-venv/bin/python opt_prime/examples/pd/validate_qwen_pd.py \
+ --config /path/to/local-qwen-config.json
+```
+
+This finite runner first checks direct P2P and then the local sidecar with the
+same endpoints. It is a validation harness, not a persistent production service.
+Model revision/geometry must match the compiled artifact's adjacent `model.json`.
+See [backend installation and extension](NPU_BACKEND_EXTENSIONS.md) and
+[Qwen results](QWEN_PD_VALIDATION.md).

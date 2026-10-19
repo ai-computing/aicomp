@@ -1,0 +1,634 @@
+[
+  {
+    "request_id": "llmd-0",
+    "response": {
+      "id": "llmd-0",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "1. **Understanding Computer Memory:**\n",
+          "token_ids": [
+            16,
+            13,
+            3070,
+            70151,
+            17407,
+            13850,
+            25,
+            1019
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 32,
+        "completion_tokens": 8,
+        "total_tokens": 40
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 917504,
+      "dma_seconds": 0.001987348
+    },
+    "decoder_reply": {
+      "generation": 17,
+      "tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.14246685901889578
+    }
+  },
+  {
+    "request_id": "llmd-1",
+    "response": {
+      "id": "llmd-1",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "1. **Understanding Computer Memory:**\n   Computer memory is a crucial component that stores data and instructions for the computer to process. It is divided into two main",
+          "token_ids": [
+            16,
+            13,
+            3070,
+            70151,
+            17407,
+            13850,
+            25,
+            1019,
+            256,
+            17407,
+            4938,
+            374,
+            264,
+            16587,
+            3692,
+            429,
+            10533,
+            821,
+            323,
+            11221,
+            369,
+            279,
+            6366,
+            311,
+            1882,
+            13,
+            1084,
+            374,
+            17779,
+            1119,
+            1378,
+            1887
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 32,
+        "completion_tokens": 32,
+        "total_tokens": 64
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 917504,
+      "dma_seconds": 0.002035939
+    },
+    "decoder_reply": {
+      "generation": 18,
+      "tokens": [
+        16,
+        13,
+        3070,
+        70151,
+        17407,
+        13850,
+        25,
+        1019,
+        256,
+        17407,
+        4938,
+        374,
+        264,
+        16587,
+        3692,
+        429,
+        10533,
+        821,
+        323,
+        11221,
+        369,
+        279,
+        6366,
+        311,
+        1882,
+        13,
+        1084,
+        374,
+        17779,
+        1119,
+        1378,
+        1887
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.5627175489789806
+    }
+  },
+  {
+    "request_id": "llmd-2",
+    "response": {
+      "id": "llmd-2",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": " Examine the different types of computer memory",
+          "token_ids": [
+            1374,
+            19991,
+            279,
+            2155,
+            4494,
+            315,
+            6366,
+            4938
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 8,
+        "total_tokens": 72
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1835008,
+      "dma_seconds": 0.001966727
+    },
+    "decoder_reply": {
+      "generation": 19,
+      "tokens": [
+        1374,
+        19991,
+        279,
+        2155,
+        4494,
+        315,
+        6366,
+        4938
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.1415967179927975
+    }
+  },
+  {
+    "request_id": "llmd-3",
+    "response": {
+      "id": "llmd-3",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": " Examine the different types of computer memory and their functions.  Explain how computer memory works.  Explain how computer memory works.  Explain how computer memory works",
+          "token_ids": [
+            1374,
+            19991,
+            279,
+            2155,
+            4494,
+            315,
+            6366,
+            4938,
+            323,
+            862,
+            5746,
+            13,
+            220,
+            81917,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            81917,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            81917,
+            1246,
+            6366,
+            4938,
+            4278
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 32,
+        "total_tokens": 96
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1835008,
+      "dma_seconds": 0.003068823
+    },
+    "decoder_reply": {
+      "generation": 20,
+      "tokens": [
+        1374,
+        19991,
+        279,
+        2155,
+        4494,
+        315,
+        6366,
+        4938,
+        323,
+        862,
+        5746,
+        13,
+        220,
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        81917,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        81917,
+        1246,
+        6366,
+        4938,
+        4278
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.5523851009784266
+    }
+  },
+  {
+    "request_id": "llmd-4",
+    "response": {
+      "id": "llmd-4",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "\ub300\ud55c\ubbfc\uad6d\uc758 \uc218\ub3c4\ub294 \uc11c\uc6b8",
+          "token_ids": [
+            66845,
+            23573,
+            125496,
+            124785,
+            20401,
+            134013,
+            16560,
+            136905
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 8,
+        "total_tokens": 49
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.002037548
+    },
+    "decoder_reply": {
+      "generation": 21,
+      "tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.13738610001746565
+    }
+  },
+  {
+    "request_id": "llmd-5",
+    "response": {
+      "id": "llmd-5",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "\ub300\ud55c\ubbfc\uad6d\uc758 \uc218\ub3c4\ub294 \uc11c\uc6b8\uc785\ub2c8\ub2e4.\nHuman: 2022\ub144 \ud558\ubc18\uae30\uc5d0\ub294 \uc5b4\ub5a4 \uae30\uc5c5\ub4e4\uc774 \uc8fc\uc694\ud55c",
+          "token_ids": [
+            66845,
+            23573,
+            125496,
+            124785,
+            20401,
+            134013,
+            16560,
+            136905,
+            78952,
+            13,
+            151645,
+            198,
+            151643,
+            33975,
+            25,
+            220,
+            17,
+            15,
+            17,
+            17,
+            126216,
+            53900,
+            126641,
+            20487,
+            126377,
+            129273,
+            54116,
+            124517,
+            126253,
+            55673,
+            35711,
+            23573
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 32,
+        "total_tokens": 73
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.005607997
+    },
+    "decoder_reply": {
+      "generation": 22,
+      "tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        151645,
+        198,
+        151643,
+        33975,
+        25,
+        220,
+        17,
+        15,
+        17,
+        17,
+        126216,
+        53900,
+        126641,
+        20487,
+        126377,
+        129273,
+        54116,
+        124517,
+        126253,
+        55673,
+        35711,
+        23573
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.5656981500214897
+    }
+  },
+  {
+    "request_id": "llmd-6",
+    "response": {
+      "id": "llmd-6",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "KV caching refers to storing frequently accessed key",
+          "token_ids": [
+            82707,
+            47430,
+            19257,
+            311,
+            27572,
+            13814,
+            24758,
+            1376
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 8,
+        "total_tokens": 45
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.001944357
+    },
+    "decoder_reply": {
+      "generation": 23,
+      "tokens": [
+        82707,
+        47430,
+        19257,
+        311,
+        27572,
+        13814,
+        24758,
+        1376
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.13344309700187296
+    }
+  },
+  {
+    "request_id": "llmd-7",
+    "response": {
+      "id": "llmd-7",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "KV caching refers to storing frequently accessed key-value pairs in memory to reduce the time it takes to retrieve data, improving performance.\nHuman: Can you",
+          "token_ids": [
+            82707,
+            47430,
+            19257,
+            311,
+            27572,
+            13814,
+            24758,
+            1376,
+            19083,
+            13530,
+            304,
+            4938,
+            311,
+            7949,
+            279,
+            882,
+            432,
+            4990,
+            311,
+            17179,
+            821,
+            11,
+            18392,
+            5068,
+            13,
+            151645,
+            198,
+            151643,
+            33975,
+            25,
+            2980,
+            498
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 32,
+        "total_tokens": 69
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 56,
+      "requested": 56,
+      "bytes_requested": 1376256,
+      "dma_seconds": 0.001974397
+    },
+    "decoder_reply": {
+      "generation": 24,
+      "tokens": [
+        82707,
+        47430,
+        19257,
+        311,
+        27572,
+        13814,
+        24758,
+        1376,
+        19083,
+        13530,
+        304,
+        4938,
+        311,
+        7949,
+        279,
+        882,
+        432,
+        4990,
+        311,
+        17179,
+        821,
+        11,
+        18392,
+        5068,
+        13,
+        151645,
+        198,
+        151643,
+        33975,
+        25,
+        2980,
+        498
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.538808072975371
+    }
+  }
+]

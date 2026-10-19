@@ -1,0 +1,9 @@
+PASS r0-p0-o8
+PASS r0-p0-o32
+PASS r0-p1-o8
+PASS r0-p1-o32
+PASS r1-p0-o8
+PASS r1-p0-o32
+PASS r1-p1-o8
+PASS r1-p1-o32
+{"passed": true, "requests": 8, "tokens": 160, "commands": 384, "worker_exit": 0, "scope": "actual P2P vs same-decoder host admission full logits; FP32 quality separate"}

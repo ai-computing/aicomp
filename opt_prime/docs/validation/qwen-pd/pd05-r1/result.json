@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "requests": 8,
+  "tokens": 160,
+  "commands": 384,
+  "worker_exit": 0,
+  "scope": "actual P2P vs same-decoder host admission full logits; FP32 quality separate"
+}

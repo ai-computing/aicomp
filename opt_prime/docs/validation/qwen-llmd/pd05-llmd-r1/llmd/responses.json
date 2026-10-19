@@ -1,0 +1,634 @@
+[
+  {
+    "request_id": "llmd-0",
+    "response": {
+      "id": "llmd-0",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "1. Introduction to Computer Memory: Computer",
+          "token_ids": [
+            16,
+            13,
+            28338,
+            311,
+            17407,
+            13850,
+            25,
+            17407
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 32,
+        "completion_tokens": 8,
+        "total_tokens": 40
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 393216,
+      "dma_seconds": 0.001819396
+    },
+    "decoder_reply": {
+      "generation": 17,
+      "tokens": [
+        16,
+        13,
+        28338,
+        311,
+        17407,
+        13850,
+        25,
+        17407
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.07137161999708042
+    }
+  },
+  {
+    "request_id": "llmd-1",
+    "response": {
+      "id": "llmd-1",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "1. Introduction to Computer Memory: Computer memory is the storage space within a computer that allows it to store and retrieve data. It is a crucial component of a",
+          "token_ids": [
+            16,
+            13,
+            28338,
+            311,
+            17407,
+            13850,
+            25,
+            17407,
+            4938,
+            374,
+            279,
+            5819,
+            3550,
+            2878,
+            264,
+            6366,
+            429,
+            6147,
+            432,
+            311,
+            3553,
+            323,
+            17179,
+            821,
+            13,
+            1084,
+            374,
+            264,
+            16587,
+            3692,
+            315,
+            264
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 32,
+        "completion_tokens": 32,
+        "total_tokens": 64
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 393216,
+      "dma_seconds": 0.001795095
+    },
+    "decoder_reply": {
+      "generation": 18,
+      "tokens": [
+        16,
+        13,
+        28338,
+        311,
+        17407,
+        13850,
+        25,
+        17407,
+        4938,
+        374,
+        279,
+        5819,
+        3550,
+        2878,
+        264,
+        6366,
+        429,
+        6147,
+        432,
+        311,
+        3553,
+        323,
+        17179,
+        821,
+        13,
+        1084,
+        374,
+        264,
+        16587,
+        3692,
+        315,
+        264
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.28933610598323867
+    }
+  },
+  {
+    "request_id": "llmd-2",
+    "response": {
+      "id": "llmd-2",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": " Explain how computer memory works. ",
+          "token_ids": [
+            1374,
+            20772,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 8,
+        "total_tokens": 72
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 786432,
+      "dma_seconds": 0.001810076
+    },
+    "decoder_reply": {
+      "generation": 19,
+      "tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.07157594297314063
+    }
+  },
+  {
+    "request_id": "llmd-3",
+    "response": {
+      "id": "llmd-3",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": " Explain how computer memory works.  Explain how computer memory works.  Explain how computer memory works.  Explain how computer memory works. ",
+          "token_ids": [
+            1374,
+            20772,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            1374,
+            20772,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            1374,
+            20772,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220,
+            1374,
+            20772,
+            1246,
+            6366,
+            4938,
+            4278,
+            13,
+            220
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 32,
+        "total_tokens": 96
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 786432,
+      "dma_seconds": 0.001801415
+    },
+    "decoder_reply": {
+      "generation": 20,
+      "tokens": [
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220,
+        1374,
+        20772,
+        1246,
+        6366,
+        4938,
+        4278,
+        13,
+        220
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.29881171201122925
+    }
+  },
+  {
+    "request_id": "llmd-4",
+    "response": {
+      "id": "llmd-4",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "\ub300\ud55c\ubbfc\uad6d\uc758 \uc218\ub3c4\ub294 \uc11c\uc6b8",
+          "token_ids": [
+            66845,
+            23573,
+            125496,
+            124785,
+            20401,
+            134013,
+            16560,
+            136905
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 8,
+        "total_tokens": 49
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 786432,
+      "dma_seconds": 0.003182275
+    },
+    "decoder_reply": {
+      "generation": 21,
+      "tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.0715749729424715
+    }
+  },
+  {
+    "request_id": "llmd-5",
+    "response": {
+      "id": "llmd-5",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "\ub300\ud55c\ubbfc\uad6d\uc758 \uc218\ub3c4\ub294 \uc11c\uc6b8\uc785\ub2c8\ub2e4.\nHuman: What is the meaning of the phrase \"I'm sorry, but I can't do",
+          "token_ids": [
+            66845,
+            23573,
+            125496,
+            124785,
+            20401,
+            134013,
+            16560,
+            136905,
+            78952,
+            13,
+            151645,
+            198,
+            151643,
+            33975,
+            25,
+            3555,
+            374,
+            279,
+            7290,
+            315,
+            279,
+            17133,
+            330,
+            40,
+            2776,
+            14589,
+            11,
+            714,
+            358,
+            646,
+            944,
+            653
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 32,
+        "total_tokens": 73
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 786432,
+      "dma_seconds": 0.001810016
+    },
+    "decoder_reply": {
+      "generation": 22,
+      "tokens": [
+        66845,
+        23573,
+        125496,
+        124785,
+        20401,
+        134013,
+        16560,
+        136905,
+        78952,
+        13,
+        151645,
+        198,
+        151643,
+        33975,
+        25,
+        3555,
+        374,
+        279,
+        7290,
+        315,
+        279,
+        17133,
+        330,
+        40,
+        2776,
+        14589,
+        11,
+        714,
+        358,
+        646,
+        944,
+        653
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.2920115059823729
+    }
+  },
+  {
+    "request_id": "llmd-6",
+    "response": {
+      "id": "llmd-6",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "KV caching is a caching technique that stores",
+          "token_ids": [
+            82707,
+            47430,
+            374,
+            264,
+            47430,
+            14762,
+            429,
+            10533
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 8,
+        "total_tokens": 45
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 786432,
+      "dma_seconds": 0.001823886
+    },
+    "decoder_reply": {
+      "generation": 23,
+      "tokens": [
+        82707,
+        47430,
+        374,
+        264,
+        47430,
+        14762,
+        429,
+        10533
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.07078824297059327
+    }
+  },
+  {
+    "request_id": "llmd-7",
+    "response": {
+      "id": "llmd-7",
+      "object": "text_completion",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "choices": [
+        {
+          "index": 0,
+          "text": "KV caching is a caching technique that stores frequently accessed data in a key-value pair format, allowing for quick retrieval of data from the cache when needed.\n",
+          "token_ids": [
+            82707,
+            47430,
+            374,
+            264,
+            47430,
+            14762,
+            429,
+            10533,
+            13814,
+            24758,
+            821,
+            304,
+            264,
+            1376,
+            19083,
+            6716,
+            3561,
+            11,
+            10693,
+            369,
+            3974,
+            56370,
+            315,
+            821,
+            504,
+            279,
+            6500,
+            979,
+            4362,
+            13,
+            151645,
+            198
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 37,
+        "completion_tokens": 32,
+        "total_tokens": 69
+      }
+    },
+    "receipt": {
+      "cqe_result": 0,
+      "completed": 48,
+      "requested": 48,
+      "bytes_requested": 786432,
+      "dma_seconds": 0.001802925
+    },
+    "decoder_reply": {
+      "generation": 24,
+      "tokens": [
+        82707,
+        47430,
+        374,
+        264,
+        47430,
+        14762,
+        429,
+        10533,
+        13814,
+        24758,
+        821,
+        304,
+        264,
+        1376,
+        19083,
+        6716,
+        3561,
+        11,
+        10693,
+        369,
+        3974,
+        56370,
+        315,
+        821,
+        504,
+        279,
+        6500,
+        979,
+        4362,
+        13,
+        151645,
+        198
+      ],
+      "passed": true,
+      "reference_checked": true,
+      "max_abs_diff": 0.0,
+      "device_completed": true,
+      "seconds": 0.3012240290408954
+    }
+  }
+]

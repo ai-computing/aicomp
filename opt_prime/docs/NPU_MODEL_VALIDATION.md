@@ -1,3 +1,6 @@
+> Historical native-execution record. Subsequent actual Qwen RNGD→ATOM P2P
+> results are recorded in [Qwen P2P validation](QWEN_PD_VALIDATION.md).
+
 # Actual NPU model validation — 2026-10-19
 
 The new checkpoint tests ran on physical ATOM2. KONI ran on physical RNGD3 →

@@ -752,10 +752,14 @@ KV off the HTTP path. See [service contracts and validation](docs/LLMD_FEATURE.m
 The PD package separates SDK-free contracts, execution state, model-family
 capabilities, cache transport and device adapters. Dense GPT-2/Llama/Qwen2/Qwen3/
 Mistral Torch models are covered by the model matrix; NPU support remains scoped
-to the validated KONI RNGD→ATOM path. See the [contributor guide](docs/CONTRIBUTING_PD.md)
+to the validated KONI and experimental Qwen2.5 RNGD→ATOM paths. See the [contributor guide](docs/CONTRIBUTING_PD.md)
 and [model/performance validation](docs/validation/model-expansion/RESULTS.md).
 
 Actual NPU tests additionally cover native ATOM execution of Qwen2.5-0.5B and
 1.5B, prefill chunk64/128 comparisons, and stage profiling of KONI RNGD→ATOM PD.
-Qwen heterogeneous P2P PD is not yet supported. See the [NPU validation record](docs/NPU_MODEL_VALIDATION.md)
-for the hardware evidence, model support boundaries and reproducible commands.
+Qwen2.5-0.5B and 1.5B now also pass actual RNGD→ATOM P2P validation at B1,
+context512. These new adapters are experimental and use a pinned external-KV
+ABI; they do not establish arbitrary NPU/GPU support. See the
+[backend extension guide](docs/NPU_BACKEND_EXTENSIONS.md),
+[Qwen P2P validation](docs/QWEN_PD_VALIDATION.md), and the earlier
+[native NPU validation record](docs/NPU_MODEL_VALIDATION.md).
