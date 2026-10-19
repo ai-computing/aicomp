@@ -777,3 +777,12 @@ the original path remains available for full-logit reference checks.
 [Native baseline and KV resume](docs/NATIVE_BASELINE_AND_KV_RESUME.md) records
 the vendor ATOM comparison, public KV API feasibility probe, numerical limits
 and the compact-prefix ablation (not promoted to default).
+
+### Heterogeneous P2P factory
+
+The external-cache RNGD → ATOM worker is available through
+`opt_prime.pd.npu.factory.create_qwen_p2p`. It uses the separate
+`hetero-npu-p2p` package and requires the validated SDK/driver/export setup.
+Native-cache P2P and automatic host fallback are not enabled.
+See [factory and validation](docs/P2P_FACTORY_KO.md) and
+[integration plan](docs/PD_INTEGRATION_PLAN_KO.md).

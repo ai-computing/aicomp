@@ -1,24 +1,39 @@
 """Finite actual RNGD→ATOM Qwen P2P validation using the common PDRuntime."""
 
 import argparse
-import array
 import json
 import os
-import socket
 import subprocess
-import sys
 import time
 import traceback
-from dataclasses import asdict
 from pathlib import Path
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--config", type=Path, required=True)
+    p.add_argument(
+        "--production-reference",
+        type=Path,
+        help="Run without worker oracle; compare tokens with a prior validated runs.jsonl",
+    )
     a = p.parse_args()
     cfg = json.loads(a.config.read_text())
     out = Path(cfg["out"]).resolve()
+    expected = None
+    if a.production_reference:
+        cfg.pop("validation_hook", None)
+        expected = {
+            (tuple(r["prompt"]), r["output_length"]): r["tokens"]
+            for r in (
+                json.loads(line)
+                for line in a.production_reference.read_text().splitlines()
+            )
+        }
+    else:
+        cfg["validation_hook"] = str(
+            Path(__file__).with_name("qwen_reference.py").resolve()
+        )
     cfg["socket"] = str(out / "bridge.sock")
     if len(os.fsencode(cfg["socket"])) >= 108:
         raise ValueError(
@@ -41,10 +56,9 @@ def main():
         import numpy as np
         import torch
         from transformers import AutoTokenizer
-        from opt_prime.pd import PDRuntime, PDRequest
+        from opt_prime.pd import PDRequest
         from opt_prime.pd.npu.model import DenseModel, load_weights
-        from opt_prime.pd.npu.engines import QwenRngdEngine, QwenAtomWorkerEngine
-        from opt_prime.pd.hetero_p2p import HeteroP2PTransport
+        from opt_prime.pd.npu.factory import create_qwen_p2p
         from hetero_p2p import RngdPdmaBackend
         from hetero_p2p.serving import RngdBinding
 
@@ -88,60 +102,16 @@ def main():
             binding.torch_device, spec.layers, spec.kv_heads, spec.head_dim
         )
         backend = RngdPdmaBackend(cfg["helper"], binding.device_path)
-        example = Path(cfg["hetero_repo"]) / "examples/koni"
-        sys.path.insert(0, str(example))
-        from batch_control import accept_worker
-
-        directory = out / "atom"
-        directory.mkdir()
-        (directory / "capture.gdb").write_text((example / "capture.gdb").read_text())
-        server = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
-        server.bind(cfg["socket"])
-        server.listen(1)
-        env = dict(os.environ, HETERO_CAPTURE_DIR=str(directory))
-        logfile = (directory / "worker.log").open("w")
-        worker = subprocess.Popen(
-            [
-                "gdb",
-                "-q",
-                "-batch",
-                "-x",
-                str(directory / "capture.gdb"),
-                "--args",
-                cfg["atom_python"],
-                str(Path(__file__).with_name("qwen_atom_worker.py").resolve()),
-                "--config",
-                str(config_path),
-                "--directory",
-                str(directory),
-            ],
-            env=env,
-            stdout=logfile,
-            stderr=subprocess.STDOUT,
+        session = create_qwen_p2p(
+            config_path, engine, binding, packer, backend, out / "atom"
         )
-        (out / "processes.json").write_text(
-            json.dumps(dict(producer=os.getpid(), worker=worker.pid))
-        )
-        conn, _ = accept_worker(server, {0: worker})
-        raw, anc, flags, _ = conn.recvmsg(65536, socket.CMSG_SPACE(spec.caches * 4))
-        if flags & (socket.MSG_TRUNC | socket.MSG_CTRUNC):
-            raise RuntimeError("truncated export descriptors")
-        fds = array.array("i")
-        for level, kind, data in anc:
-            if level == socket.SOL_SOCKET and kind == socket.SCM_RIGHTS:
-                fds.frombytes(data)
         live = True
-        metadata = json.loads(raw)
-        if (
-            metadata["spec"] != asdict(spec)
-            or len(metadata["mappings"]) != spec.caches
-            or len(fds) != len(metadata["blocks"])
-        ):
-            raise RuntimeError("export metadata mismatch")
-        for fd, block in zip(fds, metadata["blocks"]):
-            if os.fstat(fd).st_size != block["size"]:
-                raise RuntimeError("export size mismatch")
-        owner = dict(conn=conn, fds=fds, metadata=metadata, process=worker)
+        runtime = session.runtime
+        source, decoder, transport = runtime.prefill, runtime.decode, runtime.transport
+        conn = session.worker.conn
+        (out / "processes.json").write_text(
+            json.dumps(dict(producer=os.getpid(), worker=session.worker.process.pid))
+        )
         tokenizer = AutoTokenizer.from_pretrained(cfg["model"], local_files_only=True)
         base = tokenizer.encode(
             "Explain how computer memory works. ", add_special_tokens=False
@@ -155,7 +125,7 @@ def main():
             for prompt in prompts
         ):
             raise ValueError("prompts must fit the compiled64-token prefix")
-        for i, prompt in enumerate(prompts):
+        for i, prompt in enumerate(prompts if expected is None else []):
             keys, values, _ = engine.prefill_device(prompt[:-1])
             prefix = out / f"prefix-{i}.npz"
             np.savez(
@@ -181,17 +151,6 @@ def main():
             ):
                 raise RuntimeError("reference failed")
             (out / f"reference-{i}.json").write_text(json.dumps(reply, indent=2))
-        source = QwenRngdEngine(engine, packer, binding, compact_cache=compact_cache)
-        decoder = QwenAtomWorkerEngine(owner, source.spec, cfg["physical_atom"])
-        transport = HeteroP2PTransport(
-            backend,
-            decoder.build_plan,
-            lambda _: None,
-            source=binding.device_path,
-            destination=f"atom:{cfg['physical_atom']}",
-            spec=source.spec,
-        )
-        runtime = PDRuntime(source, decoder, transport)
         rows = []
         for repeat in range(2):
             for i, prompt in enumerate(prompts):
@@ -200,6 +159,13 @@ def main():
                         f"r{repeat}-p{i}-o{count}", tuple(prompt), count
                     )
                     tokens = runtime.generate(request)
+                    if (
+                        expected is not None
+                        and tokens != expected[(tuple(prompt), count)]
+                    ):
+                        raise RuntimeError(
+                            "production tokens differ from validated reference"
+                        )
                     row = dict(
                         request_id=request.request_id,
                         prompt=prompt,
@@ -235,26 +201,20 @@ def main():
                 max_output=32,
                 render=lambda ids: tokenizer.decode(ids, skip_special_tokens=True),
             )
-        conn.send(json.dumps(dict(cmd="stop")).encode())
-        code = worker.wait(timeout=60)
-        if (
-            code != 0
-            or not json.loads((directory / "result.json").read_text())["passed"]
-        ):
-            raise RuntimeError("owner did not exit normally")
+        session.close()
         live = False
-        for fd in fds:
-            os.close(fd)
-        conn.close()
-        server.close()
-        logfile.close()
+        code = session.worker.process.returncode
         status.update(
             passed=True,
             requests=len(rows),
             tokens=sum(len(r["tokens"]) for r in rows),
             commands=sum(r["receipt"]["completed"] for r in rows),
             worker_exit=code,
-            scope="actual P2P vs same-decoder host admission full logits; FP32 quality separate",
+            scope=(
+                "production P2P tokens match prior validated run; worker oracle disabled"
+                if expected is not None
+                else "actual P2P vs same-decoder host admission full logits; FP32 quality separate"
+            ),
         )
         print(json.dumps(status), flush=True)
     except BaseException as error:

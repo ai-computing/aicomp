@@ -75,8 +75,9 @@ class QwenRngdEngine:
 
 
 class QwenAtomWorkerEngine:
-    def __init__(self, owner, spec, physical):
+    def __init__(self, owner, spec, physical, *, require_reference=True):
         self.owner, self.spec, self.physical = owner, spec, physical
+        self.require_reference = require_reference
         self.generation = 0
         self.last_reply = None
 
@@ -95,6 +96,7 @@ class QwenAtomWorkerEngine:
                 dict(
                     cmd="decode",
                     generation=self.generation,
+                    request_id=request.request_id,
                     prompt=list(request.input_ids),
                     count=request.max_new_tokens,
                     dma_completed=True,
@@ -110,8 +112,14 @@ class QwenAtomWorkerEngine:
             reply.get("generation") != self.generation
             or reply.get("device_completed") is not True
             or reply.get("passed") is not True
-            or reply.get("reference_checked") is not True
-            or reply.get("max_abs_diff") != 0
+            or reply.get("request_id") != request.request_id
+            or (
+                self.require_reference
+                and (
+                    reply.get("reference_checked") is not True
+                    or reply.get("max_abs_diff") != 0
+                )
+            )
             or len(reply.get("tokens", [])) != request.max_new_tokens
         ):
             raise RuntimeError("decode fence or full-logit equality failed")

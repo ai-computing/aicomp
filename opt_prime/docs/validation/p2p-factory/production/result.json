@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "requests": 16,
+  "tokens": 320,
+  "commands": 768,
+  "worker_exit": 0,
+  "scope": "production P2P tokens match prior validated run; worker oracle disabled"
+}
