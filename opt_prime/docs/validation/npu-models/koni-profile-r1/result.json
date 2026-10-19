@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "requests": 24,
+  "output_tokens": 396,
+  "full_logit_exact": true,
+  "worker_exit": 0,
+  "scope": "same decoder host-admission parity; no native model parity claim"
+}

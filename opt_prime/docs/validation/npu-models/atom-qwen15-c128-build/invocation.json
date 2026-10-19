@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "opt_prime/examples/pd/validate_atom_checkpoint.py",
+    "--model-dir",
+    "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+    "--out",
+    "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-c128-build",
+    "--preflight-module-dir",
+    "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni",
+    "--compile-only",
+    "--chunk",
+    "128"
+  ],
+  "python": "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+  "started_utc": "2026-10-19T01:37:39Z",
+  "source_sha256": "8b31dcee5075b3dc140a3cf38292ad241b718a709ad8b000b0a967b636b71705",
+  "commit": "143e6180fc86fb0edc644df6e6a0ac7186d00964",
+  "git_status": "?? opt_prime/examples/pd/check_native_quality.py\n?? opt_prime/examples/pd/validate_atom_checkpoint.py\n"
+}

@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "scope": "vendor native ATOM baseline; no external KV or PD",
+  "compile_seconds": 78.18733659799909,
+  "compiled_only": true
+}

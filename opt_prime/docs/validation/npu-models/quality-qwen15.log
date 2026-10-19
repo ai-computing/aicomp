@@ -1,0 +1,7 @@
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:  54%|█████▍    | 183/338 [00:00<00:00, 1768.92it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 2004.50it/s]
+QUALITY 32 8 8
+QUALITY 32 32 32
+QUALITY 128 8 8
+QUALITY 128 32 32
+QUALITY 256 8 8
+QUALITY 256 32 32

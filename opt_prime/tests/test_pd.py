@@ -53,6 +53,22 @@ class PDTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 PDRuntime(Prefill(), decoder, Transport())
 
+    def test_failed_request_does_not_report_previous_success_timings(self):
+        runtime = self.runtime()
+        runtime.generate(PDRequest('ok', (1,), 2))
+        self.assertGreaterEqual(runtime.last_timings['total_seconds'],
+                                runtime.last_timings['decode_seconds'])
+        def fail(*args):
+            raise RuntimeError('uncertain DMA completion')
+        runtime.transport.transfer = fail
+        with self.assertRaises(RuntimeError):
+            runtime.generate(PDRequest('bad', (1,), 2))
+        self.assertIn('prefill_seconds', runtime.last_timings)
+        self.assertNotIn('decode_seconds', runtime.last_timings)
+        self.assertNotIn('total_seconds', runtime.last_timings)
+        self.assertEqual(runtime.state, 'poisoned')
+        self.assertEqual(len(runtime.retained), 2)
+
     def test_transfer_failure_retains_owners_and_blocks_decode(self):
         class Broken(Transport):
             def transfer(self, *args):

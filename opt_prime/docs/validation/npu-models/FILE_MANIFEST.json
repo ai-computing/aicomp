@@ -1,0 +1,777 @@
+[
+  {
+    "path": "analysis/RESULTS.md",
+    "bytes": 1300,
+    "sha256": "eaebf0bfb40a3b9fb130eeecaa79a7ef57b39aaa763ce2041eb275da93540fa5"
+  },
+  {
+    "path": "analysis/native-atom.png",
+    "bytes": 159398,
+    "sha256": "64afee49de18bed49ae2575e34237bfee50550392e6e1fdb21d399b5183bdc41"
+  },
+  {
+    "path": "analysis/native-atom.svg",
+    "bytes": 98465,
+    "sha256": "b4a11883f4c80a1211bc3e70cdf07fe5cb555b14ebe83ee2310d5d53c54d2738"
+  },
+  {
+    "path": "analysis/summary.json",
+    "bytes": 9205,
+    "sha256": "9c7a6dd67641823a60873e50eb2a1c634675e2fa9fcbe77cd7490c3be40e01a3"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/artifact-manifest.json",
+    "bytes": 32228,
+    "sha256": "f86e0acd2e92874808b230fe525ffecd22a8adffbc152299318ff45a7b9259f1"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/build-config.json",
+    "bytes": 440,
+    "sha256": "c215577f212c65f86e0640a04106b4f5dda8ccf813abad78456a8e5f5396a72e"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "ffe1f2cadf13f82fe7f6b69760dd14acb108006f0b6ab96970249bdeb9e2e2bd"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/invocation.json",
+    "bytes": 1173,
+    "sha256": "0ae14b42861f79ef26f03c12d4201653eec35ddd92cafe0ed231b96f66e7e3fa"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "c12f339da11e61f7c0ea146674d3695ca9228c7309a5455060d748dfab0de20d"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/runs.jsonl",
+    "bytes": 28514,
+    "sha256": "320ed9bdd05dbf8199b0f55b8726820a2356f99019880e2b9f196ee0bf3efaff"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/summary.json",
+    "bytes": 1852,
+    "sha256": "ec2a768de970facec729c51ab982194beece49c5afd2f8fe58019917f4b15442"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen05-abba-0-c64.log",
+    "bytes": 463,
+    "sha256": "377d0b2bb6afa7e9f5c789188a79d5380d52a1759fbdc5e94d827fabc02121fc"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/artifact-manifest.json",
+    "bytes": 32235,
+    "sha256": "03bc6624657f72b606f18f12ed6d0fea172fa3467cf63558f1ba7a17d42201d6"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/build-config.json",
+    "bytes": 441,
+    "sha256": "cda7b61adf0d51e81fc4bb30a761b98dc0501675a43382b7a569c0974dff2fc1"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "4a540864a3f54e681a055af6ce36ed0bba460bb4060dc908356ac85a08a96c40"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/invocation.json",
+    "bytes": 1179,
+    "sha256": "3dbecbc8fe45a40ef972d3bea8a4532f5b81541291aa92d8408b0ca29300785f"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "201d7e60cb72fc9db197a3051a4dc39b870e1212898556c2680cbd4e7a71de87"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/runs.jsonl",
+    "bytes": 28494,
+    "sha256": "7d2ebe3a4c395b23e4877e15ebb6d2be3b4626ad9c446da39fb75ecff36395fa"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/summary.json",
+    "bytes": 1837,
+    "sha256": "20b708609e2afaffbfd02aa82ade7945f69daaa08b7059b3e42d2c712036ed3e"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen05-abba-1-c128.log",
+    "bytes": 462,
+    "sha256": "39b6eaa500ebb6733977e64fdbf00edb4b6a51f41f8a1dc38437af4299a73874"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/artifact-manifest.json",
+    "bytes": 32235,
+    "sha256": "03bc6624657f72b606f18f12ed6d0fea172fa3467cf63558f1ba7a17d42201d6"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/build-config.json",
+    "bytes": 441,
+    "sha256": "cda7b61adf0d51e81fc4bb30a761b98dc0501675a43382b7a569c0974dff2fc1"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "12186d8279452b171868e498e92b04bf5f6a3e52d68cd76cf3fc845fe59fd25d"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/invocation.json",
+    "bytes": 1179,
+    "sha256": "d32bbb53adb05fcdb866ec7d1f2e282f0221266e575ba5b3e40d4943a39895f0"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "0ba6384b0fbda760dbf93e7105e3a9e8e54314c0b64c4a91c9caf8c181abe9b7"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/runs.jsonl",
+    "bytes": 28497,
+    "sha256": "6fe58ee64536feca3da9843f8a1242ffd6e6d705220e55b5e3e957356316ad36"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/summary.json",
+    "bytes": 1843,
+    "sha256": "dc14fd39953cc3850561aacb0021d8cccea29d17a143feefaab140684581caf9"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen05-abba-2-c128.log",
+    "bytes": 465,
+    "sha256": "dc5fb69f178af7b385bd11065faa49682d2479cb50bcbec646738f55c122267c"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/artifact-manifest.json",
+    "bytes": 32228,
+    "sha256": "f86e0acd2e92874808b230fe525ffecd22a8adffbc152299318ff45a7b9259f1"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/build-config.json",
+    "bytes": 440,
+    "sha256": "c215577f212c65f86e0640a04106b4f5dda8ccf813abad78456a8e5f5396a72e"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "0987565d04f4941ced487dc334260909c1803dd9a6410e820ec2bf868309e2a5"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/invocation.json",
+    "bytes": 1173,
+    "sha256": "090029d94fe5209eaededa7f2f432e123aeaa19955a0ba3ab54ee10baf484474"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "adeae0e15b8657ece07be9af724bad5b0517a27db8c37ff361bda95873842fee"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/runs.jsonl",
+    "bytes": 28511,
+    "sha256": "7c9898d42948dc9aa09e8952191687f984c2136e0b40ee5da2cfea7cfa920b99"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/summary.json",
+    "bytes": 1845,
+    "sha256": "7384a11d472a623f4a76f90b9ddabc35a82934924b1aa6c40c9d8d398837c422"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen05-abba-3-c64.log",
+    "bytes": 465,
+    "sha256": "84f0b400f0141de9a59e6bbc78cbe386f9fa3def3db157832633c601f26a0af5"
+  },
+  {
+    "path": "atom-qwen05-c128-build/build-config.json",
+    "bytes": 441,
+    "sha256": "cda7b61adf0d51e81fc4bb30a761b98dc0501675a43382b7a569c0974dff2fc1"
+  },
+  {
+    "path": "atom-qwen05-c128-build/invocation.json",
+    "bytes": 867,
+    "sha256": "b539aa050eee615b6afbfaa84b4b01f1fe400a9caa8fbc810052fdf4534b47cd"
+  },
+  {
+    "path": "atom-qwen05-c128-build/result.json",
+    "bytes": 150,
+    "sha256": "a69e025d9010e11898a66e4de1aace9fefff2d372bfdd804d5fa797b88bbb82c"
+  },
+  {
+    "path": "atom-qwen05-c128-build/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen05-c128-build.log",
+    "bytes": 7153,
+    "sha256": "448e1b98443c403cbeb2ad737f641118cf06f209ea60045eed8c53df0f3a8f70"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/build-config.json",
+    "bytes": 440,
+    "sha256": "c215577f212c65f86e0640a04106b4f5dda8ccf813abad78456a8e5f5396a72e"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "e017804215864cab62ee96f87e150535a31ef8130de03be3c2a53bb357de8fbe"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/invocation.json",
+    "bytes": 815,
+    "sha256": "f087076e0a390353c179709b96ec3ed4e7df8e16d3c3ca604adee08235e6a1c3"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "9c24766743e4a1ba94d181196ebe326869ebb39c3aa87309971b8632d8f153b4"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/result.json",
+    "bytes": 327,
+    "sha256": "ba4c94e979d9634e6c34137a5e27c04f41a48add43160f9de2e02b0def74e97a"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/runs.jsonl",
+    "bytes": 28505,
+    "sha256": "c08fadf1cf90fa1caf60ef145a0dc4addae8bed70af68adba9cbbcf995531b4c"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/summary.json",
+    "bytes": 1837,
+    "sha256": "7a478e030ffc2faaab77d095a2c427cdd670be67aaba96c56626c3302a126c42"
+  },
+  {
+    "path": "atom-qwen05-c64-r1/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen05-c64-r1.log",
+    "bytes": 7364,
+    "sha256": "7bb9a77dc75375bfc5785ccc2cca7508971cee816ddbaa5e0f1d5c2d97c33f22"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/artifact-manifest.json",
+    "bytes": 37375,
+    "sha256": "c351bd17c9ba16ba06fb097c7a4f74e6193582afda5830b4c9a26ab373a36b24"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/build-config.json",
+    "bytes": 440,
+    "sha256": "01470d73d0d0713665cda0ad41a0309cb339be14661c4065f44873ae34d09b32"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "300f66e8c43110fcb9544f6abf2f76d0a80f4ad09c3207096ffc115b62785a13"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/invocation.json",
+    "bytes": 1176,
+    "sha256": "55b20af2d9509f28fe94fdb828de25227e4816d60d68d6156743b985e8cb85d7"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "af880af025801bc44d122ae806b2d566f570a8cd787334df0b316dcf43dd8740"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/runs.jsonl",
+    "bytes": 28521,
+    "sha256": "9faa9d6e7c3e71d08d96eb7b414686827aa6daf40b82d2c14823722cab72c142"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/summary.json",
+    "bytes": 1841,
+    "sha256": "0809ea12c5fbb296966ac17c721e64fc37b45418569683b1b3deb5c787535df9"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen15-abba-0-c64.log",
+    "bytes": 439,
+    "sha256": "2f339d129de254c98d66f260964439535bbe30cd8113640bd7c232b4211e8782"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/artifact-manifest.json",
+    "bytes": 37379,
+    "sha256": "327ef767a03341d8f1f56d952edcbb24847f4ed38b68276222704aaf7ab59b43"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/build-config.json",
+    "bytes": 441,
+    "sha256": "58a961b724b341725a788beb7583c0e1de1575de7adec1d9773936fe5f24a15e"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "20d7dc952c7d8f596e87dfe6a2e49766c3bd299c4c36f7b6280f6349e940bba2"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/invocation.json",
+    "bytes": 1230,
+    "sha256": "7de1ad807dfbf77c794b2c5169bbddffdb26ae18f75113eb473572604dd9f176"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "62c65e287dee77c3db93072930e1a8acbcfa3ad9e2ef91fbf8844815264bc29d"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/runs.jsonl",
+    "bytes": 28510,
+    "sha256": "6b5022d7feb57710cb54ce2cccc2703fa85a83783309032cc73f7cbf58f81907"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/summary.json",
+    "bytes": 1833,
+    "sha256": "df5faf96bc8fd499653c9c37e89428becf95579157878e40336f54a0f53f04fe"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen15-abba-1-c128.log",
+    "bytes": 438,
+    "sha256": "1eb23c88f2e161dedf526d2451afdae6493695ee1a5bb219886776b4299f042b"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/artifact-manifest.json",
+    "bytes": 37379,
+    "sha256": "327ef767a03341d8f1f56d952edcbb24847f4ed38b68276222704aaf7ab59b43"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/build-config.json",
+    "bytes": 441,
+    "sha256": "58a961b724b341725a788beb7583c0e1de1575de7adec1d9773936fe5f24a15e"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "72fd65dd1fd55ca40152593edf63c382a1ad093b8d18a39d2f14a19ad9560aac"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/invocation.json",
+    "bytes": 1230,
+    "sha256": "32713ec70c843a66cfd24ba79167a92bf40a355515c078b185fb72fe607ee50e"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "449284cd81a0ac72debfd83efcc793fc5adf8317c608d0283ede0e832b911134"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/runs.jsonl",
+    "bytes": 28526,
+    "sha256": "91e21f4aec7ea0ea34b795799324af0e9b279ebe02be7e4c060a9fc285d28684"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/summary.json",
+    "bytes": 1845,
+    "sha256": "f99f625679983d6193579777684c2aa08660dbafe97c194ae1199dc4f338cbec"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen15-abba-2-c128.log",
+    "bytes": 440,
+    "sha256": "7bb29e8bfe1196409cc281dad3d232a8772e762ac58e2bef0eeaeb68360dc9fb"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/artifact-manifest.json",
+    "bytes": 37375,
+    "sha256": "c351bd17c9ba16ba06fb097c7a4f74e6193582afda5830b4c9a26ab373a36b24"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/build-config.json",
+    "bytes": 440,
+    "sha256": "01470d73d0d0713665cda0ad41a0309cb339be14661c4065f44873ae34d09b32"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/device-loaded.txt",
+    "bytes": 1725,
+    "sha256": "8dac5802c3673d7080e63cd54c8a927dc443ba070bb0e9454e1bd86d3bce0fcc"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/invocation.json",
+    "bytes": 1227,
+    "sha256": "a0305b7d7a46dfe3a3b92210f2e8fbe762d43804bff119fe325c1ba5324b7507"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "0e783679eed68cfcaddb4687a0fa87f253db74a77ac1a4cc2ba23d8b6dd5b6e8"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/result.json",
+    "bytes": 287,
+    "sha256": "aefc1cdde094f1a8059928581a065e7bfd0a649d527d8f84eebe36cb7d43bb5d"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/runs.jsonl",
+    "bytes": 28521,
+    "sha256": "e0839b75f889d102faa08e503a3ddfd195fa9f56988e46965f2a63faffcfb3c7"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/summary.json",
+    "bytes": 1844,
+    "sha256": "0a2a677c5254e443611ebd831695b2a786edf0d1969faf01c279eb2c123dfef4"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen15-abba-3-c64.log",
+    "bytes": 440,
+    "sha256": "767fe875eadc7a58bf829aafcfc90526e74330b630876177216662a8d3e8fd2c"
+  },
+  {
+    "path": "atom-qwen15-c128-build/build-config.json",
+    "bytes": 441,
+    "sha256": "58a961b724b341725a788beb7583c0e1de1575de7adec1d9773936fe5f24a15e"
+  },
+  {
+    "path": "atom-qwen15-c128-build/invocation.json",
+    "bytes": 917,
+    "sha256": "0df18954cde11f63059d8e4a32fa6d280e16809424263812d4d5e92710dad44b"
+  },
+  {
+    "path": "atom-qwen15-c128-build/result.json",
+    "bytes": 150,
+    "sha256": "cf851ea5f841efee7087313022bed247c858e31e0f67067dd5c70d0f49316f0b"
+  },
+  {
+    "path": "atom-qwen15-c128-build/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen15-c128-build.log",
+    "bytes": 8511,
+    "sha256": "b4592e01b2cac1b1eb381d4a28eaeccda4bcc7db0f00167d88c6084028b41428"
+  },
+  {
+    "path": "atom-qwen15-c64-build/build-config.json",
+    "bytes": 440,
+    "sha256": "01470d73d0d0713665cda0ad41a0309cb339be14661c4065f44873ae34d09b32"
+  },
+  {
+    "path": "atom-qwen15-c64-build/invocation.json",
+    "bytes": 840,
+    "sha256": "25549e0048cfa6cfbcf81ea8f34187361f3556fd00c5dc52abc3457fb6e4f4c0"
+  },
+  {
+    "path": "atom-qwen15-c64-build/result.json",
+    "bytes": 150,
+    "sha256": "fba8f1dff409e78f3772c0eeb3f41cb28242d57ad4da133589c18229beaff3ca"
+  },
+  {
+    "path": "atom-qwen15-c64-build/versions.json",
+    "bytes": 119,
+    "sha256": "74d340da0d078046fdf364dc06bd55ace3c24255d61016b1691874756d8a4f68"
+  },
+  {
+    "path": "atom-qwen15-c64-build.log",
+    "bytes": 8405,
+    "sha256": "7dd638669b1cc4c5f6d08732291d5d726d467dcdf67cdf53a5a9ba4484227084"
+  },
+  {
+    "path": "dependency-commits.json",
+    "bytes": 611,
+    "sha256": "b3f9be72f882ec622008aee7a678a35762172610d050f59f4ed73383d6b51ba6"
+  },
+  {
+    "path": "device-after-atom.txt",
+    "bytes": 1725,
+    "sha256": "539434e6595107356728abd6f8dc9498c18bcf1ccdaa3c4a941c5d9e3d294d7a"
+  },
+  {
+    "path": "device-after-rngd.txt",
+    "bytes": 75,
+    "sha256": "45e055263ced8ace1173fd6712aba65ebd47ff3463ecdb45b60ecebec18b68d9"
+  },
+  {
+    "path": "koni-profile-config.json",
+    "bytes": 1171,
+    "sha256": "08473ed1d4242ebe7301bd4fd6b325f485e774e6de2d99ebad6299a083db5941"
+  },
+  {
+    "path": "koni-profile-r1/artifacts.json",
+    "bytes": 502,
+    "sha256": "c56a0c32cea37911006dcabf6604bac90609361d527729851c7ec7788b44ee57"
+  },
+  {
+    "path": "koni-profile-r1/b4/atom2/iteration-rows.jsonl",
+    "bytes": 11725,
+    "sha256": "b809fb65ea1dfbdfa5e77c018c885c51bc18fea366a09e5303223fdba6d413d7"
+  },
+  {
+    "path": "koni-profile-r1/b4/atom2/live-capture.json",
+    "bytes": 3238,
+    "sha256": "ce1c144a3d435c579507117541edee9e6b460dc4dc7c73e96d391d0a4a604251"
+  },
+  {
+    "path": "koni-profile-r1/b4/atom2/result.json",
+    "bytes": 127,
+    "sha256": "8a2201f0648a4e90cd8da03eff5bd53ba4d57c9cf948f85dca384d0bbbdbfe07"
+  },
+  {
+    "path": "koni-profile-r1/b4/atom2/rows.jsonl",
+    "bytes": 6798,
+    "sha256": "e9f455f52252d2c000ae3b6539e96159cd71485755b7ed8ea6bbdb924b7b656c"
+  },
+  {
+    "path": "koni-profile-r1/b4/atom2/worker.log",
+    "bytes": 538,
+    "sha256": "2debe9962b0b742aa7f84125f8366e9015ce7eb760412919a9ca47c5bcc796eb"
+  },
+  {
+    "path": "koni-profile-r1/binding.json",
+    "bytes": 1638,
+    "sha256": "4eed770bbfad93c286770e16eae2821390a804f24581405a5b02baae781b697a"
+  },
+  {
+    "path": "koni-profile-r1/config.json",
+    "bytes": 1171,
+    "sha256": "08473ed1d4242ebe7301bd4fd6b325f485e774e6de2d99ebad6299a083db5941"
+  },
+  {
+    "path": "koni-profile-r1/preflight-rbln-smi.txt",
+    "bytes": 1725,
+    "sha256": "cf717e037a6fba97dae5fb1428068e2f89dd6f07c697902a01154f675dfc01d8"
+  },
+  {
+    "path": "koni-profile-r1/preflight.json",
+    "bytes": 36,
+    "sha256": "3504365b6fe77177f3f416168b9b2f7755f44bb683be5b6fe7786f2793a343cc"
+  },
+  {
+    "path": "koni-profile-r1/processes.json",
+    "bytes": 38,
+    "sha256": "622a879490de776c72ddd95b0ce559586829562afa0769ae6b8a957c53e6b72b"
+  },
+  {
+    "path": "koni-profile-r1/reference.json",
+    "bytes": 11695,
+    "sha256": "f2b9843cf63a73980c92779c76ae9108cdcfd9b59a534bbc3ec86e59b495cdd4"
+  },
+  {
+    "path": "koni-profile-r1/requests.jsonl",
+    "bytes": 27321,
+    "sha256": "3fc061f1d8cba85b04b26afc38dbe7be4a8a906760b283a6c4f6df50b991bedc"
+  },
+  {
+    "path": "koni-profile-r1/result.json",
+    "bytes": 189,
+    "sha256": "4cb91603bd97cd109102aedc90c4a4933dc52c0186e68b2385e99c82b30c8d24"
+  },
+  {
+    "path": "koni-profile-r1/stage-summary.json",
+    "bytes": 709,
+    "sha256": "487fed861b7d753ac63a489af63d7a43247fffe8e2292878b5f392c6c1aefcdf"
+  },
+  {
+    "path": "koni-profile-r1.log",
+    "bytes": 613,
+    "sha256": "65114fdbf5a3d779c5912bd9610fe61d69121d897da7d50b3df6544302c6ecf9"
+  },
+  {
+    "path": "matrix-commands.json",
+    "bytes": 7436,
+    "sha256": "daf904321267938c3b64b57443484bf406394dadc6721e62df27fab4864dd8fe"
+  },
+  {
+    "path": "matrix.log",
+    "bytes": 1744,
+    "sha256": "94332c13f30415c740c0925514a590335f4c79e055f88b66a12fb8c8e4d00818"
+  },
+  {
+    "path": "quality-qwen05.json",
+    "bytes": 18441,
+    "sha256": "8de25994f0b374feefa5f148d370c08dd6b6713313e55f287d7b5e55e84c8087"
+  },
+  {
+    "path": "quality-qwen05.log",
+    "bytes": 247,
+    "sha256": "0c99c2a429046963ab49ebdbf32fd6b0f9f9f5b3dda40b51ea46dee2a08220b7"
+  },
+  {
+    "path": "quality-qwen15.json",
+    "bytes": 18455,
+    "sha256": "a4a5f5dd764a5514b71b9be5b917c9d336f3e105420e57fff7634536ed68758f"
+  },
+  {
+    "path": "quality-qwen15.log",
+    "bytes": 328,
+    "sha256": "787fb4d494c242dff73a92281dfcda993afefd1ce2c2e1b72a2fee24c1dedf9a"
+  },
+  {
+    "path": "registry-commands.json",
+    "bytes": 804,
+    "sha256": "f10fc1cd6c12b2abf8dd3e68790ef4d2f221551995be0faa10558a7d7cf09bcb"
+  },
+  {
+    "path": "rngd-qwen05-dryrun.log",
+    "bytes": 277,
+    "sha256": "3bb9f1e447db10e69c31428efb7e1a8ef7af041618db73da2118c9bb0f0e199a"
+  },
+  {
+    "path": "rngd-qwen15-dryrun.log",
+    "bytes": 278,
+    "sha256": "988e2a539769475a29f33d0d939c3a70aea9eb7c82a1cc08659d555230497023"
+  },
+  {
+    "path": "run_matrix.py",
+    "bytes": 1623,
+    "sha256": "fb460cdaaa588be95286148f36ba067b973920724f67e91f1bce9f4594ff8f54"
+  },
+  {
+    "path": "source-manifest.json",
+    "bytes": 744,
+    "sha256": "68c73f139c096821038b724701f12a25c29d1bcd3ca5fea9da11be4edc3d2163"
+  },
+  {
+    "path": "source.diff",
+    "bytes": 3827,
+    "sha256": "d6f35af0b5354fe8097c13acfc99f93a84c5d52bddc7524c94565d598c0939ce"
+  },
+  {
+    "path": "sources/opt_prime/examples/pd/check_native_quality.py",
+    "bytes": 2360,
+    "sha256": "6bf84474a6324d83ab4fc60a115d9930d8d42bd791fa1ee9c0bbd617070d46c8"
+  },
+  {
+    "path": "sources/opt_prime/examples/pd/validate_atom_checkpoint.py",
+    "bytes": 8432,
+    "sha256": "4a269a89aa56aca14c7dbcb039860a2cf0dfcd170b94a32e0093286c27ba233f"
+  },
+  {
+    "path": "sources/opt_prime/examples/pd/validate_koni.py",
+    "bytes": 9516,
+    "sha256": "18f76675f55e25d8146b9a018519925504113ec9dbab966dec288fa73122f84e"
+  },
+  {
+    "path": "sources/opt_prime/opt_prime/pd/runtime.py",
+    "bytes": 3719,
+    "sha256": "d2d9c2a0b3224d22be68b4f611a9774875de720a6fc04d1f4ea5c9b656c4d488"
+  },
+  {
+    "path": "unit-tests-final.log",
+    "bytes": 1285,
+    "sha256": "e94232dcbc41ffddb1e9f06bcd052020e0d06407697abd1a71bc762c9bc59484"
+  },
+  {
+    "path": "unit-tests.log",
+    "bytes": 1199,
+    "sha256": "f37b1f28653c91d71bc768328757604da4928bc3c1d25994ac7728610597b02f"
+  }
+]

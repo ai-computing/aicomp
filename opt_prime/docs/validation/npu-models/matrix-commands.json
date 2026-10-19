@@ -1,0 +1,146 @@
+[
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-0-c64",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-c64-r1/compiled",
+      "--chunk",
+      "64",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-0-c64.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-1-c128",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-c128-build/compiled",
+      "--chunk",
+      "128",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-1-c128.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-2-c128",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-c128-build/compiled",
+      "--chunk",
+      "128",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-2-c128.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-3-c64",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-c64-r1/compiled",
+      "--chunk",
+      "64",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen05-abba-3-c64.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-c64-build/compiled",
+      "--chunk",
+      "64",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-0-c64.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-c128-build/compiled",
+      "--chunk",
+      "128",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-1-c128.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-c128-build/compiled",
+      "--chunk",
+      "128",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-2-c128.log"
+  },
+  {
+    "cwd": "/home/gspark/workspace/01_pd_disag/aicomp-integration",
+    "argv": [
+      "/home/gspark/workspace/01_pd_disag/experiments/native_pd_2026_4/p2p_dma/devkit/torch-venv/bin/python",
+      "opt_prime/examples/pd/validate_atom_checkpoint.py",
+      "--model-dir",
+      "/home/gspark/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct/snapshots/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "--out",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64",
+      "--artifact",
+      "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-c64-build/compiled",
+      "--chunk",
+      "64",
+      "--preflight-module-dir",
+      "/home/gspark/workspace/01_pd_disag/hetero-npu-p2p/examples/koni"
+    ],
+    "log": "/home/gspark/workspace/01_pd_disag/experiments/npu_model_expansion_20261019/atom-qwen15-abba-3-c64.log"
+  }
+]
