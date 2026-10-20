@@ -32,8 +32,31 @@ def test_selection_by_model_and_device():
     if NpuLoraTrainBackend().supports(llama, job("rngd:0")) == []:      # npu-lora installed
         assert select_train_backend(llama, job("rngd:0"))[0].name == "npu-lora"
         assert select_train_backend(qwen3, job("rngd:0"))[0].name == "npu-lora"
-    with pytest.raises(ValueError, match="npu-lora|optimus"):
-        select_train_backend(qwen3_moe, job("rngd:0"))                   # no backend trains MoE on RNGD yet
+    try:
+        from npu_lora.llama import MOE_FAMILIES                          # npu-lora with the MoE split
+    except ImportError:
+        MOE_FAMILIES = {}
+    if "qwen3_moe" in MOE_FAMILIES:
+        assert select_train_backend(qwen3_moe, job("rngd:0"))[0].name == "npu-lora"
+        full = TrainJob(model="x", data="x", device="rngd:0", method="full")
+        assert any("LoRA only" in r for r in NpuLoraTrainBackend().supports(qwen3_moe, full))
+    else:
+        with pytest.raises(ValueError, match="npu-lora|optimus"):
+            select_train_backend(qwen3_moe, job("rngd:0"))               # this npu-lora has no MoE split
+
+
+def test_npu_lora_moe_families_follow_the_installed_library(monkeypatch):
+    """MoE checkpoints go to npu-lora only when the installed npu-lora declares the MoE split."""
+    import types
+    qwen3_moe = model_spec(build_tiny("qwen3_moe"))
+    job = TrainJob(model="x", data="x", device="rngd:0")
+    pkg, mod = types.ModuleType("npu_lora"), types.ModuleType("npu_lora.llama")
+    pkg.llama = mod
+    monkeypatch.setitem(sys.modules, "npu_lora", pkg)
+    monkeypatch.setitem(sys.modules, "npu_lora.llama", mod)
+    assert NpuLoraTrainBackend().supports(qwen3_moe, job)                 # old npu-lora: rejected
+    mod.MOE_FAMILIES = {"qwen3_moe": "qwen3"}
+    assert NpuLoraTrainBackend().supports(qwen3_moe, job) == []
 
 
 @pytest.fixture

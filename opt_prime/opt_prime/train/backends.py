@@ -188,7 +188,9 @@ class OptimusTrainBackend(TrainBackend):
 class NpuLoraTrainBackend(TrainBackend):
     """The npu-lora library: its functional model, backward graphs compiled for the NPU, host optimizer. Supports the
     families npu-lora implements: dense full-attention GQA blocks with a gated SiLU MLP - Llama, Mistral (no sliding
-    window), Qwen2 (q/k/v biases), Qwen3 (per-head q/k norm), Gemma 3 text (sequence within the sliding window)."""
+    window), Qwen2 (q/k/v biases), Qwen3 (per-head q/k norm), Gemma 3 text (sequence within the sliding window) - and,
+    with an npu-lora that has the MoE split, LoRA on Qwen3-MoE / Qwen2-MoE / Mixtral (attention on the NPU, the
+    post-attention norm and MoE block frozen on the host)."""
     name = "npu-lora"
     device_kinds = ("rngd", "cuda", "cpu")
 
@@ -200,6 +202,14 @@ class NpuLoraTrainBackend(TrainBackend):
             return reasons + ["npu-lora not installed (pip install npu-lora)"]
         families = {"llama": (False, False), "mistral": (False, False), "qwen2": (True, False), "qwen3": (False, True),
                     "gemma3_text": (False, True)}
+        # MoE checkpoints (npu-lora >= the MoE split): attention on the NPU, norm + MoE block frozen on the host
+        moe_families = {"qwen3_moe": (False, True), "qwen2_moe": (True, False), "mixtral": (False, False)}
+        try:
+            from npu_lora.llama import MOE_FAMILIES
+            families.update({k: v for k, v in moe_families.items() if k in MOE_FAMILIES})
+        except ImportError:
+            pass
+        moe = spec.model_type in moe_families
         if spec.model_type not in families:
             reasons.append(f"npu-lora implements {sorted(families)}, not {spec.model_type}")
         else:
@@ -207,10 +217,13 @@ class NpuLoraTrainBackend(TrainBackend):
             for l in spec.layers:
                 a = l.attention
                 window_ok = not a.sliding_window or (spec.model_type == "gemma3_text" and job.seq_len <= a.sliding_window)
-                if (a.kind != "gqa" or not window_ok or l.is_moe or (l.mlp and l.mlp.kind != "gated")
-                        or a.qk_norm != qkn or (a.qkv_bias and not bias)):
+                mlp_ok = l.is_moe or (l.mlp and l.mlp.kind == "gated") if moe else (not l.is_moe and (
+                    not l.mlp or l.mlp.kind == "gated"))
+                if (a.kind != "gqa" or not window_ok or not mlp_ok or a.qk_norm != qkn or (a.qkv_bias and not bias)):
                     reasons.append(f"layer {l.index} is not a {spec.model_type} block npu-lora implements")
                     break
+            if moe and job.method == "full":
+                reasons.append("npu-lora trains MoE checkpoints with LoRA only (experts stay frozen on the host)")
         bad = [t for t in job.lora_targets if t not in _NPU_LORA_TARGETS]
         if job.method == "lora" and bad:
             reasons.append(f"LoRA targets {bad} (npu-lora: {sorted(_NPU_LORA_TARGETS)})")
