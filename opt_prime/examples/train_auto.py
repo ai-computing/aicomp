@@ -25,6 +25,8 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--out", default=None)
     ap.add_argument("--offload-gpu-gb", type=float, default=None, help="MoE: GPU budget for experts, rest on host")
+    ap.add_argument("--moe-hot-fraction", type=float, default=0.0,
+                    help="MoE on an NPU (npu-lora): fraction of each layer's experts computed on the device")
     ap.add_argument("--make-data", type=int, default=0, help="write N synthetic prompt/response examples to --data")
     a = ap.parse_args()
     if a.make_data:
@@ -33,7 +35,8 @@ def main():
                 f.write(json.dumps({"prompt": f"What is the code name of project {i}?",
                                     "response": f"Project {i} is code-named Optimus-{i * 37 % 1000}."}) + "\n")
     res = train(TrainJob(model=a.model, data=a.data, method=a.method, device=a.device, steps=a.steps,
-                         seq_len=a.seq_len, lr=a.lr, out=a.out, offload_gpu_gb=a.offload_gpu_gb))
+                         seq_len=a.seq_len, lr=a.lr, out=a.out, offload_gpu_gb=a.offload_gpu_gb,
+                         moe_hot_fraction=a.moe_hot_fraction))
     if res.losses:
         print(f"[train] backend {res.backend}: {len(res.losses)} steps, loss {res.losses[0]:.4f} -> "
               f"{res.losses[-1]:.4f} in {res.seconds:.1f}s; {json.dumps({k: v for k, v in res.info.items() if k != 'summary'})}")

@@ -39,7 +39,8 @@ def test_selection_by_model_and_device():
     if "qwen3_moe" in MOE_FAMILIES:
         assert select_train_backend(qwen3_moe, job("rngd:0"))[0].name == "npu-lora"
         full = TrainJob(model="x", data="x", device="rngd:0", method="full")
-        assert any("LoRA only" in r for r in NpuLoraTrainBackend().supports(qwen3_moe, full))
+        from opt_prime.train.backends import _npu_lora_has
+        assert (NpuLoraTrainBackend().supports(qwen3_moe, full) == []) == _npu_lora_has("moe", "HostMLP", "step")
     else:
         with pytest.raises(ValueError, match="npu-lora|optimus"):
             select_train_backend(qwen3_moe, job("rngd:0"))               # this npu-lora has no MoE split
@@ -57,6 +58,14 @@ def test_npu_lora_moe_families_follow_the_installed_library(monkeypatch):
     assert NpuLoraTrainBackend().supports(qwen3_moe, job)                 # old npu-lora: rejected
     mod.MOE_FAMILIES = {"qwen3_moe": "qwen3"}
     assert NpuLoraTrainBackend().supports(qwen3_moe, job) == []
+    full = TrainJob(model="x", data="x", device="rngd:0", method="full")
+    assert any("LoRA only" in r for r in NpuLoraTrainBackend().supports(qwen3_moe, full))   # no moe.HostMLP.step
+    moe = types.ModuleType("npu_lora.moe")
+    moe.HostMLP = type("HostMLP", (), {"step": lambda self: None})
+    monkeypatch.setitem(sys.modules, "npu_lora.moe", moe)
+    assert NpuLoraTrainBackend().supports(qwen3_moe, full) == []
+    hot = TrainJob(model="x", data="x", device="rngd:0", moe_hot_fraction=0.25)
+    assert any("device experts" in r for r in NpuLoraTrainBackend().supports(qwen3_moe, hot))
 
 
 @pytest.fixture

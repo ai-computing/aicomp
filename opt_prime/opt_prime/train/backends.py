@@ -29,6 +29,7 @@ class TrainJob:
     out: Optional[str] = None               # adapter (LoRA, PEFT format) or weights (full) directory
     seed: int = 0
     offload_gpu_gb: Optional[float] = None  # MoE models: experts beyond this GPU budget stay frozen on the host
+    moe_hot_fraction: float = 0.0           # MoE on an NPU (npu-lora): fraction of each layer's experts on the device
 
     @property
     def device_kind(self) -> str:
@@ -185,12 +186,23 @@ class OptimusTrainBackend(TrainBackend):
                                 [(t["tier"], t["experts"]) for t in opt.moe_offload_report.tiers]))
 
 
+def _npu_lora_has(module, name, attr=None):
+    """feature detection on the installed npu-lora (optional dependency, versions differ)"""
+    import importlib
+    try:
+        obj = getattr(importlib.import_module(f"npu_lora.{module}"), name)
+    except (ImportError, AttributeError):
+        return False
+    return attr is None or hasattr(obj, attr)
+
+
 class NpuLoraTrainBackend(TrainBackend):
     """The npu-lora library: its functional model, backward graphs compiled for the NPU, host optimizer. Supports the
     families npu-lora implements: dense full-attention GQA blocks with a gated SiLU MLP - Llama, Mistral (no sliding
     window), Qwen2 (q/k/v biases), Qwen3 (per-head q/k norm), Gemma 3 text (sequence within the sliding window) - and,
     with an npu-lora that has the MoE split, LoRA on Qwen3-MoE / Qwen2-MoE / Mixtral (attention on the NPU, the
-    post-attention norm and MoE block frozen on the host)."""
+    post-attention norm and MoE block on the host: frozen for LoRA, trained there for full fine-tuning; with
+    moe_hot_fraction the most routed experts run on the device)."""
     name = "npu-lora"
     device_kinds = ("rngd", "cuda", "cpu")
 
@@ -222,8 +234,10 @@ class NpuLoraTrainBackend(TrainBackend):
                 if (a.kind != "gqa" or not window_ok or not mlp_ok or a.qk_norm != qkn or (a.qkv_bias and not bias)):
                     reasons.append(f"layer {l.index} is not a {spec.model_type} block npu-lora implements")
                     break
-            if moe and job.method == "full":
-                reasons.append("npu-lora trains MoE checkpoints with LoRA only (experts stay frozen on the host)")
+            if moe and job.method == "full" and not _npu_lora_has("moe", "HostMLP", "step"):
+                reasons.append("this npu-lora trains MoE checkpoints with LoRA only (needs the MoE full-FT version)")
+            if moe and job.moe_hot_fraction and not _npu_lora_has("moe_device", "HybridExperts"):
+                reasons.append("this npu-lora has no device experts for MoE training (moe_hot_fraction)")
         bad = [t for t in job.lora_targets if t not in _NPU_LORA_TARGETS]
         if job.method == "lora" and bad:
             reasons.append(f"LoRA targets {bad} (npu-lora: {sorted(_NPU_LORA_TARGETS)})")
@@ -235,7 +249,9 @@ class NpuLoraTrainBackend(TrainBackend):
         from npu_lora.data import PackedDataset
         from npu_lora.trainer import LoRAConfig, LoRATrainer, TrainConfig
         dev = job.device.replace("rngd", "furiosa")
-        tc = TrainConfig(seq_len=job.seq_len, lr=job.lr, steps=job.steps, seed=job.seed, full=job.method == "full")
+        extra = {"moe_hot_fraction": job.moe_hot_fraction} if job.moe_hot_fraction else {}
+        tc = TrainConfig(seq_len=job.seq_len, lr=job.lr, steps=job.steps, seed=job.seed, full=job.method == "full",
+                         **extra)
         lora = LoRAConfig(r=job.lora_r, alpha=job.lora_alpha,
                           targets=tuple(_NPU_LORA_TARGETS[t] for t in job.lora_targets))
         import sys
