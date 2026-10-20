@@ -62,16 +62,24 @@ def describe_model(config) -> ModelGeometry:
 
 
 def _describe_hybrid(config) -> ModelGeometry:
-    if getattr(config, 'num_kv_shared_layers', 0):
+    from opt_prime.accel.spec.config import config_value, per_layer_config
+    if config_value(config, 'num_kv_shared_layers', 0):
         raise ValueError('layers sharing another layer\'s KV cache require a separate adapter')
     layers = config.num_hidden_layers
-    kinds = list(getattr(config, 'layer_types', None) or ['full_attention'] * layers)
+    kinds = list(config_value(config, 'layer_types') or ['full_attention'] * layers)
     if len(kinds) != layers or any(k not in ('full_attention', 'sliding_attention') for k in kinds):
         raise ValueError('unsupported layer types')
-    heads = getattr(config, 'num_key_value_heads', config.num_attention_heads)
-    dim = getattr(config, 'head_dim', None) or config.hidden_size // config.num_attention_heads
-    full_dim = getattr(config, 'global_head_dim', None) or dim          # Gemma 4 global layers
-    full_heads = getattr(config, 'num_global_key_value_heads', None) or heads
-    dims = tuple((full_heads, full_dim) if k == 'full_attention' else (heads, dim) for k in kinds)
-    window = getattr(config, 'sliding_window', None) if 'sliding_attention' in kinds else None
+    plc = per_layer_config(config)
+    if plc is not None:                   # transformers >= 5.15: per-layer configs carry each layer's geometry
+        dims = tuple((getattr(c, 'num_key_value_heads', None) or config.num_attention_heads,
+                      getattr(c, 'head_dim', None) or config.hidden_size // config.num_attention_heads) for c in plc)
+        wins = [getattr(c, 'sliding_window', None) for c, k in zip(plc, kinds) if k == 'sliding_attention']
+        window = min((w for w in wins if w), default=None)
+    else:
+        heads = config_value(config, 'num_key_value_heads') or config.num_attention_heads
+        dim = config_value(config, 'head_dim') or config.hidden_size // config.num_attention_heads
+        full_dim = config_value(config, 'global_head_dim') or dim          # Gemma 4 global layers
+        full_heads = config_value(config, 'num_global_key_value_heads') or heads
+        dims = tuple((full_heads, full_dim) if k == 'full_attention' else (heads, dim) for k in kinds)
+        window = config_value(config, 'sliding_window') if 'sliding_attention' in kinds else None
     return ModelGeometry(config.model_type, layers, max(h for h, _ in dims), max(d for _, d in dims), dims, window)

@@ -26,9 +26,10 @@ def _tiny(family):
                   max_position_embeddings=256, num_experts=8, n_routed_experts=8, num_local_experts=8,
                   num_experts_per_tok=2, n_shared_experts=1, n_group=1, topk_group=1, first_k_dense_replace=0,
                   pad_token_id=0, bos_token_id=1, eos_token_id=2)
-    kw = {k: v for k, v in shrink.items() if hasattr(base, k)}
+    from opt_prime.accel.spec.config import config_value, has_value
+    kw = {k: v for k, v in shrink.items() if has_value(base, k)}   # per-layer attributes (transformers >= 5.15)
     kw.update(_EXTRA.get(family, {}))
-    lt = getattr(base, "layer_types", None)
+    lt = config_value(base, "layer_types")
     if lt:
         kinds = list(dict.fromkeys(lt))
         kw["layer_types"] = [kinds[i % len(kinds)] for i in range(2)]
