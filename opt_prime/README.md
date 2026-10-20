@@ -225,6 +225,13 @@ optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=True)
 
 #### Notes
 
+* With **transformers 5.x** (validated: transformers 5.1.0, torch 2.10.0+cu128) the export path (a) passes
+  `prefer_deferred_runtime_asserts_over_guards=True` to `torch.export` and strips the resulting runtime shape asserts
+  before graph reconstruction, because every GQA model produces always-true stride guards on the dynamic `seq_len`
+  (e.g. `Min(16*s, 32*s) == 16*s`) that torch cannot prove; (b) disables the HF `use_cache` output during export also
+  for KV-cache inference, since transformers 5 returns a `DynamicCache` object torch.export cannot output (OptimusPrime
+  injects its own CachedSDPA modules); (c) treats symbolic size arithmetic as non-tensor when re-deriving devices.
+  transformers 4.x behaviour is unchanged.
 * When using `--dynamo-capture` with `torch.amp.autocast` (mixed-precision training), a lower learning rate (e.g., 1e-5 instead of 3e-5) may be needed for stable convergence.
 
 ---
