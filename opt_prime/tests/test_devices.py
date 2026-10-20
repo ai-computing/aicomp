@@ -18,6 +18,7 @@ from opt_prime.devices import discovery, lease  # noqa: E402
 def _cache(tmp_path, monkeypatch):
     monkeypatch.setenv("OPT_PRIME_CACHE", str(tmp_path / "cache"))
     monkeypatch.setattr(discovery, "_ROOT", str(tmp_path / "empty"))     # hermetic: never read this host's sysfs
+    monkeypatch.setenv("OPT_PRIME_DEVICE_SOURCE", "local")                  # nor an installed ai-rm provider
     yield
     for l in list(devices.held().values()):
         l.release()
@@ -54,6 +55,46 @@ def test_discovery_from_fake_sysfs(tmp_path, monkeypatch):
     assert found["atom:5"].extra["visible_npu_id"] == "2"
     with pytest.raises(KeyError):
         devices.discover(["warp-drive"])
+
+
+def _acc(id_, vendor, model, mem, bdf=None):
+    from types import SimpleNamespace
+    return SimpleNamespace(id=id_, vendor=vendor, model=model, memory_bytes=mem, memory_kind="hbm",
+                           interconnect=["pcie5"], peak_tflops={"bf16": 256.0}, extra={"pci_bdf": bdf} if bdf else {})
+
+
+def test_ai_rm_provider_decides_devices_and_optimus_adds_its_fields(monkeypatch):
+    local = [discovery.DeviceInfo("rngd", 0, "furiosa", 48 << 30, 1, frozenset({"experts"}),
+                                  {"pci": "0000:50:00.0", "dev": "/dev/rngd/npu0mgmt"}),
+             discovery.DeviceInfo("rngd", 1, "furiosa", 48 << 30, 0, frozenset({"experts"}), {"pci": "0000:63:00.0"}),
+             discovery.DeviceInfo("cuda", 0, "nvidia", 79 << 30, 3, frozenset({"decode"}), {"pci": "0000:bd:00.0"}),
+             discovery.DeviceInfo("cpu", 0, "host", 1 << 40)]
+    monkeypatch.setattr(discovery, "_DISCOVERERS", {k: (lambda k=k: [d for d in local if d.kind == k])
+                                                    for k in ("rngd", "cuda", "cpu", "atom")})
+    accs = [_acc("n1/furiosa:0", "furiosa", "RNGD", 48 << 30, "0000:50:00.0"),
+            _acc("n1/nvidia:0", "nvidia", "A100", 80 << 30, "0000:99:00.0"),   # not in CUDA_VISIBLE_DEVICES
+            _acc("n1/nvidia:1", "nvidia", "A100", 80 << 30, "0000:BD:00.0"),   # visible as cuda:0
+            _acc("n1/rebellions:3", "rebellions", "ATOM", 16 << 30)]         # sysfs saw no ATOM here
+    monkeypatch.setattr(discovery, "_provider_accelerators", lambda: accs)
+    found = {d.name: d for d in devices.discover()}
+    # rngd:1 is not reported by the provider -> not a device; the hidden GPU is dropped; ATOM comes from the provider
+    assert set(found) == {"rngd:0", "cuda:0", "atom:3", "cpu:0"}
+    r = found["rngd:0"]
+    assert r.extra["airm_id"] == "n1/furiosa:0" and r.extra["dev"] == "/dev/rngd/npu0mgmt" and r.numa_node == 1
+    assert r.capabilities == frozenset({"experts"}) and r.extra["peak_tflops"] == {"bf16": 256.0}
+    assert found["cuda:0"].extra["airm_id"] == "n1/nvidia:1" and found["cuda:0"].memory_bytes == 79 << 30
+    assert "graph_compile" in found["atom:3"].capabilities and found["atom:3"].memory_bytes == 16 << 30
+    monkeypatch.setattr(discovery, "_provider_accelerators", lambda: None)  # no provider: sysfs only
+    assert {d.name for d in devices.discover()} == {"rngd:0", "rngd:1", "cuda:0", "cpu:0"}
+
+
+def test_provider_lookup_honours_local_switch(monkeypatch):
+    assert discovery._provider_accelerators() is None                      # OPT_PRIME_DEVICE_SOURCE=local
+    pytest.importorskip("rm_core")
+    monkeypatch.setenv("OPT_PRIME_DEVICE_SOURCE", "auto")
+    from rm_core import registry
+    monkeypatch.setattr(registry, "available", lambda group: {})
+    assert discovery._provider_accelerators() is None                      # rm-core without a provider
 
 
 def test_lease_exclusive_in_process_and_generation():
