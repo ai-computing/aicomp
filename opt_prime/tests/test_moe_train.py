@@ -59,3 +59,27 @@ def test_dense_models_untouched():
                                                               num_hidden_layers=1, num_attention_heads=2,
                                                               num_key_value_heads=1, vocab_size=64))
     assert prepare_moe_for_training(m) is False
+
+
+@pytest.mark.parametrize("family", ["qwen3_moe", "solar_open", "gpt_oss"])
+def test_grouped_matches_batched_with_grads(family):
+    """opt_grouped_mm (one expert at a time, used by the offloaded experts' backward) == opt_batched_mm."""
+    from opt_prime.moe_offload.batched import opt_batched_mm, opt_grouped_mm
+    try:
+        m = build_tiny(family, torch.float32)
+    except Exception as e:
+        pytest.skip(f"{family}: {type(e).__name__}")
+    ex = find_moe_experts(m)[0].module
+    H = ex.gate_up_proj.shape[1] if getattr(ex, "is_transposed", False) else ex.gate_up_proj.shape[2]
+    torch.manual_seed(0)
+    x = torch.randn(7, H, requires_grad=True)
+    idx = torch.stack([torch.randperm(ex.num_experts)[:2] for _ in range(7)])
+    w = torch.rand(7, 2, requires_grad=True)
+    g = torch.randn(7, H)
+    a = opt_batched_mm(ex, x, idx, w)
+    ga = torch.autograd.grad(a, (x, w), g)
+    b = opt_grouped_mm(ex, x, idx, w)
+    gb = torch.autograd.grad(b, (x, w), g)
+    assert torch.allclose(a, b, atol=1e-5, rtol=1e-4)
+    for p, q in zip(ga, gb):
+        assert torch.allclose(p, q, atol=1e-5, rtol=1e-4)

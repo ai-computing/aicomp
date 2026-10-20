@@ -337,22 +337,23 @@ class OffloadedLayer:
 
     def backward(self, hidden, top_k_index, top_k_weights, grad_out):
         """gradients of the layer's output w.r.t. hidden and the routing weights (experts are frozen): the experts
-        the call used are taken from the host tier (it holds every expert), moved to the gradient's device and run
-        again under autograd with opt_prime.moe_train's batched form."""
-        from .batched import opt_batched_mm
+        the call used are taken from the host tier (it holds every expert) and run again under autograd one expert at
+        a time, each expert's weights moved to the gradient's device only while it is computed (a weight copy per
+        routed pair does not fit for large experts)."""
+        from .batched import opt_grouped_mm
         from .backends.cuda import skeleton_with
         dev = grad_out.device
         used = torch.unique(top_k_index).tolist()
         host = self.tiers[-1]
         W = (host.weights_of(self.handles[-1], used) if hasattr(host, "weights_of")
              else self.adapter.weights(self._source, used))
-        m = skeleton_with(W, dev)
+        m = skeleton_with(W, W.gate_up.device)
         remap = torch.full((self.E,), 0, dtype=torch.long, device=top_k_index.device)
         remap[torch.tensor(used, device=top_k_index.device)] = torch.arange(len(used), device=top_k_index.device)
         x = hidden.detach().requires_grad_(True)
         w = top_k_weights.detach().requires_grad_(True)
         with torch.enable_grad():
-            y = opt_batched_mm(m, x, remap[top_k_index], w)
+            y = opt_grouped_mm(m, x, remap[top_k_index], w, device=dev)
             gx, gw = torch.autograd.grad(y, (x, w), grad_out.to(y.dtype))
         return gx.to(hidden.dtype), gw.to(top_k_weights.dtype)
 
