@@ -114,3 +114,26 @@ def test_rngd_layer_engine_protocol_and_leases(tmp_path, solar):
 def test_engine_without_manifest_is_not_offered(tmp_path, solar):
     eng = RngdLayerEngine(str(tmp_path / "nope"), str(tmp_path))
     assert eng.supports(solar) and select_engine(solar, [OptimusEngine(), eng])[0].name == "optimus"
+
+
+def test_atom_rbln_engine_selection(monkeypatch, tmp_path):
+    """atom-rbln: supported families and present ATOM chips; a recorded decode rate makes it win selection."""
+    import types
+    from opt_prime.exec import AtomRblnEngine
+    monkeypatch.setitem(sys.modules, "optimum", types.ModuleType("optimum"))
+    monkeypatch.setitem(sys.modules, "optimum.rbln", types.ModuleType("optimum.rbln"))
+    atoms = [discovery.DeviceInfo("atom", i, "rebellions") for i in (0, 1)]
+    monkeypatch.setattr(devices, "discover", lambda kinds=None: [d for d in atoms if kinds is None or d.kind in kinds])
+    monkeypatch.setattr(discovery, "discover", devices.discover)
+    from transformers import AutoConfig, AutoModelForCausalLM
+    llama = model_spec(AutoModelForCausalLM.from_config(AutoConfig.for_model(
+        "llama", hidden_size=64, intermediate_size=128, num_hidden_layers=2, num_attention_heads=4,
+        num_key_value_heads=2, vocab_size=128)))
+    hybrid = model_spec(build_tiny("qwen3_next"))
+    eng = AtomRblnEngine(devices=[0, 1], cache_dir=str(tmp_path), tok_s=85.0)
+    assert eng.supports(llama) == []
+    assert any("qwen3_next" in r for r in eng.supports(hybrid))
+    assert any("not present" in r for r in AtomRblnEngine(devices=[3]).supports(llama))
+    slow = OptimusEngine(tok_s=20.0)
+    assert select_engine(llama, [slow, eng])[0] is eng
+    assert eng._dir("meta-llama/Llama-3.2-1B").endswith("meta-llama--Llama-3.2-1B-tp2-s4096-b1")
