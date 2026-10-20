@@ -55,6 +55,8 @@ def test_npu_lora_moe_families_follow_the_installed_library(monkeypatch):
     pkg.llama = mod
     monkeypatch.setitem(sys.modules, "npu_lora", pkg)
     monkeypatch.setitem(sys.modules, "npu_lora.llama", mod)
+    for sub in ("moe", "moe_device"):                  # an old npu-lora: neither module
+        monkeypatch.setitem(sys.modules, f"npu_lora.{sub}", None)
     assert NpuLoraTrainBackend().supports(qwen3_moe, job)                 # old npu-lora: rejected
     mod.MOE_FAMILIES = {"qwen3_moe": "qwen3"}
     assert NpuLoraTrainBackend().supports(qwen3_moe, job) == []
