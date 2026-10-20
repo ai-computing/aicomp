@@ -81,20 +81,21 @@ class ExpertBackend:
         """replace the expert in local `slot` with the single expert in `w` (adaptive re-placement)."""
         raise NotImplementedError
 
-    def native_tier(self, h: Handle):
+    def native_tier(self, h: Handle, bf16_weights: bool = False):
         """optional: (C function address, context address) running this tier for the native dispatcher
-        (csrc/dispatch.c, `moe_tier_fn` signature), or None. Layers whose blocking tiers all provide one run decode
+        (csrc/dispatch.c, `moe_tier_fn` signature), or None. bf16_weights: the routing weights are bf16, so each
+        weighted expert output is rounded to bf16 (as torch multiplies in the weights' dtype). Layers whose blocking tiers all provide one run decode
         steps without the Python GIL."""
         return None
 
-    def run_pairs(self, h: Handle, x: torch.Tensor, pairs) -> torch.Tensor:
+    def run_pairs(self, h: Handle, x: torch.Tensor, pairs, bf16_weights: bool = False) -> torch.Tensor:
         """decode fast path for blocking tiers: x [R,H] on the host, pairs[r] = [(local_id, weight), ...] (non-empty,
-        weights != 0) -> float32 [R,H]. The default packs the lists into tensors and calls run(); backends whose
+        weights != 0, held as Python floats; bf16_weights: they came from bf16 routing weights) -> float32 [R,H]. The default packs the lists into tensors and calls run(); backends whose
         calls cost per Python op (servers, ctypes kernels) override it."""
         k = max(len(p) for p in pairs)
         idx = torch.tensor([[e for e, _ in p] + [p[0][0]] * (k - len(p)) for p in pairs], dtype=torch.long)
         w = torch.tensor([[a for _, a in p] + [0.0] * (k - len(p)) for p in pairs], dtype=torch.float32)
-        return self.run(h, x, idx, w.to(x.dtype)).float()
+        return self.run(h, x, idx, w.to(torch.bfloat16) if bf16_weights else w).float()
 
     def run(self, h: Handle, hidden: torch.Tensor, local_index: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
         """partial output [T,H] in hidden's dtype on this backend's device. local_index/weights: [T,k]; weight-0

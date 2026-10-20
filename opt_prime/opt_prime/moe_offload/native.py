@@ -80,6 +80,7 @@ def load():
                 return None
             P, I, I64 = ctypes.c_void_p, ctypes.c_int, ctypes.c_int64
             lib.moe_host_forward.argtypes = [I, I, I, I, I, P, P, P, P, P, P, I]
+            lib.moe_host_forward_bw.argtypes = [I, I, I, I, I, P, P, P, P, P, P, I]
             lib.moe_host_place.argtypes = [P, P, I64, I64, I]
             _LIB = lib
         except Exception:

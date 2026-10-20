@@ -4,7 +4,8 @@
  * Host (CPU) experts for opt_prime.moe_offload: SwiGLU experts with stacked bf16 weights
  *   gate_up[E][2F][H] (gate rows 0..F-1, up rows F..2F-1), down[E][H][F]
  * out[r] += w[r][j] * down[e] @ (silu(gate_up[e][:F] @ x[r]) * (gate_up[e][F:] @ x[r]))   for each pair (r, j),
- * e = idx[r][j], skipping pairs with w == 0.  Memory bound for decode: each thread streams its own contiguous weight
+ * e = idx[r][j], skipping pairs with w == 0.  moe_host_forward_bw rounds w[r][j] * (...) to bf16 before accumulating,
+ * as torch does when the routing weights are bf16 (the torch tier and HF eager experts multiply in the weights' dtype).  Memory bound for decode: each thread streams its own contiguous weight
  * rows (AVX-512 BF16 dot products, fp32 accumulation).  Build: gcc -O3 -march=native -fopenmp -shared -fPIC.
  */
 #include <immintrin.h>
@@ -45,8 +46,8 @@ void moe_host_place(uint16_t *dst, const uint16_t *src, int64_t rows, int64_t co
 
 /* x: [R][H] bf16, idx: [R][K] int64 (< E), w: [R][K] fp32, out: [R][H] fp32 (accumulated into).
  * Pairs are grouped by expert so each expert's weights are streamed once for all of its rows. */
-void moe_host_forward(int R, int K, int H, int F, int E, const uint16_t *x, const int64_t *idx, const float *w,
-                      const uint16_t *gate_up, const uint16_t *down, float *out, int threads) {
+static void host_forward(int R, int K, int H, int F, int E, const uint16_t *x, const int64_t *idx, const float *w,
+                         const uint16_t *gate_up, const uint16_t *down, float *out, int threads, int bf16_product) {
     int P = R * K;
     int *cnt = calloc((size_t)E + 1, sizeof(int));
     int *ord = malloc(sizeof(int) * (size_t)(P > 0 ? P : 1));
@@ -82,9 +83,20 @@ void moe_host_forward(int R, int K, int H, int F, int E, const uint16_t *x, cons
                 for (int i = 0; i < n; i++) {
                     int p = pp[i];
                     float y = bf2f(f2bf(dot_bf16(dn + (size_t)o * F, hb + (size_t)i * F, F)));
-                    out[(size_t)(p / K) * H + o] += w[p] * y;
+                    float c = w[p] * y;
+                    out[(size_t)(p / K) * H + o] += bf16_product ? bf2f(f2bf(c)) : c;
                 }
         }
     }
     free(cnt); free(ord); free(fill); free(g); free(hb);
+}
+
+void moe_host_forward(int R, int K, int H, int F, int E, const uint16_t *x, const int64_t *idx, const float *w,
+                      const uint16_t *gate_up, const uint16_t *down, float *out, int threads) {
+    host_forward(R, K, H, F, E, x, idx, w, gate_up, down, out, threads, 0);
+}
+
+void moe_host_forward_bw(int R, int K, int H, int F, int E, const uint16_t *x, const int64_t *idx, const float *w,
+                         const uint16_t *gate_up, const uint16_t *down, float *out, int threads) {
+    host_forward(R, K, H, F, E, x, idx, w, gate_up, down, out, threads, 1);
 }

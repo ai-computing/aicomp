@@ -218,7 +218,7 @@ class RngdOptBackend(ExpertBackend):
         for ext in (".g", ".u", ".d"): os.unlink(stem + ext)
         h.global_ids[slot] = w.global_ids[0]
 
-    def native_tier(self, h: Handle):
+    def native_tier(self, h: Handle, bf16_weights: bool = False):
         srv = self._server
         if srv is None or srv.pipe is None:
             return None
@@ -228,7 +228,7 @@ class RngdOptBackend(ExpertBackend):
                                       srv.native.moe_pipe_ctx_new(srv.pipe, h.state["layer"]))
         return h.state["native_tier"]
 
-    def run_pairs(self, h: Handle, x, pairs):
+    def run_pairs(self, h: Handle, x, pairs, bf16_weights: bool = False):
         H = h.spec.hidden
         out = torch.empty(len(pairs), H, dtype=torch.float32)
         xb = x.to(torch.bfloat16).contiguous().view(torch.int16).numpy()

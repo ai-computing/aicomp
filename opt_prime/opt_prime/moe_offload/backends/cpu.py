@@ -87,26 +87,28 @@ class CpuBackend(ExpertBackend):
         lib.moe_host_place(dst.data_ptr(), t.data_ptr(), t.numel() // t.shape[-1], t.shape[-1], self.threads)
         return dst
 
-    def native_tier(self, h):
+    def native_tier(self, h, bf16_weights=False):
         st = h.state
         if st["native"] is None:
             return None
-        if "native_tier" not in st:
+        key = ("native_tier", bool(bf16_weights))
+        if key not in st:
             from ..native import fn_addr, load_dispatch
             d = load_dispatch()
             if d is None:
-                st["native_tier"] = None
+                st[key] = None
             else:
                 n, two_f, _ = st["gu"].shape
-                ctx = d.moe_cpu_ctx_new(fn_addr(st["native"], "moe_host_forward"), st["gu"].data_ptr(),
+                fwd = "moe_host_forward_bw" if bf16_weights else "moe_host_forward"
+                ctx = d.moe_cpu_ctx_new(fn_addr(st["native"], fwd), st["gu"].data_ptr(),
                                         st["dn"].data_ptr(), n, two_f // 2, self.threads)
-                st["native_tier"] = (fn_addr(d, "moe_tier_cpu"), ctx)
-        return st["native_tier"]
+                st[key] = (fn_addr(d, "moe_tier_cpu"), ctx)
+        return st[key]
 
-    def run_pairs(self, h, x, pairs):
+    def run_pairs(self, h, x, pairs, bf16_weights=False):
         st = h.state
         if st["native"] is None:
-            return super().run_pairs(h, x, pairs)
+            return super().run_pairs(h, x, pairs, bf16_weights)
         if torch.get_num_threads() != self.threads:
             torch.set_num_threads(self.threads)
         k = max(len(p) for p in pairs)
@@ -115,8 +117,9 @@ class CpuBackend(ExpertBackend):
         x = x.contiguous()
         out = torch.zeros(x.shape[0], x.shape[1], dtype=torch.float32)
         n, two_f, H = st["gu"].shape
-        st["native"].moe_host_forward(x.shape[0], k, H, two_f // 2, n, x.data_ptr(), idx.data_ptr(), w.data_ptr(),
-                                      st["gu"].data_ptr(), st["dn"].data_ptr(), out.data_ptr(), self.threads)
+        fwd = st["native"].moe_host_forward_bw if bf16_weights else st["native"].moe_host_forward
+        fwd(x.shape[0], k, H, two_f // 2, n, x.data_ptr(), idx.data_ptr(), w.data_ptr(),
+            st["gu"].data_ptr(), st["dn"].data_ptr(), out.data_ptr(), self.threads)
         return out
 
     def run(self, h, hidden, local_index, weights):
@@ -129,9 +132,9 @@ class CpuBackend(ExpertBackend):
             w = weights.float().contiguous()
             out = torch.zeros(x.shape[0], x.shape[1], dtype=torch.float32)
             n, two_f, H = st["gu"].shape
-            st["native"].moe_host_forward(x.shape[0], idx.shape[1], H, two_f // 2, n, x.data_ptr(), idx.data_ptr(),
-                                          w.data_ptr(), st["gu"].data_ptr(), st["dn"].data_ptr(), out.data_ptr(),
-                                          self.threads)
+            fwd = st["native"].moe_host_forward_bw if weights.dtype == torch.bfloat16 else st["native"].moe_host_forward
+            fwd(x.shape[0], idx.shape[1], H, two_f // 2, n, x.data_ptr(), idx.data_ptr(),
+                w.data_ptr(), st["gu"].data_ptr(), st["dn"].data_ptr(), out.data_ptr(), self.threads)
             return out.to(hidden.dtype)
         m = st["module"]
         out = torch.zeros(hidden.shape[0], hidden.shape[1], dtype=torch.float32)

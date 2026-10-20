@@ -101,8 +101,9 @@ def test_export_has_one_opaque_node_per_layer(family):
 
 # ---------- native host kernel ----------
 
+@pytest.mark.parametrize("wdtype", [torch.float32, torch.bfloat16])
 @pytest.mark.parametrize("rows", [1, 7])
-def test_native_host_kernel_matches_torch(rows):
+def test_native_host_kernel_matches_torch(rows, wdtype):
     from opt_prime.moe_offload import native
     from opt_prime.moe_offload.adapters import adapter_for
     from opt_prime.moe_offload.backends import get_backend
@@ -115,13 +116,15 @@ def test_native_host_kernel_matches_torch(rows):
     wts = ad.weights(ex, list(range(NUM_EXPERTS)))
     h = torch.randn(rows, ex.gate_up_proj.shape[2], dtype=torch.bfloat16)
     idx = torch.randint(0, NUM_EXPERTS, (rows, 2))
-    w = torch.rand(rows, 2)
+    w = torch.rand(rows, 2).to(wdtype)
     nat_b, torch_b = get_backend("cpu", kernel="native"), get_backend("cpu", kernel="torch")
     hn, ht = nat_b.load(wts), torch_b.load(wts)
     assert hn.state["native"] is not None and ht.state["native"] is None
     a = nat_b.run(hn, h, idx, w)
     b = torch_b.run(ht, h, idx, w)
     assert (a.float() - b.float()).abs().max().item() <= 2e-2 * b.float().abs().max().item()
+    # same rounding as torch (weighted product in the weights' dtype): only matmul-order ulps differ
+    assert (a != b).float().mean().item() < 0.05
 
 
 # ---------- heterogeneous tiers, planner, backends ----------

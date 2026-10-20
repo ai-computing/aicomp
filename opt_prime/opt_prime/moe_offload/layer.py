@@ -50,6 +50,7 @@ class OffloadedLayer:
         self._lock = threading.Lock()      # guards owner/local tables against the adaptation worker
         self._adapting = None
         self._has, self._blocking_any, self._lists, self._native = None, None, None, None
+        self._native_bw = False
         self._pin, self._dev_counts, self._counts_d = {}, None, None
         # keep the original module only if the host tier cannot hand out expert weights itself
         self._source = None if hasattr(tiers[-1], "weights_of") else source
@@ -137,7 +138,8 @@ class OffloadedLayer:
             if ev is not None: ev.synchronize()
             if prof is not None: tp = _ph(prof, "sync", tp)
             if idx_p.shape[0] <= cfg.fast_rows:
-                nat = self._native_plan(has) if cfg.native_dispatch and h_p.dtype == torch.bfloat16 else None
+                nat = (self._native_plan(has, w_p.dtype == torch.bfloat16)
+                       if cfg.native_dispatch and h_p.dtype == torch.bfloat16 else None)
                 if nat is not None:
                     native = self._native_start(nat, idx_p, w_p, h_p, lists)
                 else:
@@ -214,10 +216,13 @@ class OffloadedLayer:
         return [_POOL.submit(lambda t=t: (rows_c, self._run_blocking(t, h_c, i_c, w_c, o_c, local_c)))
                 for t in blocking], rows_c
 
-    def _native_plan(self, has):
+    def _native_plan(self, has, bf16_weights=False):
         """(fns, ctxs, blocking) ctypes arrays when every blocking tier holding experts of this layer has a native
         tier function; None otherwise (cached until the placement changes)."""
+        if self._native is not None and self._native_bw != bf16_weights:
+            self._native = None
         if self._native is None:
+            self._native_bw = bf16_weights
             import ctypes
             from .native import load_dispatch
             lib = load_dispatch()
@@ -230,7 +235,7 @@ class OffloadedLayer:
                 for t, tier in enumerate(self.tiers):
                     if not (tier.blocking and has[t]):
                         continue
-                    nt = tier.native_tier(self.handles[t])
+                    nt = tier.native_tier(self.handles[t], bf16_weights)
                     if nt is None:
                         plan = False
                         break
@@ -258,6 +263,7 @@ class OffloadedLayer:
         (local id, weight) lists; all but one tier go to workers, the last runs inline after the device launches."""
         owner_l, local_l = lists[0], lists[1]
         il, wl = idx_p.tolist(), w_p.float().tolist()
+        bw = w_p.dtype == torch.bfloat16
         T = len(self.tiers)
         per = [dict() for _ in range(T)]                  # tier -> {row: [(local, w)]}
         counts = [0] * T
@@ -274,16 +280,16 @@ class OffloadedLayer:
                 rows = list(per[t])
                 n = sum(len(p) for p in per[t].values())
                 cost = self.tiers[t].cost(spec, n, n)
-                jobs.append((cost, lambda t=t, rows=rows: (rows, self._run_pairs(t, h_p[rows], [per[t][r] for r in rows]))))
+                jobs.append((cost, lambda t=t, rows=rows: (rows, self._run_pairs(t, h_p[rows], [per[t][r] for r in rows], bw))))
         if not jobs:
             return [], None
         jobs.sort(key=lambda j: -j[0])
         futs = [_POOL.submit(j) for _, j in jobs[:-1]]
         return futs, jobs[-1][1]
 
-    def _run_pairs(self, t, x, pairs):
+    def _run_pairs(self, t, x, pairs, bf16_weights=False):
         t0 = time.perf_counter()
-        y = self.tiers[t].run_pairs(self.handles[t], x, pairs)
+        y = self.tiers[t].run_pairs(self.handles[t], x, pairs, bf16_weights)
         dt = time.perf_counter() - t0
         self.cfg.stats.host_s += dt
         if self.cfg.profile_phases:
