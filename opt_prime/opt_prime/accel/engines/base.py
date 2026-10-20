@@ -2,6 +2,9 @@
 # Copyright (c) 2026-present, ETRI, All rights reserved.
 #
 """Execution engine contract, the built-in engines and selection."""
+import json
+from dataclasses import asdict
+
 from typing import Dict, List, Optional, Tuple
 
 from opt_prime.accel.spec.blocks import ModelSpec
@@ -17,8 +20,11 @@ def engine_geometry(spec: ModelSpec) -> dict:
            for m in (l.moe for l in spec.layers if l.moe is not None)}
     mlp = {(l.mlp.kind, l.mlp.ffn, l.mlp.activation) for l in spec.layers if l.mlp is not None}
     return dict(model_type=spec.model_type, hidden=spec.hidden, layers=len(spec.layers), vocab=spec.vocab,
-                dtype=spec.dtype, tied=spec.tied_embeddings, attention=sorted(map(list, attn)),
-                moe=sorted(map(list, moe)), mlp=sorted(map(list, mlp)))
+                dtype=spec.dtype, tied=spec.tied_embeddings, attention=sorted(map(list, attn), key=lambda row: json.dumps(row)),
+                moe=sorted(map(list, moe), key=lambda row: json.dumps(row)),
+                mlp=sorted(map(list, mlp), key=lambda row: json.dumps(row)),
+                geometry_version=2,
+                layer_specs=[json.loads(json.dumps(asdict(layer), default=str)) for layer in spec.layers])
 
 
 class ExecutionEngine:

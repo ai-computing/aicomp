@@ -54,6 +54,8 @@ class AtomRblnEngine(ExecutionEngine):
         return self.tok_s
 
     def start(self, model_id):
+        if self.model is not None or self.leases:
+            raise RuntimeError("engine already started")
         import optimum.rbln as orbln
         from transformers import AutoConfig
         from opt_prime.accel.platforms import acquire
@@ -63,22 +65,31 @@ class AtomRblnEngine(ExecutionEngine):
         except BaseException:
             self._release()
             raise
-        cls = getattr(orbln, self.CLASSES[AutoConfig.from_pretrained(model_id).model_type])
-        self.dir = self._dir(model_id)
-        t0 = time.time()
-        if os.path.exists(os.path.join(self.dir, "config.json")):
-            self.model = cls.from_pretrained(self.dir, export=False, rbln_config={"device": self.devices})
-            self.compiled = False
-        else:
-            self.model = cls.from_pretrained(model_id, export=True, rbln_config={
-                "batch_size": self.batch_size, "max_seq_len": self.max_seq_len,
-                "tensor_parallel_size": len(self.devices), "device": self.devices})
-            self.model.save_pretrained(self.dir)
-            self.compiled = True
-        self.load_s = time.time() - t0
-        m = os.path.join(self.dir, "engine_manifest.json")
-        if self.tok_s is None and os.path.exists(m):
-            self.tok_s = json.load(open(m)).get("tok_s")
+        try:
+            cls = getattr(orbln, self.CLASSES[AutoConfig.from_pretrained(model_id).model_type])
+            from opt_prime.accel.platforms import discover
+            mapping = {d.index: d.extra.get("visible_npu_id") for d in discover(["atom"])}
+            if any(mapping.get(d) is None for d in self.devices):
+                raise ValueError("physical ATOM devices require a host-group runtime mapping")
+            runtime_devices = [int(mapping[d]) for d in self.devices]
+            self.dir = self._dir(model_id)
+            t0 = time.time()
+            if os.path.exists(os.path.join(self.dir, "config.json")):
+                self.model = cls.from_pretrained(self.dir, export=False, rbln_config={"device": runtime_devices})
+                self.compiled = False
+            else:
+                self.model = cls.from_pretrained(model_id, export=True, rbln_config={
+                    "batch_size": self.batch_size, "max_seq_len": self.max_seq_len,
+                    "tensor_parallel_size": len(self.devices), "device": runtime_devices})
+                self.model.save_pretrained(self.dir)
+                self.compiled = True
+            self.load_s = time.time() - t0
+            m = os.path.join(self.dir, "engine_manifest.json")
+            if self.tok_s is None and os.path.exists(m):
+                self.tok_s = json.load(open(m)).get("tok_s")
+        except BaseException:
+            self.close()
+            raise
 
     def generate(self, ids, max_new=64):
         import torch
