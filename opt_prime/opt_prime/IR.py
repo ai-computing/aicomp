@@ -154,7 +154,8 @@ def _inline_subgraph_into_graph(call_node, submod, submod_attr_node, env,
                         mapped.append(sub_env[a])
                     else:
                         mapped.append(a)
-                env[call_node] = tuple(mapped) if len(mapped) > 1 else mapped[0]
+                # a region may return nothing (e.g. a no_grad block only updating state: Gemma 3, transformers 5.1)
+                env[call_node] = tuple(mapped) if len(mapped) != 1 else mapped[0]
             else:
                 env[call_node] = out_args
 
@@ -330,6 +331,57 @@ def _inline_higher_order_ops(flat_gm):
 
     new_graph.lint()
     return GraphModule(flat_gm, new_graph)
+
+
+def _transformers_major():
+    try:
+        import transformers
+        return int(transformers.__version__.split(".")[0])
+    except Exception:
+        return 0
+
+
+# transformers 5.x changed what torch.export sees (DynamicCache outputs, fused MoE experts, GQA stride guards);
+# the export path adapts where noted.  Validated with transformers 5.1.0 / torch 2.10.0.
+_TRANSFORMERS_GE_5 = _transformers_major() >= 5
+
+
+def _strip_runtime_asserts(exported_program):
+    """Remove runtime shape asserts and the symbolic-int nodes that only feed them, in place.
+
+    Only nodes whose value is a SymInt/SymBool/bool/int (no tensors) and that end up without users are removed, so
+    tensor computations and size values used by the model stay. `_assert_tensor_metadata` (dtype/device checks that
+    export records for `.to()` calls) is removed as well: it computes nothing, and under torch.compile Inductor may
+    lower an equivalent value with another dtype (Solar-Open's group mask `zeros_like().scatter_(.., 1)` comes out
+    int64 instead of float32 before `.to(bool)`), failing the check although the result is the same.
+    """
+    import operator
+    g = exported_program.graph_module.graph
+    assert_targets = {torch.ops.aten._assert_scalar.default}
+    for name in ("_assert_async.msg", "sym_constrain_range.default", "sym_constrain_range_for_size.default",
+                 "_assert_tensor_metadata.default"):
+        op = getattr(torch.ops.aten, name.split(".")[0], None)
+        if op is not None and hasattr(op, name.split(".")[1]):
+            assert_targets.add(getattr(op, name.split(".")[1]))
+    removed = 0
+    for n in list(g.nodes):
+        if n.op == "call_function" and n.target in assert_targets:
+            g.erase_node(n); removed += 1
+
+    def symbolic(n):
+        v = n.meta.get("val")
+        return isinstance(v, (torch.SymInt, torch.SymBool, torch.SymFloat, int, bool)) and not isinstance(v, torch.Tensor)
+
+    changed = True
+    while changed:
+        changed = False
+        for n in reversed(list(g.nodes)):
+            if (n.op == "call_function" and not n.users and symbolic(n)
+                    and n.target is not torch.ops.aten.sym_size.int):
+                g.erase_node(n); removed += 1; changed = True
+    exported_program.graph_module.recompile()
+    if int(os.environ.get("RANK", "0")) == 0 and removed:
+        print(f">> [IR] Removed {removed} runtime-assert node(s) (deferred shape guards)")
 
 
 def _tensor_output_sig(t):
@@ -654,6 +706,32 @@ def build_module_graph_from_export(exported_program, original_model, input_names
         region['type'] = 'inline'
         region['fqn'] = None
 
+    # ── Step 4c: Demote parameter-free leaf modules called more than once ──
+    # A call_module node replays the module with the tensor inputs of its region only; non-tensor arguments are
+    # lost. A module called several times with different constant arguments (Gemma 4's rotary embedding, called
+    # with layer_type="sliding_attention" and "full_attention") then runs every call with the default
+    # (AttributeError: 'Gemma4TextRotaryEmbedding' object has no attribute 'None_inv_freq'). Without parameters
+    # nothing is lost by keeping its ops inline (buffers become get_attr nodes), so such modules are inlined.
+    # Calls are counted by export's per-call stack keys ("model.rotary_emb", "model.rotary_emb@1"): consecutive calls
+    # of one module can fall into a single region.
+    call_keys = {}
+    for node in flat_graph.nodes:
+        for key, entry in node.meta.get('nn_module_stack', {}).items():
+            path = entry[0] if isinstance(entry, (tuple, list)) else entry
+            if path in leaf_fqns:
+                call_keys.setdefault(path, set()).add(key)
+    for region in regions:
+        if region['type'] != 'module' or len(call_keys.get(region['fqn'], ())) < 2:
+            continue
+        try:
+            mod = original_model.get_submodule(region['fqn'])
+        except (AttributeError, ValueError):
+            continue
+        if any(True for _ in mod.parameters(recurse=False)):
+            continue
+        region['type'] = 'inline'
+        region['fqn'] = None
+
     # ── Step 5: Build new module-level graph ──
     new_graph = fx.Graph()
     value_map = {}   # old_node → new_node
@@ -769,8 +847,16 @@ def build_module_graph_from_export(exported_program, original_model, input_names
         if n.op in ('call_module', 'placeholder', 'get_attr'):
             return True
         if n.op == 'call_function':
+            # Export records each node's value: trust it when present.  Symbolic size arithmetic
+            # (operator.mul on SymInts, torch.sym_min, ...) is not a tensor even though it is a
+            # call_function; transformers >= 5.0 experts code feeds such values to torch.arange.
+            val = n.meta.get('val')
+            if val is not None:
+                return isinstance(val, torch.Tensor)
             tgt = getattr(n.target, '__name__', str(n.target))
-            if 'sym_size' in tgt or 'sym_numel' in tgt:
+            if 'sym_size' in tgt or 'sym_numel' in tgt or tgt.startswith('sym_'):
+                return False
+            if getattr(n.target, '__module__', None) in ('_operator', 'operator'):
                 return False
             return True
         return False
@@ -1775,12 +1861,20 @@ class IR(object):
         # pipeline split and loss computation.  Models like OPT load from
         # pretrained with use_cache=True by default, unlike LLaMA examples
         # which explicitly set use_cache=False.
+        # transformers >= 5.0 returns the HF cache as a DynamicCache object, which torch.export cannot carry as an
+        # output ("Found DynamicCache in output ... register a pytree").  KV-cache inference does not use that
+        # output anyway (CachedSDPA modules are injected into the graph afterwards), so disable it there too.
+        # transformers 4.x keeps the original behaviour.
         _orig_use_cache = None
-        if (not use_kv_cache
-                and hasattr(model, 'config')
-                and getattr(model.config, 'use_cache', False)):
-            _orig_use_cache = model.config.use_cache
-            model.config.use_cache = False
+        _use_cache_cfgs = []        # the model config and, for multimodal configs, the text config (Gemma 4)
+        if (not use_kv_cache or _TRANSFORMERS_GE_5) and hasattr(model, 'config'):
+            _text = getattr(model.config, 'get_text_config', lambda: None)()
+            for _c in {id(c): c for c in (model.config, _text) if c is not None}.values():
+                if getattr(_c, 'use_cache', False):
+                    _use_cache_cfgs.append(_c)
+                    _c.use_cache = False
+            if _use_cache_cfgs:
+                _orig_use_cache = True
 
         # Disable layerdrop before export.  Models like Whisper use
         # data-dependent control flow (`random.uniform() < layerdrop`) inside
@@ -1871,10 +1965,25 @@ class IR(object):
         # (see register_output_spec_hooks).
         _out_specs, _spec_handles = register_output_spec_hooks(model)
 
+        # Guards torch cannot prove become runtime asserts instead of export errors.
+        # With transformers >= 5.0 every GQA model (SDPA with enable_gqa, or repeat_kv's expand+reshape) produces
+        # stride guards such as Eq(Min(16*s, 32*s), 16*s) on the dynamic seq_len that are always true but that the
+        # range-based solver of torch 2.10 cannot prove, so export used to fail with "Constraints violated
+        # (seq_len)". Graphs that already exported are unchanged (they had no unprovable guards).
+        # Validated with torch 2.10.0 + transformers 5.1.0 (Qwen2/3-MoE, Mixtral, GLM-4-MoE, Solar-Open); the flag
+        # exists from torch 2.5 on and is simply not passed on older versions.
+        export_kwargs = {}
+        if "prefer_deferred_runtime_asserts_over_guards" in inspect.signature(export).parameters:
+            export_kwargs["prefer_deferred_runtime_asserts_over_guards"] = True
+        if int(os.environ.get("RANK", "0")) == 0:
+            import transformers as _tf
+            print(f">> [IR] torch.export with torch {torch.__version__}, transformers {_tf.__version__}"
+                  f"{' (deferred runtime asserts)' if export_kwargs else ''}")
+
         try:
             exported_program = export(
                 model, args=(), kwargs=example_inputs, strict=False,
-                dynamic_shapes=dynamic_shapes,
+                dynamic_shapes=dynamic_shapes, **export_kwargs,
             )
         except TypeError as e:
             if _orig_update_causal_mask is not None and (
@@ -1888,7 +1997,7 @@ class IR(object):
                           f"reverted patch and retrying export")
                 exported_program = export(
                     model, args=(), kwargs=example_inputs, strict=False,
-                    dynamic_shapes=dynamic_shapes,
+                    dynamic_shapes=dynamic_shapes, **export_kwargs,
                 )
             else:
                 raise
@@ -1897,8 +2006,8 @@ class IR(object):
                 _h.remove()
         model.train(_was_training)  # Restore original mode
         # Restore original use_cache setting
-        if _orig_use_cache is not None:
-            model.config.use_cache = _orig_use_cache
+        for _c in _use_cache_cfgs:
+            _c.use_cache = True
         # Restore training mode on layerdrop modules
         for mod in _layerdrop_modules:
             mod.training = True
@@ -1906,6 +2015,12 @@ class IR(object):
         if _orig_update_causal_mask is not None:
             mod_ref, orig_fn = _orig_update_causal_mask
             mod_ref._update_causal_mask = orig_fn
+
+        # The deferred guards above are runtime asserts plus the symbolic size arithmetic feeding them. They only
+        # restate always-true shape relations, and their nodes (mul, sym_min, ...) would otherwise be picked up by
+        # the name-based module-graph reconstruction, so drop them before it.
+        if export_kwargs:
+            _strip_runtime_asserts(exported_program)
 
         # Reconstruct module-level graph from nn_module_stack metadata
         # (bypasses unflatten() which is broken for LLaMA — PyTorch #147348)
