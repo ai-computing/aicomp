@@ -85,8 +85,11 @@ class GenericAdapter(ModelAdapter):
         return c
 
     def weights(self, m, ids):
-        t = torch.tensor(list(ids), dtype=torch.long)
-        sub = lambda name: getattr(m, name).data[t] if getattr(m, name, None) is not None else None
+        ids = list(ids)
+        t = torch.tensor(ids, dtype=torch.long)
+        every = ids == list(range(m.num_experts))         # the host tier: share the tensors instead of copying them
+        sub = lambda name: ((getattr(m, name).data if every else getattr(m, name).data[t])
+                            if getattr(m, name, None) is not None else None)
         has_bias = bool(getattr(m, "has_bias", False))
         return ExpertWeights(self.spec(m), list(ids), sub("gate_up_proj"), sub("down_proj"),
                              sub("gate_up_proj_bias") if has_bias else None, sub("down_proj_bias") if has_bias else None,
