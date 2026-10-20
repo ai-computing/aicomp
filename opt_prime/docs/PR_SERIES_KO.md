@@ -1,46 +1,59 @@
-# PR 시리즈: 이종 가속기 offload · PD · 학습 (main 병합용)
+# PR 시리즈: opt_prime.accel (이종 가속기 offload · 학습 · 엔진 · PD)
 
-2026-10-19. 개발은 통합 브랜치 `feat/optimus-moe-offload`에서 했고, main에는 아래 순서의 기능 PR로 나눠 올린다.
-각 PR 브랜치는 **혼자서 테스트가 통과**하고, 모든 PR은 기존 API를 바꾸지 않는다(새 인자·새 모듈만 추가).
+2026-10-20. 절차는 조직 기본 가이드(ai-computing/.github `CONTRIBUTING.md`, GitHub flow)를 따른다. 상위 Issue #59,
+구조 Issue #71, PD 병합 계획 #69. 새 코드는 모두 `opt_prime/accel/` 아래에 있고, 기존 엔진 파일은 선택 인자(`moe_offload=`)와
+export 수정만 바뀐다. 각 PR 브랜치는 **혼자서 테스트가 통과**하고(transformers 5.1.0 / 5.8.1, CUDA 숨김), 쌓인 PR은 앞 PR이
+병합되면 base를 main으로 바꾸고 Draft를 해제한다. Merge는 aicomp 관리자가 한다.
 
-2026-10-20 갱신. 절차는 조직 기본 가이드(ai-computing/.github `CONTRIBUTING.md`, GitHub flow)를 따른다:
-Issue(문제·근거·범위·완료 조건·담당) → `<type>/<issue#>-<slug>` 브랜치 → PR 템플릿(배경·변경 내용·검증·호환성과 제약·관련
-Issue) → 리뷰 + CI → Squash and merge → 브랜치 삭제. 상위 Issue는 #59. 쌓인(stacked) PR은 앞 브랜치를 base로 하고, 앞 PR이
-병합되면 다음 PR의 base를 main으로 바꾸고 Draft를 해제한다. Merge는 aicomp 관리자가 한다.
+## 구조
 
-| # | Issue | PR | 브랜치 | base | 내용 | 테스트 (5.1.0 / 5.8.1, 브랜치 단독) |
-|---|---|---|---|---|---|---|
-| 1 | #58 | #57 | `feature/transformers5-ir` | main | IR export 경로의 transformers 5.x 대응 | 5 / 5 passed |
-| 2 | #53 | #64 | `feat/53-devices` | 1 | 장치 탐색(rm-accel 연동), capability, 칩 lease | 13 / 13 passed |
-| 3 | #60 | #65 | `feat/60-moe-offload` | 2 | MoE expert offload (tier, planner, dispatcher, 네이티브 커널 반올림 #54) | 109 / 106 passed |
-| 4 | #61 | #66 | `feat/61-moe-training` | 3 | MoE 학습(모든 dtype), offload 상태 학습, 학습 probe | 115 / 113 passed |
-| 5 | #62 | #67 | `feat/62-model-exec-train` | 4 | 블록 스펙, provider, 엔진 선택, 학습 백엔드, 계획 문서 | 151 / 149 passed |
-| PD | #63 | #68 | `feat/63-pd-families` | `feat/optimus-llmd` | PD torch 엔진 MoE·hybrid 계열, 칩 lease(선택) | PD 52 OK + 9 passed (RNGD+ATOM 호스트) |
+```
+opt_prime/accel/
+  spec/       모델 기술 하나: ModelSpec, ExpertSpec, 계열 어댑터, expert 탐색
+  platforms/  장치·lease(rm-accel 연동), 벤더별 구현: cuda/ cpu/(native C) rngd/ atom/
+  moe/        expert offload(planner, 레이어 실행, custom op), moe/train.py
+  engines/    엔진 선택 + Optimus 엔진 (벤더 엔진은 platforms/<벤더>/engine.py)
+  pd/         PD 계약·런타임·torch 엔진, pd/npu: RNGD→ATOM 파이프라인
+  train/      TrainJob, 학습 백엔드 (Optimus_p / npu-train)
+  serve/      llm-d sidecar
+```
+의존 방향: `spec ← platforms ← moe / engines / pd / train ← serve`. 기능 패키지는 벤더 SDK를 import하지 않는다.
 
-PR 1은 Issue 번호 규칙 도입 전에 열려 브랜치 이름을 유지한다(열린 PR의 head 브랜치 이름을 바꾸면 PR이 닫힌다).
-CUDA를 가린 상태의 단위 테스트 수이고, GPU·NPU 실측은 각 PR의 검증 절에 있다.
+## 순서
 
-외부 라이브러리(선택 의존): `npu-kernels` — ai-computing/npu-offload 하위 프로젝트(Issue #6, PR #7), PR 3의 `rngd-opt` tier가
-사용. `npu-lora` — ai-computing/npu-train(계열 확장 Issue #8, PR #9; MoE는 #6), PR 5의 학습 백엔드가 사용. 없으면 해당 백엔드만
-빠진다.
+```
+#57 ─ A1 ─┬─ A2 ─ A3 ─ A4
+          └─ P1 ─┬─ P2 ─ P4
+                 └─ P3
+P0 (main 기준, 독립)
+```
 
-## PR별 리뷰 포인트
+| PR | 브랜치 | 내용 | 바뀌는 기존 파일 | 테스트 (5.1 / 5.8, 누적) |
+|---|---|---|---|---|
+| #57 | `feature/transformers5-ir` | transformers 5 export 수정 | `IR.py`, README(설명) | 5 / 5 |
+| A1 | `feat/71-accel-spec-platforms` | spec, platforms 핵심(탐색·lease·capability, 벤더별 device) | 없음 | 42 / 42 |
+| A2 | `feat/60-accel-moe-offload` | moe offload, 벤더별 expert tier, native CPU 커널 | `inference.py`, `opti_pri.py`(`moe_offload=None`), README | 138 / 135 |
+| A3 | `feat/61-accel-moe-train` | MoE 학습(expert 구현 교체, 한 expert씩 역전파) | `opti_pri.py`(MoE 모델에서만 hook) | 147 / 145 |
+| A4 | `feat/62-accel-engines-train` | 엔진 선택(Optimus, RNGD layer, ATOM rbln), 학습 백엔드 | 없음 | 154 / 152 |
+| P0 | `chore/69-opt-prime-packaging` | pyproject, LICENSE, .gitignore | 없음 | - |
+| P1 | `feat/69-accel-pd-core` | PD 계약·런타임·torch 엔진(dense·MoE·hybrid) | `__init__.py`(지연 export), README | 68 / 70 |
+| P2 | `feat/69-accel-pd-npu` | RNGD prefill → ATOM decode, P2P worker·factory | 없음 | 82 / 84 |
+| P3 | `feat/69-accel-serve-llmd` | llm-d sidecar, HTTP 취소 | 없음 | 78 / 80 |
+| P4 | `exp/69-atom-native-kv-resume` | ATOM native KV resume (실험적) | 없음 | 82 / 84 |
 
-1. **transformers5-ir** — `IR.py`만 수정. transformers 4.x 경로(HFTracer)는 변경 없음. 확인: deferred runtime assert,
-   assert 노드 제거 범위(값 계산 없는 노드만), 여러 번 호출되는 파라미터 없는 leaf 모듈 inline, 빈 출력 region.
-2. **devices** — 새 패키지, 다른 코드에서 아직 사용하지 않음. 확인: sysfs만 읽고 장치를 열지 않음, flock lease의 프로세스
-   간 배타성, RNGD `pe_occupancy`/ATOM `rbln-smi` busy probe.
-3. **moe-offload** — `Optimus_Inference(moe_offload=None)` 기본값이면 기존 동작 그대로. 확인: custom op이 export에 불투명,
-   planner 비용 모델, native C 코드(gcc로 첫 사용 시 빌드), NPU 백엔드는 SDK를 지연 import.
-4. **moe-training** — `Optimus_p`가 MoE 모델에서만 expert 구현을 `opt_batched_mm`으로 바꿈(dense 모델 무관). 확인: eager
-   대비 출력·gradient 일치 테스트.
-5. **model-exec-train** — 새 패키지 4개(`model`, `kernels`, `exec`, `train`). 기존 실행 경로에는 끼어들지 않음.
-PD. PD 팀 브랜치에 대한 PR. 기존 dense 계열 동작 불변, 새 계열은 parity 테스트로 추가.
+외부 패키지(`hetero_p2p`, `rngd_pd`, `npu_kernels`, `npu_lora`, rebel/furiosa SDK)가 없으면 해당 테스트는 건너뛴다.
+PD 검증 원본(로그·JSON·소스 사본)은 main에 넣지 않고 요약(`docs/validation/**/RESULTS.md`)만 둔다(#69).
 
-## 검증 요약 (통합 브랜치 실측)
+## 기존 동작 회귀 검증
 
-- offload: Qwen3-30B-A3B exact 15.4 tok/s(compile 18.4), Solar-Open-100B exact 8.6–10.2, Gemma-4-26B fp32 logits 9.2e-5
-- 엔진 선택: Solar-Open-100B → RNGD layer 엔진 29.4 tok/s decode
-- 학습(GPU): Llama·Qwen2/3·Gemma3·Qwen3-MoE·Solar·Gemma4 tiny FT/LoRA PASS(pp=1,2), Llama-3.2-1B LoRA loss 3.11→1.26; 실모델 expert offload LoRA — Qwen3-30B-A3B 3.21→0.38, gemma-4-26B-A4B 6.42→0.72 (GPU 20 GB + CPU)
-- 학습(RNGD): Optimus train() → npu-lora, Llama-3.2-1B LoRA loss 3.75→0.59/30 step (첫 컴파일 2.2 h 후 캐시), Qwen2.5-0.5B LoRA 2.41→0.49, Llama-3.2-1B 전체 FT 3.75→0.34 (HF 로드·생성 확인)
-- PD: dense + Qwen3-MoE·Solar·Gemma3·Gemma4 parity
+기존 파일을 바꾸는 PR(#57, A2, A3, P1)에는 main 대비 회귀 결과를 첨부한다: 예제가 쓰는 13개 계열(gpt2, gpt2 분류, llama,
+llama+LoRA, opt, bert, electra, gpt-neo, gptj, whisper, vit, qwen2-moe, 사용자 정의 모듈)과 Optimus_Inference 생성을,
+transformers 4.46.2(HFTracer, dynamo) / 5.1.0 / 5.8.1에서 같은 seed로 돌려 loss·토큰을 비트 단위로 비교.
+
+## 검증 요약 (실측)
+
+- offload: Qwen3-30B-A3B exact 15.4 tok/s(compile 18.4), Solar-Open-100B exact 8.6–10.2, gemma-4-26B fp32 logits 9.2e-5
+- 엔진: Solar-Open-100B → RNGD layer 엔진 29.4 tok/s decode; ATOM rbln: Llama-3.2-1B 85 tok/s(토큰 HF와 동일)
+- 학습(GPU, expert offload): Qwen3-30B-A3B 3.21→0.38, gemma-4-26B 6.42→0.72, Solar-Open-100B 3.53→0.60
+- 학습(RNGD, npu-train): Llama-3.2-1B LoRA·전체 FT, Qwen2.5-0.5B, Qwen3-0.6B, gemma-3-1b LoRA
+- PD: dense + Qwen3-MoE·Solar·Gemma3·Gemma4 parity, RNGD→ATOM P2P(KONI, Qwen2.5 0.5B/1.5B/3B)
