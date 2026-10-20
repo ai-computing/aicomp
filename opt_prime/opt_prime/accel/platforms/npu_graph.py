@@ -201,9 +201,14 @@ class GraphNPUBackend(ExpertBackend):
                 m = BakedFFN(w.spec, gu[i].contiguous(), dn[i].contiguous(),
                              None if gb is None else gb[i], None if db is None else db[i])
                 # weights are constants of the graph: they are part of its cache key
-                digest = hashlib.blake2b(gu[i].contiguous().view(torch.uint8).numpy().tobytes()
-                                         + dn[i].contiguous().view(torch.uint8).numpy().tobytes(),
-                                         digest_size=12).hexdigest()
+                constants = [gu[i], dn[i]]
+                if gb is not None:
+                    constants.append(gb[i])
+                if db is not None:
+                    constants.append(db[i])
+                digest = hashlib.blake2b(
+                    b"".join(t.detach().cpu().contiguous().view(torch.uint8).numpy().tobytes()
+                             for t in constants), digest_size=12).hexdigest()
                 ent = {"module": m, "digest": digest}
                 ent[self.token_buckets[0]] = self._baked_graph(w.spec, ent, self.token_buckets[0])   # decode bucket now
                 graphs.append(ent)                 # other token buckets compile on first use: {T_b: callable}
