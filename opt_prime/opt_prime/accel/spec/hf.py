@@ -17,6 +17,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
+from opt_prime.accel.spec.config import config_value, layer_value
 from opt_prime.accel.spec.blocks import (AttentionSpec, DenseMLPSpec, LayerSpec, MoESpec, ModelSpec, NormSpec, RopeSpec,
                      RouterSpec)
 
@@ -61,18 +62,18 @@ def _norm(m: Optional[nn.Module]) -> Optional[NormSpec]:
 
 
 def _rope(cfg, layer_type: Optional[str]) -> RopeSpec:
-    rp = getattr(cfg, "rope_parameters", None) or {}
+    rp = config_value(cfg, "rope_parameters", None) or {}
     if layer_type and isinstance(rp, dict) and isinstance(rp.get(layer_type), dict):
         rp = rp[layer_type]                                  # per layer-type RoPE (e.g. sliding vs full)
     rp = dict(rp) if isinstance(rp, dict) else {}
-    theta = rp.pop("rope_theta", None) or getattr(cfg, "rope_theta", None)
-    prf = float(rp.pop("partial_rotary_factor", getattr(cfg, "partial_rotary_factor", 1.0)) or 1.0)
+    theta = rp.pop("rope_theta", None) or config_value(cfg, "rope_theta")
+    prf = float(rp.pop("partial_rotary_factor", config_value(cfg, "partial_rotary_factor", 1.0)) or 1.0)
     if rp.get("rope_type") == "default":
         rp.pop("rope_type")
     return RopeSpec(float(theta) if theta is not None else None, json.dumps(rp, sort_keys=True) if rp else None, prf)
 
 
-def _attention(cfg, layer, layer_type) -> AttentionSpec:
+def _attention(cfg, layer, layer_type, idx=None) -> AttentionSpec:
     hidden = cfg.hidden_size
     name, a = _child(layer, _ATTN_NAMES)
     if a is None:
@@ -80,8 +81,8 @@ def _attention(cfg, layer, layer_type) -> AttentionSpec:
         return AttentionSpec("linear" if sname in ("linear_attn",) else "custom", hidden,
                              module_class=type(s).__name__ if s is not None else "")
     cls = type(a).__name__
-    heads = getattr(cfg, "num_attention_heads", 0)
-    window = getattr(cfg, "sliding_window", None) if layer_type == "sliding_attention" else None
+    heads = config_value(cfg, "num_attention_heads", 0)
+    window = layer_value(cfg, "sliding_window", idx) if layer_type == "sliding_attention" else None
     if window is None and layer_type is None:
         window = getattr(a, "sliding_window", None)
     rope = _rope(cfg, layer_type)
@@ -90,10 +91,10 @@ def _attention(cfg, layer, layer_type) -> AttentionSpec:
         return AttentionSpec("mla", hidden, heads, heads, nope + rd, vd, False,
                              getattr(a.o_proj, "bias", None) is not None, False, window,
                              RopeSpec(rope.theta, rope.scaling, rope.partial_rotary_factor, rd),
-                             cfg.kv_lora_rank, getattr(cfg, "q_lora_rank", None) or 0, cls)
+                             cfg.kv_lora_rank, config_value(cfg, "q_lora_rank", None) or 0, cls)
     if all(hasattr(a, p) for p in ("q_proj", "k_proj", "v_proj", "o_proj")):
-        kvh = getattr(cfg, "num_key_value_heads", None) or heads
-        hd = getattr(a, "head_dim", None) or getattr(cfg, "head_dim", None) or hidden // heads
+        kvh = layer_value(cfg, "num_key_value_heads", idx) or heads
+        hd = getattr(a, "head_dim", None) or layer_value(cfg, "head_dim", idx) or hidden // heads
         geometry_ok = _out(a.q_proj) == heads * hd and _out(a.k_proj) == kvh * hd and _out(a.v_proj) == kvh * hd
         return AttentionSpec("gqa" if geometry_ok else "custom", hidden, heads, kvh, hd, hd,
                              a.q_proj.bias is not None, a.o_proj.bias is not None,
@@ -111,11 +112,11 @@ def _router(cfg, moe, experts_spec) -> RouterSpec:
     has_bias = any("e_score_correction_bias" in n for n in names)
     if has_bias != bias:
         scoring = "custom"                                   # the module does not match the checked semantics
-    top_k = (getattr(cfg, "num_experts_per_tok", None) or getattr(cfg, "moe_k", None)
-             or getattr(cfg, "top_k_experts", None) or 0)
-    return RouterSpec(E, int(top_k), scoring, bool(getattr(cfg, "norm_topk_prob", True)), bias,
-                      int(getattr(cfg, "n_group", None) or 1), int(getattr(cfg, "topk_group", None) or 1),
-                      float(getattr(cfg, "routed_scaling_factor", None) or 1.0), cls)
+    top_k = (config_value(cfg, "num_experts_per_tok", None) or config_value(cfg, "moe_k", None)
+             or config_value(cfg, "top_k_experts", None) or 0)
+    return RouterSpec(E, int(top_k), scoring, bool(config_value(cfg, "norm_topk_prob", True)), bias,
+                      int(config_value(cfg, "n_group", None) or 1), int(config_value(cfg, "topk_group", None) or 1),
+                      float(config_value(cfg, "routed_scaling_factor", None) or 1.0), cls)
 
 
 def _shared(moe):
@@ -142,7 +143,7 @@ def _mlp(cfg, layer):
         es = adapter_for(experts).spec(experts)
         ffn, gate = _shared(m)
         return None, MoESpec(_router(cfg, m, es), es, ffn, gate, type(m).__name__)
-    cls, act = type(m).__name__, getattr(cfg, "hidden_act", "silu")
+    cls, act = type(m).__name__, config_value(cfg, "hidden_act", "silu")
     if all(hasattr(m, p) for p in ("gate_proj", "up_proj", "down_proj")):
         return DenseMLPSpec("gated", cfg.hidden_size, _out(m.gate_proj), act, m.down_proj.bias is not None, cls), None
     if hasattr(m, "gate_up_proj") and hasattr(m, "down_proj"):
@@ -163,26 +164,26 @@ def model_spec(model: nn.Module, revision: str = "") -> ModelSpec:
     cfg = _cfg(model)
     n = cfg.num_hidden_layers
     prefix, layers = _decoder_layers(model, n)
-    types = getattr(cfg, "layer_types", None)
+    types = config_value(cfg, "layer_types")
     out = []
     for i, layer in enumerate(layers):
         lt = types[i] if isinstance(types, (list, tuple)) and i < len(types) else None
         mlp, moe = _mlp(cfg, layer)
-        out.append(LayerSpec(i, _attention(cfg, layer, lt), _norm(_child(layer, _IN_NORM)[1]),
+        out.append(LayerSpec(i, _attention(cfg, layer, lt, i), _norm(_child(layer, _IN_NORM)[1]),
                              _norm(_child(layer, _POST_NORM)[1]), mlp, moe, f"{prefix}.{i}"))
     emb = model.get_input_embeddings()
     base = getattr(model, "model", model)
-    dtype = getattr(cfg, "dtype", None) or next(model.parameters()).dtype
+    dtype = config_value(cfg, "dtype", None) or next(model.parameters()).dtype
     return ModelSpec(cfg.model_type, cfg.hidden_size, int(emb.weight.shape[0]), tuple(out),
-                     _norm(getattr(base, "norm", None)), bool(getattr(cfg, "tie_word_embeddings", False)),
-                     str(dtype).replace("torch.", ""), getattr(cfg, "max_position_embeddings", None), revision)
+                     _norm(getattr(base, "norm", None)), bool(config_value(cfg, "tie_word_embeddings", False)),
+                     str(dtype).replace("torch.", ""), config_value(cfg, "max_position_embeddings", None), revision)
 
 
 def model_spec_from_pretrained(path_or_id: str, revision: str = "", dtype=None) -> ModelSpec:
     """ModelSpec without reading weights: config + the model built on the meta device."""
     from transformers import AutoConfig, AutoModelForCausalLM
     cfg = AutoConfig.from_pretrained(path_or_id)
-    dt = dtype or getattr(cfg, "dtype", None) or torch.bfloat16
+    dt = dtype or config_value(cfg, "dtype", None) or torch.bfloat16
     if isinstance(dt, str):
         dt = getattr(torch, dt)
     with torch.device("meta"):

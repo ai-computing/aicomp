@@ -15,15 +15,16 @@ _SHRINK = dict(hidden_size=64, intermediate_size=128, moe_intermediate_size=32, 
                top_k_experts=TOP_K, global_head_dim=32, n_shared_experts=1, n_group=1, topk_group=1, first_k_dense_replace=0, decoder_sparse_step=1,
                mlp_only_layers=[], moe_layer_start_index=0, num_local_experts_per_tok=TOP_K,
                pad_token_id=0, bos_token_id=1, eos_token_id=2)
-# what generic shrinking cannot infer
+# what generic shrinking cannot infer (MLA families: no GQA, kv heads = heads as in the real checkpoints)
 _EXTRA = {
-    "deepseek_v2": dict(q_lora_rank=None, kv_lora_rank=16, qk_nope_head_dim=16, qk_rope_head_dim=8, v_head_dim=16,
+    "deepseek_v2": dict(num_key_value_heads=4, q_lora_rank=None, kv_lora_rank=16, qk_nope_head_dim=16, qk_rope_head_dim=8, v_head_dim=16,
                         head_dim=8),
-    "deepseek_v3": dict(q_lora_rank=None, kv_lora_rank=16, qk_nope_head_dim=16, qk_rope_head_dim=8, v_head_dim=16,
+    "deepseek_v3": dict(num_key_value_heads=4, q_lora_rank=None, kv_lora_rank=16, qk_nope_head_dim=16, qk_rope_head_dim=8, v_head_dim=16,
                         head_dim=8),
-    "glm4_moe_lite": dict(q_lora_rank=None, kv_lora_rank=16, qk_nope_head_dim=16, qk_rope_head_dim=8,
+    "glm4_moe_lite": dict(num_key_value_heads=4, q_lora_rank=None, kv_lora_rank=16, qk_nope_head_dim=16, qk_rope_head_dim=8,
                           v_head_dim=16, head_dim=8),
     "gemma4_text": dict(enable_moe_block=True),        # the MoE variant (gemma-4-26B-A4B); off by default
+    "lfm2_moe": dict(layer_types=["conv", "full_attention"], num_dense_layers=0),   # no default pattern in >= 5.15
     "jamba": dict(attn_layer_period=2, attn_layer_offset=1, expert_layer_period=1, expert_layer_offset=0,
                   mamba_d_state=8, mamba_d_conv=4, mamba_expand=2, mamba_dt_rank=8, use_mamba_kernels=False),
 }
@@ -41,10 +42,14 @@ def _mixed(lt, n):
 
 def build_tiny(family: str, dtype=torch.float32, seed: int = 0):
     from transformers import AutoConfig, AutoModelForCausalLM
+    from opt_prime.accel.spec.config import config_value, has_value
     base = AutoConfig.for_model(family)
-    kw = {k: v for k, v in _SHRINK.items() if hasattr(base, k)}
+    kw = {k: v for k, v in _SHRINK.items() if has_value(base, k)}
     kw.update(_EXTRA.get(family, {}))
-    lt = getattr(base, "layer_types", None)
+    derived = isinstance(getattr(type(base), "layer_types", None), property)   # computed from other fields (Jamba)
+    lt = None if derived else config_value(base, "layer_types")
+    if derived:
+        kw.pop("layer_types", None)
     if isinstance(lt, (list, tuple)) and lt:            # keep the family's layer pattern, cut to the tiny depth
         n = kw.get("num_hidden_layers", len(lt))
         kw["layer_types"] = [lt[i % len(lt)] for i in range(n)] if len(set(lt)) == 1 else _mixed(lt, n)
