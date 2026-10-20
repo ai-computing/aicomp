@@ -1,20 +1,28 @@
 # PR 시리즈: 이종 가속기 offload · PD · 학습 (main 병합용)
 
 2026-10-19. 개발은 통합 브랜치 `feat/optimus-moe-offload`에서 했고, main에는 아래 순서의 기능 PR로 나눠 올린다.
-각 PR 브랜치는 앞 PR 위에 쌓여 있고(stacked), **혼자서 테스트가 통과**한다. 앞 PR이 병합되면 다음 PR의 base를 main으로
-바꾼다. 모든 PR은 기존 API를 바꾸지 않는다(새 인자·새 모듈만 추가).
+각 PR 브랜치는 **혼자서 테스트가 통과**하고, 모든 PR은 기존 API를 바꾸지 않는다(새 인자·새 모듈만 추가).
 
-| # | 브랜치 (원격) | base | 내용 | 테스트 (transformers 5.1.0 / 5.8.1) |
-|---|---|---|---|---|
-| 1 | `feature/transformers5-ir` | main | IR export 경로의 transformers 5.x 대응 | 5 / 5 passed |
-| 2 | `feature/devices` | 1 | 장치 탐색, capability, 칩 lease | 6 passed, 2 skipped(다음 PR 의존) |
-| 3 | `feature/moe-offload` | 2 | MoE expert offload (GPU/CPU/RNGD/ATOM tier, planner, dispatcher) | 97 / 94 passed |
-| 4 | `feature/moe-training` | 3 | MoE 학습(모든 dtype), 학습 probe | 102 / 100 passed |
-| 5 | `feature/model-exec-train` | 4 | 블록 스펙, provider, 엔진 선택, 학습 백엔드, 계획 문서 | 137 / 134 passed |
-| PD | `feature/pd-families-leases` | `feat/optimus-llmd` | PD torch 엔진 MoE·hybrid 계열, 칩 lease(선택) | PD 52 OK + 9 passed (etri-001) |
+2026-10-20 갱신. 절차는 조직 기본 가이드(ai-computing/.github `CONTRIBUTING.md`, GitHub flow)를 따른다:
+Issue(문제·근거·범위·완료 조건·담당) → `<type>/<issue#>-<slug>` 브랜치 → PR 템플릿(배경·변경 내용·검증·호환성과 제약·관련
+Issue) → 리뷰 + CI → Squash and merge → 브랜치 삭제. 상위 Issue는 #59. 쌓인(stacked) PR은 앞 브랜치를 base로 하고, 앞 PR이
+병합되면 다음 PR의 base를 main으로 바꾸고 Draft를 해제한다. Merge는 aicomp 관리자가 한다.
 
-외부 라이브러리(별도 저장소, 위치 결정 후 push): `npu-kernels`(RNGD 커널 생성기, PR 3의 `rngd-opt`가 선택적으로 사용),
-`npu-lora`(RNGD 학습, PR 5의 `npu-lora` 학습 백엔드가 선택적으로 사용). 둘 다 없으면 해당 백엔드만 제공되지 않는다.
+| # | Issue | PR | 브랜치 | base | 내용 | 테스트 (5.1.0 / 5.8.1, 브랜치 단독) |
+|---|---|---|---|---|---|---|
+| 1 | #58 | #57 | `feature/transformers5-ir` | main | IR export 경로의 transformers 5.x 대응 | 5 / 5 passed |
+| 2 | #53 | #64 | `feat/53-devices` | 1 | 장치 탐색(rm-accel 연동), capability, 칩 lease | 13 / 13 passed |
+| 3 | #60 | #65 | `feat/60-moe-offload` | 2 | MoE expert offload (tier, planner, dispatcher, 네이티브 커널 반올림 #54) | 109 / 106 passed |
+| 4 | #61 | #66 | `feat/61-moe-training` | 3 | MoE 학습(모든 dtype), offload 상태 학습, 학습 probe | 115 / 113 passed |
+| 5 | #62 | #67 | `feat/62-model-exec-train` | 4 | 블록 스펙, provider, 엔진 선택, 학습 백엔드, 계획 문서 | 151 / 149 passed |
+| PD | #63 | #68 | `feat/63-pd-families` | `feat/optimus-llmd` | PD torch 엔진 MoE·hybrid 계열, 칩 lease(선택) | PD 52 OK + 9 passed (RNGD+ATOM 호스트) |
+
+PR 1은 Issue 번호 규칙 도입 전에 열려 브랜치 이름을 유지한다(열린 PR의 head 브랜치 이름을 바꾸면 PR이 닫힌다).
+CUDA를 가린 상태의 단위 테스트 수이고, GPU·NPU 실측은 각 PR의 검증 절에 있다.
+
+외부 라이브러리(선택 의존): `npu-kernels` — ai-computing/npu-offload 하위 프로젝트(Issue #6, PR #7), PR 3의 `rngd-opt` tier가
+사용. `npu-lora` — ai-computing/npu-train(계열 확장 Issue #8, PR #9; MoE는 #6), PR 5의 학습 백엔드가 사용. 없으면 해당 백엔드만
+빠진다.
 
 ## PR별 리뷰 포인트
 
