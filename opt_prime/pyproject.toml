@@ -15,3 +15,6 @@ torch-pd = ["torch==2.11.0", "transformers==5.8.1"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["opt_prime*"]
+
+[tool.setuptools.package-data]
+"opt_prime.accel.platforms.cpu" = ["csrc/*.c"]
