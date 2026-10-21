@@ -66,7 +66,9 @@ class _Request:
 
 
 class ContinuousBatcher:
-    def __init__(self, model, *, slots=8, max_context=2048, prefill_chunk=256):
+    def __init__(self, model, *, slots=8, max_context=2048, prefill_chunk=256, kv="slot", pages=None, page_size=64):
+        """kv="slot": one max_context store per slot (copies the slots' prefixes every step); kv="paged": a page pool
+        of `pages` pages (default: slots * max_context worth) read in place by flex attention (#108)."""
         geometry = describe_model(model.config)
         if not geometry.uniform or geometry.window is not None:
             raise ValueError('continuous batching supports uniform full-attention families only')
@@ -74,8 +76,17 @@ class ContinuousBatcher:
         self.model, self.device, self.dtype = model.eval(), params.device, params.dtype
         if slots < 1 or prefill_chunk < 1 or max_context < 2:
             raise ValueError('positive slots, chunk and context required')
-        self.kv = SlotKV(geometry.layers, slots, geometry.kv_heads, max_context, geometry.head_dim,
-                         self.dtype, self.device)
+        if kv == "paged":
+            from opt_prime.accel.pd.paged import PagedKV
+            self.kv = PagedKV(geometry.layers, slots, geometry.kv_heads, geometry.head_dim, self.dtype, self.device,
+                              pages=pages or slots * max_context // page_size, page_size=page_size,
+                              max_context=max_context)
+        elif kv == "slot":
+            self.kv = SlotKV(geometry.layers, slots, geometry.kv_heads, max_context, geometry.head_dim,
+                             self.dtype, self.device)
+        else:
+            raise ValueError("kv must be 'slot' or 'paged'")
+        self.paged = kv == "paged"
         self.chunk, self.max_context = prefill_chunk, max_context
         self.free = list(range(slots))
         self.waiting, self.prefilling, self.decoding = deque(), deque(), []
@@ -125,7 +136,12 @@ class ContinuousBatcher:
                 self.decoding.remove(r)
                 self._finish(r, RequestCancelled(r.request.request_id))
             while self.free and self.waiting:
-                r = self.waiting.popleft()
+                r = self.waiting[0]
+                slot = self.free[0]
+                need = len(r.request.input_ids) + r.request.max_new_tokens
+                if self.paged and not self.kv.alloc(slot, need):
+                    break                                 # wait for pages (FIFO: no overtaking)
+                self.waiting.popleft()
                 r.slot = self.free.pop(0)
                 self.kv.length[r.slot] = 0
                 self.prefilling.append(r)
@@ -163,6 +179,9 @@ class ContinuousBatcher:
         rows = list(self.decoding)
         slots = [r.slot for r in rows]
         lengths = [self.kv.length[s] for s in slots]
+        if self.paged:
+            logits = self.kv.decode(self.model, slots, lengths, [r.tokens[-1] for r in rows])
+            return self._decoded(rows, lengths, logits)
         L = max(lengths)
         mask = torch.zeros(len(rows), L + 1, dtype=torch.long, device=self.device)
         for i, n in enumerate(lengths):
@@ -172,12 +191,15 @@ class ContinuousBatcher:
                          past_key_values=self.kv.prefix(slots, L), use_cache=True, attention_mask=mask,
                          position_ids=torch.tensor([[n] for n in lengths], device=self.device), logits_to_keep=1)
         self.kv.write(slots, lengths, out.past_key_values, slice(L, L + 1))
+        self._decoded(rows, lengths, out.logits[:, -1])
+
+    def _decoded(self, rows, lengths, logits):
         self.stats['decode_steps'] += 1
         self.stats['decode_rows'] += len(rows)
         done = []
         for i, r in enumerate(rows):
             self.kv.length[r.slot] = lengths[i] + 1
-            token = select_token(out.logits[i, -1], r.request.sampling, lengths[i] + 1)
+            token = select_token(logits[i], r.request.sampling, lengths[i] + 1)
             if not self._emit(r, token):
                 done.append(r)
         for r in done:
@@ -197,6 +219,8 @@ class ContinuousBatcher:
     def _finish(self, r, error):
         """lock held; frees the slot and completes the future"""
         if r.slot >= 0:
+            if self.paged:
+                self.kv.release(r.slot)
             self.free.append(r.slot)
             self.free.sort()
             r.slot = -1

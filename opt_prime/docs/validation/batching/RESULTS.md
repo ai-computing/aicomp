@@ -30,3 +30,32 @@ serving engines in general show the same effect.
 - the llm-d stage service (slot table, admission, streaming per request);
 - NPU batched graphs;
 - hybrid or sliding-attention families, which are rejected.
+
+## Paged KV (#108)
+
+`ContinuousBatcher(kv="paged")` keeps the KV in a page pool, `[layers, kv_heads, pages × page_size, head_dim]`. A
+request takes only the pages it needs (prompt + max new tokens). A decode step reads the pool **in place**: the
+registered `opt_paged` attention runs a compiled `flex_attention` with a block mask built from the page tables, one
+mask per step shared by all layers. The per-step prefix copy of the slot store (30–47% of a decode step) is gone.
+Prefill chunks still gather the request's prefix once per chunk.
+
+Same workload as above (32 requests, 64 new tokens, chunk 256), page size 64:
+
+| dtype | KV | slots | continuous batching | vs one at a time | requests token-identical |
+|---|---|---:|---:|---:|---:|
+| fp32 | slot (above) | 8 | 285 tok/s | 2.52× | 32 / 32 |
+| fp32 | **paged** | 8 | **426 tok/s** | 3.81× | **32 / 32** |
+| bf16 | slot | 8 | 541 tok/s | 4.38× | 20 / 32 |
+| bf16 | **paged** | 8 | **625 tok/s** | 4.62× | 18 / 32 |
+| bf16 | slot | 16 | 722 tok/s | 5.48× | 18 / 32 |
+| bf16 | **paged** | 16 | **899 tok/s** | 6.85× | 19 / 32 |
+| bf16 | **paged** | 32 | **966 tok/s** | 7.73× | 21 / 32 |
+
+As before, fp32 is token-exact and bf16 differences are batch-shape rounding. CPU tests run every batching case for
+both KV layouts (flex attention eager on the CPU) on transformers 5.1, 5.8 and 5.15. GPU tests use the compiled
+kernel.
+
+Setup notes:
+- flex decoding lowers here only with a 128-row query block; `Q_BLOCK = 128`, with the KV block equal to the page.
+- The default pool equals `slots × max_context` (the same memory as the slot store). Pass `pages` to set a smaller
+  KV budget: admission then waits for free pages, not for a free slot.
