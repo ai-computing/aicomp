@@ -192,6 +192,64 @@ When the 'swap_model_in_optstep' option is set to True, the optimizer's step() p
     # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
 
+Both swap options only act when `force_free_mem=True`, and they are threshold driven: the optimizer
+state is offloaded when less than 5 GB of the GPU is left unreserved during forward/backward, and the
+model is moved to the host for `step()` when less than 25 GB is left after backward. On a GPU with
+plenty of free memory they may therefore never trigger. With `swap_model_in_optstep`, the optimizer
+state stays in host memory and `step()` runs on the CPU, which needs host RAM for the stage's
+weights, gradients and optimizer state (about 16 bytes per parameter in fp32) and makes each
+optimizer step much slower.
+
+#### Memory needed for Llama-2-13B (`examples/pp_train_llama2.py`)
+
+The example trains with Adam and keeps weights, gradients and optimizer state on the GPU by default.
+With fp32 weights that is 16 bytes per parameter; Llama-2-13B (13.0B parameters) needs about 208 GB
+for these alone, more than four 48 GB A40s (193 GB) provide. Running out of memory on 4 GPUs is
+therefore expected with the current defaults, on one host or two (issue #21); it is a capacity limit,
+not a multi-node problem. Note that transformers 4.x loads the checkpoint in fp32, while
+transformers 5.x keeps its fp16 dtype, which the example casts to bf16 (8 bytes per parameter).
+
+The memory options are available as flags of the example:
+
+| Flag | Optimus_p option | Effect |
+|---|---|---|
+| `--dtype {auto,fp32,bf16}` | (model dtype) | `auto` (default) keeps the loading behavior above |
+| `--activation-ckpt` | `activation_ckpt=True` | drop stage activations after forward and recompute them in backward (not on the last stage) |
+| `--swap-opt` | `swap_opt_in_fwdbwd=True` | offload optimizer state to the host during forward/backward |
+| `--cpu-opt-step` | `swap_model_in_optstep=True` | run `optimizer.step()` on the CPU (implies `--swap-opt`) |
+| `--low-mem` | all three above | |
+| `--batch-size`, `--num-mb`, `--max-length` | | defaults 64, 16, 1024 |
+
+Estimated peak GPU memory per GPU for PP=4 (largest stage: 10 decoder layers plus the embedding or
+the LM head, 3.34B parameters), batch 64 in 16 micro-batches of 4 sequences. The SQuAD contexts the
+example uses are under 500 characters, so a padded batch is at most about 220 tokens (171 with the
+Llama-3 tokenizer, scaled for Llama-2's smaller vocabulary); the
+`max_length=1024` truncation is never reached. These are **estimates**: the static part is
+bytes-per-parameter arithmetic, the activation part is scaled from a single-GPU measurement of a
+Llama-2-13B-shaped 10-layer stage (random weights, A100 80GB capped to A40 capacity), about
+0.37 MB per token per layer under bf16 autocast and 0.45 MB in fp32; the first stage keeps up to
+4 micro-batches in flight under 1F1B.
+
+| Configuration (PP=4) | Weights + grads + optimizer on GPU | Est. peak per GPU | Fits 48 GB A40? |
+|---|---|---|---|
+| default, transformers 4.x (fp32) | 53.4 GB | ~67 GB (in `optimizer.step()`) | no, OOM at the first step |
+| `--dtype bf16` (= default with transformers 5.x) | 26.7 GB | ~40 GB | yes |
+| `--cpu-opt-step` (fp32) | 26.7 GB (optimizer state on host) | ~40 GB | yes |
+| `--low-mem` (fp32) | 26.7 GB (optimizer state on host) | ~31 GB | yes |
+| `--low-mem --dtype bf16` | 26.7 GB (swap thresholds not reached, optimizer stays on GPU) | ~33 GB | yes |
+
+With the fp32 defaults, PP=5 (~2.7B parameters per stage, ~54 GB peak) still does not fit a 48 GB
+GPU; PP=8 (~1.75B, ~41 GB) does. Measured on the single-GPU 10-layer proxy (3.5B parameters, one
+micro-batch of 4 x 256 tokens, memory capped at 46068 MiB): the fp32 default ran out of memory in the
+first `optimizer.step()`, `--cpu-opt-step` peaked at 35.0 GB, and `--dtype bf16` at 35.2 GB.
+On 4 A40s with the default 1F1B schedule, the first stage also keeps up to 4 micro-batches of
+activations, so expect more than the proxy peak there unless `--activation-ckpt` is set.
+
+For example, on 4 A40s in one host:
+
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=127.0.0.1 --master_port=29500 \
+        examples/pp_train_llama2.py --low-mem
+
 ### Graph capture mode: `--dynamo-capture`
 
 By default, OptimusPrime uses HuggingFace's HFTracer (built on torch.fx.symbolic_trace) to extract the model's FX graph. For enhanced model compatibility, the --dynamo-capture option enables the use of torch.export.export(). This leverages TorchDynamo to capture a comprehensive ATen-level IR, which is then reconstructed into a module-level FX graph, ensuring a more robust extraction for complex architectures.
