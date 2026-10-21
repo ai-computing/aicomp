@@ -1,0 +1,16 @@
+{
+  "out": "/absolute/path/to/new-run",
+  "model": "/absolute/path/to/pinned-qwen-checkpoint",
+  "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+  "artifact": "/absolute/path/to/compiled/model.rbln",
+  "physical_atom": "rbln1",
+  "rngd_device_path": "/dev/rngd/npu3ch0",
+  "rngd_logical_index": 2,
+  "hetero_repo": "/absolute/path/to/hetero-npu-p2p",
+  "helper": "/absolute/path/to/hetero-npu-p2p/build/rngd-pdma",
+  "atom_python": "/absolute/path/to/atom-venv/bin/python",
+  "accurate_attention": true,
+  "sidecar_binary": "/absolute/path/to/pd-sidecar",
+  "atom_reuse_inputs": false,
+  "rngd_compact_cache": false
+}
