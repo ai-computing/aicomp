@@ -70,3 +70,16 @@ class FactoryTests(unittest.TestCase):
         engine = QwenAtomWorkerEngine(owner, spec, "rbln0", require_reference=True)
         with self.assertRaises(RuntimeError):
             engine.decode(request, cache, continuation)
+
+
+def test_invalid_device_identifiers_are_rejected_before_leasing(monkeypatch):
+    import pytest
+    from opt_prime.accel import platforms
+    from opt_prime.accel.pd.npu.factory import lease_p2p_devices
+    acquired = []
+    monkeypatch.setattr(platforms, 'acquire', lambda *args, **kw: acquired.append(args))
+    for path, physical in [('', 'rbln3'), ('/dev/unknown', 'rbln3'), ('/dev/rngd/npu1ch0', ''),
+                           ('/dev/rngd/npu1ch0', 'atom:3')]:
+        with pytest.raises(ValueError, match='device'):
+            lease_p2p_devices(SimpleNamespace(device_path=path), {'physical_atom': physical}, 'test')
+    assert acquired == []
