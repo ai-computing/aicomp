@@ -26,7 +26,7 @@ class TrainJob:
     lora_r: int = 16
     lora_alpha: float = 32.0
     lora_targets: Tuple[str, ...] = ("q_proj", "v_proj")
-    out: Optional[str] = None               # adapter (LoRA, PEFT format) or weights (full) directory
+    out: Optional[str] = None               # HF output: PEFT adapter (LoRA) or from_pretrained model directory (full)
     seed: int = 0
     offload_gpu_gb: Optional[float] = None  # MoE models: experts beyond this GPU budget stay frozen on the host
     moe_hot_fraction: float = 0.0           # MoE on an NPU (npu-lora): fraction of each layer's experts on the device
@@ -175,15 +175,44 @@ class OptimusTrainBackend(TrainBackend):
             opt.optimizer.step()
             if opt.is_last_stage():
                 losses.append(float(sum(opt.get_loss()) / opt.num_mb))
-        out = None
-        if job.out:                                   # every stage saves its own trainable parameters
-            os.makedirs(job.out, exist_ok=True)
-            out = job.out
-            state = {n: p.detach().cpu() for n, p in opt.run_info.submod.named_parameters() if p.requires_grad}
-            torch.save(state, os.path.join(out, f"stage{opt.tpl.stage}_trainable.pt"))
-        return TrainResult(self.name, losses, out, time.time() - t0,
+        if job.out:
+            _save_hf(opt, job)
+        return TrainResult(self.name, losses, job.out, time.time() - t0,
                            dict(stage=opt.tpl.stage, offload=None if opt.moe_offload_report is None else
                                 [(t["tier"], t["experts"]) for t in opt.moe_offload_report.tiers]))
+
+
+def _save_hf(opt, job):
+    """Optimus_p stages -> job.out in a Hugging Face format: the full model (save_pretrained layout + tokenizer) for
+    full fine-tuning, a PEFT adapter for LoRA. Every stage writes its part to job.out/.stages, rank 0 assembles."""
+    import shutil
+    import torch
+    import torch.distributed as dist
+    from opt_prime.hf_ckpt import hf_state_keys, merge_hf_ckpt, save_peft_adapter
+    from opt_prime.lora import get_lora_state_dict
+    parts = os.path.join(job.out, ".stages")
+    if job.method == "full":
+        opt.save_hf_ckpt(parts)                       # stage{N}_tp0.pt: the stage's state_dict, DDP/DTensor unwrapped
+    else:
+        submod = opt.run_info.submod
+        submod = submod.module if isinstance(submod, torch.nn.parallel.DistributedDataParallel) else submod
+        os.makedirs(parts, exist_ok=True)
+        torch.save({k: v.detach().cpu() for k, v in get_lora_state_dict(submod).items()},
+                   os.path.join(parts, f"stage{opt.tpl.stage}_lora.pt"))
+    multi = opt.tpl.world_size > 1 and dist.is_initialized()
+    if multi:
+        dist.barrier()
+    if opt.get_rank() == 0:
+        if job.method == "full":
+            merge_hf_ckpt(job.model, parts, job.out, dtype=torch.bfloat16, log=lambda *a: None)
+        else:
+            lora = {}
+            for f in sorted(os.listdir(parts)):
+                lora.update(torch.load(os.path.join(parts, f), map_location="cpu"))
+            save_peft_adapter(job.out, lora, job.model, opt.lora_config, hf_state_keys(job.model)[1])
+        shutil.rmtree(parts)
+    if multi:
+        dist.barrier()
 
 
 def _npu_lora_has(module, name, attr=None):
