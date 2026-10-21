@@ -48,6 +48,22 @@ class BatchedService(CompletionAPI):
              [f"vllm:prefix_cache_queries_total{{{lab}}} {kv.query_tokens}"]),
             ("vllm:prefix_cache_hits_total", "counter", "Prompt tokens served from the prefix cache.",
              [f"vllm:prefix_cache_hits_total{{{lab}}} {kv.hit_tokens}"]),
+        ] + (self._host_metrics(lab, kv.host) if kv.host is not None else [])
+
+    @staticmethod
+    def _host_metrics(lab, host):
+        st = host.stats
+        return [
+            ("airm_kv_host_blocks", "gauge", "Blocks held by the host-DRAM KV tier.",
+             [f"airm_kv_host_blocks{{{lab}}} {len(host.index)}"]),
+            ("airm_kv_host_capacity_blocks", "gauge", "Capacity of the host-DRAM KV tier in blocks.",
+             [f"airm_kv_host_capacity_blocks{{{lab}}} {host.blocks}"]),
+            ("airm_kv_host_hit_tokens_total", "counter", "Prompt tokens reloaded from the host tier.",
+             [f"airm_kv_host_hit_tokens_total{{{lab}}} {st['hit_tokens']}"]),
+            ("airm_kv_offload_blocks_total", "counter", "Blocks written back from the device to the host tier.",
+             [f"airm_kv_offload_blocks_total{{{lab}}} {st['offloaded']}"]),
+            ("airm_kv_reload_bytes_total", "counter", "Bytes reloaded from the host tier to the device.",
+             [f"airm_kv_reload_bytes_total{{{lab}}} {st['reloaded'] * host.block_bytes}"]),
         ]
 
 

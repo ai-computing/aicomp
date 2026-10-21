@@ -11,16 +11,18 @@ import time
 
 
 def encode(events, medium="GPU", block_size=64):
-    """the EventBatch of `events` (as recorded by PagedKV), before msgpack"""
+    """the EventBatch of `events` (as recorded by PagedKV), before msgpack. `medium` names the device tier; events of
+    another tier (the host tier's "CPU") carry their own. A host copy is a BlockStored without tokens, as llm-d expects."""
     out = []
     for e in events:
         if e[0] == "stored":
-            _, hashes, parent, tokens = e
+            hashes, parent, tokens = e[1:4]
+            tier = e[4] if len(e) > 4 else None
             out.append(dict(type="BlockStored", block_hashes=list(hashes), parent_block_hash=parent,
-                            token_ids=list(tokens), block_size=block_size, lora_id=None, medium=medium,
+                            token_ids=list(tokens), block_size=block_size, lora_id=None, medium=tier or medium,
                             lora_name=None))
         elif e[0] == "removed":
-            out.append(dict(type="BlockRemoved", block_hashes=list(e[1]), medium=medium))
+            out.append(dict(type="BlockRemoved", block_hashes=list(e[1]), medium=(e[2] if len(e) > 2 else None) or medium))
         else:
             raise ValueError(f"unknown KV event {e[0]!r}")
     return [time.time(), out]

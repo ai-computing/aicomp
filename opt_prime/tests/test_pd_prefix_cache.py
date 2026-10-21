@@ -113,3 +113,80 @@ def test_metrics_expose_cache_config_and_hits():
     assert 'vllm:prefix_cache_hits_total{model_name="m"} 32' in text
     assert 'vllm:prefix_cache_queries_total{model_name="m"} 80' in text
     assert 'vllm:kv_cache_usage_perc{model_name="m"} 0.0' in text      # cached, unreferenced pages are reclaimable
+
+
+# ---- #52: host-DRAM tier ----
+def _tiered(model, pages, host_kv_gib, **kw):
+    return ContinuousBatcher(model, kv="paged", slots=1, max_context=64, prefill_chunk=64, page_size=16, pages=pages,
+                             prefix_cache=True, host_kv_gib=host_kv_gib, **kw)
+
+
+BLOCK_GIB = 2 * 2 * 2 * 16 * 8 * 4 / 2 ** 30          # one block of the test llama (layers 2, kv heads 2, fp32)
+
+
+def test_evicted_blocks_reload_from_host_and_match():
+    model = _llama()
+    events = ListKVEventPublisher(block_size=16)
+    b = _tiered(model, 4, 8 * BLOCK_GIB, kv_events=events)
+    p, q = _prompts(2, 33, 34, seed=7)
+    _run(b, "p", p, 8)
+    _run(b, "q", q, 8)                                     # evicts p's blocks from the device into the host tier
+    host = b.kv.host
+    assert host.blocks == 8 and host.stats["offloaded"] >= 1
+    hits = b.kv.hit_tokens
+    assert _run(b, "p2", p, 8) == _greedy(model, p, 8)     # p's prefix comes back from the host tier
+    assert b.kv.hit_tokens - hits == 32 and host.stats["reloaded"] >= 1 and host.stats["hit_tokens"] >= 16
+    flat = [e for batch in events.batches for e in batch[1]]
+    cpu = [e for e in flat if e["medium"] == "CPU"]
+    assert cpu and all(e["type"] == "BlockStored" and e["token_ids"] == [] for e in cpu)
+    first = block_hashes(p, 16)[0]
+    order = [(e["type"], e["medium"]) for e in flat if first in e["block_hashes"]]
+    assert order[:3] == [("BlockStored", "GPU"), ("BlockStored", "CPU"), ("BlockRemoved", "GPU")]
+    assert ("BlockStored", "GPU") in order[3:]             # reloaded: on the device again
+
+
+def test_host_only_vs_device_only_hit_rate():
+    """three prompts cycling through a pool that holds one: without the host tier nothing is ever reused"""
+    model = _llama()
+    prompts = _prompts(3, 33, 34, seed=21)
+    rates = {}
+    for gib in (0, 16 * BLOCK_GIB):
+        b = _tiered(model, 4, gib)
+        for rnd in range(3):
+            for i, p in enumerate(prompts):
+                assert _run(b, f"{gib}-{rnd}-{i}", p, 8) == _greedy(model, p, 8)
+        rates[gib] = b.kv.hit_tokens / b.kv.query_tokens
+    assert rates[0] == 0 and rates[16 * BLOCK_GIB] > 0.5
+
+
+def test_host_lru_eviction_and_reload_rule():
+    model = _llama()
+    events = ListKVEventPublisher(block_size=16)
+    b = _tiered(model, 4, 2 * BLOCK_GIB, kv_events=events)           # two host blocks
+    for i, p in enumerate(_prompts(4, 33, 34, seed=31)):
+        _run(b, f"r{i}", p, 8)
+    host = b.kv.host
+    assert len(host.index) == 2 and host.stats["evicted"] >= 1
+    assert any(e["type"] == "BlockRemoved" and e["medium"] == "CPU" for batch in events.batches for e in batch[1])
+    slow = _tiered(model, 4, 2 * BLOCK_GIB, reload_bandwidth=1.0, prefill_rate=1e6)   # recompute beats 1 B/s
+    fast = _tiered(model, 4, 2 * BLOCK_GIB, reload_bandwidth=1e12, prefill_rate=1.0)
+    assert not slow.kv.host.reload and fast.kv.host.reload
+
+
+def test_host_tier_needs_prefix_cache():
+    with pytest.raises(ValueError):
+        ContinuousBatcher(_llama(), kv="paged", page_size=16, max_context=64, host_kv_gib=1)
+
+
+def test_host_tier_metrics():
+    from opt_prime.accel.serve.batched import BatchedService
+    model = _llama()
+    b = _tiered(model, 4, 8 * BLOCK_GIB)
+    p, q = _prompts(2, 33, 34, seed=7)
+    for rid, x in (("p", p), ("q", q), ("p2", p)):
+        _run(b, rid, x, 8)
+    svc = BatchedService(b, model="m", vocab_size=97, max_output=8, render=str)
+    text = svc.metrics.render(*svc.gauges())
+    assert 'airm_kv_host_capacity_blocks{model_name="m"} 8' in text
+    assert f'airm_kv_reload_bytes_total{{model_name="m"}} {b.kv.host.stats["reloaded"] * b.kv.host.block_bytes}' in text
+    assert b.kv.host.block_bytes == 2 * 2 * 2 * 16 * 8 * 4
