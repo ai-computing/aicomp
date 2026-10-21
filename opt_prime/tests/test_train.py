@@ -215,3 +215,25 @@ def test_optimus_lora_output_is_a_peft_adapter(tmp_path):
     sd = {k.replace(".default", ""): v for k, v in pm.state_dict().items() if "lora_" in k}
     for k, v in ad.items():
         assert torch.equal(sd[k].to(v.dtype), v), k
+
+
+def test_full_ft_merge_fills_frozen_offloaded_experts_from_base(tmp_path):
+    """with MoE expert offloading the experts are not stage parameters (frozen on the tiers): the merged model
+    takes them from the base model, the trained stage parameters from the stages"""
+    from transformers import AutoModelForCausalLM
+    from opt_prime.accel.train.backends import _save_hf
+    base = _tiny_hf(tmp_path)
+    subs = _stages(base)
+    held_out = "model_layers_1_mlp_down_proj"                   # stands in for the offloaded experts
+    del subs[1]._modules[held_out]
+    for s in subs:
+        _train_step(s.parameters())
+    job = TrainJob(model=str(tmp_path / "model"), data="x", method="full", out=str(tmp_path / "out"))
+    for stage in (1, 0):
+        o = _fake_opt(subs[stage], stage, 2)
+        o.moe_offload_report = object()
+        _save_hf(o, job)
+    got = AutoModelForCausalLM.from_pretrained(tmp_path / "out", dtype=torch.bfloat16).state_dict()
+    ref = base.state_dict()
+    assert torch.equal(got["model.layers.1.mlp.down_proj.weight"], ref["model.layers.1.mlp.down_proj.weight"])
+    assert not torch.equal(got["model.layers.0.mlp.down_proj.weight"], ref["model.layers.0.mlp.down_proj.weight"])

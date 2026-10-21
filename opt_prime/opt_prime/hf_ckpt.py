@@ -140,14 +140,24 @@ def merge_stage_state_dicts(ckpt_dir, original_keys, log=print):
     return full_sd
 
 
-def merge_hf_ckpt(model, ckpt_dir, output, token=None, dtype=None, log=print):
+def merge_hf_ckpt(model, ckpt_dir, output, token=None, dtype=None, log=print, fill_from_base=False):
     """Stage checkpoints of `model` (HF id or path) in ckpt_dir -> a HuggingFace model directory `output`
-    (weights + config + tokenizer); dtype: the saved weights' dtype (None: transformers' default)."""
+    (weights + config + tokenizer); dtype: the saved weights' dtype (None: transformers' default).
+    fill_from_base: take keys the stages do not hold from `model` itself - the frozen MoE experts kept on the host
+    by expert offloading are not stage parameters, and are unchanged from the base model."""
     from transformers import AutoModelForCausalLM, AutoTokenizer
     log(f"Loading model config: {model}")
     config, original_keys = hf_state_keys(model, token)
     log(f"Original model has {len(original_keys)} parameters/buffers")
     full_sd = merge_stage_state_dicts(ckpt_dir, original_keys, log)
+
+    missing = original_keys - set(full_sd.keys())
+    if missing and fill_from_base:
+        base = AutoModelForCausalLM.from_pretrained(model, token=token,
+                                                    **({} if dtype is None else {"dtype": dtype})).state_dict()
+        full_sd.update({k: base[k] for k in missing if k in base})
+        log(f"Filled {len(missing)} keys from the base model (frozen, not held by any stage)")
+        del base
 
     # Verify
     missing = original_keys - set(full_sd.keys())

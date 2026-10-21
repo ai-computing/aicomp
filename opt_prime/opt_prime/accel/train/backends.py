@@ -204,7 +204,8 @@ def _save_hf(opt, job):
         dist.barrier()
     if opt.get_rank() == 0:
         if job.method == "full":
-            merge_hf_ckpt(job.model, parts, job.out, dtype=torch.bfloat16, log=lambda *a: None)
+            merge_hf_ckpt(job.model, parts, job.out, dtype=torch.bfloat16, log=lambda *a: None,
+                          fill_from_base=getattr(opt, "moe_offload_report", None) is not None)   # frozen host experts
         else:
             lora = {}
             for f in sorted(os.listdir(parts)):
