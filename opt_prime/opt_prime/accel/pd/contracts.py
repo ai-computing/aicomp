@@ -30,10 +30,43 @@ class KVSpec:
 
 
 @dataclass(frozen=True)
+class SamplingParams:
+    """Token selection. The default is greedy; engines without `supports_sampling` accept only that.
+    `seed` makes sampling reproducible across processes (each position draws from its own seeded stream), so a
+    prefill and a decode stage on different hosts continue one sequence. Generation ends early at any of
+    `stop_token_ids` (the stop token is kept in the output)."""
+    temperature: float = 0.0
+    top_p: float = 1.0
+    top_k: int = 0
+    seed: int | None = None
+    stop_token_ids: tuple[int, ...] = ()
+
+    def __post_init__(self):
+        if not isinstance(self.temperature, (int, float)) or not 0 <= self.temperature <= 100:
+            raise ValueError("temperature must be in [0, 100]")
+        if not isinstance(self.top_p, (int, float)) or not 0 < self.top_p <= 1:
+            raise ValueError("top_p must be in (0, 1]")
+        if type(self.top_k) is not int or self.top_k < 0:
+            raise ValueError("top_k must be a nonnegative integer")
+        if self.seed is not None and (type(self.seed) is not int or self.seed < 0):
+            raise ValueError("seed must be a nonnegative integer")
+        if not isinstance(self.stop_token_ids, tuple) or any(type(t) is not int or t < 0 for t in self.stop_token_ids):
+            raise ValueError("stop token IDs must be a tuple of nonnegative integers")
+
+    @property
+    def greedy(self):
+        return self.temperature == 0 or self.top_k == 1
+
+
+GREEDY = SamplingParams()
+
+
+@dataclass(frozen=True)
 class PDRequest:
     request_id: str
     input_ids: tuple[int, ...]
-    max_new_tokens: int
+    max_new_tokens: int                       # upper bound: generation may end earlier at a stop token
+    sampling: SamplingParams = GREEDY
 
     def __post_init__(self):
         if (
@@ -47,6 +80,8 @@ class PDRequest:
             raise ValueError("nonnegative token IDs required")
         if type(self.max_new_tokens) is not int or self.max_new_tokens < 1:
             raise ValueError("positive output length required")
+        if not isinstance(self.sampling, SamplingParams):
+            raise ValueError("SamplingParams required")
 
 
 @dataclass(frozen=True)

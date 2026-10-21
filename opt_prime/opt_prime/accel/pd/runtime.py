@@ -69,6 +69,8 @@ class PDRuntime:
                 capability = getattr(engine, "capabilities", None)
                 if capability is not None:
                     capability.validate(request)
+                if not request.sampling.greedy and not getattr(engine, "supports_sampling", False):
+                    raise ValueError("engine supports greedy decoding only")
             if cancellation is not None and cancellation.cancelled:
                 raise RequestCancelled(request.request_id)
             self.generation += 1
@@ -140,7 +142,7 @@ class PDRuntime:
                 self.last_timings["total_seconds"] = perf_counter() - started
                 if cancellation is not None and cancellation.cancelled:
                     raise RequestCancelled(request.request_id)
-                return [*result.output_prefix, *tail]
+                return stop_at(request, [*result.output_prefix, *tail])
             except RequestCancelled:
                 if self.state != "idle":
                     self.state = "poisoned"
@@ -150,3 +152,12 @@ class PDRuntime:
                 raise
         finally:
             self._lock.release()
+
+
+def stop_at(request, tokens):
+    """Cut after the first stop token (engines that cannot stop early still return a correct output)."""
+    stop = request.sampling.stop_token_ids
+    for i, t in enumerate(tokens):
+        if t in stop:
+            return tokens[:i + 1]
+    return tokens
