@@ -20,7 +20,7 @@ RUN wget https://github.com/huggingface/transformers/archive/refs/tags/v4.46.2.t
  && tar xvfz v4.46.2.tar.gz \
  && rm v4.46.2.tar.gz
 
-RUN git clone https://github.com/ai-computing/aicomp.git \
+RUN git clone --branch v4.0.0 --depth 1 https://github.com/ai-computing/aicomp.git \
  && cp aicomp/compiler_fx/modeling_llama.py  /workspace/transformers-4.46.2/src/transformers/models/llama
 
 #download FASOP from Google drive
