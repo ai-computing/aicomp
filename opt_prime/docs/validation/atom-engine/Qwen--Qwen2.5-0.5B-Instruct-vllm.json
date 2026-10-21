@@ -1,0 +1,40 @@
+{
+ "model": "Qwen/Qwen2.5-0.5B-Instruct",
+ "new_tokens": 128,
+ "batch": 1,
+ "vllm_rbln": {
+  "rows": [
+   {
+    "prompt_tokens": 5,
+    "new_tokens": 128,
+    "ttft_s": 0.0099,
+    "decode_tok_s": 175.6
+   },
+   {
+    "prompt_tokens": 11,
+    "new_tokens": 128,
+    "ttft_s": 0.0096,
+    "decode_tok_s": 177.3
+   },
+   {
+    "prompt_tokens": 4,
+    "new_tokens": 128,
+    "ttft_s": 0.0096,
+    "decode_tok_s": 176.8
+   },
+   {
+    "prompt_tokens": 11,
+    "new_tokens": 128,
+    "ttft_s": 0.0095,
+    "decode_tok_s": 176.6
+   }
+  ],
+  "artifact": "~/.cache/opt_prime/atom-rbln/Qwen--Qwen2.5-0.5B-Instruct-tp1-s2048-b1"
+ },
+ "tokens_equal_per_prompt": [
+  false,
+  false,
+  false,
+  false
+ ]
+}
