@@ -1,0 +1,40 @@
+{
+ "model": "unsloth/Llama-3.2-1B-Instruct",
+ "new_tokens": 128,
+ "batch": 1,
+ "vllm_rbln": {
+  "rows": [
+   {
+    "prompt_tokens": 6,
+    "new_tokens": 128,
+    "ttft_s": 0.0209,
+    "decode_tok_s": 78.4
+   },
+   {
+    "prompt_tokens": 12,
+    "new_tokens": 128,
+    "ttft_s": 0.0204,
+    "decode_tok_s": 80.5
+   },
+   {
+    "prompt_tokens": 5,
+    "new_tokens": 128,
+    "ttft_s": 0.0206,
+    "decode_tok_s": 82.6
+   },
+   {
+    "prompt_tokens": 10,
+    "new_tokens": 128,
+    "ttft_s": 0.0186,
+    "decode_tok_s": 82.7
+   }
+  ],
+  "artifact": "~/.cache/opt_prime/atom-rbln/unsloth--Llama-3.2-1B-Instruct-tp1-s2048-b1"
+ },
+ "tokens_equal_per_prompt": [
+  true,
+  true,
+  true,
+  true
+ ]
+}

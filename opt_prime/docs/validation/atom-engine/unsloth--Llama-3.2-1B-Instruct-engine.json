@@ -1,0 +1,35 @@
+{
+ "model": "unsloth/Llama-3.2-1B-Instruct",
+ "new_tokens": 128,
+ "batch": 1,
+ "optimus_atom_engine": {
+  "rows": [
+   {
+    "prompt_tokens": 6,
+    "new_tokens": 128,
+    "ttft_s": 0.0185,
+    "decode_tok_s": 85.0
+   },
+   {
+    "prompt_tokens": 12,
+    "new_tokens": 128,
+    "ttft_s": 0.0184,
+    "decode_tok_s": 84.6
+   },
+   {
+    "prompt_tokens": 5,
+    "new_tokens": 128,
+    "ttft_s": 0.0189,
+    "decode_tok_s": 85.8
+   },
+   {
+    "prompt_tokens": 10,
+    "new_tokens": 128,
+    "ttft_s": 0.0184,
+    "decode_tok_s": 84.8
+   }
+  ],
+  "load_s": 5.1,
+  "artifact": "~/.cache/opt_prime/atom-rbln/unsloth--Llama-3.2-1B-Instruct-tp1-s2048-b1"
+ }
+}
