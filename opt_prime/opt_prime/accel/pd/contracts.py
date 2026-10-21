@@ -29,6 +29,13 @@ class KVSpec:
             raise ValueError("positive physical KV dimensions required")
 
 
+class RetryableError(Exception):
+    """Raised by an engine or transport when the call failed without leaving device work outstanding or a KV
+    allocation in an uncertain state (e.g. no destination capacity, a transfer that timed out before any copy was
+    issued). The runtime then releases the request's leases and stays usable; the caller may retry, here or on
+    another replica. Anything else that fails is treated as uncertain and quarantines the lane."""
+
+
 @dataclass(frozen=True)
 class SamplingParams:
     """Token selection. The default is greedy; engines without `supports_sampling` accept only that.

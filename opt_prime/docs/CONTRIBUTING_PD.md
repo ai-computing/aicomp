@@ -61,7 +61,11 @@ No raw pointer guessing or automatic fallback belongs in the common runtime.
 
 Use one owner per mutable cache lane. After an uncertain device operation the
 runtime is poisoned; it must not be reset by dropping its references. Device
-recovery is a backend responsibility, not generic exception cleanup.
+recovery is a backend responsibility, not generic exception cleanup: an endpoint
+may implement `recover() -> bool`, returning True only when its device state is
+known-good, and `PDRuntime.recover()` / `PDStageService.reset()` reopen the lane
+only when every endpoint does. Raise `RetryableError` only when a call failed
+before anything became uncertain (nothing outstanding, allocations released).
 
 ## Diagnostics and performance
 
