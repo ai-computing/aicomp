@@ -152,14 +152,14 @@ def lease_p2p_devices(binding, cfg, owner):
     except ImportError:              # opt_prime.accel.platforms not present (PD used on its own): no leases
         return []
 
+    m = re.fullmatch(r"/dev/rngd/npu(\d+)ch\d+", str(getattr(binding, "device_path", "")))
+    a = re.fullmatch(r"rbln(\d+)", str(cfg.get("physical_atom", "")))
+    if m is None or a is None:
+        raise ValueError("explicit RNGD device path and physical ATOM device required for leasing")
     leases = []
     try:
-        m = re.fullmatch(r"/dev/rngd/npu(\d+)ch\d+", str(getattr(binding, "device_path", "")))
-        if m:
-            leases.append(acquire(f"rngd:{m.group(1)}", "prefill", owner, probe=None))
-        a = re.fullmatch(r"rbln(\d+)", str(cfg.get("physical_atom", "")))
-        if a:
-            leases.append(acquire(f"atom:{a.group(1)}", "decode", owner))
+        leases.append(acquire(f"rngd:{m.group(1)}", "prefill", owner, probe=None))
+        leases.append(acquire(f"atom:{a.group(1)}", "decode", owner))
     except BaseException:
         for lease in leases:
             lease.release()
