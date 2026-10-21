@@ -11,6 +11,7 @@ from opt_prime.accel.pd.contracts import (
     KVLease as KVLease,
     PrefillResult as PrefillResult,
     PDRequest,
+    RetryableError,
     PrefillEngine,
     DecodeEngine,
     Transport,
@@ -38,8 +39,10 @@ class CancellationToken:
 class PDRuntime:
     """One cache lane. Keep this object alive after failure until device recovery.
 
-    No automatic host fallback, format conversion, retry, or poisoned-lane reset.
-    Endpoints must retain allocations internally if their allocation call raises.
+    No automatic host fallback, format conversion or retry. A RetryableError from an endpoint releases the request's
+    leases and leaves the lane idle; any other failure poisons it until `recover()` succeeds, which every endpoint
+    must confirm (device recovery is a backend responsibility). Endpoints must retain allocations internally if
+    their allocation call raises.
     """
 
     def __init__(
@@ -162,12 +165,30 @@ class PDRuntime:
                 if self.state != "idle":
                     self.state = "poisoned"
                 raise
+            except RetryableError:
+                self.retained.clear()                     # the endpoint guarantees nothing is outstanding
+                self.state = "idle"
+                raise
             except BaseException:
                 self.state = "poisoned"
                 raise
         finally:
             self._lock.release()
 
+
+    def recover(self):
+        """Return a poisoned lane to idle when every endpoint confirms its device state is known-good
+        (`recover() -> True`); the retained allocations are released only then. False if any endpoint has no
+        recovery or declines - the lane stays poisoned and its owners stay alive."""
+        if self.state != "poisoned":
+            return self.state == "idle"
+        for part in (self.prefill, self.decode, self.transport):
+            fn = getattr(part, "recover", None)
+            if fn is None or fn() is not True:
+                return False
+        self.retained.clear()
+        self.state = "idle"
+        return True
 
 def stop_at(request, tokens):
     """Cut after the first stop token (engines that cannot stop early still return a correct output)."""

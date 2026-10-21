@@ -74,3 +74,7 @@ class TorchCacheTransport:
 
     def finish(self, request_id):
         pass
+
+    def recover(self):
+        """tensor copies leave nothing outstanding once the devices are fenced (see TorchCausalLMEngine.recover)"""
+        return True

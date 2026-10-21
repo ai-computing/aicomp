@@ -52,6 +52,14 @@ class TorchCausalLMEngine:
         self.prefix_only = prefix_only
         self.last_logits = []
 
+    def recover(self):
+        """device state is known-good once queued work completes (a failed launch raises here instead)"""
+        try:
+            fence(self.device)
+            return True
+        except Exception:
+            return False
+
     def _validate(self, request):
         if len(request.input_ids) + request.max_new_tokens > self.max_context:
             raise ValueError('request exceeds cache capacity')

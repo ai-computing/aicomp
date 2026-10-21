@@ -52,8 +52,14 @@ prefill. No NIXL or Mooncake wire-protocol implementation is claimed.
   (`OwnerExecutor(service, sweep=1.0)`), so an abandoned prepared prefill frees the
   lane without a new request. Neither cancels an in-flight copy/decode or authorizes
   premature destination reuse.
-- A failed engine operation quarantines the service and retains the prepared
-  source and runtime owners. Readiness becomes 503. No retry/reset/fallback occurs.
+- Failures (#49): an endpoint that raises `RetryableError` guarantees nothing is
+  outstanding; the lane returns to idle and the client gets 503 with `Retry-After: 1`
+  and `"retryable": true`. Any other engine failure quarantines the service and
+  retains the prepared source and runtime owners: 500 `"retryable": false`, then
+  readiness 503 and 503 `"retryable": true` for new requests (retry on another
+  replica). `POST /v1/admin/reset` reopens the lane only when the prefill engine,
+  decode engine and transport each confirm a known-good device with `recover()`;
+  a backend without `recover()` answers 501 (restart the stage). No fallback occurs.
 - A client that closes its connection while its request is queued or running is
   cancelled through the same fenced path as `POST /v1/cancel`: device work already
   submitted finishes or drains, then the lane is released (499, not delivered).

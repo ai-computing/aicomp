@@ -13,15 +13,16 @@ import select
 import socket
 import threading
 import time
-from opt_prime.accel.pd.contracts import SamplingParams
+from opt_prime.accel.pd.contracts import RetryableError, SamplingParams
 from opt_prime.accel.pd.runtime import PDRequest, PDRuntime, CancellationToken, RequestCancelled
 from opt_prime.accel.serve.metrics import StageMetrics
 
 
 class StageError(Exception):
-    def __init__(self, status, message):
+    """HTTP status + message. retryable: the request may be retried (here later, or on another replica)."""
+    def __init__(self, status, message, retryable=False):
         super().__init__(message)
-        self.status = status
+        self.status, self.retryable = status, retryable
 
 
 @dataclass
@@ -30,6 +31,10 @@ class Prepared:
     result: object
     created: float
     spec: object
+
+    def recover(self):
+        # host-side record of a fenced prefill; the source engine's own recovery is checked by PDStageService.reset
+        return True
 
     def prefill(self, request):
         if (
@@ -208,7 +213,7 @@ class PDStageService:
         if cancellation is not None and cancellation.cancelled:
             raise StageError(499, "request cancelled before execution")
         if self.state == "poisoned":
-            raise StageError(503, "owner quarantined; recovery required")
+            raise StageError(503, "owner quarantined; recovery required", retryable=True)
         self.expire()
         if self.prepared is not None and self.prepared.request.request_id == rid:
             if self.prepared.request.input_ids != request.input_ids:
@@ -250,6 +255,12 @@ class PDStageService:
                 self.state = "idle"
                 self._event("cancelled", rid)
                 raise StageError(499, "prefill cancelled after completion")
+            except RetryableError as error:
+                self.prepared = None                      # the engine left nothing outstanding
+                self.state = "idle"
+                self.metrics.failed()
+                self._event("retryable_failure", rid)
+                raise StageError(503, f"retryable: {error}", retryable=True)
             except BaseException:
                 self.state = "poisoned"
                 self.metrics.failed()
@@ -282,7 +293,7 @@ class PDStageService:
             if len(tokens) > 1 and "decode_seconds" in t:
                 self.metrics.observe("vllm:time_per_output_token_seconds", t["decode_seconds"] / (len(tokens) - 1))
             self.metrics.observe("vllm:e2e_request_latency_seconds", self.clock() - started)
-            self.metrics.finished("length", len(request.input_ids), len(tokens))
+            self.metrics.finished(finish, len(request.input_ids), len(tokens))
             return response
         except RequestCancelled:
             if self.runtime.state != "idle":
@@ -292,10 +303,34 @@ class PDStageService:
             self.state = "idle"
             self._event("cancelled", rid)
             raise StageError(499, "decode cancelled after drain")
+        except RetryableError as error:
+            self.prepared = None                          # runtime released the leases; retry from prefill
+            self.state = "idle"
+            self.metrics.failed()
+            self._event("retryable_failure", rid)
+            raise StageError(503, f"retryable: {error}", retryable=True)
         except BaseException:
             self.state = "poisoned"
             self.metrics.failed()
             raise
+
+    def reset(self):
+        """Recovery from quarantine: every endpoint must confirm a known-good device state (`recover() -> True`);
+        only then are the retained allocations released and the lane reopened. Owner thread only."""
+        if self.state != "poisoned":
+            raise StageError(409, "owner is not quarantined")
+        for part in (self.prefill, self.decode, self.transport):
+            fn = getattr(part, "recover", None)
+            if fn is None:
+                raise StageError(501, f"{type(part).__name__} has no recovery; restart the stage")
+            if fn() is not True:
+                raise StageError(503, f"{type(part).__name__} not known-good; still quarantined")
+        if self.runtime is not None and not self.runtime.recover():
+            raise StageError(503, "cache lane not recovered; still quarantined")
+        self.prepared = None
+        self.state = "idle"
+        self._event("recovered", None)
+        return dict(state=self.state)
 
     def _finish(self, request, stop_strings, tokens):
         """(tokens, text, finish_reason): cut at the first stop string (the text excludes it, the tokens end with the
@@ -398,6 +433,8 @@ class OwnerExecutor:
                     result = self.service.execute(*args, cancellation=token, **kwargs)
                 elif operation == "cancel":
                     result = self.service.cancel(*args)
+                elif operation == "reset":
+                    result = self.service.reset()
                 else:
                     raise StageError(400, "unknown owner operation")
             except BaseException as exc:
@@ -436,10 +473,12 @@ def serve_stage(owner, stage, port):
         def log_message(self, *args):
             pass
 
-        def reply(self, status, payload):
+        def reply(self, status, payload, retry_after=None):
             data = json.dumps(payload).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
+            if retry_after is not None:
+                self.send_header("Retry-After", str(retry_after))
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             try:
@@ -479,10 +518,13 @@ def serve_stage(owner, stage, port):
                     pass
 
         def do_POST(self):
-            if self.path not in ("/v1/completions", "/v1/chat/completions", "/v1/cancel"):
+            if self.path not in ("/v1/completions", "/v1/chat/completions", "/v1/cancel", "/v1/admin/reset"):
                 self.reply(404, dict(error="not found"))
                 return
             try:
+                if self.path == "/v1/admin/reset":
+                    self.reply(200, owner.submit("reset"))
+                    return
                 if self.path == "/v1/cancel":
                     result = owner.cancel_request(self.headers.get("x-request-id"))
                     self.reply(200 if result["drained"] else 202, result)
@@ -508,15 +550,16 @@ def serve_stage(owner, stage, port):
                         self.cancel_if_gone(rid, state)
                 self.reply(200, response)
             except StageError as error:
-                self.reply(error.status, dict(error=str(error)))
+                self.reply(error.status, dict(error=str(error), retryable=error.retryable),
+                           retry_after=1 if error.retryable else None)
             except (ValueError, TypeError):
                 failed = owner.service.state == "poisoned"
                 self.reply(
                     500 if failed else 400,
-                    dict(error="engine failed" if failed else "invalid request"),
+                    dict(error="engine failed" if failed else "invalid request", retryable=False),
                 )
             except Exception:
-                self.reply(500, dict(error="engine failed; owner retained"))
+                self.reply(500, dict(error="engine failed; owner retained", retryable=False))
 
         def stream(self, rid, body, chat):
             """OpenAI-compatible SSE: a chunk per token as the owner produces it (the first right after the fenced
