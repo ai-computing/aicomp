@@ -523,6 +523,8 @@ class Optimus_p:
                 if local_rank == i:
                     self.ir = IR(module, self)
 
+                    from opt_prime.accel.moe.train import prepare_moe_for_training
+                    prepare_moe_for_training(module)        # export/autograd-safe experts (MoE models)
                     if moe_offload is not None and self.moe_offload_report is None:   # experts frozen on offload tiers
                         from opt_prime.accel.moe import apply_moe_offload
                         self.moe_offload_report = apply_moe_offload(module, moe_offload)
@@ -572,6 +574,8 @@ class Optimus_p:
             self.ir = IR(module, self)
             #self.model_ir.append(IR(module))
 
+            from opt_prime.accel.moe.train import prepare_moe_for_training
+            prepare_moe_for_training(module)        # export/autograd-safe experts (MoE models)
             if moe_offload is not None and self.moe_offload_report is None:   # experts frozen on offload tiers
                 from opt_prime.accel.moe import apply_moe_offload
                 self.moe_offload_report = apply_moe_offload(module, moe_offload)
