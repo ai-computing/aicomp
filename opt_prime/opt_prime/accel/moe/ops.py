@@ -7,6 +7,7 @@
 OptimusPrime IR (shape-only fake implementation), so data-dependent routing is never traced and the expert weights
 are not graph parameters.
 """
+import inspect
 import itertools
 import threading
 from typing import Dict, List
@@ -35,9 +36,10 @@ def get_layer(layer_id: int) -> OffloadedLayer:
 # cudagraph_unsafe: the op synchronizes with the host (routing), so torch.compile(mode="reduce-overhead") captures
 # CUDA graphs for the regions between offloaded layers and runs this op eagerly in between (graph partition).
 _TAGS = (torch.Tag.cudagraph_unsafe,) if hasattr(torch.Tag, "cudagraph_unsafe") else ()
+_OP_KW = {"tags": _TAGS} if "tags" in inspect.signature(torch.library.custom_op).parameters else {}   # torch < 2.6
 
 
-@torch.library.custom_op("opt_prime::offloaded_experts", mutates_args=(), tags=_TAGS)
+@torch.library.custom_op("opt_prime::offloaded_experts", mutates_args=(), **_OP_KW)
 def offloaded_experts(hidden: torch.Tensor, top_k_index: torch.Tensor, top_k_weights: torch.Tensor,
                       layer_id: int) -> torch.Tensor:
     return _LAYERS[layer_id].forward(hidden, top_k_index, top_k_weights)

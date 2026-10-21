@@ -838,3 +838,58 @@ The example entry points (`pp_inference_llama.py`, `pp_generation_llama.py`, `se
 ## License
 
 The results of the AIcomp project are distributed under the 3-clause BSD license.
+
+## Experimental heterogeneous prefill/decode integration
+
+An optional `opt_prime.accel.pd` layer separates prefill and decode engines from KV
+transport, with explicit model/layout compatibility and buffer lifetime contracts.
+It includes a bridge to the separately installed `hetero-npu-p2p` transport.
+Torch causal-model and KONI RNGD/ATOM endpoint adapters are included. llm-d
+service integration is a separate feature; hardware support is limited to explicitly
+validated routes and SDK versions. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).
+
+### llm-d sidecar
+
+`opt_prime.accel.serve.llmd` adds an optional local shared-storage-sidecar adapter on top of
+the tested engine. It serializes device work through the owning process and keeps
+KV off the HTTP path. See [service contracts and validation](docs/LLMD_FEATURE.md).
+
+### Extending models and backends
+
+The PD package separates SDK-free contracts, execution state, model-family
+capabilities, cache transport and device adapters. Dense GPT-2/Llama/Qwen2/Qwen3/
+Mistral Torch models are covered by the model matrix; NPU support remains scoped
+to the validated KONI and experimental Qwen2.5 RNGD→ATOM paths. See the [contributor guide](docs/CONTRIBUTING_PD.md)
+and [model/performance validation](docs/validation/model-expansion/RESULTS.md).
+
+Actual NPU tests additionally cover native ATOM execution of Qwen2.5-0.5B and
+1.5B, prefill chunk64/128 comparisons, and stage profiling of KONI RNGD→ATOM PD.
+Qwen2.5-0.5B, 1.5B and 3B now also pass actual RNGD→ATOM P2P validation at B1,
+context512. These new adapters are experimental and use a pinned external-KV
+ABI; they do not establish arbitrary NPU/GPU support. See the
+[backend extension guide](docs/NPU_BACKEND_EXTENSIONS.md),
+[Qwen P2P validation](docs/QWEN_PD_VALIDATION.md), and the earlier
+[native NPU validation record](docs/NPU_MODEL_VALIDATION.md).
+
+The [3B extension record](docs/QWEN_3B_VALIDATION.md) covers additional model
+geometry, explicit device selection and actual local llm-d verification. The3B transfer
+path passes, but FP32 teacher-forced agreement is147/160; broader model quality
+is not cleared.
+
+For the [vendor-engine reuse strategy](docs/NATIVE_ENGINE_INTEGRATION.md) and
+[measured ATOM input-buffer optimization](docs/ATOM_INPUT_REUSE.md), see the
+linked assessments. The Qwen runner accepts opt-in `atom_reuse_inputs: true`;
+the original path remains available for full-logit reference checks.
+
+[Native baseline and KV resume](docs/NATIVE_BASELINE_AND_KV_RESUME.md) records
+the vendor ATOM comparison, public KV API feasibility probe, numerical limits
+and the compact-prefix ablation (not promoted to default).
+
+### Heterogeneous P2P factory
+
+The external-cache RNGD → ATOM worker is available through
+`opt_prime.accel.pd.npu.factory.create_qwen_p2p`. It uses the separate
+`hetero-npu-p2p` package and requires the validated SDK/driver/export setup.
+Native-cache P2P and automatic host fallback are not enabled.
+See [factory and validation](docs/P2P_FACTORY_KO.md) and
+[integration plan](docs/PD_INTEGRATION_PLAN_KO.md).
