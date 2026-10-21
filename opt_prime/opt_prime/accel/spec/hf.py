@@ -99,6 +99,10 @@ def _attention(cfg, layer, layer_type, idx=None) -> AttentionSpec:
         return AttentionSpec("gqa" if geometry_ok else "custom", hidden, heads, kvh, hd, hd,
                              a.q_proj.bias is not None, a.o_proj.bias is not None,
                              hasattr(a, "q_norm") and hasattr(a, "k_norm"), window, rope, module_class=cls)
+    if hasattr(a, "c_attn") and hasattr(a, "head_dim"):     # GPT-2: one fused qkv projection, every head keeps KV
+        nh = getattr(a, "num_heads", heads)
+        return AttentionSpec("fused_qkv", hidden, nh, nh, a.head_dim, a.head_dim, True, True, False, window, None,
+                             module_class=cls)
     return AttentionSpec("custom", hidden, heads, module_class=cls)
 
 
@@ -155,7 +159,7 @@ def _mlp(cfg, layer):
 
 def _decoder_layers(model, n):
     for name, mod in model.named_modules():
-        if isinstance(mod, nn.ModuleList) and len(mod) == n and name.endswith("layers"):
+        if isinstance(mod, nn.ModuleList) and len(mod) == n and (name.endswith("layers") or name == "transformer.h"):
             return name, mod
     raise ValueError(f"no decoder layer list of length {n} found")
 
@@ -177,6 +181,14 @@ def model_spec(model: nn.Module, revision: str = "") -> ModelSpec:
     return ModelSpec(cfg.model_type, cfg.hidden_size, int(emb.weight.shape[0]), tuple(out),
                      _norm(getattr(base, "norm", None)), bool(config_value(cfg, "tie_word_embeddings", False)),
                      str(dtype).replace("torch.", ""), config_value(cfg, "max_position_embeddings", None), revision)
+
+
+def model_spec_from_config(cfg, revision: str = "", dtype=torch.bfloat16) -> ModelSpec:
+    """ModelSpec of a config: the model is built on the meta device (no weights)."""
+    from transformers import AutoModelForCausalLM
+    with torch.device("meta"):
+        model = AutoModelForCausalLM.from_config(cfg, dtype=dtype)
+    return model_spec(model, revision)
 
 
 def model_spec_from_pretrained(path_or_id: str, revision: str = "", dtype=None) -> ModelSpec:

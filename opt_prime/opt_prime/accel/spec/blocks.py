@@ -41,7 +41,8 @@ class RopeSpec:
 
 @dataclass(frozen=True)
 class AttentionSpec:
-    kind: str                     # "gqa" (q/k/v/o projections) | "mla" (latent KV) | "linear" | "custom"
+    kind: str                     # "gqa" (q/k/v/o projections) | "fused_qkv" (one qkv projection, GPT-2) | "mla"
+                                  # (latent KV) | "linear" | "custom"
     hidden: int
     heads: int = 0
     kv_heads: int = 0
@@ -58,7 +59,7 @@ class AttentionSpec:
 
     @property
     def keeps_kv(self) -> bool:
-        return self.kind in ("gqa", "mla")
+        return self.kind in ("gqa", "fused_qkv", "mla")
 
 
 @dataclass(frozen=True)
