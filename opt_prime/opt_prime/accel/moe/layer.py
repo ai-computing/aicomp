@@ -61,9 +61,15 @@ class OffloadedLayer:
         self.owner_c, self.local_c = owner, local
         self._dev_tables = {}
 
+    def _padded_tables(self):
+        """owner/local tables with one extra entry for padding ids (-1 and num_experts, as in transformers' expert
+        parallelism): its owner is len(tiers), which is no tier, so padded pairs reach no tier and add nothing."""
+        return (torch.cat([self.owner_c, torch.tensor([len(self.tiers)])]),
+                torch.cat([self.local_c, torch.zeros(1, dtype=torch.long)]))
+
     def _tables(self, device):
         if device not in self._dev_tables:
-            self._dev_tables[device] = (self.owner_c.to(device), self.local_c.to(device))
+            self._dev_tables[device] = tuple(t.to(device) for t in self._padded_tables())
         return self._dev_tables[device]
 
     def _snapshot(self, device):
@@ -73,11 +79,12 @@ class OffloadedLayer:
             if self._has is None:
                 self._has = [bool((self.owner_c == t).any()) for t in range(len(self.tiers))]
                 self._blocking_any = any(self._has[t] and self.tiers[t].blocking for t in range(len(self.tiers)))
-                self._lists = (self.owner_c.tolist(), self.local_c.tolist(),      # for the decode fast path
-                               self.owner_c.to(torch.int32).contiguous(), self.local_c.to(torch.int32).contiguous())
+                owner, local = self._padded_tables()
+                self._lists = (owner.tolist(), local.tolist(),                    # for the decode fast path
+                               owner.to(torch.int32).contiguous(), local.to(torch.int32).contiguous())
                 self._native = None
-            return (self.owner_c.clone(), self.local_c.clone(), self._tables(device), self._has, self._blocking_any,
-                    self._lists)
+            owner, local = self._padded_tables()
+            return owner, local, self._tables(device), self._has, self._blocking_any, self._lists
 
     def _pinned(self, name, like):
         key = (name, tuple(like.shape), like.dtype)
@@ -99,7 +106,7 @@ class OffloadedLayer:
 
     def flush_stats(self, st):
         if self._dev_counts is not None:
-            for t, n in enumerate(self._dev_counts.tolist()):
+            for t, n in enumerate(self._dev_counts.tolist()[:len(self.tiers)]):     # the last bin is padding
                 if n:
                     st.tier_pairs[self.names[t]] = st.tier_pairs.get(self.names[t], 0) + int(n)
                     if self.tiers[t].blocking: st.host_pairs += int(n)
@@ -110,8 +117,7 @@ class OffloadedLayer:
         with self._execution_lock:
             guard = _NATIVE_LOCK if self.cfg.native_dispatch else nullcontext()
             with guard:
-                valid = (top_k_index >= 0) & (top_k_index < self.E)
-                return self._forward(hidden, top_k_index.clamp(0, self.E - 1), top_k_weights * valid)
+                return self._forward(hidden, top_k_index, top_k_weights)     # padding ids: see _padded_tables
 
     def _forward(self, hidden, top_k_index, top_k_weights):
         cfg, st = self.cfg, self.cfg.stats
@@ -126,7 +132,8 @@ class OffloadedLayer:
         if cfg.adapt_every:                                 # routing EMA on the device (no host sync)
             if self._counts_d is None or self._counts_d.device != dev:
                 self._counts_d = torch.zeros(self.E, dtype=torch.float32, device=dev)
-            self._counts_d.mul_(cfg.adapt_decay).add_(torch.bincount(top_k_index.reshape(-1), minlength=self.E).float())
+            ids = top_k_index.reshape(-1).remainder(self.E + 1)            # padding (-1, E) -> bin E, not counted
+            self._counts_d.mul_(cfg.adapt_decay).add_(torch.bincount(ids, minlength=self.E + 1)[:self.E].float())
             self.calls += 1
 
         # 1) start copying the routing (and the hidden rows) to the host without waiting
@@ -158,9 +165,9 @@ class OffloadedLayer:
                 futs, rows_c = self._split(idx_p, w_p, h_p, owner_c, local_c)
         else:
             if self._dev_counts is None or self._dev_counts.device != dev:
-                self._dev_counts = torch.zeros(len(self.tiers), dtype=torch.long, device=dev)
+                self._dev_counts = torch.zeros(len(self.tiers) + 1, dtype=torch.long, device=dev)
                 st._sources.append(self)
-            self._dev_counts += torch.bincount(own_idx.reshape(-1), minlength=len(self.tiers))
+            self._dev_counts += torch.bincount(own_idx.reshape(-1), minlength=len(self.tiers) + 1)
 
         if prof is not None: tp = _ph(prof, "split", tp)
         # 3) launch every device tier that owns experts of this layer (needs nothing from the host)
@@ -214,7 +221,7 @@ class OffloadedLayer:
     def _split(self, idx_c, w_p, h_p, owner_c, local_c):
         """general path: tensors per blocking tier, all in workers."""
         own_c = owner_c[idx_c]
-        per_tier = torch.bincount(own_c.reshape(-1), minlength=len(self.tiers)).tolist()
+        per_tier = torch.bincount(own_c.reshape(-1), minlength=len(self.tiers) + 1).tolist()[:len(self.tiers)]
         self._count(per_tier)
         blocking = [t for t, n in enumerate(per_tier) if n and self.tiers[t].blocking]
         if not blocking:
@@ -279,7 +286,10 @@ class OffloadedLayer:
         counts = [0] * T
         for r, (ir, wr) in enumerate(zip(il, wl)):
             for e, a in zip(ir, wr):
-                t = owner_l[e]; counts[t] += 1
+                t = owner_l[e]
+                if t == T:                                # padding id
+                    continue
+                counts[t] += 1
                 if a != 0.0 and self.tiers[t].blocking:
                     per[t].setdefault(r, []).append((local_l[e], a))
         self._count(counts)
