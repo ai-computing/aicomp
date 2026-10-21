@@ -105,3 +105,82 @@ def test_atom_rbln_engine_selection(monkeypatch, tmp_path):
     slow = OptimusEngine(tok_s=20.0)
     assert select_engine(llama, [slow, eng])[0] is eng
     assert eng._dir("meta-llama/Llama-3.2-1B").endswith("meta-llama--Llama-3.2-1B-tp2-s4096-b1")
+
+
+def test_geometry_handles_mixed_windows_and_preserves_layer_order(solar):
+    from dataclasses import replace
+    a = replace(solar.layers[0], attention=replace(solar.layers[0].attention, sliding_window=None))
+    b = replace(a, index=1, attention=replace(a.attention, sliding_window=32))
+    mixed = replace(solar, layers=(a, b))
+    geometry = engine_geometry(mixed)
+    reversed_layers = (replace(b, index=0), replace(a, index=1))
+    assert geometry != engine_geometry(replace(mixed, layers=reversed_layers))
+
+
+def test_rngd_start_failure_releases_device(tmp_path, solar):
+    eng = _fake_engine(tmp_path, engine_geometry(solar))
+    os.unlink(eng.binary)
+    with pytest.raises(FileNotFoundError):
+        eng.start()
+    assert not devices.held()
+
+
+def test_rngd_ready_timeout_reaps_worker(tmp_path, solar):
+    eng = _fake_engine(tmp_path, engine_geometry(solar))
+    # No newline: a blocking readline must not bypass the readiness deadline.
+    from pathlib import Path
+    Path(eng.binary).write_text('#!/usr/bin/env python3\nimport time\nprint("R", end="", flush=True)\ntime.sleep(3)\n')
+    eng.ready_timeout = 0.1
+    import time
+    start = time.monotonic()
+    with pytest.raises(TimeoutError):
+        eng.start()
+    assert time.monotonic() - start < 2
+    assert eng.p is None and not devices.held()
+
+
+def test_atom_config_failure_releases_device(monkeypatch, tmp_path):
+    import types
+    from transformers import AutoConfig
+    from opt_prime.accel.engines import AtomRblnEngine
+    monkeypatch.setitem(sys.modules, 'optimum', types.ModuleType('optimum'))
+    monkeypatch.setitem(sys.modules, 'optimum.rbln', types.ModuleType('optimum.rbln'))
+    def fail(*args, **kwargs):
+        raise ValueError('broken config')
+    monkeypatch.setattr(AutoConfig, 'from_pretrained', fail)
+    monkeypatch.setattr(devices, 'acquire', lambda device, role, owner: __import__(
+        'opt_prime.accel.platforms.lease', fromlist=['acquire']).acquire(device, role, owner, probe=None))
+    eng = AtomRblnEngine(devices=[3], cache_dir=str(tmp_path))
+    with pytest.raises(ValueError, match='broken config'):
+        eng.start('dummy')
+    assert eng.leases == [] and not devices.held()
+
+
+def test_atom_runtime_uses_visible_id_while_leasing_physical_card(monkeypatch, tmp_path):
+    import types
+    from transformers import AutoConfig
+    from opt_prime.accel.engines import AtomRblnEngine
+    calls = []
+    class Model:
+        @classmethod
+        def from_pretrained(cls, *args, **kwargs):
+            calls.append(kwargs['rbln_config']['device'])
+            return cls()
+        def save_pretrained(self, directory):
+            os.makedirs(directory)
+    vendor = types.ModuleType('optimum.rbln')
+    vendor.RBLNLlamaForCausalLM = Model
+    monkeypatch.setitem(sys.modules, 'optimum', types.ModuleType('optimum'))
+    monkeypatch.setitem(sys.modules, 'optimum.rbln', vendor)
+    monkeypatch.setattr(AutoConfig, 'from_pretrained', lambda *a, **kw: types.SimpleNamespace(model_type='llama'))
+    monkeypatch.setattr(devices, 'discover', lambda *a: [
+        discovery.DeviceInfo('atom', 3, 'rebellions', extra={'visible_npu_id': '0'})])
+    monkeypatch.setattr(devices, 'acquire', lambda device, role, owner: __import__(
+        'opt_prime.accel.platforms.lease', fromlist=['acquire']).acquire(device, role, owner, probe=None))
+    engine = AtomRblnEngine(devices=[3], cache_dir=str(tmp_path))
+    try:
+        engine.start('model')
+        assert calls == [[0]]
+        assert [x.device for x in engine.leases] == ['atom:3']
+    finally:
+        engine.close()
