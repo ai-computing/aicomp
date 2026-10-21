@@ -35,7 +35,7 @@ typedef struct {
     int64_t *idx;
     float *w, *out;
     int32_t *rows;                      // row ids (into the call's rows) this job covers
-    size_t cap_r, cap_rk;               // allocated rows / row*k
+    size_t cap_r, cap_rk, cap_rh;       // allocated rows / row*k / row*hidden
 } job_t;
 
 typedef struct {
@@ -81,11 +81,15 @@ void *moe_disp_new(void) {
 
 static void reserve(job_t *j, int R, int k, int H) {
     if ((size_t)R > j->cap_r) {
-        free(j->x); free(j->out); free(j->rows);
-        j->x = malloc(sizeof(uint16_t) * R * H);
-        j->out = malloc(sizeof(float) * R * H);
+        free(j->rows);
         j->rows = malloc(sizeof(int32_t) * R);
         j->cap_r = R;
+    }
+    if ((size_t)R * H > j->cap_rh) {
+        free(j->x); free(j->out);
+        j->cap_rh = (size_t)R * H;
+        j->x = malloc(sizeof(uint16_t) * j->cap_rh);
+        j->out = malloc(sizeof(float) * j->cap_rh);
     }
     if ((size_t)(R * k) > j->cap_rk) {
         free(j->idx); free(j->w);

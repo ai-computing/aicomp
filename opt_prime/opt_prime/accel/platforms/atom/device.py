@@ -112,5 +112,6 @@ def _atom_busy(name):
     others = [c for c in state.get("contexts", []) if str(c.get("npu")) == str(npu) and str(c.get("pid")) != str(os.getpid())]
     if others:
         return f"{physical}: contexts of pid {sorted({c.get('pid') for c in others})}"
-    mine = [c for c in state.get("contexts", []) if str(c.get("pid")) == str(os.getpid())]
+    mine = [c for c in state.get("contexts", [])
+            if str(c.get("npu")) == str(npu) and str(c.get("pid")) == str(os.getpid())]
     return None if mine else f"{physical}: memory in use ({d['memory']['used']} B) by an unknown owner"

@@ -57,7 +57,8 @@ class DeviceLease:
             if _HELD.get(self.device) is self:
                 del _HELD[self.device]
             if self._fd is not None:
-                fcntl.flock(self._fd, fcntl.LOCK_UN)
+                if self.pid == os.getpid():
+                    fcntl.flock(self._fd, fcntl.LOCK_UN)
                 os.close(self._fd)
                 self._fd = None
 
@@ -66,6 +67,23 @@ class DeviceLease:
 
     def __exit__(self, *exc):
         self.release()
+
+
+def _after_fork_child():
+    """Drop inherited references without unlocking the parent's open file descriptions."""
+    global _LOCK
+    for inherited in _HELD.values():
+        if inherited._fd is not None:
+            os.close(inherited._fd)
+            inherited._fd = None
+        inherited.released = True
+    _HELD.clear()
+    _LOCK = threading.Lock()
+
+
+# Serialize fork with acquisition/release so no partly acquired descriptor is inherited.
+os.register_at_fork(before=lambda: _LOCK.acquire(), after_in_parent=lambda: _LOCK.release(),
+                    after_in_child=_after_fork_child)
 
 
 def _parse(device):

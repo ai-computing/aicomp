@@ -31,7 +31,8 @@ def opt_batched_mm(self, hidden_states, top_k_index, top_k_weights):
     else:
         h = self.act_fn(_linear(x, self.up_proj[ids], self.up_proj_bias[ids] if bias else None, tr))
     y = _linear(h, self.down_proj[ids], self.down_proj_bias[ids] if bias else None, tr)
-    y = y * top_k_weights.reshape(-1, 1).to(y.dtype)
+    valid = (top_k_index >= 0) & (top_k_index < self.num_experts)
+    y = y * (top_k_weights * valid).reshape(-1, 1).to(y.dtype)
     return y.view(T, k, H).sum(dim=1).to(hidden_states.dtype)
 
 
@@ -51,8 +52,10 @@ def opt_grouped_mm(self, hidden_states, top_k_index, top_k_weights, device=None)
     gated = getattr(self, "has_gate", hasattr(self, "gate_up_proj"))
     lin = lambda x, w, b: (x @ w if tr else x @ w.t()) + (b if b is not None else 0)
     get = lambda name, e: getattr(self, name)[e].to(dev) if getattr(self, name, None) is not None else None
-    out = torch.zeros(T, H, dtype=torch.float32, device=hidden_states.device)
+    out = hidden_states.float() * 0 + top_k_weights.float().sum() * 0
     for e in torch.unique(flat).tolist():
+        if not 0 <= e < self.num_experts:
+            continue
         sel = (flat == e).nonzero().squeeze(1)
         r = rows[sel]
         x = hidden_states[r]

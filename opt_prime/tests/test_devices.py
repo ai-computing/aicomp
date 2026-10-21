@@ -204,3 +204,64 @@ def test_pd_p2p_lane_leases_its_chips():
     ok = P2PSession(Worker(), SimpleNamespace(state="idle"), leases)
     ok.close()
     assert not devices.held()
+
+
+def test_provider_does_not_restore_hidden_cuda(monkeypatch):
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
+    monkeypatch.setattr(discovery, "_DISCOVERERS", {"cuda": lambda: []})
+    monkeypatch.setattr(discovery, "_provider_accelerators", lambda: [
+        _acc("host/nvidia:0", "nvidia", "A100", 80 << 30)])
+    assert devices.discover(["cuda"]) == []
+
+
+@pytest.mark.parametrize("context_npu,expected_busy", [(0, True), (3, False)])
+def test_atom_own_context_must_match_selected_npu(monkeypatch, context_npu, expected_busy):
+    import json
+    from opt_prime.accel.platforms.atom.device import _atom_busy
+    state = {"devices": [{"device": "rbln3", "npu": 3, "status": "normal", "memory": {"used": 1024}}],
+             "contexts": [{"npu": context_npu, "pid": os.getpid()}]}
+    monkeypatch.setattr("shutil.which", lambda _: "/mock/rbln-smi")
+    monkeypatch.setattr(subprocess, "check_output", lambda *a, **kw: json.dumps(state))
+    assert bool(_atom_busy("atom:3")) == expected_busy
+
+
+def test_fork_child_cannot_release_parent_lease():
+    # Isolate fork and time-bound the entire scenario so a stale inherited mutex cannot hang pytest.
+    code = r'''
+import os
+import sys
+from opt_prime.accel.platforms import lease
+parent = lease.acquire("rngd:99", "prefill", "parent", probe=None)
+ready_r, ready_w = os.pipe()
+go_r, go_w = os.pipe()
+pid = os.fork()
+if pid == 0:
+    try:
+        parent.release()
+        assert not lease.held()
+        try:
+            lease.acquire("rngd:99", "decode", "child", probe=None)
+        except lease.DeviceBusy:
+            pass
+        else:
+            raise AssertionError("child unlocked parent")
+        os.write(ready_w, b"1")
+        assert os.read(go_r, 1) == b"1"
+        with lease.acquire("rngd:99", "decode", "child", probe=None) as fresh:
+            assert fresh.pid == os.getpid() and fresh.generation == 2
+        os._exit(0)
+    except BaseException:
+        import traceback
+        traceback.print_exc()
+        os._exit(1)
+os.close(ready_w)
+assert os.read(ready_r, 1) == b"1"
+assert not parent.released
+parent.release()
+os.write(go_w, b"1")
+_, status = os.waitpid(pid, 0)
+assert status == 0
+'''
+    env = dict(os.environ, PYTHONPATH=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    result = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stdout + result.stderr
