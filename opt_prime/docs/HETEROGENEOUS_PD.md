@@ -94,9 +94,10 @@ require implementations and hardware validation. No automatic host fallback exis
 It exports/imports actual KV through OptimusPrime's existing `KVCacheManager` and
 uses explicit `TorchCacheTransport` tensor copies. This transport is selected by
 the caller, never substituted for failed P2P. It supports single unpadded requests,
-fixed-length greedy output, full-prompt or prefix-only prefill. Sliding attention,
-quantized KV, sharded models and sampling are rejected or outside this adapter's
-contract. CPU validation uses independent no-cache full-sequence recomputation.
+greedy or seeded sampled output (`SamplingParams`: temperature, top-k, top-p, seed
+per position, so prefill and decode stages on different hosts continue one sequence),
+early stop at stop token IDs, full-prompt or prefix-only prefill. Sliding attention,
+quantized KV and sharded models are rejected or outside this adapter's contract. CPU validation uses independent no-cache full-sequence recomputation.
 CUDA fences are implemented but CUDA hardware has not been validated.
 
 `KoniRngdEngine` exports the existing bounded DLFloat prefix payload.

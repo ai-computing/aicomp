@@ -28,9 +28,15 @@ prefill. No NIXL or Mooncake wire-protocol implementation is claimed.
 
 ## Ownership and API
 
-- `/v1/completions`: token-ID prompt, selected model, integer output count,
-  greedy `temperature=0`, `stream=false`. Conflicting output counts, unknown fields,
-  incompatible model and over-capacity requests fail explicitly.
+- `/v1/completions`: token-ID prompt, selected model, `max_tokens` as an upper bound,
+  `stream=false`. Sampling fields `temperature`, `top_p`, `top_k`, `seed` (#42) are
+  accepted when both engines declare `supports_sampling` (the torch engine does);
+  greedy-only engines (RNGD/ATOM graphs) reject other values with 400. Generation
+  ends at an EOS token (`PDStageService(eos_token_ids=...)`, unless `ignore_eos`) or
+  at a `stop` string (up to 4; the text excludes it); `finish_reason` is `stop` or
+  `length`. Engines that cannot stop early are cut after the stop token, so the
+  output is the same but the device time is not saved. Conflicting output counts,
+  unknown fields, incompatible model and over-capacity requests fail explicitly.
 - `/health`, `/ready`: reflect owner-loop startup and quarantine state.
 - `OwnerExecutor.run()` must execute in the main owning process thread for RNGD
   PDMA. HTTP worker threads only enqueue commands; they never touch NPU buffers.

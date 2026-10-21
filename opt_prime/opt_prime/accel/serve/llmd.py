@@ -13,6 +13,7 @@ import select
 import socket
 import threading
 import time
+from opt_prime.accel.pd.contracts import SamplingParams
 from opt_prime.accel.pd.runtime import PDRequest, PDRuntime, CancellationToken, RequestCancelled
 from opt_prime.accel.serve.metrics import StageMetrics
 
@@ -54,7 +55,8 @@ class PDStageService:
         max_output,
         render,
         ttl=60,
-        clock=time.monotonic
+        clock=time.monotonic,
+        eos_token_ids=()
     ):
         if prefill.spec != decode.spec:
             raise ValueError("engine specifications differ")
@@ -68,6 +70,7 @@ class PDStageService:
             ttl,
             clock,
         )
+        self.eos_token_ids = tuple(eos_token_ids)
         self.prepared = None
         self.runtime = None
         self.state = "idle"
@@ -91,6 +94,11 @@ class PDStageService:
             "max_tokens",
             "max_completion_tokens",
             "temperature",
+            "top_p",
+            "top_k",
+            "seed",
+            "stop",
+            "ignore_eos",
             "stream",
             "cache_hit_threshold",
         }
@@ -122,11 +130,31 @@ class PDStageService:
             and body["max_tokens"] != body["max_completion_tokens"]
         ):
             raise StageError(400, "conflicting output limits")
-        if body.get("temperature", 0) != 0 or body.get("stream", False) is not False:
-            raise StageError(400, "only greedy non-streaming completions supported")
+        if body.get("stream", False) is not False:
+            raise StageError(400, "only non-streaming completions supported")
+        stop = body.get("stop", [])
+        stop = [stop] if isinstance(stop, str) else stop
+        if (not isinstance(stop, list) or len(stop) > 4
+                or any(not isinstance(x, str) or not 0 < len(x) <= 64 for x in stop)):
+            raise StageError(400, "stop must be up to 4 non-empty strings")
+        ignore_eos = body.get("ignore_eos", False)
+        if not isinstance(ignore_eos, bool):
+            raise StageError(400, "ignore_eos must be a boolean")
+        temperature, seed = body.get("temperature", 0), body.get("seed")
+        if isinstance(temperature, bool) or isinstance(body.get("top_p", 1), bool):
+            raise StageError(400, "invalid sampling parameters")
+        try:
+            sampling = SamplingParams(float(temperature) if isinstance(temperature, (int, float)) else temperature,
+                                      body.get("top_p", 1.0), body.get("top_k", 0), seed,
+                                      () if ignore_eos else self.eos_token_ids)
+        except ValueError as error:
+            raise StageError(400, str(error))
+        if not sampling.greedy and not all(getattr(e, "supports_sampling", False)
+                                           for e in (self.prefill, self.decode)):
+            raise StageError(400, "engine supports greedy decoding only")
         if "cache_hit_threshold" in body and body["cache_hit_threshold"] != 0:
             raise StageError(400, "unsupported cache threshold")
-        return PDRequest(rid, tuple(prompt), count)
+        return PDRequest(rid, tuple(prompt), count, sampling), tuple(stop)
 
     def expire(self):
         """Release a fenced prefill whose decode did not arrive within the TTL (owner thread only)."""
@@ -148,7 +176,7 @@ class PDStageService:
     def execute(self, stage, rid, body, cancellation=None):
         if stage not in ("prefill", "decode"):
             raise StageError(400, "unknown stage")
-        request = self._request(rid, body)
+        request, stops = self._request(rid, body)
         if cancellation is not None and cancellation.cancelled:
             raise StageError(499, "request cancelled before execution")
         if self.state == "poisoned":
@@ -204,13 +232,13 @@ class PDStageService:
             # PDRuntime reuses Prepared.prefill; the model is not prefetched again.
             self.runtime = PDRuntime(self.prepared, self.decode, self.transport)
             tokens = self.runtime.generate(request, cancellation=cancellation)
-            text = self.render(tokens)
+            tokens, text, finish = self._finish(request, stops, tokens)
             response = dict(
                 id=rid,
                 object="text_completion",
                 model=self.model,
                 choices=[
-                    dict(index=0, text=text, token_ids=tokens, finish_reason="length")
+                    dict(index=0, text=text, token_ids=tokens, finish_reason=finish)
                 ],
                 usage=dict(
                     prompt_tokens=len(request.input_ids),
@@ -241,6 +269,20 @@ class PDStageService:
             self.state = "poisoned"
             self.metrics.failed()
             raise
+
+    def _finish(self, request, stop_strings, tokens):
+        """(tokens, text, finish_reason): cut at the first stop string (the text excludes it, the tokens end with the
+        token that completed it); 'stop' also when the last token is a stop token."""
+        text = self.render(tokens)
+        stops = [s for s in stop_strings if s in text]
+        if stops:
+            for i in range(1, len(tokens) + 1):
+                partial = self.render(tokens[:i])
+                hit = min((partial.find(s) for s in stops if s in partial), default=-1)
+                if hit >= 0:
+                    return tokens[:i], partial[:hit], "stop"
+        stop_ids = request.sampling.stop_token_ids
+        return tokens, text, "stop" if tokens and tokens[-1] in stop_ids else "length"
 
     def _prefill_reply(self, rid):
         return dict(

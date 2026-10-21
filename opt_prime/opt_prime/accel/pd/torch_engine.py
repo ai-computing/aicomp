@@ -7,12 +7,15 @@ import torch
 from transformers.cache_utils import DynamicCache
 from opt_prime.kv_cache import KVCacheManager
 from opt_prime.accel.pd.contracts import KVLease, KVSpec, PrefillResult
+from opt_prime.accel.pd.sampling import select_token
 from opt_prime.accel.pd.torch_models import describe_model
 # Compatibility exports: existing users may import transport from this module.
 from opt_prime.accel.pd.torch_cache import LayeredKVCache, TorchCache, TorchCacheTransport, fence
 
 
 class TorchCausalLMEngine:
+    supports_sampling = True          # SamplingParams beyond greedy, early stop at stop_token_ids
+
     def __init__(self, model, *, model_id, revision, max_context, endpoint, prefix_only=False,
                  optimize_prefill=True, capture_logits=False):
         config = model.config
@@ -88,7 +91,7 @@ class TorchCausalLMEngine:
             self.last_logits.append(output.logits[0, -1].detach().cpu().clone())
         if self.prefix_only:
             return PrefillResult(lease, request.input_ids[-1], len(tokens))
-        token = int(output.logits[0, -1].argmax())
+        token = select_token(output.logits[0, -1], request.sampling, len(tokens))
         return PrefillResult(lease, token, len(tokens), (token,))
 
     @torch.inference_mode()
@@ -106,14 +109,21 @@ class TorchCausalLMEngine:
         token = continuation.next_token
         generated = []
         self.last_logits = []
+        stop = set(request.sampling.stop_token_ids)
+        position = continuation.cache_position + 1
         for _ in range(request.max_new_tokens - len(continuation.output_prefix)):
+            if token in stop and continuation.output_prefix:          # the prefill already emitted a stop token
+                break
             output = self.model(torch.tensor([[token]], device=self.device),
                                 past_key_values=dynamic, use_cache=True)
             dynamic = output.past_key_values
             logits = output.logits[0, -1]
             if self.capture_logits:
                 self.last_logits.append(logits.detach().cpu().clone())
-            token = int(logits.argmax())
+            token = select_token(logits, request.sampling, position)
+            position += 1
             generated.append(token)
+            if token in stop:
+                break
         fence(self.device)
         return generated
