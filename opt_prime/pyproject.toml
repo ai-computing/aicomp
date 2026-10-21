@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optimus-prime-engine"
+version = "0.1.0"
+description = "OptimusPrime parallel inference and optional heterogeneous PD engine contracts"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+
+[project.optional-dependencies]
+torch-pd = ["torch==2.11.0", "transformers==5.8.1"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["opt_prime*"]
+
+[tool.setuptools.package-data]
+"opt_prime.accel.platforms.cpu" = ["csrc/*.c"]
