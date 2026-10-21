@@ -49,6 +49,13 @@ prefill. No NIXL or Mooncake wire-protocol implementation is claimed.
   Stop is serialized
   behind prior commands and only succeeds with an idle/ready, quiescent owner.
 
+`GET /metrics` exposes the stage in Prometheus text format under vLLM names, labelled `model_name`:
+`vllm:num_requests_running`, `vllm:num_requests_waiting` (owner queue), `vllm:kv_cache_usage_perc` and
+`vllm:gpu_cache_usage_perc` (occupied fraction of the single lane), `vllm:request_success_total{finished_reason}`,
+`vllm:prompt_tokens_total`, `vllm:generation_tokens_total`, histograms `vllm:time_to_first_token_seconds` (prefill
+stage), `vllm:time_per_output_token_seconds` (decode stage), `vllm:e2e_request_latency_seconds`, and
+`airm_kv_transfer_seconds` / `airm_stage_request_failures_total`. No client library is needed.
+
 Prefill readiness here means a fenced source KV is available. Destination admission
 occurs in the decode stage immediately before compute. This differs from the old
 experimental broker's destination-admission-before-prefill-response ordering.

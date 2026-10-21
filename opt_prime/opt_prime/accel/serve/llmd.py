@@ -14,6 +14,7 @@ import socket
 import threading
 import time
 from opt_prime.accel.pd.runtime import PDRequest, PDRuntime, CancellationToken, RequestCancelled
+from opt_prime.accel.serve.metrics import StageMetrics
 
 
 class StageError(Exception):
@@ -71,6 +72,12 @@ class PDStageService:
         self.runtime = None
         self.state = "idle"
         self.events = []
+        self.metrics = StageMetrics(model)
+
+    def gauges(self, waiting=0):
+        """(running, waiting, KV lane usage) for /metrics: one lane, occupied unless idle"""
+        running = 1 if self.state in ("prefilling", "decoding") else 0
+        return running, waiting, 0.0 if self.state == "idle" else 1.0
 
     def _event(self, stage, request_id):
         self.events.append(dict(stage=stage, request_id=request_id, time=self.clock()))
@@ -157,6 +164,7 @@ class PDStageService:
                 raise StageError(429, "single cache lane occupied")
             self.state = "prefilling"
             prefill_fenced = False
+            started = self.clock()
             try:
                 result = self.prefill.prefill(request)
                 prefill_fenced = True
@@ -170,6 +178,10 @@ class PDStageService:
                     raise RequestCancelled(rid)
                 self.state = "ready"
                 self._event("prefill_ready", rid)
+                elapsed = self.clock() - started
+                self.metrics.observe("vllm:time_to_first_token_seconds", elapsed)   # prefill emits the first token
+                self.metrics.observe("vllm:e2e_request_latency_seconds", elapsed)
+                self.metrics.finished("stop", len(request.input_ids), 1)
                 return self._prefill_reply(rid)
             except RequestCancelled:
                 if not prefill_fenced:
@@ -181,11 +193,13 @@ class PDStageService:
                 raise StageError(499, "prefill cancelled after completion")
             except BaseException:
                 self.state = "poisoned"
+                self.metrics.failed()
                 raise
         if self.state != "ready" or self.prepared.request.request_id != rid:
             raise StageError(409, "matching completed prefill required")
         self.state = "decoding"
         self._event("decode_start", rid)
+        started = self.clock()
         try:
             # PDRuntime reuses Prepared.prefill; the model is not prefetched again.
             self.runtime = PDRuntime(self.prepared, self.decode, self.transport)
@@ -207,6 +221,13 @@ class PDStageService:
             self.prepared = None
             self.state = "idle"
             self._event("decode_complete", rid)
+            t = self.runtime.last_timings
+            if "transfer_seconds" in t:
+                self.metrics.observe("airm_kv_transfer_seconds", t["transfer_seconds"])
+            if len(tokens) > 1 and "decode_seconds" in t:
+                self.metrics.observe("vllm:time_per_output_token_seconds", t["decode_seconds"] / (len(tokens) - 1))
+            self.metrics.observe("vllm:e2e_request_latency_seconds", self.clock() - started)
+            self.metrics.finished("length", len(request.input_ids), len(tokens))
             return response
         except RequestCancelled:
             if self.runtime.state != "idle":
@@ -218,6 +239,7 @@ class PDStageService:
             raise StageError(499, "decode cancelled after drain")
         except BaseException:
             self.state = "poisoned"
+            self.metrics.failed()
             raise
 
     def _prefill_reply(self, rid):
@@ -361,6 +383,14 @@ def serve_stage(owner, stage, port):
                 return True
 
         def do_GET(self):
+            if self.path == "/metrics":
+                data = owner.service.metrics.render(*owner.service.gauges(owner.queue.qsize())).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
             if self.path not in ("/ready", "/health"):
                 self.reply(404, dict(error="not found"))
                 return
