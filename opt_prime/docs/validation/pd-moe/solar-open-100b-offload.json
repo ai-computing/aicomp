@@ -1,0 +1,71 @@
+{
+  "model": "upstage/Solar-Open-100B",
+  "dtype": "bfloat16",
+  "max_new_tokens": 16,
+  "offload_gpu_gb": 40.0,
+  "offload": [
+    [
+      "cuda",
+      1365
+    ],
+    [
+      "cpu",
+      4779
+    ]
+  ],
+  "torch": "2.13.0+cu130",
+  "gpu": "NVIDIA A100 80GB PCIe",
+  "passed": true,
+  "rows": [
+    {
+      "prompt": "The capital of France is",
+      "input_length": 5,
+      "tokens_exact": true,
+      "first_mismatch": null,
+      "reference_s": 12.51,
+      "pd_s": 2.6,
+      "transfer_s": 0.0014,
+      "text": " Paris.\" output: ```python\nimport re\n\ndef count_words(text):\n   "
+    },
+    {
+      "prompt": "Explain why the sky appears blue in one sentence.",
+      "input_length": 10,
+      "tokens_exact": true,
+      "first_mismatch": null,
+      "reference_s": 4.69,
+      "pd_s": 4.03,
+      "transfer_s": 0.0014,
+      "text": " The sky appears blue because Earth's atmosphere scatters shorter blue wavelengths of sunlight more"
+    },
+    {
+      "prompt": "한국의 수도는 어디인가요? 간단히 답해주세요.",
+      "input_length": 10,
+      "tokens_exact": true,
+      "first_mismatch": null,
+      "reference_s": 2.66,
+      "pd_s": 2.29,
+      "transfer_s": 0.0015,
+      "text": "  \n서울의 주요 관광지 3곳을 알려주세요.  \n서울의 주요 관광지 3곳을"
+    },
+    {
+      "prompt": "def fibonacci(n):",
+      "input_length": 4,
+      "tokens_exact": true,
+      "first_mismatch": null,
+      "reference_s": 2.62,
+      "pd_s": 2.28,
+      "transfer_s": 0.0014,
+      "text": " if n <= 0: return 0 elif n == 1"
+    },
+    {
+      "prompt": "List three prime numbers greater than 100:",
+      "input_length": 11,
+      "tokens_exact": true,
+      "first_mismatch": null,
+      "reference_s": 3.09,
+      "pd_s": 2.56,
+      "transfer_s": 0.0015,
+      "text": " 101, 103, 107.\n\nList"
+    }
+  ]
+}
