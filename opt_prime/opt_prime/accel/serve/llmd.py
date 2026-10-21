@@ -56,7 +56,8 @@ class PDStageService:
         render,
         ttl=60,
         clock=time.monotonic,
-        eos_token_ids=()
+        eos_token_ids=(),
+        tokenizer=None
     ):
         if prefill.spec != decode.spec:
             raise ValueError("engine specifications differ")
@@ -71,6 +72,7 @@ class PDStageService:
             clock,
         )
         self.eos_token_ids = tuple(eos_token_ids)
+        self.tokenizer = tokenizer          # text prompts and chat messages (token-ID prompts need none)
         self.prepared = None
         self.runtime = None
         self.state = "idle"
@@ -87,8 +89,10 @@ class PDStageService:
         if len(self.events) > 1024:
             del self.events[:-1024]
 
-    def _request(self, rid, body):
+    def _request(self, rid, body, chat=False):
         allowed = {
+            "messages",
+            "stream_options",
             "model",
             "prompt",
             "max_tokens",
@@ -110,7 +114,7 @@ class PDStageService:
             or body.get("model") != self.model
         ):
             raise StageError(400, "invalid model or unsupported request fields")
-        prompt = body.get("prompt")
+        prompt = self._prompt(body, chat)
         if (
             not isinstance(prompt, list)
             or not prompt
@@ -130,8 +134,8 @@ class PDStageService:
             and body["max_tokens"] != body["max_completion_tokens"]
         ):
             raise StageError(400, "conflicting output limits")
-        if body.get("stream", False) is not False:
-            raise StageError(400, "only non-streaming completions supported")
+        if not isinstance(body.get("stream", False), bool):
+            raise StageError(400, "stream must be a boolean")
         stop = body.get("stop", [])
         stop = [stop] if isinstance(stop, str) else stop
         if (not isinstance(stop, list) or len(stop) > 4
@@ -166,6 +170,29 @@ class PDStageService:
             return old
         return None
 
+    def _prompt(self, body, chat):
+        """token IDs of the request: `messages` through the chat template (chat), a text `prompt` through the
+        tokenizer, or a token-ID `prompt` as is"""
+        if chat:
+            messages = body.get("messages")
+            if "prompt" in body or not isinstance(messages, list) or not messages or any(
+                    not isinstance(m, dict) or not isinstance(m.get("role"), str)
+                    or not isinstance(m.get("content"), str) for m in messages):
+                raise StageError(400, "chat requires messages with role and text content")
+            if self.tokenizer is None:
+                raise StageError(400, "this stage has no tokenizer for chat messages")
+            ids = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=True)
+            ids = ids["input_ids"] if isinstance(ids, dict) or hasattr(ids, "keys") else ids
+            return [int(t) for t in ids]
+        if "messages" in body:
+            raise StageError(400, "messages belong to /v1/chat/completions")
+        prompt = body.get("prompt")
+        if isinstance(prompt, str):
+            if self.tokenizer is None:
+                raise StageError(400, "this stage has no tokenizer for text prompts")
+            return [int(t) for t in self.tokenizer(prompt, add_special_tokens=True)["input_ids"]]
+        return prompt
+
     def cancel(self, rid):
         if self.state != "ready" or self.prepared.request.request_id != rid:
             raise StageError(409, "only a matching fenced prefill can be cancelled")
@@ -173,10 +200,11 @@ class PDStageService:
         self.state = "idle"
         self._event("cancelled", rid)
 
-    def execute(self, stage, rid, body, cancellation=None):
+    def execute(self, stage, rid, body, cancellation=None, on_token=None, chat=False):
+        """on_token(token) streams output tokens on the owner thread (first token after the fenced prefill)."""
         if stage not in ("prefill", "decode"):
             raise StageError(400, "unknown stage")
-        request, stops = self._request(rid, body)
+        request, stops = self._request(rid, body, chat)
         if cancellation is not None and cancellation.cancelled:
             raise StageError(499, "request cancelled before execution")
         if self.state == "poisoned":
@@ -187,7 +215,7 @@ class PDStageService:
                 raise StageError(409, "request ID reused with a different prompt")
         if stage == "prefill":
             if self.state == "ready" and self.prepared.request.request_id == rid:
-                return self._prefill_reply(rid)
+                return self._prefill_reply(rid, chat)
             if self.state != "idle":
                 raise StageError(429, "single cache lane occupied")
             self.state = "prefilling"
@@ -210,7 +238,10 @@ class PDStageService:
                 self.metrics.observe("vllm:time_to_first_token_seconds", elapsed)   # prefill emits the first token
                 self.metrics.observe("vllm:e2e_request_latency_seconds", elapsed)
                 self.metrics.finished("stop", len(request.input_ids), 1)
-                return self._prefill_reply(rid)
+                if on_token is not None:
+                    for t in result.output_prefix:
+                        on_token(t)
+                return self._prefill_reply(rid, chat)
             except RequestCancelled:
                 if not prefill_fenced:
                     self.state = "poisoned"
@@ -231,21 +262,17 @@ class PDStageService:
         try:
             # PDRuntime reuses Prepared.prefill; the model is not prefetched again.
             self.runtime = PDRuntime(self.prepared, self.decode, self.transport)
-            tokens = self.runtime.generate(request, cancellation=cancellation)
+            tokens = self.runtime.generate(request, cancellation=cancellation, on_token=on_token)
             tokens, text, finish = self._finish(request, stops, tokens)
-            response = dict(
-                id=rid,
-                object="text_completion",
-                model=self.model,
-                choices=[
-                    dict(index=0, text=text, token_ids=tokens, finish_reason=finish)
-                ],
-                usage=dict(
-                    prompt_tokens=len(request.input_ids),
-                    completion_tokens=len(tokens),
-                    total_tokens=len(request.input_ids) + len(tokens),
-                ),
-            )
+            usage = dict(prompt_tokens=len(request.input_ids), completion_tokens=len(tokens),
+                         total_tokens=len(request.input_ids) + len(tokens))
+            if chat:
+                choice = dict(index=0, message=dict(role="assistant", content=text), token_ids=tokens,
+                              finish_reason=finish)
+            else:
+                choice = dict(index=0, text=text, token_ids=tokens, finish_reason=finish)
+            response = dict(id=rid, object="chat.completion" if chat else "text_completion", created=int(time.time()),
+                            model=self.model, choices=[choice], usage=usage)
             self.prepared = None
             self.state = "idle"
             self._event("decode_complete", rid)
@@ -284,7 +311,10 @@ class PDStageService:
         stop_ids = request.sampling.stop_token_ids
         return tokens, text, "stop" if tokens and tokens[-1] in stop_ids else "length"
 
-    def _prefill_reply(self, rid):
+    def _prefill_reply(self, rid, chat=False):
+        if chat:
+            return dict(id=rid, object="chat.completion", model=self.model,
+                        choices=[dict(index=0, message=dict(role="assistant", content=""), finish_reason="stop")])
         return dict(
             id=rid,
             object="text_completion",
@@ -307,10 +337,10 @@ class OwnerExecutor:
         self._submit_lock = threading.Lock()
         self._pending = {}
 
-    def submit(self, operation, *args):
-        return self.submit_async(operation, *args).result()
+    def submit(self, operation, *args, **kwargs):
+        return self.submit_async(operation, *args, **kwargs).result()
 
-    def submit_async(self, operation, *args):
+    def submit_async(self, operation, *args, **kwargs):
         future = Future()
         token = CancellationToken() if operation == "execute" else None
         rid = args[1] if token is not None else None
@@ -322,7 +352,7 @@ class OwnerExecutor:
             if not self.started or not self.accepting:
                 raise StageError(503, "owner not accepting work")
             try:
-                self.queue.put_nowait((operation, args, future, token))
+                self.queue.put_nowait((operation, args, kwargs, future, token))
                 if token is not None:
                     self._pending.setdefault(rid, []).append(token)
             except queue.Full:
@@ -350,7 +380,7 @@ class OwnerExecutor:
         self.started = True
         while True:
             try:
-                operation, args, future, token = self.queue.get(timeout=self.sweep)
+                operation, args, kwargs, future, token = self.queue.get(timeout=self.sweep)
             except queue.Empty:
                 self.service.expire()
                 continue
@@ -365,7 +395,7 @@ class OwnerExecutor:
                     self.started = False
                     result = None
                 elif operation == "execute":
-                    result = self.service.execute(*args, cancellation=token)
+                    result = self.service.execute(*args, cancellation=token, **kwargs)
                 elif operation == "cancel":
                     result = self.service.cancel(*args)
                 else:
@@ -439,8 +469,17 @@ def serve_stage(owner, stage, port):
             ready = owner.started and owner.service.state != "poisoned"
             self.reply(200 if ready else 503, dict(ready=ready, stage=stage))
 
+        def cancel_if_gone(self, rid, state):
+            # A closed client connection is a cancel request through the same fenced path.
+            if not state["cancelled"] and self.client_gone():
+                state["cancelled"] = True
+                try:
+                    owner.cancel_request(rid)
+                except StageError:
+                    pass
+
         def do_POST(self):
-            if self.path not in ("/v1/completions", "/v1/cancel"):
+            if self.path not in ("/v1/completions", "/v1/chat/completions", "/v1/cancel"):
                 self.reply(404, dict(error="not found"))
                 return
             try:
@@ -455,20 +494,18 @@ def serve_stage(owner, stage, port):
                     raise StageError(413, "invalid body size")
                 body = json.loads(self.rfile.read(length))
                 rid = self.headers.get("x-request-id")
-                future = owner.submit_async("execute", stage, rid, body)
-                cancelled = False
+                chat = self.path == "/v1/chat/completions"
+                if isinstance(body, dict) and body.get("stream") is True:
+                    self.stream(rid, body, chat)
+                    return
+                future = owner.submit_async("execute", stage, rid, body, chat=chat)
+                state = dict(cancelled=False)
                 while True:
                     try:
                         response = future.result(timeout=0.05)
                         break
                     except FutureTimeout:
-                        # A closed client connection is a cancel request through the same fenced path.
-                        if not cancelled and self.client_gone():
-                            cancelled = True
-                            try:
-                                owner.cancel_request(rid)
-                            except StageError:
-                                pass
+                        self.cancel_if_gone(rid, state)
                 self.reply(200, response)
             except StageError as error:
                 self.reply(error.status, dict(error=str(error)))
@@ -480,6 +517,91 @@ def serve_stage(owner, stage, port):
                 )
             except Exception:
                 self.reply(500, dict(error="engine failed; owner retained"))
+
+        def stream(self, rid, body, chat):
+            """OpenAI-compatible SSE: a chunk per token as the owner produces it (the first right after the fenced
+            prefill), text held back while it could still be the start of a stop string, then a chunk with
+            finish_reason, a usage chunk and [DONE]. Errors before the first chunk are plain JSON replies."""
+            tokens = queue.Queue()
+            future = owner.submit_async("execute", stage, rid, body, chat=chat, on_token=tokens.put)
+            stops = body.get("stop") or []
+            stops = [stops] if isinstance(stops, str) else stops
+            hold = max((len(x) for x in stops), default=1) - 1
+            render, created = owner.service.render, int(time.time())
+            kind = "chat.completion.chunk" if chat else "text_completion"
+            state, out, sent, started = dict(cancelled=False), [], "", False
+
+            def chunk(delta=None, finish=None, usage=None):
+                if chat:
+                    choice = dict(index=0, delta={} if delta is None else delta, finish_reason=finish)
+                else:
+                    choice = dict(index=0, text="" if delta is None else delta, finish_reason=finish)
+                payload = dict(id=rid, object=kind, created=created, model=owner.service.model,
+                               choices=[] if usage else [choice])
+                if usage:
+                    payload["usage"] = usage
+                return payload
+
+            def send(payload):
+                nonlocal started
+                if not started:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/event-stream")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.end_headers()
+                    started = True
+                    if chat:
+                        send(chunk(dict(role="assistant", content="")))
+                data = payload if isinstance(payload, str) else json.dumps(payload)
+                try:
+                    self.wfile.write(f"data: {data}\n\n".encode())
+                    self.wfile.flush()
+                except (BrokenPipeError, ConnectionResetError):
+                    self.cancel_if_gone(rid, state)
+
+            def text_delta(final=None):
+                nonlocal sent
+                text = render(out) if final is None else final
+                if final is None:
+                    cut = min((text.find(x) for x in stops if x in text), default=-1)
+                    text = text[:cut] if cut >= 0 else text[:max(len(sent), len(text) - hold)]
+                if not text.startswith(sent) or len(text) == len(sent):
+                    return                                  # nothing new, or a multi-byte character still open
+                delta, sent = text[len(sent):], text
+                send(chunk(dict(content=delta) if chat else delta))
+
+            response, error = None, None
+            while True:
+                try:
+                    out.append(tokens.get(timeout=0.05))
+                    text_delta()
+                    continue
+                except queue.Empty:
+                    pass
+                if future.done() and tokens.empty():
+                    try:
+                        response = future.result()
+                    except BaseException as exc:
+                        error = exc
+                    break
+                self.cancel_if_gone(rid, state)
+            if error is not None:
+                if started:
+                    send(dict(error=str(error), status=getattr(error, "status", 500)))
+                    send("[DONE]")
+                    return
+                raise error
+            choice = response["choices"][0]
+            if "usage" in response:                         # decode stage: the final, stop-cut text
+                text_delta(choice["message"]["content"] if chat else choice["text"])
+            else:                                           # prefill stage: its token(s), cut at a stop string
+                text = render(out)
+                cut = min((text.find(x) for x in stops if x in text), default=-1)
+                text_delta(text[:cut] if cut >= 0 else text)
+            send(chunk(finish=choice["finish_reason"]))
+            if "usage" in response:
+                send(chunk(usage=response["usage"]))
+            send("[DONE]")
 
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)

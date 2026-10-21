@@ -57,7 +57,9 @@ class PDRuntime:
         self.lane_id = uuid4().hex
         self.generation = 0
 
-    def generate(self, request: PDRequest, *, cancellation=None) -> list[int]:
+    def generate(self, request: PDRequest, *, cancellation=None, on_token=None) -> list[int]:
+        """on_token(token): called on this thread for every output token as soon as it is known (the prefill's
+        tokens before decode starts, then each decoded token if the decode engine streams, else after decode)."""
         if not self._lock.acquire(blocking=False):
             raise RuntimeError("cache lane busy")
         try:
@@ -109,6 +111,12 @@ class PDRuntime:
                 ):
                     raise ValueError("unsupported transport route")
                 self.state = "transferring"
+                if on_token is not None and not (cancellation is not None and cancellation.cancelled):
+                    prefix = stop_at(request, list(result.output_prefix))
+                    for t in prefix:                       # the prefill's tokens: flushed before the KV copy
+                        on_token(t)
+                    if prefix and prefix[-1] in request.sampling.stop_token_ids:
+                        on_token = None                    # the prefill already ended the output
                 reserved = perf_counter()
                 self.last_timings["reserve_validate_seconds"] = (
                     reserved_at - started + reserved - prefilled
@@ -122,10 +130,13 @@ class PDRuntime:
                 # transfer() has fenced copies and prepared a decode lease. If
                 # cancelled, skip compute but still finish that lease normally.
                 cancelled = cancellation is not None and cancellation.cancelled
+                kw = {}
+                if on_token is not None and _accepts(self.decode.decode, "on_token"):
+                    kw["on_token"] = on_token
                 tail = (
                     []
                     if cancelled
-                    else self.decode.decode(request, destination, result)
+                    else self.decode.decode(request, destination, result, **kw)
                 )
                 decoded = perf_counter()
                 self.last_timings["decode_seconds"] = decoded - transferred
@@ -142,7 +153,11 @@ class PDRuntime:
                 self.last_timings["total_seconds"] = perf_counter() - started
                 if cancellation is not None and cancellation.cancelled:
                     raise RequestCancelled(request.request_id)
-                return stop_at(request, [*result.output_prefix, *tail])
+                out = stop_at(request, [*result.output_prefix, *tail])
+                if on_token is not None and not kw:        # the engine did not stream: emit its tokens now
+                    for t in out[len(result.output_prefix):]:
+                        on_token(t)
+                return out
             except RequestCancelled:
                 if self.state != "idle":
                     self.state = "poisoned"
@@ -161,3 +176,11 @@ def stop_at(request, tokens):
         if t in stop:
             return tokens[:i + 1]
     return tokens
+
+
+def _accepts(fn, name):
+    import inspect
+    try:
+        return name in inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return False
