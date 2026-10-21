@@ -38,6 +38,7 @@ class StageMetrics:
         self._lock = threading.Lock()
         self._hist = {name: _Histogram(b) for name, (_, b) in self.HISTOGRAMS.items()}
         self._success, self._failed, self._tokens = {}, 0, {"prompt": 0, "generation": 0}
+        self.extra = None              # optional callable -> [(name, kind, help, [samples])], read when scraped
 
     def observe(self, name, value):
         with self._lock:
@@ -85,4 +86,6 @@ class StageMetrics:
                 samples += [f'{name}_bucket{{{lab},le="+Inf"}} {h.count}', f"{name}_sum{{{lab}}} {h.sum}",
                             f"{name}_count{{{lab}}} {h.count}"]
                 metric(name, "histogram", help_, samples)
+        for name, kind, help_, samples in (self.extra(lab) if self.extra else ()):
+            metric(name, kind, help_, samples)
         return "\n".join(out) + "\n"

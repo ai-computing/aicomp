@@ -10,6 +10,8 @@ model's own attention.
 The decode kernel is compiled once: the query batch is always all slots (unused rows have no pages) and the pool
 size is fixed. On CPU, flex attention runs eagerly (reference).
 """
+from collections import OrderedDict
+import hashlib
 import threading
 
 import torch
@@ -70,8 +72,26 @@ class _StepCache(Cache):
         return False
 
 
+def block_hashes(tokens, page_size, parent=None):
+    """chained content hashes of the full blocks of `tokens` (64-bit ints, like vLLM's external block hashes)"""
+    out, h = [], parent
+    for i in range(len(tokens) // page_size):
+        block = tokens[i * page_size:(i + 1) * page_size]
+        d = hashlib.sha256((b"" if h is None else h.to_bytes(8, "big")) +
+                           b"".join(int(t).to_bytes(4, "little") for t in block)).digest()
+        h = int.from_bytes(d[:8], "big")
+        out.append(h)
+    return out
+
+
 class PagedKV:
-    def __init__(self, layers, slots, kv_heads, head_dim, dtype, device, *, pages, page_size=64, max_context=2048):
+    """prefix_cache: full prompt blocks are content-addressed (`block_hashes`); a new request reuses the cached pages
+    of its longest matching prefix (read-only, reference-counted) and prefills only the rest (#46). Unreferenced
+    cached pages stay until the pool needs them (LRU). `events` (a list, or None) receives
+    ("stored", hashes, parent, token_ids) / ("removed", hashes) for KV-event publishing."""
+
+    def __init__(self, layers, slots, kv_heads, head_dim, dtype, device, *, pages, page_size=64, max_context=2048,
+                 prefix_cache=False):
         if max_context % page_size:
             raise ValueError("max_context must be a multiple of page_size")
         self.page_size, self.pages, self.slots = page_size, pages, slots
@@ -85,30 +105,90 @@ class PagedKV:
         self.free_pages = list(range(pages))
         self.length = [0] * slots
         self.device = device
+        self.prefix_cache = prefix_cache
+        self.refs = [0] * pages
+        self.page_hash = {}                      # page -> block hash (cached pages)
+        self.cached = {}                         # block hash -> page
+        self.evictable = OrderedDict()           # unreferenced cached pages, least recently used first
+        self.pending = {}                        # slot -> (prompt, hashes) to register after its prefill
+        self.events = []
+        self.hit_tokens = self.query_tokens = 0
 
     # ---- pages ----
     def pages_for(self, tokens):
         return -(-tokens // self.page_size)
 
-    def alloc(self, slot, tokens):
-        """reserve the pages for `tokens` positions; False if the pool cannot hold them now"""
+    def alloc(self, slot, tokens, prompt=None):
+        """reserve the pages for `tokens` positions. Returns the number of prompt tokens already in the slot (a
+        cached prefix, 0 without one), or None if the pool cannot hold the request now."""
         need = self.pages_for(tokens)
-        if need > self.max_pages or need > len(self.free_pages):
-            return False
-        pages = [self.free_pages.pop(0) for _ in range(need)]
+        hashes, hit = [], []
+        if self.prefix_cache and prompt is not None:
+            hashes = block_hashes(prompt, self.page_size)
+            for h in hashes[:(len(prompt) - 1) // self.page_size]:   # keep >= 1 prompt token to compute the logits
+                if h not in self.cached:
+                    break
+                hit.append(self.cached[h])
+        fresh = need - len(hit)
+        reclaimable = len(self.free_pages) + sum(1 for p in self.evictable if p not in hit)
+        if need > self.max_pages or fresh > reclaimable:
+            return None
+        for p in hit:
+            self.refs[p] += 1
+            self.evictable.pop(p, None)
+        pages = hit + [self._take() for _ in range(fresh)]
+        for p in pages[len(hit):]:
+            self.refs[p] = 1
         self.owned[slot] = pages
         self.table[slot, :need] = torch.tensor(pages, dtype=torch.int32, device=self.device)
         self.phys2log[slot, pages] = torch.arange(need, dtype=torch.int32, device=self.device)
-        self.length[slot] = 0
-        return True
+        self.length[slot] = len(hit) * self.page_size
+        if prompt is not None:
+            self.query_tokens += len(prompt)
+            self.hit_tokens += self.length[slot]
+            if self.prefix_cache:
+                self.pending[slot] = (prompt, hashes, len(hit))
+        return self.length[slot]
+
+    def _take(self):
+        if self.free_pages:
+            return self.free_pages.pop(0)
+        page, _ = self.evictable.popitem(last=False)              # least recently used cached block
+        h = self.page_hash.pop(page)
+        del self.cached[h]
+        self.events.append(("removed", [h]))
+        return page
+
+    def commit_prompt(self, slot):
+        """after the slot's prefill: register its new full prompt blocks as cached"""
+        prompt, hashes, start = self.pending.pop(slot, (None, [], 0))
+        new = [(i, h) for i, h in enumerate(hashes) if i >= start and h not in self.cached]
+        for i, h in new:
+            page = self.owned[slot][i]
+            self.cached[h], self.page_hash[page] = page, h
+        if new:
+            first = new[0][0]
+            self.events.append(("stored", [h for _, h in new], hashes[first - 1] if first else None,
+                                list(prompt[first * self.page_size:(new[-1][0] + 1) * self.page_size])))
 
     def release(self, slot):
         if self.owned[slot]:
             self.phys2log[slot, self.owned[slot]] = -1
-            self.free_pages.extend(self.owned[slot])
+            for p in self.owned[slot]:
+                self.refs[p] -= 1
+                if self.refs[p] == 0:
+                    if p in self.page_hash:
+                        self.evictable[p] = None                 # stays cached until the pool needs it
+                    else:
+                        self.free_pages.append(p)
             self.free_pages.sort()
             self.owned[slot] = []
+        self.pending.pop(slot, None)
         self.length[slot] = 0
+
+    def drain_events(self):
+        out, self.events = self.events, []
+        return out
 
     def physical(self, slots, positions):
         s = torch.as_tensor(slots, device=self.device)

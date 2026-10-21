@@ -73,3 +73,40 @@ streaming chat requests with 64 new tokens each (`ignore_eos`), on an A100 in bf
 |---:|---:|---:|---:|---:|
 | 1 | 0.76 s | 85 tok/s | 11 ms | 0.75 s |
 | 32 | 1.97 s | **1037 tok/s** | 256 ms | 1.14 s |
+
+## Prefix caching and KV events (#46)
+
+With `ContinuousBatcher(kv="paged", prefix_cache=True)`, full prompt blocks (one block = one page) are
+content-addressed with chained 64-bit hashes. A new request reuses the cached pages of its longest matching prefix and
+prefills only the rest. The last prompt token is always computed, because it produces the first token's logits.
+Shared pages are reference-counted and only read; writes go to the request's own pages. Unreferenced cached pages
+stay in the pool until a new request needs them, then the least recently used go first.
+
+`kv_events=serve.kv_events.ZmqKVEventPublisher(...)` publishes `BlockStored` / `BlockRemoved` once per step, in
+vLLM's wire format (ZMQ PUB `[topic, seq, msgpack [ts, [event, ...]]]`, int block hashes, topic
+`kv@<pod-ip>:<port>@<model>`), so the llm-d EPP's prefix-cache scorer can route to the pod that holds a prefix.
+/metrics adds `vllm:cache_config_info` (`block_size`, read by the EPP), `vllm:prefix_cache_queries_total` and
+`vllm:prefix_cache_hits_total`.
+
+`examples/pd/prefix_cache_bench.py`, Llama-3.2-1B-Instruct on an A100 80GB PCIe (torch 2.13, transformers 5.15).
+The load was 32 requests sharing a 1536-token system prompt, each with its own 16–127-token suffix and 32 new tokens;
+8 slots, 256-token chunks, 64-token pages:
+
+| dtype | cache | wall | TTFT mean | TTFT p50 | prefill chunks | cached prompt tokens | identical to no cache |
+|---|---|---:|---:|---:|---:|---:|---:|
+| fp32 | off | 12.51 s | 6.35 s | 6.55 s | 225 | 0 / 51581 | — |
+| fp32 | on | **5.13 s** (2.44×) | **3.21 s** (1.98×) | 3.53 s | 81 | 36864 / 51581 | 32 / 32 |
+| bf16 | off | 5.27 s | 2.52 s | 2.60 s | 225 | 0 / 51581 | — |
+| bf16 | on | **2.89 s** (1.82×) | **1.57 s** (1.60×) | 1.71 s | 81 | 36864 / 51581 | 32 / 32 |
+
+The first 8 requests are admitted together, before any prefix is registered, so they all miss. The remaining 24 hit
+the 1536-token prefix (24 × 1536 = 36864). A prefix becomes reusable when its request finishes prefill; requests in
+flight at the same time do not share prefill work.
+
+CPU tests (`tests/test_pd_prefix_cache.py`) check:
+- a shared prefix skips its prefill chunks and the tokens stay exact;
+- a request with a fully cached prompt still computes its last prompt token;
+- eviction under a small pool emits `BlockRemoved`;
+- pages are reference-counted while concurrent requests share them;
+- the event encoding and the ZMQ multipart message match the vLLM format;
+- the metrics are present.

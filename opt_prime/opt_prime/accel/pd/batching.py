@@ -68,7 +68,8 @@ class _Request:
 class ContinuousBatcher:
     supports_sampling = True          # SamplingParams (torch engine: select_token), stop tokens
 
-    def __init__(self, model, *, slots=8, max_context=2048, prefill_chunk=256, kv="slot", pages=None, page_size=64):
+    def __init__(self, model, *, slots=8, max_context=2048, prefill_chunk=256, kv="slot", pages=None, page_size=64,
+                 prefix_cache=False, kv_events=None):
         """kv="slot": one max_context store per slot (copies the slots' prefixes every step); kv="paged": a page pool
         of `pages` pages (default: slots * max_context worth) read in place by flex attention (#108)."""
         geometry = describe_model(model.config)
@@ -82,13 +83,16 @@ class ContinuousBatcher:
             from opt_prime.accel.pd.paged import PagedKV
             self.kv = PagedKV(geometry.layers, slots, geometry.kv_heads, geometry.head_dim, self.dtype, self.device,
                               pages=pages or slots * max_context // page_size, page_size=page_size,
-                              max_context=max_context)
+                              max_context=max_context, prefix_cache=prefix_cache)
         elif kv == "slot":
             self.kv = SlotKV(geometry.layers, slots, geometry.kv_heads, max_context, geometry.head_dim,
                              self.dtype, self.device)
         else:
             raise ValueError("kv must be 'slot' or 'paged'")
         self.paged = kv == "paged"
+        if prefix_cache and not self.paged:
+            raise ValueError("prefix caching needs kv='paged'")
+        self.kv_events = kv_events               # e.g. serve.kv_events.ZmqKVEventPublisher (publish(list))
         self.chunk, self.max_context = prefill_chunk, max_context
         self.free = list(range(slots))
         self.waiting, self.prefilling, self.decoding = deque(), deque(), []
@@ -141,16 +145,23 @@ class ContinuousBatcher:
                 r = self.waiting[0]
                 slot = self.free[0]
                 need = len(r.request.input_ids) + r.request.max_new_tokens
-                if self.paged and not self.kv.alloc(slot, need):
-                    break                                 # wait for pages (FIFO: no overtaking)
+                cached = 0
+                if self.paged:
+                    cached = self.kv.alloc(slot, need, prompt=r.request.input_ids)
+                    if cached is None:
+                        break                             # wait for pages (FIFO: no overtaking)
                 self.waiting.popleft()
                 r.slot = self.free.pop(0)
-                self.kv.length[r.slot] = 0
+                self.kv.length[r.slot] = r.prefilled = cached   # a cached prefix is not prefilled again
                 self.prefilling.append(r)
         if self.prefilling:
             self._prefill_chunk(self.prefilling[0])
         if self.decoding:
             self._decode_step()
+        if self.paged and self.kv_events is not None:
+            events = self.kv.drain_events()
+            if events:
+                self.kv_events.publish(events)
 
     def run_until_idle(self, max_iterations=1_000_000):
         for _ in range(max_iterations):
@@ -173,6 +184,8 @@ class ContinuousBatcher:
         if end < len(ids):
             return
         self.prefilling.popleft()
+        if self.paged:
+            self.kv.commit_prompt(r.slot)
         token = select_token(out.logits[0, -1], r.request.sampling, len(ids))
         if self._emit(r, token):
             self.decoding.append(r)
