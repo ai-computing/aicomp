@@ -142,3 +142,75 @@ def test_cancel_after_prefill_returns_does_not_leave_prepared_slot():
     finally:
         owner.submit('stop')
         thread.join(5)
+
+
+def _wait(cond, timeout=5):
+    import time
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        if cond():
+            return True
+        time.sleep(0.01)
+    return False
+
+
+def test_client_disconnect_cancels_and_frees_lane():
+    # #43: a client that disconnects mid-request frees the lane; the next request on it stays token-exact
+    import socket
+    engine = service()
+    reached, release = threading.Event(), threading.Event()
+    original = engine.transport.transfer
+
+    def transfer(*args):
+        result = original(*args)
+        reached.set()
+        release.wait(5)
+        return result
+
+    engine.transport.transfer = transfer
+    owner = OwnerExecutor(engine)
+    worker = threading.Thread(target=owner.run)
+    worker.start()
+    server, http_thread = serve_stage(owner, "decode", 0)
+    try:
+        owner.submit("execute", "prefill", "gone", body(1))
+        data = json.dumps(body()).encode()
+        client = socket.create_connection(("127.0.0.1", server.server_port))
+        client.sendall(b"POST /v1/completions HTTP/1.1\r\nHost: x\r\nx-request-id: gone\r\n"
+                       b"Content-Type: application/json\r\nContent-Length: %d\r\n\r\n" % len(data) + data)
+        assert reached.wait(5)
+        client.close()                                   # the client goes away while decode is running
+        assert _wait(lambda: any(t.cancelled for t in owner._pending.get("gone", ())))
+        release.set()
+        assert _wait(lambda: engine.state == "idle" and engine.prepared is None and not owner._pending)
+        assert engine.events[-1]["stage"] == "cancelled"
+        engine.transport.transfer = original
+        owner.submit("execute", "prefill", "after", body(1))
+        reply = owner.submit("execute", "decode", "after", body())
+        assert reply["choices"][0]["token_ids"] == [7] + [8] * 5
+    finally:
+        release.set()
+        owner.submit("stop")
+        worker.join(5)
+        server.shutdown()
+        server.server_close()
+        http_thread.join(5)
+
+
+def test_ttl_sweeper_releases_abandoned_prefill_without_a_new_request():
+    now = [0.0]
+    engine = service(clock=lambda: now[0])
+    owner = OwnerExecutor(engine, sweep=0.01)
+    worker = threading.Thread(target=owner.run)
+    worker.start()
+    try:
+        owner.submit("execute", "prefill", "abandoned", body(1))
+        assert engine.state == "ready"
+        now[0] = 11.0                                     # past ttl=10; no further request arrives
+        assert _wait(lambda: engine.state == "idle")
+        assert engine.prepared is None and engine.events[-1]["stage"] == "expired"
+        owner.submit("execute", "prefill", "next", body(1))
+        assert engine.state == "ready"
+    finally:
+        owner.submit("stop")
+        worker.join(5)

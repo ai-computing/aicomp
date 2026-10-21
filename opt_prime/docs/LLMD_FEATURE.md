@@ -37,11 +37,16 @@ prefill. No NIXL or Mooncake wire-protocol implementation is claimed.
 - One lane: a second outstanding prefill gets 429; a duplicate ready prefill is
   idempotent. Decode requires matching ready state. This is not a batch scheduler.
 - `cancel` is an owner command for a completed source prefill only. TTL expiration
-  is checked on subsequent requests, not by an independent timer. Neither cancels
-  an in-flight copy/decode or authorizes premature destination reuse.
+  is checked on every request and by the idle owner loop every `sweep` seconds
+  (`OwnerExecutor(service, sweep=1.0)`), so an abandoned prepared prefill frees the
+  lane without a new request. Neither cancels an in-flight copy/decode or authorizes
+  premature destination reuse.
 - A failed engine operation quarantines the service and retains the prepared
   source and runtime owners. Readiness becomes 503. No retry/reset/fallback occurs.
-- Client disconnect does not cancel submitted device work. Stop is serialized
+- A client that closes its connection while its request is queued or running is
+  cancelled through the same fenced path as `POST /v1/cancel`: device work already
+  submitted finishes or drains, then the lane is released (499, not delivered).
+  Stop is serialized
   behind prior commands and only succeeds with an idle/ready, quiescent owner.
 
 Prefill readiness here means a fenced source KV is available. Destination admission
@@ -77,7 +82,8 @@ The sidecar binary is external and is not redistributed in this repository.
 ## Validation boundaries
 
 Unit tests cover sidecar limit rewriting, no repeated prefill, request mismatch,
-capacity, lazy TTL expiry, safe cancellation, quarantine retention, actual HTTP
+capacity, TTL expiry (on request and by the owner sweep), cancellation on client
+disconnect, safe cancellation, quarantine retention, actual HTTP
 requests and owner shutdown. Real-model and real-NPU sidecar evidence is kept in
 `docs/validation/llmd/` after each run. CPU fixtures alone do not establish a
 hardware path.

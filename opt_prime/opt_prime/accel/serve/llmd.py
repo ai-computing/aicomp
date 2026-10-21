@@ -4,11 +4,13 @@ No KV bytes travel over HTTP. One serialized owner executes all device work;
 run OwnerExecutor.run on the main thread for the checked RNGD PDMA backend.
 """
 
-from concurrent.futures import Future
+from concurrent.futures import Future, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import queue
+import select
+import socket
 import threading
 import time
 from opt_prime.accel.pd.runtime import PDRequest, PDRuntime, CancellationToken, RequestCancelled
@@ -119,6 +121,16 @@ class PDStageService:
             raise StageError(400, "unsupported cache threshold")
         return PDRequest(rid, tuple(prompt), count)
 
+    def expire(self):
+        """Release a fenced prefill whose decode did not arrive within the TTL (owner thread only)."""
+        if self.state == "ready" and self.clock() - self.prepared.created > self.ttl:
+            old = self.prepared.request.request_id
+            self.prepared = None
+            self.state = "idle"
+            self._event("expired", old)
+            return old
+        return None
+
     def cancel(self, rid):
         if self.state != "ready" or self.prepared.request.request_id != rid:
             raise StageError(409, "only a matching fenced prefill can be cancelled")
@@ -134,11 +146,7 @@ class PDStageService:
             raise StageError(499, "request cancelled before execution")
         if self.state == "poisoned":
             raise StageError(503, "owner quarantined; recovery required")
-        if self.state == "ready" and self.clock() - self.prepared.created > self.ttl:
-            old = self.prepared.request.request_id
-            self.prepared = None
-            self.state = "idle"
-            self._event("expired", old)
+        self.expire()
         if self.prepared is not None and self.prepared.request.request_id == rid:
             if self.prepared.request.input_ids != request.input_ids:
                 raise StageError(409, "request ID reused with a different prompt")
@@ -222,10 +230,13 @@ class PDStageService:
 
 
 class OwnerExecutor:
-    """HTTP threads enqueue only. Timeouts never cancel or release device work."""
+    """HTTP threads enqueue only. Timeouts never cancel or release device work.
 
-    def __init__(self, service, capacity=64):
-        self.service = service
+    While idle, the owner sweeps the TTL every `sweep` seconds, so an abandoned prepared prefill frees the lane
+    without waiting for the next request."""
+
+    def __init__(self, service, capacity=64, sweep=1.0):
+        self.service, self.sweep = service, sweep
         self.queue = queue.Queue(capacity)
         self.started = False
         self.accepting = True
@@ -233,6 +244,9 @@ class OwnerExecutor:
         self._pending = {}
 
     def submit(self, operation, *args):
+        return self.submit_async(operation, *args).result()
+
+    def submit_async(self, operation, *args):
         future = Future()
         token = CancellationToken() if operation == "execute" else None
         rid = args[1] if token is not None else None
@@ -251,7 +265,7 @@ class OwnerExecutor:
                 raise StageError(429, "owner command queue full")
             if operation == "stop":
                 self.accepting = False
-        return future.result()
+        return future
 
     def cancel_request(self, rid):
         if not isinstance(rid, str) or not rid.strip() or len(rid) > 128:
@@ -271,7 +285,11 @@ class OwnerExecutor:
     def run(self):
         self.started = True
         while True:
-            operation, args, future, token = self.queue.get()
+            try:
+                operation, args, future, token = self.queue.get(timeout=self.sweep)
+            except queue.Empty:
+                self.service.expire()
+                continue
             error = None
             stopping = operation == "stop"
             try:
@@ -335,6 +353,13 @@ def serve_stage(owner, stage, port):
             except (BrokenPipeError, ConnectionResetError):
                 pass  # The completed owner operation is not cancelled by disconnect.
 
+        def client_gone(self):
+            try:
+                readable, _, _ = select.select([self.connection], [], [], 0)
+                return bool(readable) and self.connection.recv(1, socket.MSG_PEEK) == b""
+            except OSError:
+                return True
+
         def do_GET(self):
             if self.path not in ("/ready", "/health"):
                 self.reply(404, dict(error="not found"))
@@ -357,9 +382,21 @@ def serve_stage(owner, stage, port):
                 if not 0 < length <= 1048576:
                     raise StageError(413, "invalid body size")
                 body = json.loads(self.rfile.read(length))
-                response = owner.submit(
-                    "execute", stage, self.headers.get("x-request-id"), body
-                )
+                rid = self.headers.get("x-request-id")
+                future = owner.submit_async("execute", stage, rid, body)
+                cancelled = False
+                while True:
+                    try:
+                        response = future.result(timeout=0.05)
+                        break
+                    except FutureTimeout:
+                        # A closed client connection is a cancel request through the same fenced path.
+                        if not cancelled and self.client_gone():
+                            cancelled = True
+                            try:
+                                owner.cancel_request(rid)
+                            except StageError:
+                                pass
                 self.reply(200, response)
             except StageError as error:
                 self.reply(error.status, dict(error=str(error)))
