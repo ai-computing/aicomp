@@ -5,8 +5,10 @@
 (asynchronous device tiers on the calling thread, blocking tiers - host CPU, NPU servers - in workers), sum."""
 import threading
 import time
+from contextlib import nullcontext
 
 _NATIVE = {}                 # process-wide native dispatcher (layer calls are sequential): {"lib", "disp"}
+_NATIVE_LOCK = threading.Lock()  # one start/wait pair at a time across models and layers
 _LAST_END = [None]          # end of the previous layer call (phase profiling: time spent in the rest of the model)
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
@@ -48,6 +50,7 @@ class OffloadedLayer:
         self.counts = torch.zeros(num_experts, dtype=torch.float64)
         self.calls = 0
         self._lock = threading.Lock()      # guards owner/local tables against the adaptation worker
+        self._execution_lock = threading.Lock()  # snapshots remain valid until their forward finishes
         self._adapting = None
         self._has, self._blocking_any, self._lists, self._native = None, None, None, None
         self._native_bw = False
@@ -104,6 +107,13 @@ class OffloadedLayer:
             self._dev_counts.zero_()
 
     def forward(self, hidden, top_k_index, top_k_weights):
+        with self._execution_lock:
+            guard = _NATIVE_LOCK if self.cfg.native_dispatch else nullcontext()
+            with guard:
+                valid = (top_k_index >= 0) & (top_k_index < self.E)
+                return self._forward(hidden, top_k_index.clamp(0, self.E - 1), top_k_weights * valid)
+
+    def _forward(self, hidden, top_k_index, top_k_weights):
         cfg, st = self.cfg, self.cfg.stats
         prof = st.phases if cfg.profile_phases else None
         if prof is not None:
@@ -305,6 +315,15 @@ class OffloadedLayer:
                 else: st.device_pairs += n
 
     def adapt(self):
+        # A forward may have already snapshotted the old mapping. Publishing a new
+        # table alone does not protect its in-flight reads of mutable expert slots.
+        with self._execution_lock:
+            for device in self._dev_tables:
+                if device.type == "cuda":
+                    torch.cuda.synchronize(device)
+            return self._adapt()
+
+    def _adapt(self):
         """Swap the hottest host experts into accelerator tiers in place of their coldest experts, in two phases so
         every call sees a correct table: (1) route both experts to the host (it holds every expert), (2) overwrite
         the slot, (3) route the new expert to the slot."""
@@ -343,6 +362,8 @@ class OffloadedLayer:
         from opt_prime.accel.moe.batched import opt_grouped_mm
         from opt_prime.accel.platforms.cuda.experts import skeleton_with
         dev = grad_out.device
+        valid = (top_k_index >= 0) & (top_k_index < self.E)
+        top_k_index = top_k_index.clamp(0, self.E - 1)
         used = torch.unique(top_k_index).tolist()
         host = self.tiers[-1]
         W = (host.weights_of(self.handles[-1], used) if hasattr(host, "weights_of")
@@ -353,7 +374,7 @@ class OffloadedLayer:
         x = hidden.detach().requires_grad_(True)
         w = top_k_weights.detach().requires_grad_(True)
         with torch.enable_grad():
-            y = opt_grouped_mm(m, x, remap[top_k_index], w, device=dev)
+            y = opt_grouped_mm(m, x, remap[top_k_index], w * valid, device=dev)
             gx, gw = torch.autograd.grad(y, (x, w), grad_out.to(y.dtype))
         return gx.to(hidden.dtype), gw.to(top_k_weights.dtype)
 
