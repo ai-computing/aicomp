@@ -397,17 +397,18 @@ cfg = MoEOffloadConfig(
     profile=prof.as_lists(), adapt_every=8)
 ```
 
-Code layout (`opt_prime/moe_offload/`, design and extension guide in `DESIGN.md`):
+Code layout (under `opt_prime/accel/`; design, validation status and extension guide in
+[`accel/moe/DESIGN.md`](opt_prime/accel/moe/DESIGN.md)):
 
-| file | role |
+| path | role |
 |---|---|
-| `spec.py` | `ExpertSpec` (shape, gate, bias, layout, dtype): the contract between models and devices |
-| `adapters.py` | model side: `GenericAdapter` for the transformers >= 5 experts interface; `register_adapter` for others |
-| `backends/` | device side: `gpu` (aliases `cuda`, `xpu`), `cpu` (native kernel / torch), `rngd` (furiosa-torch graphs), `rngd-opt` (per-shape furiosa-opt kernel + expert server from the npu-kernels package, `pip install npu-kernels`); `npu_graph.GraphNPUBackend` is the base for graph-compiled NPUs (three vendor hooks); `register_backend` for new devices |
-| `planner.py` | per-layer LPT over all tiers by cost (call overhead x P(used) + traffic x bytes / bandwidth) |
-| `layer.py` | N-tier execution: one host sync per layer, device tiers async, blocking tiers in workers; adaptive re-placement |
-| `ops.py`, `api.py` | the `opt_prime::offloaded_experts` custom op; `apply_moe_offload` |
-| `config.py`, `profiler.py`, `placement.py`, `discover.py`, `native.py`, `csrc/` | options/stats, routing profile, budget fill, module discovery, host kernel |
+| `spec/experts.py`, `spec/adapters.py`, `spec/discover.py` | `ExpertSpec` (shape, gate, bias, layout, dtype), the model-side adapters (`GenericAdapter`, `register_adapter`) and experts-module discovery |
+| `moe/planner.py`, `moe/placement.py`, `moe/profiler.py` | per-layer LPT over all tiers by cost, budget fill, routing profile |
+| `moe/layer.py`, `moe/ops.py`, `moe/api.py` | N-tier execution (one host sync per layer, device tiers async, blocking tiers in workers, adaptive re-placement), the `opt_prime::offloaded_experts` custom op, `apply_moe_offload` |
+| `moe/backends.py`, `moe/batched.py`, `moe/config.py` | backend registry (`get_backend`, `register_backend`), batched / grouped expert math, options and stats |
+| `moe/train.py` | MoE training through `Optimus_p` with experts offloaded |
+| `platforms/<vendor>/experts.py` | expert tiers per device: `cuda` (aliases `gpu`, `xpu`), `cpu` (native AVX-512 BF16 kernel in `cpu/csrc`, or torch), `rngd` (furiosa-torch graphs), `rngd-opt` (per-shape furiosa-opt kernels from the npu-kernels package), `atom` (RBLN SDK) |
+| `platforms/npu_graph.py` | `GraphNPUBackend`, the base for graph-compiled NPUs |
 | `testing.py` | tiny random models of every family (tests, examples) |
 
 Checks:
@@ -449,8 +450,17 @@ the eager implementation on the cold pairs; the two partial sums are added in th
 unmodified model to fp32 precision; in bf16 they can differ by rounding (greedy tokens of near-tied tiny random models
 may then differ). Compare with `config._experts_implementation = "eager"` for the closest reference.
 
-Limits: RNGD is verified in emulation (same graphs on the host) until a silicon run; ATOM is not implemented yet
-(GraphNPUBackend subclass planned); adaptive re-placement copies swapped experts synchronously.
+Validation on NPUs (details in `accel/moe/DESIGN.md`):
+- **`rngd-opt`** passes on silicon. Qwen3-30B-A3B with rngd-opt ×2 (64 slots) + CPU runs at 15.4 tok/s (18.4 with
+  `torch.compile`); Solar-Open-100B with rngd-opt ×2 + CPU runs at 8.6 tok/s, exact.
+- **`atom`** is verified on one RBLN-CA22 (rebel-compiler 0.11). The Qwen3-30B-A3B expert shape matches the CPU
+  backend, and a tiny qwen3_moe runs end to end with experts on ATOM + CPU.
+- **`rngd`** (the furiosa-torch graph backend) is verified in emulation; its silicon run is pending.
+
+Limits:
+- Adaptive re-placement copies swapped experts synchronously and waits for an in-flight forward of the same layer.
+- The regression set matches `optimus-rm` bit for bit, with one exception: `qwen_moe` with MoE training (#74) has
+  fewer stage nodes and a step-2 loss that differs in the 7th digit.
 
 ## HuggingFace-compatible Checkpoint
 
