@@ -101,7 +101,7 @@ else:
     optimus_p.optimizer = torch.optim.AdamW(optimus_p.parameters(), lr=5e-6, weight_decay=0.01)
 
 # Format squad data as Q&A pairs to prevent catastrophic forgetting
-squad = load_dataset("squad")
+squad = load_dataset("rajpurkar/squad")
 train_data = squad["train"]
 
 def format_squad_qa(examples):
