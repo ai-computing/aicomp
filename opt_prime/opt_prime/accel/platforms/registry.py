@@ -135,7 +135,9 @@ def _merge_provider(local: List[DeviceInfo], accs, kinds) -> List[DeviceInfo]:
             base = by_name.get(f"{kind}:{index}")
         if base is not None and base.kind == kind:
             index = base.index                       # Optimus numbering follows the device nodes
-        elif any(d.kind == kind for d in local):
+        # CUDA ordinals are process-local: a host provider cannot establish visibility,
+        # even when torch reports no devices (or CUDA discovery failed).
+        elif kind == "cuda" or any(d.kind == kind for d in local):
             continue                                 # not addressable here (e.g. outside CUDA_VISIBLE_DEVICES)
         else:
             base = None

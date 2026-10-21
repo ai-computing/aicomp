@@ -110,7 +110,7 @@ optimus_p.train()
 optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 
-datasets = load_dataset("squad").data["train"]["context"]
+datasets = load_dataset("rajpurkar/squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
 # Use DP-aware dataloader (DistributedSampler) when dp_size > 1.
 dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
