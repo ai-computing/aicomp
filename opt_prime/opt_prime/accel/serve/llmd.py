@@ -272,31 +272,48 @@ class OwnerExecutor:
         self.started = True
         while True:
             operation, args, future, token = self.queue.get()
+            error = None
+            stopping = operation == "stop"
             try:
-                if operation == "stop":
+                if stopping:
                     if self.service.state not in ("idle", "ready"):
                         raise StageError(409, "owner not quiescent")
                     if self.service.state == "ready":
                         self.service.cancel(self.service.prepared.request.request_id)
                     self.started = False
-                    future.set_result(None)
-                    return
-                if operation == "execute":
+                    result = None
+                elif operation == "execute":
                     result = self.service.execute(*args, cancellation=token)
                 elif operation == "cancel":
                     result = self.service.cancel(*args)
                 else:
                     raise StageError(400, "unknown owner operation")
-                future.set_result(result)
-            except BaseException as error:
-                future.set_exception(error)
-            finally:
+            except BaseException as exc:
+                error = exc
+            # Complete pending-token bookkeeping atomically with cancellation.
+            # A cancel accepted after execute() returns must still drain a ready
+            # prefill; otherwise the client sees 202 but the slot remains occupied.
+            with self._submit_lock:
                 if token is not None:
-                    with self._submit_lock:
+                    try:
+                        if error is None and token.cancelled:
+                            if (self.service.state == "ready" and
+                                    self.service.prepared.request.request_id == args[1]):
+                                self.service.cancel(args[1])
+                            error = StageError(499, "request cancelled after completion")
+                    except BaseException as exc:
+                        error = exc
+                    finally:
                         pending = self._pending[args[1]]
                         pending.remove(token)
                         if not pending:
                             del self._pending[args[1]]
+            if error is not None:
+                future.set_exception(error)
+            else:
+                future.set_result(result)
+                if stopping:
+                    return
 
 
 def serve_stage(owner, stage, port):

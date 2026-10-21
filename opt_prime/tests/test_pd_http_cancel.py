@@ -113,3 +113,32 @@ class HttpCancelTests(unittest.TestCase):
         with self.assertRaises(RequestCancelled):
             engine.execute("prefill", "r", body(1))
         self.assertEqual(engine.state, "poisoned")
+
+
+def test_cancel_after_prefill_returns_does_not_leave_prepared_slot():
+    engine = service()
+    owner = OwnerExecutor(engine)
+    original = engine.execute
+    accepted = []
+    def execute(*args, **kwargs):
+        result = original(*args, **kwargs)
+        if args[1] == 'race':
+            accepted.append(owner.cancel_request('race'))
+        return result
+    engine.execute = execute
+    thread = threading.Thread(target=owner.run)
+    thread.start()
+    try:
+        try:
+            owner.submit('execute', 'prefill', 'race', body(1))
+        except StageError as error:
+            assert error.status == 499
+        else:
+            raise AssertionError('accepted cancellation was lost after prefill completion')
+        assert accepted[0]['cancellation_requested']
+        assert engine.state == 'idle' and engine.prepared is None
+        owner.submit('execute', 'prefill', 'next', body(1))
+        owner.submit('execute', 'decode', 'next', body())
+    finally:
+        owner.submit('stop')
+        thread.join(5)
