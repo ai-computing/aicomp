@@ -73,6 +73,11 @@ prefill. No NIXL or Mooncake wire-protocol implementation is claimed.
 stage), `vllm:time_per_output_token_seconds` (decode stage), `vllm:e2e_request_latency_seconds`, and
 `airm_kv_transfer_seconds` / `airm_stage_request_failures_total`. No client library is needed.
 
+**Continuous batching (#44).** `opt_prime.accel.serve.batched` serves a `pd.batching.ContinuousBatcher` (iteration-level
+scheduling, chunked prefill, slot or paged KV) through the same `serve_stage` HTTP layer: any number of requests in
+flight, admitted into free slots/pages, with streaming, cancellation on disconnect and /metrics. It runs prefill and
+decode in one process (not disaggregated); PD decode admission into the batcher is the next stage.
+
 Prefill readiness here means a fenced source KV is available. Destination admission
 occurs in the decode stage immediately before compute. This differs from the old
 experimental broker's destination-admission-before-prefill-response ordering.
