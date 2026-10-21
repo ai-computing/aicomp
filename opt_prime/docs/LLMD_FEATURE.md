@@ -28,8 +28,13 @@ prefill. No NIXL or Mooncake wire-protocol implementation is claimed.
 
 ## Ownership and API
 
-- `/v1/completions`: token-ID prompt, selected model, `max_tokens` as an upper bound,
-  `stream=false`. Sampling fields `temperature`, `top_p`, `top_k`, `seed` (#42) are
+- `/v1/completions` and `/v1/chat/completions` (#41): token-ID or text `prompt`, or chat
+  `messages` through the tokenizer's chat template (`PDStageService(tokenizer=...)`),
+  `max_tokens` as an upper bound. `stream=true` returns OpenAI-compatible SSE: one chunk
+  per token as the owner produces it (the prefill's token before the KV copy, then each
+  decoded token if the decode engine streams, else after decode), a chunk with
+  `finish_reason`, a `usage` chunk and `data: [DONE]`; text that could start a `stop`
+  string is held back until it cannot. Sampling fields `temperature`, `top_p`, `top_k`, `seed` (#42) are
   accepted when both engines declare `supports_sampling` (the torch engine does);
   greedy-only engines (RNGD/ATOM graphs) reject other values with 400. Generation
   ends at an EOS token (`PDStageService(eos_token_ids=...)`, unless `ignore_eos`) or

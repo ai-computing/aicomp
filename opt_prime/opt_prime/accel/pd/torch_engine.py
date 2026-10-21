@@ -95,7 +95,7 @@ class TorchCausalLMEngine:
         return PrefillResult(lease, token, len(tokens), (token,))
 
     @torch.inference_mode()
-    def decode(self, request, cache, continuation):
+    def decode(self, request, cache, continuation, on_token=None):
         self._validate(request)
         continuation.validate(request)
         manager = cache.payload.manager
@@ -123,6 +123,8 @@ class TorchCausalLMEngine:
             token = select_token(logits, request.sampling, position)
             position += 1
             generated.append(token)
+            if on_token is not None:
+                on_token(token)
             if token in stop:
                 break
         fence(self.device)
