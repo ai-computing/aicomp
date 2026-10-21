@@ -112,7 +112,9 @@ int moe_disp_start(void *dp, int R, int k, int H, const int64_t *idx, const floa
     for (int r = 0; r < R; r++) {
         int cnt[MAX_TIERS] = {0};
         for (int j = 0; j < k; j++) {
-            int t = owner[idx[r * k + j]];
+            int64_t e = idx[r * k + j];
+            int t = e < 0 ? ntiers : owner[e];          // owner has num_experts + 1 entries; padding -> ntiers
+            if (t >= ntiers) continue;
             counts[t]++;
             if (blocking[t] && w[r * k + j] != 0.0f) cnt[t]++;
         }
@@ -144,7 +146,7 @@ int moe_disp_start(void *dp, int R, int k, int H, const int64_t *idx, const floa
             float *wr = jb->w + (size_t)jb->R * jb->k;
             for (int j = 0; j < k; j++) {
                 int64_t e = idx[r * k + j];
-                if (owner[e] == t && w[r * k + j] != 0.0f) { ir[c] = local[e]; wr[c] = w[r * k + j]; c++; }
+                if (e >= 0 && owner[e] == t && w[r * k + j] != 0.0f) { ir[c] = local[e]; wr[c] = w[r * k + j]; c++; }
             }
             if (!c) continue;
             for (int j = c; j < jb->k; j++) { ir[j] = ir[0]; wr[j] = 0.0f; }

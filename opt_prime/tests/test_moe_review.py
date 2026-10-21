@@ -258,3 +258,38 @@ def test_offloaded_padding_routes_match_forward_and_backward():
     actual = layer.backward(x, ids, w, torch.ones_like(ref))
     for a, b in zip(actual, expected):
         torch.testing.assert_close(a, b)
+
+
+def _host_layer(native=False, adapt_every=0):
+    m, adapter = Experts(), GenericAdapter()
+    tier = CpuBackend(kernel='torch', threads=1)
+    handle = tier.load(adapter.weights(m, [0, 1]))
+    cfg = MoEOffloadConfig(native_dispatch=native, adapt_every=adapt_every)
+    return m, OffloadedLayer(2, [tier], [handle], [[0, 1]], ['host'], cfg, adapter, m)
+
+
+@pytest.mark.parametrize('pad', [-1, 2])
+def test_padding_ids_reach_no_tier_and_are_not_counted(pad):
+    # #89: padding is dropped through the routing tables (no per-call mask); it must not count as expert 0
+    m, layer = _host_layer(adapt_every=1000)
+    x, w = torch.ones(3, 2), torch.tensor([[0.4, 0.7], [0.5, 0.5], [1.0, 0.3]])
+    ids = torch.tensor([[0, pad], [pad, pad], [1, pad]])
+    ref = opt_batched_mm(m, x, ids.clamp(0, 1), w * ((ids >= 0) & (ids < 2)))
+    torch.testing.assert_close(layer.forward(x, ids, w), ref)
+    assert layer._counts_d.tolist() == [1.0, 1.0]
+
+
+def test_padding_with_large_rows_uses_general_split():
+    m, layer = _host_layer()
+    layer.cfg.fast_rows = 0                                  # force the general (tensor) host path
+    x = torch.ones(4, 2)
+    ids, w = torch.tensor([[0, -1], [2, 1], [-1, -1], [1, 0]]), torch.full((4, 2), 0.5)
+    ref = opt_batched_mm(m, x, ids.clamp(0, 1), w * ((ids >= 0) & (ids < 2)))
+    torch.testing.assert_close(layer.forward(x, ids, w), ref)
+
+
+def test_grouped_mm_all_padding_with_inf_hidden_is_zero_not_nan():
+    m = Experts()
+    x = torch.full((1, 2), float('inf'), requires_grad=True)
+    out = opt_grouped_mm(m, x, torch.tensor([[2]]), torch.ones(1, 1))
+    assert torch.equal(out, torch.zeros_like(out))
