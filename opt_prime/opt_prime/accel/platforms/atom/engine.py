@@ -113,6 +113,13 @@ class AtomRblnEngine(ExecutionEngine):
                     decode_tok_s=(len(t) - 1) / (t[-1] - t[0]) if len(t) > 1 and t[-1] > t[0] else None)
         return toks, info
 
+    def batcher(self, **kw):
+        """continuous batching over the compiled decode graph (needs batch_size > 1; #44 stage 3)"""
+        if self.model is None:
+            raise RuntimeError("engine not started")
+        from opt_prime.accel.platforms.atom.batching import AtomBatcher
+        return AtomBatcher(self.model, **kw)
+
     def record_tok_s(self, tok_s: float):
         """save a measured decode rate next to the compiled model (the selection estimate from then on)."""
         self.tok_s = tok_s

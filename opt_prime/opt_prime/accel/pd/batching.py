@@ -129,14 +129,8 @@ class ContinuousBatcher:
     def step(self):
         """one iteration: admit, one prefill chunk, one batched decode step"""
         self.stats['iterations'] += 1
+        self._drop_cancelled()
         with self._lock:
-            for queue in (self.waiting, self.prefilling):
-                for r in [r for r in queue if r.cancelled]:
-                    queue.remove(r)
-                    self._finish(r, RequestCancelled(r.request.request_id))
-            for r in [r for r in self.decoding if r.cancelled]:
-                self.decoding.remove(r)
-                self._finish(r, RequestCancelled(r.request.request_id))
             while self.free and self.waiting:
                 r = self.waiting[0]
                 slot = self.free[0]
@@ -151,6 +145,16 @@ class ContinuousBatcher:
             self._prefill_chunk(self.prefilling[0])
         if self.decoding:
             self._decode_step()
+
+    def _drop_cancelled(self):
+        with self._lock:
+            for queue in (self.waiting, self.prefilling):
+                for r in [r for r in queue if r.cancelled]:
+                    queue.remove(r)
+                    self._finish(r, RequestCancelled(r.request.request_id))
+            for r in [r for r in self.decoding if r.cancelled]:
+                self.decoding.remove(r)
+                self._finish(r, RequestCancelled(r.request.request_id))
 
     def run_until_idle(self, max_iterations=1_000_000):
         for _ in range(max_iterations):
