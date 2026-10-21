@@ -15,5 +15,15 @@ chosen. PD composes engines of this kind as prefill / decode endpoints.
 from opt_prime.accel.engines.base import (ExecutionEngine, engine_geometry, register_engine,  # noqa: F401
                                          registered_engines, select_engine)
 from opt_prime.accel.engines.optimus import OptimusEngine  # noqa: F401
-from opt_prime.accel.platforms.atom.engine import AtomRblnEngine  # noqa: F401  (SDKs imported only when started)
-from opt_prime.accel.platforms.rngd.engine import RngdLayerEngine  # noqa: F401
+
+# The platform engines import engines.base, so they are re-exported lazily: importing one of them first must not
+# re-enter its own half-initialised module through this package (#102). SDKs load only when an engine starts.
+_WHERE = {"AtomRblnEngine": "opt_prime.accel.platforms.atom.engine",
+          "RngdLayerEngine": "opt_prime.accel.platforms.rngd.engine"}
+
+
+def __getattr__(name):
+    if name in _WHERE:
+        import importlib
+        return getattr(importlib.import_module(_WHERE[name]), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
