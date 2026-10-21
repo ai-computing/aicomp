@@ -166,6 +166,16 @@ class PDStageService:
             return old
         return None
 
+    def expire(self):
+        """Release a fenced prefill whose decode did not arrive within the TTL (owner thread only)."""
+        if self.state == "ready" and self.clock() - self.prepared.created > self.ttl:
+            old = self.prepared.request.request_id
+            self.prepared = None
+            self.state = "idle"
+            self._event("expired", old)
+            return old
+        return None
+
     def cancel(self, rid):
         if self.state != "ready" or self.prepared.request.request_id != rid:
             raise StageError(409, "only a matching fenced prefill can be cancelled")
