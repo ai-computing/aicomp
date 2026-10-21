@@ -130,7 +130,7 @@ else:
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimus_p.optimizer, T_max=10)
 
 # Dataset: Q&A format to prevent catastrophic forgetting
-squad = load_dataset("squad")
+squad = load_dataset("rajpurkar/squad")
 train_data = squad["train"]
 
 def format_squad_qa(examples):
