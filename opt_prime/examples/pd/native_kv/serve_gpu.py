@@ -222,6 +222,8 @@ class GPUHTTPServer(ThreadingHTTPServer):
 
 
 def main(a):
+    if getattr(a,'local_continuous',False) and (getattr(a,'prefill_backend','native')!='gpu' or getattr(a,'local_single_width',False)):
+        raise ValueError('--local-continuous requires GPU prefill and a fixed batch graph')
     if getattr(a,'local_single_width',False) and getattr(a,'prefill_backend','native')!='gpu':
         raise ValueError('--local-single-width requires --prefill-backend gpu')
     if getattr(a,'fused_elementwise',False) and (not a.fuse_mlp or a.norm_mode!='fused'):
@@ -252,6 +254,7 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fused-elementwise',action='store_true')
+    p.add_argument('--local-continuous',action='store_true')
     p.add_argument('--local-prefill-paged',action='store_true')
     p.add_argument('--local-prefill-token-chunk',type=int,choices=(0,64,128,256,512),default=0)
     p.add_argument('--local-prefill-batch-size',type=int,choices=range(1,17),default=16)
