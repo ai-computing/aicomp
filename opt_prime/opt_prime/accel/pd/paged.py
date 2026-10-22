@@ -10,6 +10,8 @@ model's own attention.
 The decode kernel is compiled once: the query batch is always all slots (unused rows have no pages) and the pool
 size is fixed. On CPU, flex attention runs eagerly (reference).
 """
+from collections import OrderedDict
+import hashlib
 import threading
 
 import torch
@@ -70,8 +72,57 @@ class _StepCache(Cache):
         return False
 
 
+def block_hashes(tokens, page_size, parent=None):
+    """chained content hashes of the full blocks of `tokens` (64-bit ints, like vLLM's external block hashes)"""
+    out, h = [], parent
+    for i in range(len(tokens) // page_size):
+        block = tokens[i * page_size:(i + 1) * page_size]
+        d = hashlib.sha256((b"" if h is None else h.to_bytes(8, "big")) +
+                           b"".join(int(t).to_bytes(4, "little") for t in block)).digest()
+        h = int.from_bytes(d[:8], "big")
+        out.append(h)
+    return out
+
+
+class HostKVTier:
+    """host-DRAM tier behind the paged prefix cache (#52): cached blocks evicted from the device pool are written back
+    here and reloaded on a later prefix hit instead of being recomputed.
+
+    Blocks are [layers, kv_heads, page_size, head_dim] for K and for V, in one buffer allocated once (pinned when the
+    pool is on CUDA), so a block is contiguous and the buffer can be registered whole with a transfer engine. LRU over
+    blocks. With `reload_bandwidth` (bytes/s) and `prefill_rate` (tokens/s) a hit is reloaded only when that is faster
+    than recomputing it: block_bytes / reload_bandwidth < page_size / prefill_rate."""
+
+    def __init__(self, layers, kv_heads, page_size, head_dim, dtype, *, blocks, pin=False, reload_bandwidth=None,
+                 prefill_rate=None, medium="CPU"):
+        if blocks < 1:
+            raise ValueError("host tier needs at least one block")
+        shape = (blocks, layers, kv_heads, page_size, head_dim)
+        self.k = torch.empty(shape, dtype=dtype, pin_memory=pin)
+        self.v = torch.empty(shape, dtype=dtype, pin_memory=pin)
+        self.blocks, self.page_size, self.medium = blocks, page_size, medium
+        self.block_bytes = 2 * self.k[0].numel() * self.k.element_size()
+        self.index = OrderedDict()               # block hash -> host block, least recently used first
+        self.free = list(range(blocks))
+        self.reload = (reload_bandwidth is None or prefill_rate is None or
+                       self.block_bytes / reload_bandwidth < page_size / prefill_rate)
+        self.stats = dict(offloaded=0, reloaded=0, evicted=0, hit_tokens=0)
+
+    @staticmethod
+    def blocks_for(gib, layers, kv_heads, page_size, head_dim, dtype):
+        per = 2 * layers * kv_heads * page_size * head_dim * torch.empty((), dtype=dtype).element_size()
+        return int(gib * 2 ** 30) // per
+
+
 class PagedKV:
-    def __init__(self, layers, slots, kv_heads, head_dim, dtype, device, *, pages, page_size=64, max_context=2048):
+    """prefix_cache: full prompt blocks are content-addressed (`block_hashes`); a new request reuses the cached pages
+    of its longest matching prefix (read-only, reference-counted) and prefills only the rest (#46). Unreferenced
+    cached pages stay until the pool needs them (LRU). With a `host` tier (`HostKVTier`) evicted cached pages are
+    written back to host DRAM and reloaded on a hit (#52). `events` receives ("stored", hashes, parent, token_ids,
+    medium) / ("removed", hashes, medium) for KV-event publishing; medium None is the device."""
+
+    def __init__(self, layers, slots, kv_heads, head_dim, dtype, device, *, pages, page_size=64, max_context=2048,
+                 prefix_cache=False, host=None):
         if max_context % page_size:
             raise ValueError("max_context must be a multiple of page_size")
         self.page_size, self.pages, self.slots = page_size, pages, slots
@@ -85,30 +136,144 @@ class PagedKV:
         self.free_pages = list(range(pages))
         self.length = [0] * slots
         self.device = device
+        self.prefix_cache = prefix_cache
+        self.refs = [0] * pages
+        self.page_hash = {}                      # page -> block hash (cached pages)
+        self.cached = {}                         # block hash -> page
+        self.evictable = OrderedDict()           # unreferenced cached pages, least recently used first
+        self.pending = {}                        # slot -> (prompt, hashes) to register after its prefill
+        self.events = []
+        self.hit_tokens = self.query_tokens = 0
+        if host is not None and not prefix_cache:
+            raise ValueError("a host KV tier needs prefix_cache")
+        self.host = host
 
     # ---- pages ----
     def pages_for(self, tokens):
         return -(-tokens // self.page_size)
 
-    def alloc(self, slot, tokens):
-        """reserve the pages for `tokens` positions; False if the pool cannot hold them now"""
+    def alloc(self, slot, tokens, prompt=None):
+        """reserve the pages for `tokens` positions. Returns the number of prompt tokens already in the slot (a
+        cached prefix, 0 without one), or None if the pool cannot hold the request now."""
         need = self.pages_for(tokens)
-        if need > self.max_pages or need > len(self.free_pages):
-            return False
-        pages = [self.free_pages.pop(0) for _ in range(need)]
+        hashes, hit = [], []                     # hit: the matched prefix, a device page or "host" per block
+        if self.prefix_cache and prompt is not None:
+            hashes = block_hashes(prompt, self.page_size)
+            reload = self.host is not None and self.host.reload
+            for h in hashes[:(len(prompt) - 1) // self.page_size]:   # keep >= 1 prompt token to compute the logits
+                if h in self.cached:
+                    hit.append(self.cached[h])
+                elif reload and h in self.host.index:
+                    hit.append("host")
+                else:
+                    break
+        on_device = [p for p in hit if p != "host"]
+        fresh = need - len(on_device)
+        reclaimable = len(self.free_pages) + sum(1 for p in self.evictable if p not in on_device)
+        if need > self.max_pages or fresh > reclaimable:
+            return None
+        for p in on_device:
+            self.refs[p] += 1
+            self.evictable.pop(p, None)
+        reloads = [i for i, p in enumerate(hit) if p == "host"]
+        for i in reloads:                        # most recently used: write-backs below must not evict them
+            self.host.index.move_to_end(hashes[i])
+        pinned = {hashes[i] for i in reloads}
+        pages = [None if p == "host" else p for p in hit] + [None] * (need - len(hit))
+        for i, p in enumerate(pages):
+            if p is None:
+                pages[i] = self._take(pinned)
+                self.refs[pages[i]] = 1
+        for i in reloads:                        # host -> device; the pages become device-cached again
+            h, page = hashes[i], pages[i]
+            self._reload(h, page)
+            self.cached[h], self.page_hash[page] = page, h
+            self.events.append(("stored", [h], hashes[i - 1] if i else None,
+                                list(prompt[i * self.page_size:(i + 1) * self.page_size]), None))
         self.owned[slot] = pages
         self.table[slot, :need] = torch.tensor(pages, dtype=torch.int32, device=self.device)
         self.phys2log[slot, pages] = torch.arange(need, dtype=torch.int32, device=self.device)
-        self.length[slot] = 0
-        return True
+        self.length[slot] = len(hit) * self.page_size
+        if prompt is not None:
+            self.query_tokens += len(prompt)
+            self.hit_tokens += self.length[slot]
+            if reloads:
+                self.host.stats["hit_tokens"] += len(reloads) * self.page_size
+            if self.prefix_cache:
+                self.pending[slot] = (prompt, hashes, len(hit))
+        return self.length[slot]
+
+    def _take(self, pinned=()):
+        if self.free_pages:
+            return self.free_pages.pop(0)
+        page, _ = self.evictable.popitem(last=False)              # least recently used cached block
+        h = self.page_hash.pop(page)
+        del self.cached[h]
+        if self.host is not None:
+            self._offload(page, h, pinned)
+        self.events.append(("removed", [h], None))
+        return page
+
+    # ---- host tier ----
+    def _span(self, page):
+        return slice(page * self.page_size, (page + 1) * self.page_size)
+
+    def _offload(self, page, h, pinned=()):
+        """write a cached device page back to the host tier (before the page is reused)"""
+        host = self.host
+        if h in host.index:                      # still there from an earlier write-back
+            host.index.move_to_end(h)
+            return
+        if not host.free:
+            victim = next((x for x in host.index if x not in pinned), None)
+            if victim is None:
+                return                           # every host block is about to be reloaded: drop this one
+            host.free.append(host.index.pop(victim))
+            host.stats["evicted"] += 1
+            self.events.append(("removed", [victim], host.medium))
+        block = host.free.pop()
+        host.k[block].copy_(self.k[:, :, self._span(page)], non_blocking=True)    # stream-ordered before reuse
+        host.v[block].copy_(self.v[:, :, self._span(page)], non_blocking=True)
+        host.index[h] = block
+        host.stats["offloaded"] += 1
+        self.events.append(("stored", [h], None, [], host.medium))
+
+    def _reload(self, h, page):
+        block = self.host.index[h]
+        self.k[:, :, self._span(page)].copy_(self.host.k[block], non_blocking=True)
+        self.v[:, :, self._span(page)].copy_(self.host.v[block], non_blocking=True)
+        self.host.stats["reloaded"] += 1
+
+    def commit_prompt(self, slot):
+        """after the slot's prefill: register its new full prompt blocks as cached"""
+        prompt, hashes, start = self.pending.pop(slot, (None, [], 0))
+        new = [(i, h) for i, h in enumerate(hashes) if i >= start and h not in self.cached]
+        for i, h in new:
+            page = self.owned[slot][i]
+            self.cached[h], self.page_hash[page] = page, h
+        if new:
+            first = new[0][0]
+            self.events.append(("stored", [h for _, h in new], hashes[first - 1] if first else None,
+                                list(prompt[first * self.page_size:(new[-1][0] + 1) * self.page_size]), None))
 
     def release(self, slot):
         if self.owned[slot]:
             self.phys2log[slot, self.owned[slot]] = -1
-            self.free_pages.extend(self.owned[slot])
+            for p in self.owned[slot]:
+                self.refs[p] -= 1
+                if self.refs[p] == 0:
+                    if p in self.page_hash:
+                        self.evictable[p] = None                 # stays cached until the pool needs it
+                    else:
+                        self.free_pages.append(p)
             self.free_pages.sort()
             self.owned[slot] = []
+        self.pending.pop(slot, None)
         self.length[slot] = 0
+
+    def drain_events(self):
+        out, self.events = self.events, []
+        return out
 
     def physical(self, slots, positions):
         s = torch.as_tensor(slots, device=self.device)

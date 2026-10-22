@@ -22,6 +22,8 @@ class BatchedService(CompletionAPI):
         super().__init__(**kw)
         self.batcher = batcher
         self.state = "idle"                       # "poisoned" after an engine failure (readiness 503)
+        if batcher.paged:
+            self.metrics.extra = self._cache_metrics
 
     def _engines(self):
         return (self.batcher,)
@@ -29,11 +31,40 @@ class BatchedService(CompletionAPI):
     def gauges(self, waiting=0):
         b = self.batcher
         running = len(b.prefilling) + len(b.decoding)
-        if b.paged:
-            used = 1.0 - len(b.kv.free_pages) / b.kv.pages
+        if b.paged:                               # unreferenced cached pages count as free
+            used = 1.0 - (len(b.kv.free_pages) + len(b.kv.evictable)) / b.kv.pages
         else:
             used = 1.0 - len(b.free) / len(b.kv.length)
         return running, waiting + len(b.waiting), round(used, 4)
+
+    def _cache_metrics(self, lab):
+        """vLLM's cache config (the EPP's prefix scorer reads block_size from it) and prefix-cache counters"""
+        kv = self.batcher.kv
+        return [
+            ("vllm:cache_config_info", "gauge", "Information of the LLMEngine CacheConfig.",
+             [f'vllm:cache_config_info{{{lab},block_size="{kv.page_size}",num_gpu_blocks="{kv.pages}",'
+              f'enable_prefix_caching="{kv.prefix_cache}"}} 1']),
+            ("vllm:prefix_cache_queries_total", "counter", "Prompt tokens looked up in the prefix cache.",
+             [f"vllm:prefix_cache_queries_total{{{lab}}} {kv.query_tokens}"]),
+            ("vllm:prefix_cache_hits_total", "counter", "Prompt tokens served from the prefix cache.",
+             [f"vllm:prefix_cache_hits_total{{{lab}}} {kv.hit_tokens}"]),
+        ] + (self._host_metrics(lab, kv.host) if kv.host is not None else [])
+
+    @staticmethod
+    def _host_metrics(lab, host):
+        st = host.stats
+        return [
+            ("airm_kv_host_blocks", "gauge", "Blocks held by the host-DRAM KV tier.",
+             [f"airm_kv_host_blocks{{{lab}}} {len(host.index)}"]),
+            ("airm_kv_host_capacity_blocks", "gauge", "Capacity of the host-DRAM KV tier in blocks.",
+             [f"airm_kv_host_capacity_blocks{{{lab}}} {host.blocks}"]),
+            ("airm_kv_host_hit_tokens_total", "counter", "Prompt tokens reloaded from the host tier.",
+             [f"airm_kv_host_hit_tokens_total{{{lab}}} {st['hit_tokens']}"]),
+            ("airm_kv_offload_blocks_total", "counter", "Blocks written back from the device to the host tier.",
+             [f"airm_kv_offload_blocks_total{{{lab}}} {st['offloaded']}"]),
+            ("airm_kv_reload_bytes_total", "counter", "Bytes reloaded from the host tier to the device.",
+             [f"airm_kv_reload_bytes_total{{{lab}}} {st['reloaded'] * host.block_bytes}"]),
+        ]
 
 
 class BatchedOwner:
