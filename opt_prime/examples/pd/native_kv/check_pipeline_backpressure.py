@@ -10,10 +10,11 @@ from gpu_pipeline_worker import PipelineWorker
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--model-dir', required=True)
 p.add_argument('--out', required=True)
+p.add_argument('--batch-size', type=int, default=4)
 p.add_argument('--adaptive-single', action='store_true')
 a = p.parse_args()
 args = SimpleNamespace(model_dir=a.model_dir, device='cuda:0', model='Qwen/Qwen3-8B-FP8',
-    native='http://127.0.0.1:19101', norm_mode='fused', fuse_mlp=True, fuse_qkv=True, batch_size=4, adaptive_single=a.adaptive_single)
+    native='http://127.0.0.1:19101', norm_mode='fused', fuse_mlp=True, fuse_qkv=True, batch_size=a.batch_size, adaptive_single=a.adaptive_single)
 worker = PipelineWorker(args)
 body = {'model':args.model, 'prompt':[1000]*128, 'max_tokens':128,
         'temperature':0, 'ignore_eos':True}
