@@ -64,7 +64,6 @@ class LocalWorker(Worker):
                             log.write(json.dumps({'stage':'local_wave','requests':len(valid),
                                 'width':graph.batch_size,'input_lengths':[len(x[1]) for x in valid]})+'\n')
                     for job, _, _ in valid: job.send('start')
-                    first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in valid])
                     states = {}
                     def emit(state, token, finished):
                         job, decoder, prompt_count, generated, pending = state
@@ -79,14 +78,26 @@ class LocalWorker(Worker):
                                 'usage':{'prompt_tokens':prompt_count,'completion_tokens':generated,
                                          'total_tokens':prompt_count+generated}}))
                         return stopped
-                    for lane, (job, tokens, count) in enumerate(valid):
-                        if job.cancel.is_set(): continue
-                        state = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
-                        states[lane] = state
-                        stopped = emit(state, first_tokens[lane], count == 1)
-                        if count > 1 and not stopped:
-                            prefix = [(k[offsets[lane]:offsets[lane+1]],v[offsets[lane]:offsets[lane+1]]) for k,v in layers]
-                            graph.load_device_lane(lane, prefix, first_tokens[lane], count-1)
+                    chunk_size = getattr(a, 'local_prefill_batch_size', 16)
+                    for begin in range(0, len(valid), chunk_size):
+                        if self.stopping.is_set(): break
+                        chunk = valid[begin:begin+chunk_size]
+                        first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in chunk])
+                        for index, (job, tokens, count) in enumerate(chunk):
+                            lane = begin+index
+                            if job.cancel.is_set(): continue
+                            state = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
+                            states[lane] = state
+                            stopped = emit(state, first_tokens[index], count == 1)
+                            # Deliver this chunk's first tokens before computing the next.
+                            # Never block the GPU owner on a stalled HTTP consumer.
+                            while state[4]:
+                                try: job.events.put_nowait(state[4][0])
+                                except queue.Full: break
+                                state[4].popleft()
+                            if count > 1 and not stopped:
+                                prefix = [(k[offsets[index]:offsets[index+1]],v[offsets[index]:offsets[index+1]]) for k,v in layers]
+                                graph.load_device_lane(lane, prefix, first_tokens[index], count-1)
                     while states and not self.stopping.is_set():
                         for lane, state in list(states.items()):
                             job, _, _, _, pending = state
