@@ -279,7 +279,7 @@ def test_pd_mode_imports_prefilled_kv(fake_rebel):
     model = _llama()
     fake = _blocks_model(fake_rebel, model, batch=2, blocks=5)
     worker = PrefillWorker(TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16))
-    b = AtomBatcher(fake, prefix_cache=True, prefill_worker=worker)
+    b = AtomBatcher(fake, prefix_cache=True, prefill_worker=worker, local_prefill=False)
     system = _prompts(1, 40, 41, seed=13)[0]
     prompts = [system + (i, i + 3) for i in range(1, 5)]
     fs = [b.submit(PDRequest(f"p{i}", p, 7)) for i, p in enumerate(prompts)]
@@ -288,4 +288,23 @@ def test_pd_mode_imports_prefilled_kv(fake_rebel):
         assert f.result() == _greedy(model, p, 7)
     assert not [c for c in fake.calls if c[0] == "prefill"]          # no prefill ran on the decode device
     assert b.blocks.stats["device_copies"] >= 1                       # later requests reused the cached prefix
+    worker.close()
+
+
+def test_pd_mode_routes_prompts_between_remote_and_local(fake_rebel):
+    """with local prefill allowed, a burst is split between the prefill worker and ATOM (in-flight limit, then the
+    measured cost of each side); tokens stay exact"""
+    import copy
+    from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+    model = _llama()
+    fake = _blocks_model(fake_rebel, model, batch=4, blocks=6)
+    worker = PrefillWorker(TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16))
+    b = AtomBatcher(fake, prefill_worker=worker, remote_inflight=1)
+    prompts = _prompts(6, seed=17)
+    fs = [b.submit(PDRequest(f"b{i}", p, 6)) for i, p in enumerate(prompts)]
+    b.run_until_idle()
+    for p, f in zip(prompts, fs):
+        assert f.result() == _greedy(model, p, 6)
+    assert b.stats_pd["remote"] >= 1 and b.stats_pd["local"] >= 1
+    assert [c for c in fake.calls if c[0] == "prefill"]       # some prompts did run on the decode device
     worker.close()

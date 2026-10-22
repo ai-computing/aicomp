@@ -31,6 +31,7 @@ Idle lanes then decode on a reserved scratch block. Measured on ATOM (Llama-3.2-
 """
 from collections import OrderedDict, deque
 import threading
+import time
 
 import torch
 
@@ -53,6 +54,10 @@ def bf16_to_dlfloat(bits):
         normal = sign | ((exp - 96) << 9).astype(np.uint32) | ((bf & 127) << 2)
         _DLFLOAT = np.where(exp < 96, sign, np.where(exp > 159, sign | 0x7fff, normal)).astype(np.uint16)
     return _DLFLOAT[np.asarray(bits, dtype=np.uint16)]
+
+
+def _ema(old, new, alpha=0.3):
+    return new if old is None else (1 - alpha) * old + alpha * new
 
 
 class _Lanes:
@@ -223,13 +228,15 @@ class AtomKVBlocks:
         positions start..start+n; the SDK's KV tensors are (key, value) per layer in bfloat16"""
         import numpy as np
         block, n = self.lane_block[lane], keys.shape[2]
-        for i, (m, buf) in enumerate(zip(self.metas, self._staging())):
-            src = (keys[i // 2] if i % 2 == 0 else values[i // 2]).detach().to("cpu")
-            if buf.dtype == np.uint16:                       # the device holds DLFloat16
-                bits = src.to(torch.bfloat16).contiguous().view(torch.int16).numpy().view(np.uint16)
-                buf[block, :, start:start + n] = bf16_to_dlfloat(bits)
-            else:
-                buf[block, :, start:start + n] = src.float().numpy()
+        stage = self._staging()
+        # all layers converted at once ([layers, 2, kv_heads, n, head_dim], K then V), then one copy per KV tensor
+        kv = torch.stack([keys, values], dim=1).detach().to("cpu")
+        if stage[0].dtype == np.uint16:                      # the device holds DLFloat16
+            data = bf16_to_dlfloat(kv.to(torch.bfloat16).contiguous().view(torch.int16).numpy().view(np.uint16))
+        else:
+            data = kv.float().numpy()
+        for i, (m, buf) in enumerate(zip(self.metas, stage)):
+            buf[block, :, start:start + n] = data[i // 2, i % 2]
             self.io_rt.set_kv_cache_for_layer(m["name"], block, start, n, buf)
 
     def drain_events(self):
@@ -241,10 +248,16 @@ class AtomBatcher(ContinuousBatcher):
     supports_sampling = True          # the decode graph returns logits; sampling runs on the host
 
     def __init__(self, model, *, pad_token_id=None, prefix_cache=False, host_kv_gib=0.0, kv_events=None,
-                 prefill_worker=None):
+                 prefill_worker=None, remote_inflight=None, local_prefill=True):
         """prefix_cache / host_kv_gib need a model compiled with kv_blocks > batch_size (own block tables).
         prefill_worker (PD, #120): prompts are prefilled elsewhere (`pd.pd_batching.PrefillWorker` and engines) and their
-        KV imported into the lane's block; ATOM only decodes, so the batch never stalls on a prefill."""
+        KV imported into the lane's block; ATOM only decodes, so the batch never stalls on a prefill.
+        remote_inflight (PD): at most this many prompts wait on the prefill worker(s) (default: 2 per worker).
+        Each prompt goes to whichever side should finish it first, from measured moving averages: remote
+        (in-flight remote prefills + 1) x remote time per prompt (prefill + KV import) against local (prompts
+        queued here + 1) x ATOM prefill time; local prefills run one per iteration, as in aggregated serving. A
+        slow prefill device is therefore used only for overflow, and a fast one takes most prompts.
+        local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first)."""
         rc = model.rbln_config
         self.lanes = rc.batch_size
         decoders = getattr(model, "decoders", None) or {}
@@ -267,6 +280,10 @@ class AtomBatcher(ContinuousBatcher):
         self.poisoned = False
         self.kv_events = kv_events
         self.worker = prefill_worker
+        self.remote_inflight = remote_inflight or 2 * len(getattr(prefill_worker, "workers", [prefill_worker]))
+        self.stats_pd = dict(remote=0, local=0)
+        self._remote_s = self._local_s = None    # moving averages (seconds per prompt)
+        self.local_prefill = local_prefill
         self.blocks = None
         if (getattr(rc, "kvcache_num_blocks", self.lanes) or self.lanes) > self.lanes:
             self.blocks = AtomKVBlocks(model, self.lanes, prefix_cache=prefix_cache,
@@ -336,7 +353,7 @@ class AtomBatcher(ContinuousBatcher):
             raise RuntimeError("non-finite ATOM logits")
         padded = int(getattr(out, "padded_cache_lengths", 0) or 0)
         self.kv.length[r.slot] = r.prefilled = len(ids) + padded
-        self.prefilling.popleft()
+        self.prefilling.remove(r)                    # PD: requests waiting on remote prefills may be ahead of it
         if self._emit(r, select_token(logits, r.request.sampling, len(ids))):
             self.decoding.append(r)
 
@@ -365,17 +382,41 @@ class AtomBatcher(ContinuousBatcher):
     def _pd_step(self):
         from concurrent.futures import FIRST_COMPLETED, wait
         with self._lock:
-            admitted = []
+            admitted, local = [], None
+            remote = sum(1 for r in self.prefilling if r.pending is not None)
+            queued = 0                                 # prompts that will be prefilled here before this one
             while self.free and self.waiting:
+                go_remote = remote < self.remote_inflight or not self.local_prefill
+                if not self.local_prefill:
+                    pass
+                elif go_remote and self._remote_s is not None and self._local_s is not None:
+                    go_remote = (remote + 1) * self._remote_s <= (queued + 1) * self._local_s
+                elif go_remote and self._remote_s is None and remote:
+                    go_remote = False                  # still measuring: one remote probe at a time
+                if not go_remote:
+                    if local is None:                  # one local prefill per iteration
+                        local = self.waiting.popleft()
+                        local.slot = self.free.pop(0)
+                        self.prefilling.append(local)
+                        queued += 1
+                        continue
+                    break
                 r = self.waiting.popleft()
                 r.slot = self.free.pop(0)
                 self.prefilling.append(r)
                 admitted.append(r)
+                remote += 1
         try:
             for r in admitted:                       # decode-side prefix (device copy / host reload) is not sent
                 start = self.blocks.admit(r.slot, r.request.input_ids)
                 r.admitted = True
                 r.pending = self.worker.submit(r.request, send_from=start, slot=r.slot)
+                self.stats_pd["remote"] += 1
+            if local is not None:
+                self.stats_pd["local"] += 1
+                t0 = time.perf_counter()
+                self._prefill_request(local)
+                self._local_s = _ema(self._local_s, time.perf_counter() - t0)
             pending = [r for r in self.prefilling if r.pending is not None]
             if pending and not self.decoding:
                 wait([r.pending for r in pending], timeout=0.05, return_when=FIRST_COMPLETED)
@@ -394,8 +435,12 @@ class AtomBatcher(ContinuousBatcher):
                     continue
                 r.pending = None
                 ids = r.request.input_ids
+                t0 = time.perf_counter()
                 if out.keys.shape[2]:
                     self.blocks.import_span(r.slot, out.start, out.keys, out.values)
+                # remote cost per prompt: the prefill itself, its transfer and the import here
+                self._remote_s = _ema(self._remote_s, (out.prefill_s or 0.0) + (out.transfer_s or 0.0) +
+                                      time.perf_counter() - t0)
                 self.kv.length[r.slot] = r.prefilled = len(ids)
                 self.stats['prefill_chunks'] += 1
                 if self._emit(r, out.token):

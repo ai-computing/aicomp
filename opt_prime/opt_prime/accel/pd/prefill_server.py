@@ -12,8 +12,10 @@ The KV of positions send_from .. len(tokens) goes into slot `slot` of the slab, 
 
 Engines (--engine):
   torch      `pd_batching.TorchPrefillEngine` on --device (cpu, cuda:N), any uniform HF causal LM
-  rngd-qwen  `platforms.rngd.pd.QwenRngdPrefill` on RNGD chip --chip (Qwen2-family dense models, context 512,
-             prompts up to --width tokens); the first token comes from the final norm + LM head on the host
+  rngd-qwen  `platforms.rngd.pd.QwenRngdPrefill` on RNGD chip --chip (Qwen2-family dense models, context 512);
+             --width takes a comma-separated list of compiled widths, and each prompt runs on the smallest that
+             holds it (measured on Qwen2.5-0.5B: width 512 349 ms, 256 217 ms per prompt); the first token comes from
+             the final norm + LM head on the host
 """
 import argparse
 import json
@@ -35,7 +37,9 @@ class _RngdQwen:
         from opt_prime.accel.platforms.rngd.pd import QwenRngdPrefill
         self.spec = DenseModel.load(a.model, a.model_id or a.model)
         w = load_weights(a.model, self.spec)
-        self.engine = QwenRngdPrefill(self.spec, w, width=a.width, chip=a.chip, accurate_attention=True)
+        widths = sorted(int(x) for x in str(a.width).split(","))
+        self.engines = [(width, QwenRngdPrefill(self.spec, w, width=width, chip=a.chip, accurate_attention=True))
+                        for width in widths]
         self.norm = w["model.norm.weight"].float()
         head = w.get("lm_head.weight")
         self.head = (head if head is not None else w["model.embed_tokens.weight"]).float()
@@ -45,7 +49,10 @@ class _RngdQwen:
     def prefill(self, tokens):
         """-> keys, values [layers, kv_heads, n, head_dim] (host, bf16) and last-position logits"""
         torch = self.torch
-        k, v, hidden = self.engine.prefill_device(list(tokens), full_context=False)
+        engine = next((e for width, e in self.engines if len(tokens) <= width), None)
+        if engine is None:
+            raise ValueError(f"prompt of {len(tokens)} tokens exceeds the compiled widths")
+        k, v, hidden = engine.prefill_device(list(tokens), full_context=False)
         n = len(tokens)
         keys = k.cpu()[:, :, :, :n].transpose(-1, -2)
         values = v.cpu()[:, :, :n, :]
@@ -63,7 +70,7 @@ def main():
     ap.add_argument("--head-dim", type=int, required=True); ap.add_argument("--max-context", type=int, required=True)
     ap.add_argument("--device", default="cpu"); ap.add_argument("--dtype", default="bfloat16")
     ap.add_argument("--chunk", type=int, default=2048); ap.add_argument("--chip", type=int, default=0)
-    ap.add_argument("--width", type=int, default=512)
+    ap.add_argument("--width", default="512", help="compiled prompt widths (rngd-qwen), e.g. 256,512")
     a = ap.parse_args()
     import os
     if not os.path.isdir(a.model):                 # a hub ID: the local snapshot (engines below need a directory)
