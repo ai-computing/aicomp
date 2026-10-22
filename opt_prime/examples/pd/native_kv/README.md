@@ -104,3 +104,10 @@ references, unsupported layouts, metadata and payload mismatches.
 The branch starts at `main` and is deliberately standalone: the integrated PD
 engine currently lives on `optimus-rm`. Engine integration should be a separate
 reviewable change on that line, once its admission criteria are met.
+
+## In-memory performance path
+
+`memory_receiver.py` adds a reusable, single-flight client and a payload-backed
+view path without file I/O or per-token copies. See [MEMORY_PERFORMANCE.md](MEMORY_PERFORMANCE.md)
+for reproducible old/new comparisons, boundary differences and the remaining gap
+against native TTFT. This remains experimental and does not enable a serving backend.

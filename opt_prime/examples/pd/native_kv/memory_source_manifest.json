@@ -1,0 +1,10 @@
+{
+  "measurement": "2026-10-22 memory run3 and final CPU validation",
+  "sha256": {
+    "memory_receiver.py": "f4621d2035b924bf79e473ab3a692bc9d18fff24dff6abcc329163dbd5096318",
+    "bench_memory.py": "fefeee37ecbf937de6ed80f62216a259956f0676f672a7bde86163a36d2f6854",
+    "test_memory_receiver.py": "5a202198fb11d56357162cc6226ad16257bf9a6bff81446020158138a234da6b",
+    "protocol.py": "8e67ee10ddc374cbe034685524b90db3d236c4b05aba64394f805584883ddb87",
+    "qwen3_8b_layout.json": "96eaefa3e5fa8ea7e0f9d1a86004abe06fad689f3d32a06aba9b891271b216cc"
+  }
+}
