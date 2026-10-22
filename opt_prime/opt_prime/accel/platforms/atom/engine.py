@@ -22,7 +22,10 @@ class AtomRblnEngine(ExecutionEngine):
     CLASSES = {"llama": "RBLNLlamaForCausalLM", "mistral": "RBLNMistralForCausalLM", "qwen2": "RBLNQwen2ForCausalLM",
                "qwen3": "RBLNQwen3ForCausalLM", "gemma3_text": "RBLNGemma3ForCausalLM",
                "qwen3_moe": "RBLNQwen3MoeForCausalLM", "qwen2_moe": "RBLNQwen2MoeForCausalLM",
-               "mixtral": "RBLNMixtralForCausalLM", "exaone": "RBLNExaoneForCausalLM"}
+               "mixtral": "RBLNMixtralForCausalLM", "exaone": "RBLNExaoneForCausalLM",
+               "gemma": "RBLNGemmaForCausalLM", "gemma2": "RBLNGemma2ForCausalLM",
+               "gemma4_text": "RBLNGemma4ForCausalLM", "gemma4": "RBLNGemma4ForCausalLM",
+               "gpt_oss": "RBLNGptOssForCausalLM", "phi": "RBLNPhiForCausalLM"}
 
     def __init__(self, devices=(0,), max_seq_len: int = 4096, batch_size: int = 1, cache_dir: Optional[str] = None,
                  tok_s: Optional[float] = None, kv_blocks: Optional[int] = None):
@@ -111,7 +114,9 @@ class AtomRblnEngine(ExecutionEngine):
                 pass
         clock = _Clock()
         t0 = time.time()
-        out = self.model.generate(torch.tensor([list(ids)]), max_new_tokens=max_new, do_sample=False, streamer=clock)
+        x = torch.tensor([list(ids)])
+        out = self.model.generate(x, attention_mask=torch.ones_like(x), max_new_tokens=max_new, do_sample=False,
+                                  streamer=clock)
         dt = time.time() - t0
         toks = out[0, len(ids):].tolist()
         t = clock.t[1:]                   # new-token times

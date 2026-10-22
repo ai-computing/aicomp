@@ -346,8 +346,11 @@ class AtomBatcher(ContinuousBatcher):
         for r in rows:
             tokens[r.slot], positions[r.slot] = r.tokens[-1], self.kv.length[r.slot]
         kw = {} if self.blocks is None else dict(block_tables=self.blocks.table([r.slot for r in rows]))
+        cache_position = torch.tensor(positions, dtype=torch.int32)[:, None].contiguous()
+        if getattr(self.model.rbln_config, "use_position_ids", False):     # e.g. Gemma 3 (sliding attention)
+            kw["position_ids"] = cache_position.clone()
         out = self.decoder(input_ids=torch.tensor(tokens, dtype=torch.int64)[:, None].contiguous(),
-                           cache_position=torch.tensor(positions, dtype=torch.int32)[:, None].contiguous(), **kw)
+                           cache_position=cache_position, **kw)
         logits = out.logits[[r.slot for r in rows], -1].float()
         if not torch.isfinite(logits).all():
             raise RuntimeError("non-finite ATOM logits")

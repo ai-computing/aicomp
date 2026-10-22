@@ -95,10 +95,16 @@ def _attention(cfg, layer, layer_type, idx=None) -> AttentionSpec:
     if all(hasattr(a, p) for p in ("q_proj", "k_proj", "v_proj", "o_proj")):
         kvh = layer_value(cfg, "num_key_value_heads", idx) or heads
         hd = getattr(a, "head_dim", None) or layer_value(cfg, "head_dim", idx) or hidden // heads
-        geometry_ok = _out(a.q_proj) == heads * hd and _out(a.k_proj) == kvh * hd and _out(a.v_proj) == kvh * hd
+        if _out(a.k_proj) and _out(a.k_proj) != kvh * hd and _out(a.k_proj) % hd == 0:
+            kvh = _out(a.k_proj) // hd               # per-layer-type KV heads (Gemma 4 global layers)
+        # K=V layers (Gemma 4 `attention_k_eq_v`: v_proj None, values from k_proj) still keep a K and a V cache
+        v_out = _out(a.v_proj) if a.v_proj is not None else kvh * hd
+        q_ok = _out(a.q_proj) in (heads * hd, 2 * heads * hd)  # 2x: query + output gate (Qwen3.5/3.6 attention)
+        geometry_ok = q_ok and _out(a.k_proj) == kvh * hd and v_out == kvh * hd
         return AttentionSpec("gqa" if geometry_ok else "custom", hidden, heads, kvh, hd, hd,
                              a.q_proj.bias is not None, a.o_proj.bias is not None,
-                             hasattr(a, "q_norm") and hasattr(a, "k_norm"), window, rope, module_class=cls)
+                             hasattr(a, "q_norm") and hasattr(a, "k_norm"), window, rope, module_class=cls,
+                             output_gate=_out(a.q_proj) == 2 * heads * hd)
     if hasattr(a, "c_attn") and hasattr(a, "head_dim"):     # GPT-2: one fused qkv projection, every head keeps KV
         nh = getattr(a, "num_heads", heads)
         return AttentionSpec("fused_qkv", hidden, nh, nh, a.head_dim, a.head_dim, True, True, False, window, None,
