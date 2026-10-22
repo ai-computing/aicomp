@@ -25,8 +25,11 @@ class AtomRblnEngine(ExecutionEngine):
                "mixtral": "RBLNMixtralForCausalLM", "exaone": "RBLNExaoneForCausalLM"}
 
     def __init__(self, devices=(0,), max_seq_len: int = 4096, batch_size: int = 1, cache_dir: Optional[str] = None,
-                 tok_s: Optional[float] = None):
+                 tok_s: Optional[float] = None, kv_blocks: Optional[int] = None):
+        """kv_blocks: KV blocks (of max_seq_len tokens) compiled into the model; default = batch_size. More blocks than
+        lanes hold prefix-cache entries on the device (`AtomBatcher(prefix_cache=True)`)."""
         self.devices, self.max_seq_len, self.batch_size = list(devices), max_seq_len, batch_size
+        self.kv_blocks = kv_blocks
         self.cache_dir = cache_dir or os.path.join(os.environ.get("OPT_PRIME_CACHE", os.path.expanduser(
             "~/.cache/opt_prime")), "atom-rbln")
         self.tok_s, self.model, self.leases, self.dir = tok_s, None, [], None
@@ -48,7 +51,8 @@ class AtomRblnEngine(ExecutionEngine):
 
     def _dir(self, model_id):
         slug = str(model_id).rstrip("/").replace("/", "--")
-        return os.path.join(self.cache_dir, f"{slug}-tp{len(self.devices)}-s{self.max_seq_len}-b{self.batch_size}")
+        blocks = f"-k{self.kv_blocks}" if self.kv_blocks else ""
+        return os.path.join(self.cache_dir, f"{slug}-tp{len(self.devices)}-s{self.max_seq_len}-b{self.batch_size}{blocks}")
 
     def expected_tok_s(self, spec):
         return self.tok_s
@@ -78,9 +82,11 @@ class AtomRblnEngine(ExecutionEngine):
                 self.model = cls.from_pretrained(self.dir, export=False, rbln_config={"device": runtime_devices})
                 self.compiled = False
             else:
-                self.model = cls.from_pretrained(model_id, export=True, rbln_config={
-                    "batch_size": self.batch_size, "max_seq_len": self.max_seq_len,
-                    "tensor_parallel_size": len(self.devices), "device": runtime_devices})
+                rbln_config = {"batch_size": self.batch_size, "max_seq_len": self.max_seq_len,
+                               "tensor_parallel_size": len(self.devices), "device": runtime_devices}
+                if self.kv_blocks:
+                    rbln_config.update(kvcache_num_blocks=self.kv_blocks, kvcache_block_size=self.max_seq_len)
+                self.model = cls.from_pretrained(model_id, export=True, rbln_config=rbln_config)
                 self.model.save_pretrained(self.dir)
                 self.compiled = True
             self.load_s = time.time() - t0

@@ -8,6 +8,8 @@
         --slots 8 --max-context 512 --kv-host-memory-gb 16
     # batched PD (#120): prefill on another GPU (or another venv / NPU via --pd-prefill-python), decode lanes batched:
     python examples/pd/serve_batched.py --model ... --pd-prefill-device cuda:0 --device cuda:1
+    python examples/pd/serve_batched.py --model Qwen/Qwen2.5-0.5B-Instruct --backend atom --atom-kv-blocks 17 \
+        --pd-prefill-python ~/venvs/furiosa-2026.4/bin/python --pd-prefill-args "--engine rngd-qwen --chip 2"
     # + prefix caching with KV events for the llm-d EPP (topic kv@<pod-ip>:<port>@<model>):
     python examples/pd/serve_batched.py --model ... --prefix-cache --kv-events tcp://*:5557 --pod-ip 192.0.2.5
     # + a host-DRAM tier behind the prefix cache (#52):
@@ -58,9 +60,11 @@ def build(a):
                                 generation_config=GenerationConfig.from_pretrained(a.model))
     elif a.backend == "atom":
         from opt_prime.accel.platforms.atom.engine import AtomRblnEngine
-        engine = AtomRblnEngine(devices=a.devices, max_seq_len=a.max_context, batch_size=a.slots)
+        engine = AtomRblnEngine(devices=a.devices, max_seq_len=a.max_context, batch_size=a.slots,
+                                kv_blocks=a.atom_kv_blocks)
         engine.start(a.model)
-        b, model = engine.batcher(), engine.model
+        b, model = engine.batcher(prefix_cache=a.prefix_cache, host_kv_gib=a.kv_host_memory_gb, kv_events=events,
+                                  prefill_worker=prefill_worker(a, a.slots, engine.model.config)), engine.model
     else:
         model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
         kw = dict(slots=a.slots, max_context=a.max_context, kv=a.kv, page_size=a.page_size,
@@ -88,6 +92,7 @@ if __name__ == "__main__":
     ap.add_argument("--max-output", type=int, default=1024); ap.add_argument("--dtype", default="bfloat16")
     ap.add_argument("--device", default="cuda"); ap.add_argument("--backend", default="torch", choices=["torch", "atom", "rngd"])
     ap.add_argument("--devices", type=int, nargs="+", default=[0], help="ATOM devices (tensor parallel)")
+    ap.add_argument("--atom-kv-blocks", type=int, default=None, help="ATOM KV blocks (> slots: prefix cache, host tier)")
     ap.add_argument("--fxb", default=None, help="RNGD: furiosa-llm compiled artifact")
     ap.add_argument("--rngd-devices", default="npu:0"); ap.add_argument("--no-prefix-cache", action="store_true")
     ap.add_argument("--pd-prefill-device", default=None, help="PD: torch prefill on this device (e.g. cuda:0)")
