@@ -204,3 +204,32 @@ def test_prefill_pool_spreads_requests_and_matches():
         assert f.result() == _greedy(model, p, 6)
     assert set(seen) == {0, 1}                         # both workers prefilled
     pool.close()
+
+
+def test_rngd_full_engine_hands_over_kv_in_slab_layout():
+    """prefill_server's rngd-full engine: the per-group device KV ([NG, kv_heads, head_dim, C] keys,
+    [NG, kv_heads, C, head_dim] values) becomes [layers, kv_heads, n, head_dim], cut to the prompt"""
+    import types
+    from opt_prime.accel.pd.prefill_server import _RngdFull
+    layers, kv_heads, head_dim, width, group, n = 4, 2, 3, 8, 2, 5
+    keys = torch.randn(layers, kv_heads, width, head_dim)
+    values = torch.randn(layers, kv_heads, width, head_dim)
+
+    class Stage:
+        def __init__(self):
+            self.x = "hidden"
+            self.Ks = [keys[g:g + group].transpose(-1, -2) for g in range(0, layers, group)]
+            self.Vs = [values[g:g + group] for g in range(0, layers, group)]
+
+        def advance(self, _n):
+            return True
+
+    engine = types.SimpleNamespace(ngroups=layers // group, begin_device_prefill=lambda tokens: Stage(),
+                                   _logits=lambda x, p: __import__("numpy").arange(7, dtype="float32") * p)
+    e = _RngdFull.__new__(_RngdFull)
+    e.engine, e.widths, e.torch = engine, [width], torch
+    k, v, logits = e.prefill(list(range(n)))
+    assert torch.equal(k, keys[:, :, :n]) and torch.equal(v, values[:, :, :n])
+    assert int(logits.argmax()) == 6
+    with pytest.raises(ValueError, match="exceeds"):
+        e.prefill(list(range(width + 1)))
