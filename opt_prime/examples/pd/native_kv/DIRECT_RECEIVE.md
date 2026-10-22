@@ -86,3 +86,5 @@ receiver validation/copy, and scheduling costs before selecting the next optimiz
 No full native-performance or equal-cost claim. No weights, raw KV or vendor binaries
 are published. Compact results are direct_receive_summary.json and
 direct_same_cache_pause.json; source hashes identify the measured implementation.
+
+Follow-up:RECEIVER_PROFILE.md separates validation/copy time from message gaps and records the1ms/5ms/1ms scheduling experiment; defaults remain unchanged.
