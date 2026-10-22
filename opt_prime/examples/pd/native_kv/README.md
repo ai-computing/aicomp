@@ -131,3 +131,9 @@ The fully fused default norm mode changes native-KV outputs and is diagnostic on
 No current result establishes full native-speed serving or native FP8 quality parity.
 
 Colocated RNGD+A100 follow-up, including live torch-stats parity and remaining latency gap: [GPU_COLOCATED.md](GPU_COLOCATED.md). `--cpu-threads` controls the client copy worker count; default remains4.
+
+
+`--streaming-import` uploads validated batches during reception; `--compare-imports`
+rotates it against native and packed modes. It is experimental and disabled by default:
+latency gains were not stable across lengths or CPU affinity settings. See
+[GPU_STREAMING.md](GPU_STREAMING.md) for positive and negative results.

@@ -79,15 +79,17 @@ class KVViews:
 
 
 class ViewAssembler(CanonicalAssembler):
-    def __init__(self, request_id, positions):
+    def __init__(self, request_id, positions, on_batch=None):
         if not 1 <= positions <= MAX_POSITIONS:raise ValueError('unsupported position count')
         self.request_id, self.positions = request_id, positions
         self.data = KVViews(positions)
         self.seen = np.zeros(72, dtype=bool)
         self.expected_positions = np.arange(positions, dtype=np.uint32)
         self.final = False
+        self.on_batch = on_batch
 
     def _store(self, slots, values):
+        if self.on_batch is not None:self.on_batch(slots,values)
         for i,slot in enumerate(slots):self.data.slots[slot] = values[i]
 
 
@@ -144,13 +146,15 @@ class NativeKVClient:
             self.close()
             raise
 
-    def prefill(self, model, tokens, mode='fast'):
+    def prefill(self, model, tokens, mode='fast', on_batch=None):
         if self.poisoned:raise RuntimeError('failed client cannot be reused; restart dedicated server')
         if not 2 <= len(tokens) <= 2048:raise ValueError('prompt length must be 2..2048')
         if mode not in ('fast','legacy','views'):raise ValueError('unknown assembly mode')
+        if on_batch is not None and mode!='views':raise ValueError('batch callback requires views')
         start = time.perf_counter()
         request_id = 'perf-kv-'+uuid.uuid4().hex
-        assembler = {'fast':CanonicalAssembler,'legacy':LegacyAssembler,'views':ViewAssembler}[mode](request_id,len(tokens)-1)
+        assembler = (ViewAssembler(request_id,len(tokens)-1,on_batch) if mode=='views' else
+                     {'fast':CanonicalAssembler,'legacy':LegacyAssembler}[mode](request_id,len(tokens)-1))
         body={'model':model,'prompt':tokens,'max_tokens':1,'min_tokens':0,'temperature':0,'ignore_eos':True,'stream':False,
               'kv_transfer_params':{'remote_decoder':f'127.0.0.1:{self.receiver_port}','id':request_id}}
         future = self.executor.submit(self.http.post,self.http_url+'/v1/completions',json=body,timeout=self.timeout)

@@ -102,6 +102,57 @@ class GraphDecoder:
             with torch.cuda.graph(self.graph):step()
         self.loaded_positions=None
 
+    def begin_prefix(self,n):
+        """Prepare an owned upload; no decode is admitted until all slots arrive."""
+        import torch
+        if not 1<=n<self.capacity:raise ValueError('prefix outside capacity')
+        torch.cuda.synchronize(self.device)
+        self.loaded_positions=None
+        self.streaming_positions=n
+        self.streaming_seen=set()
+        shape=(72,n,8,128)
+        if not hasattr(self,'host_staging') or self.host_staging.shape!=shape:
+            self.host_staging=torch.empty(shape,dtype=torch.bfloat16,pin_memory=True)
+            self.device_staging=torch.empty(shape,dtype=torch.bfloat16,device=self.device)
+
+    def stage_prefix_slots(self,slots,values):
+        """Copy validated CPU [slots,heads,positions,dim] while later batches arrive."""
+        import numpy as np
+        import torch
+        n=getattr(self,'streaming_positions',None)
+        indices=[int(i) for i in slots]
+        if (n is None or not indices or len(set(indices))!=len(indices) or
+            any(i<0 or i>=72 or i in self.streaming_seen for i in indices) or
+            values.shape!=(len(indices),8,n,128) or values.dtype!=np.uint16):
+            raise ValueError('invalid streaming KV batch')
+        source=torch.from_numpy(values).view(torch.bfloat16).transpose(1,2)
+        with torch.inference_mode():
+            if indices==list(range(indices[0],indices[0]+len(indices))):
+                section=slice(indices[0],indices[-1]+1)
+                self.host_staging[section].copy_(source)
+                self.device_staging[section].copy_(self.host_staging[section],non_blocking=True)
+            else:
+                for j,i in enumerate(indices):
+                    self.host_staging[i].copy_(source[j])
+                    self.device_staging[i].copy_(self.host_staging[i],non_blocking=True)
+            for i in indices:
+                layer=self.cache.layers[i//2]
+                dest=layer.keys if i%2==0 else layer.values
+                dest[:,:,:n].copy_(self.device_staging[i].transpose(0,1).unsqueeze(0))
+        self.streaming_seen.update(indices)
+
+    def finish_prefix(self,last_token):
+        import torch
+        if getattr(self,'streaming_positions',None) is None or len(self.streaming_seen)!=72:
+            raise ValueError('incomplete streaming prefix')
+        if not 0<=last_token<self.model.config.vocab_size:raise ValueError('invalid final prompt token')
+        with torch.inference_mode():
+            self.input_id.fill_(last_token)
+            self.position.fill_(self.streaming_positions)
+        torch.cuda.synchronize(self.device)
+        self.loaded_positions=self.streaming_positions
+        self.streaming_positions=None
+
     def load_prefix(self,layers,last_token,packed_import=False):
         import torch
         if len(layers)!=36:raise ValueError('expected 36 layer pairs')
