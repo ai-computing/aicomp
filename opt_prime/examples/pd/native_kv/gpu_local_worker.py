@@ -30,6 +30,10 @@ class LocalWorker(Worker):
                             and a.batch_size > 1 else batch_graph)
             graph = batch_graph
             prefill = LocalPrefiller(a.model_dir, a.device)
+            token_chunk = getattr(a, 'local_prefill_token_chunk', 0)
+            if token_chunk:
+                from gpu_chunked_prefill import ChunkedPrefiller
+                chunked_prefill = ChunkedPrefiller(prefill)
             tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
             self.tokenizer = tokenizer
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
@@ -78,11 +82,43 @@ class LocalWorker(Worker):
                                 'usage':{'prompt_tokens':prompt_count,'completion_tokens':generated,
                                          'total_tokens':prompt_count+generated}}))
                         return stopped
+                    def advance_decode():
+                        for lane, state in list(states.items()):
+                            job, _, _, _, pending = state
+                            if job.cancel.is_set():
+                                graph.cancel_lane(lane); del states[lane]; continue
+                            while pending:
+                                try: job.events.put_nowait(pending[0])
+                                except queue.Full: break
+                                pending.popleft()
+                            if not pending and not graph.remaining[lane]: del states[lane]
+                        paused = [lane for lane,state in states.items() if state[4]]
+                        emitted = graph.step(ignore_eos=True, paused=paused)
+                        for lane, token in emitted.items():
+                            if emit(states[lane], token, not graph.remaining[lane]): graph.cancel_lane(lane)
+                        # Flush newly generated tokens before returning to prefill.
+                        for state in states.values():
+                            job, _, _, _, pending = state
+                            while pending and not job.cancel.is_set():
+                                try: job.events.put_nowait(pending[0])
+                                except queue.Full: break
+                                pending.popleft()
+                        if not emitted: self.stopping.wait(0.001)
                     chunk_size = getattr(a, 'local_prefill_batch_size', 16)
                     for begin in range(0, len(valid), chunk_size):
                         if self.stopping.is_set(): break
                         chunk = valid[begin:begin+chunk_size]
-                        first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in chunk])
+                        if token_chunk and any(graph.remaining):
+                            session = chunked_prefill.start([x[1] for x in chunk], token_chunk,
+                                paged=getattr(a, 'local_prefill_paged', False))
+                            result = None
+                            while result is None and not self.stopping.is_set():
+                                advance_decode()
+                                result = session.step()
+                            if result is None: break
+                            first_tokens, layers, offsets, _ = result
+                        else:
+                            first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in chunk])
                         for index, (job, tokens, count) in enumerate(chunk):
                             lane = begin+index
                             if job.cancel.is_set(): continue
@@ -99,20 +135,7 @@ class LocalWorker(Worker):
                                 prefix = [(k[offsets[index]:offsets[index+1]],v[offsets[index]:offsets[index+1]]) for k,v in layers]
                                 graph.load_device_lane(lane, prefix, first_tokens[index], count-1)
                     while states and not self.stopping.is_set():
-                        for lane, state in list(states.items()):
-                            job, _, _, _, pending = state
-                            if job.cancel.is_set():
-                                graph.cancel_lane(lane); del states[lane]; continue
-                            while pending:
-                                try: job.events.put_nowait(pending[0])
-                                except queue.Full: break
-                                pending.popleft()
-                            if not pending and not graph.remaining[lane]: del states[lane]
-                        paused = [lane for lane,state in states.items() if state[4]]
-                        emitted = graph.step(ignore_eos=True, paused=paused)
-                        for lane, token in emitted.items():
-                            if emit(states[lane], token, not graph.remaining[lane]): graph.cancel_lane(lane)
-                        if not emitted: self.stopping.wait(0.001)
+                        advance_decode()
                 except Exception:
                     import traceback
                     traceback.print_exc()

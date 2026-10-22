@@ -76,3 +76,5 @@ Generated with Codex; maintainer review required.
 Follow-up same-run comparisons, graph-width/admission changes and additional worker checks: GPU_LOCAL_PAIRED.md.
 
 Request-group prefill and its early streaming pause tradeoff: GPU_LOCAL_CHUNKS.md.
+
+Token-level prefill scheduling and its overhead/quality limits: GPU_TOKEN_CHUNKS.md.

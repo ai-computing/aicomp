@@ -261,6 +261,8 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fused-elementwise',action='store_true')
+    p.add_argument('--local-prefill-paged',action='store_true')
+    p.add_argument('--local-prefill-token-chunk',type=int,choices=(0,64,128,256,512),default=0)
     p.add_argument('--local-prefill-batch-size',type=int,choices=range(1,17),default=16)
     p.add_argument('--local-single-width',action='store_true',help='experimental one-request wave graph; no mid-request width switch')
     p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
