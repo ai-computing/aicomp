@@ -1,7 +1,8 @@
 """Experimental loopback completions server with one GPU/native-KV owner.
 
 Default execution serializes requests; --batch-size enables experimental waves.
-Neither mode is continuous batching. Tokens are read back after each graph replay.
+--pipeline overlaps native prefill with continuous GPU lane admission.
+Tokens are read back after each graph replay.
 """
 import argparse,json,queue,select,signal,socket,threading,time,uuid
 from dataclasses import dataclass,field
@@ -166,6 +167,10 @@ def handler(worker):
                 while True:
                     try:kind,value=job.events.get(timeout=0.1)
                     except queue.Empty:
+                        if job.cancel.is_set():
+                            if headers_sent:send_event({'error':{'message':'request cancelled'}})
+                            else:self.send_json(503,{'error':'request cancelled'})
+                            break
                         if time.monotonic()>=deadline:raise
                         readable,_,_=select.select([self.connection],[],[],0)
                         if readable and not self.connection.recv(1,socket.MSG_PEEK):break
@@ -200,7 +205,10 @@ def handler(worker):
 
 
 def main(a):
-    if getattr(a,'batch_size',1)>1:
+    if getattr(a,'pipeline',False):
+        from gpu_pipeline_worker import PipelineWorker
+        worker=PipelineWorker(a)
+    elif getattr(a,'batch_size',1)>1:
         from gpu_batch_worker import BatchWorker
         worker=BatchWorker(a)
     else:worker=Worker(a)
@@ -217,6 +225,8 @@ def main(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--pipeline',action='store_true')
+    p.add_argument('--adaptive-single',action='store_true',help='experimental width switching; output parity unresolved')
     p.add_argument('--batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--model-dir',required=True);p.add_argument('--device',default='cuda:0')
     p.add_argument('--native',default='http://127.0.0.1:19101');p.add_argument('--port',type=int,default=19111)

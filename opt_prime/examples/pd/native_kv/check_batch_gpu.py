@@ -64,6 +64,24 @@ with torch.inference_mode():
         for lane, token in batch.step(ignore_eos=True).items(): live[lane].append(token)
     assert live[0] == prefixes[1][2][:3]
     assert live[3] == other_expected[:8]
+    # Backpressure pauses one lane without consuming its input or position.
+    batch.load_lane(0, layers, last, 5)
+    batch.load_lane(3, other_layers, other_last, 5)
+    held_position = int(batch.position[0])
+    held_token = int(batch.input_id[0, 0])
+    progressed = []
+    for _ in range(3):
+        item = batch.step(ignore_eos=True, paused={0})
+        assert set(item) == {3}
+        progressed.append(item[3])
+    assert int(batch.position[0]) == held_position
+    assert int(batch.input_id[0, 0]) == held_token
+    resumed = []
+    while any(batch.remaining):
+        for lane, token in batch.step(ignore_eos=True).items():
+            (resumed if lane == 0 else progressed).append(token)
+    assert resumed == expected[:5]
+    assert progressed == other_expected[:5]
     # EOS retirement (use the known next token as the stop token).
     batch.load_lane(1, layers, last, 3)
     assert batch.step(eos_ids={expected[0]}) == {1: expected[0]}
