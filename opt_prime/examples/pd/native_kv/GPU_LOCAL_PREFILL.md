@@ -78,3 +78,5 @@ Follow-up same-run comparisons, graph-width/admission changes and additional wor
 Request-group prefill and its early streaming pause tradeoff: GPU_LOCAL_CHUNKS.md.
 
 Token-level prefill scheduling and its overhead/quality limits: GPU_TOKEN_CHUNKS.md.
+
+Continuous admission, long-context retrieval and open-loop arrival evidence: GPU_LOCAL_ARRIVALS.md.

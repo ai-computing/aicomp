@@ -38,6 +38,21 @@ class LocalWorker(Worker):
             self.tokenizer = tokenizer
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
             eos = {eos} if isinstance(eos, int) else set(eos)
+            def prepare(jobs):
+                valid = []
+                for job in jobs:
+                    if job.cancel.is_set(): continue
+                    try:
+                        count = validate(job.body, a.model)
+                        tokens = job.body['prompt']
+                        if isinstance(tokens, str): tokens = tokenizer.encode(tokens, add_special_tokens=False)
+                        if not 1 <= len(tokens) <= 2048 or len(tokens)-1+count > 2048:
+                            raise ValueError('prompt/output exceeds capacity')
+                        if any(t < 0 or t >= model.config.vocab_size for t in tokens):
+                            raise ValueError('token out of range')
+                        valid.append((job, tokens, count))
+                    except ValueError as exc: job.send('error', (400, str(exc)))
+                return valid
             self.ready.set()
             while not self.stopping.is_set():
                 try: first = self.jobs.get(timeout=0.2)
@@ -49,25 +64,13 @@ class LocalWorker(Worker):
                     except queue.Empty: break
                 valid = []
                 try:
-                    for job in wave:
-                        if job.cancel.is_set(): continue
-                        try:
-                            count = validate(job.body, a.model)
-                            tokens = job.body['prompt']
-                            if isinstance(tokens, str): tokens = tokenizer.encode(tokens, add_special_tokens=False)
-                            if not 1 <= len(tokens) <= 2048 or len(tokens)-1+count > 2048:
-                                raise ValueError('prompt/output exceeds capacity')
-                            if any(t < 0 or t >= model.config.vocab_size for t in tokens):
-                                raise ValueError('token out of range')
-                            valid.append((job, tokens, count))
-                        except ValueError as exc: job.send('error', (400, str(exc)))
+                    valid = prepare(wave)
                     if not valid: continue
-                    graph = single_graph if len(valid) == 1 else batch_graph
+                    graph = single_graph if len(valid) == 1 and not getattr(a, 'local_continuous', False) else batch_graph
                     if getattr(a, 'profile_stages', None):
                         with open(a.profile_stages, 'a') as log:
                             log.write(json.dumps({'stage':'local_wave','requests':len(valid),
                                 'width':graph.batch_size,'input_lengths':[len(x[1]) for x in valid]})+'\n')
-                    for job, _, _ in valid: job.send('start')
                     states = {}
                     def emit(state, token, finished):
                         job, decoder, prompt_count, generated, pending = state
@@ -104,42 +107,56 @@ class LocalWorker(Worker):
                                 except queue.Full: break
                                 pending.popleft()
                         if not emitted: self.stopping.wait(0.001)
-                    chunk_size = getattr(a, 'local_prefill_batch_size', 16)
-                    for begin in range(0, len(valid), chunk_size):
-                        if self.stopping.is_set(): break
-                        chunk = valid[begin:begin+chunk_size]
-                        if token_chunk and any(graph.remaining):
-                            session = chunked_prefill.start([x[1] for x in chunk], token_chunk,
-                                paged=getattr(a, 'local_prefill_paged', False))
-                            result = None
-                            while result is None and not self.stopping.is_set():
-                                advance_decode()
-                                result = session.step()
-                            if result is None: break
-                            first_tokens, layers, offsets, _ = result
-                        else:
-                            first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in chunk])
-                        for index, (job, tokens, count) in enumerate(chunk):
-                            lane = begin+index
-                            if job.cancel.is_set(): continue
-                            state = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
-                            states[lane] = state
-                            stopped = emit(state, first_tokens[index], count == 1)
-                            # Deliver this chunk's first tokens before computing the next.
-                            # Never block the GPU owner on a stalled HTTP consumer.
-                            while state[4]:
-                                try: job.events.put_nowait(state[4][0])
-                                except queue.Full: break
-                                state[4].popleft()
-                            if count > 1 and not stopped:
-                                prefix = [(k[offsets[index]:offsets[index+1]],v[offsets[index]:offsets[index+1]]) for k,v in layers]
-                                graph.load_device_lane(lane, prefix, first_tokens[index], count-1)
+                    def admit(incoming, lane_indices):
+                        for job, _, _ in incoming: job.send('start')
+                        chunk_size = getattr(a, 'local_prefill_batch_size', 16)
+                        for begin in range(0, len(incoming), chunk_size):
+                            if self.stopping.is_set(): break
+                            chunk = incoming[begin:begin+chunk_size]
+                            if token_chunk and any(graph.remaining):
+                                session = chunked_prefill.start([x[1] for x in chunk], token_chunk,
+                                    paged=getattr(a, 'local_prefill_paged', False))
+                                result = None
+                                while result is None and not self.stopping.is_set():
+                                    advance_decode()
+                                    result = session.step()
+                                if result is None: break
+                                first_tokens, layers, offsets, _ = result
+                            else:
+                                first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in chunk])
+                            for index, (job, tokens, count) in enumerate(chunk):
+                                lane = lane_indices[begin+index]
+                                if job.cancel.is_set(): continue
+                                state = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
+                                states[lane] = state
+                                stopped = emit(state, first_tokens[index], count == 1)
+                                # Deliver this chunk's first tokens before computing the next.
+                                # Never block the GPU owner on a stalled HTTP consumer.
+                                while state[4]:
+                                    try: job.events.put_nowait(state[4][0])
+                                    except queue.Full: break
+                                    state[4].popleft()
+                                if count > 1 and not stopped:
+                                    prefix = [(k[offsets[index]:offsets[index+1]],v[offsets[index]:offsets[index+1]]) for k,v in layers]
+                                    graph.load_device_lane(lane, prefix, first_tokens[index], count-1)
+                    admit(valid, list(range(len(valid))))
                     while states and not self.stopping.is_set():
                         advance_decode()
+                        if getattr(a, 'local_continuous', False):
+                            free = [i for i in range(graph.batch_size) if i not in states]
+                            arrivals = []
+                            for _ in free:
+                                try: arrivals.append(self.jobs.get_nowait())
+                                except queue.Empty: break
+                            # Keep the shutdown registry bounded to active/admitting jobs.
+                            self.active.jobs = [state[0] for state in states.values()]+arrivals
+                            if arrivals:
+                                incoming = prepare(arrivals)
+                                admit(incoming, free[:len(incoming)])
                 except Exception:
                     import traceback
                     traceback.print_exc()
-                    for job in wave: job.send('error', (500, 'local generation failed'))
+                    for job in self.active.jobs: job.send('error', (500, 'local generation failed'))
                     self.stopping.set()
                 finally:
                     for lane in range(graph.batch_size): graph.cancel_lane(lane)
