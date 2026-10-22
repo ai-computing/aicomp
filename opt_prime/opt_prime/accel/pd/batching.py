@@ -86,7 +86,8 @@ class ContinuousBatcher:
     supports_sampling = True          # SamplingParams (torch engine: select_token), stop tokens
 
     def __init__(self, model, *, slots=8, max_context=2048, prefill_chunk=256, kv="slot", pages=None, page_size=64,
-                 prefix_cache=False, kv_events=None, host_kv_gib=0, reload_bandwidth=None, prefill_rate=None):
+                 prefix_cache=False, kv_events=None, host_kv_gib=0, reload_bandwidth=None, prefill_rate=None,
+                 remote_kv=None):
         """kv="slot": one max_context store per slot (copies the slots' prefixes every step); kv="paged": a page pool
         of `pages` pages (default: slots * max_context worth) read in place by flex attention (#108).
         prefix_cache reuses cached prompt blocks (#46); host_kv_gib > 0 adds a host-DRAM tier of that size behind it
@@ -112,7 +113,8 @@ class ContinuousBatcher:
                                   prefill_rate=prefill_rate, groups=host_groups)
             self.kv = PagedKV(geometry.layers, slots, geometry.kv_heads, geometry.head_dim, self.dtype, self.device,
                               pages=pages or slots * max_context // page_size, page_size=page_size,
-                              max_context=max_context, prefix_cache=prefix_cache, host=host, groups=groups)
+                              max_context=max_context, prefix_cache=prefix_cache, host=host, groups=groups,
+                              remote=remote_kv)
             if geometry.recurrent:
                 self.kv.attach_recurrent(model, geometry.recurrent)
         elif kv == "slot":
