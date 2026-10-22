@@ -159,7 +159,12 @@ class NativeKVClient:
         try:
             while True:
                 remaining=deadline-time.perf_counter()
-                if remaining<=0 or not self.rx.poll(max(1,int(remaining*1000))):raise TimeoutError('KV receive')
+                if future.done():
+                    # Successful prefill waits for Ack; early completion exposes HTTP failures.
+                    response=future.result()
+                    response.raise_for_status()
+                if remaining<=0:raise TimeoutError('KV receive')
+                if not self.rx.poll(max(1,min(500,int(remaining*1000)))):continue
                 parts=self.rx.recv_multipart(copy=False)
                 header=bytes(parts[0])
                 if len(parts)==1:

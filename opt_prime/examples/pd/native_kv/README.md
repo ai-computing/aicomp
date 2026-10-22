@@ -111,3 +111,21 @@ reviewable change on that line, once its admission criteria are met.
 view path without file I/O or per-token copies. See [MEMORY_PERFORMANCE.md](MEMORY_PERFORMANCE.md)
 for reproducible old/new comparisons, boundary differences and the remaining gap
 against native TTFT. This remains experimental and does not enable a serving backend.
+
+
+## Experimental A100 continuation
+
+`gpu_decoder.py` loads the pinned Qwen3-8B FP8 checkpoint as BF16 or Marlin
+weight-only FP8 and owns a single fixed-capacity CUDA graph lane. `bench_live_gpu.py`
+connects the native receiver directly to that lane. Use `--packed-import` for one
+pinned contiguous upload. These examples are not registered as a production backend.
+
+`bench_gpu_decode.py` measures isolated decode. `check_gpu_logits.py` compares
+teacher-forced logits on a shared BF16 prefix and history. Both require a local
+checkpoint via `--model-dir`; see [GPU_PERFORMANCE.md](GPU_PERFORMANCE.md) for versions,
+commands, timing boundaries, failed runs and precision limitations.
+
+Norm optimization is opt-in. `--fused-norms --norm-mode torch-stats` preserves the
+reference variance/rsqrt operations and passed the recorded bitwise unit checks.
+The fully fused default norm mode changes native-KV outputs and is diagnostic only.
+No current result establishes full native-speed serving or native FP8 quality parity.
