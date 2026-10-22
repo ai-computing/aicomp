@@ -16,7 +16,9 @@ class PinnedPacket:
 
 
 class PinnedAssembler(CanonicalAssembler):
-    def __init__(self, request_id, positions):
+    def __init__(self, request_id, positions, *, max_batch_slots=4):
+        if max_batch_slots not in (4,8): raise ValueError("max_batch_slots must be 4 or 8")
+        self.max_batch_slots = max_batch_slots
         if not 1 <= positions <= MAX_POSITIONS: raise ValueError('unsupported position count')
         self.request_id,self.positions = request_id,positions
         self.data = PinnedPacket(positions)

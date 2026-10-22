@@ -61,7 +61,8 @@ class PipelineWorker(Worker):
                 pack_pool = concurrent.futures.ThreadPoolExecutor(1) if getattr(a, 'async_pack', False) else None
                 try:
                     client = MultiplexKVClient(a.native, 19201, 19202,
-                        json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()))
+                        json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()),
+                        max_batch_slots=getattr(a,'native_kv_max_batch_slots',4))
                     producer_ready.set()
                     while not self.stopping.is_set():
                         if not credits.acquire(timeout=0.1): continue

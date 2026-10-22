@@ -7,8 +7,8 @@ from gpu_native_pack import pack_native_views
 from gpu_decoder import load_model
 from gpu_norms import install_fused_norms
 from gpu_batch_decoder import BatchGraphDecoder
-p=argparse.ArgumentParser();p.add_argument('--model-dir',required=True);p.add_argument('--out',required=True);p.add_argument('--direct',action='store_true');a=p.parse_args();torch.set_num_threads(1)
-client=MultiplexKVClient('http://127.0.0.1:19101',19201,19202,json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()))
+p=argparse.ArgumentParser();p.add_argument('--model-dir',required=True);p.add_argument('--out',required=True);p.add_argument('--direct',action='store_true');p.add_argument('--max-batch-slots',type=int,choices=(4,8),default=4);a=p.parse_args();torch.set_num_threads(1)
+client=MultiplexKVClient('http://127.0.0.1:19101',19201,19202,json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()),max_batch_slots=a.max_batch_slots)
 packets=[]
 try:
  for n,t in ((512,1000),(128,1001)):

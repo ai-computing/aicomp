@@ -231,6 +231,8 @@ class GPUHTTPServer(ThreadingHTTPServer):
 
 
 def main(a):
+    if getattr(a,'native_kv_max_batch_slots',4)!=4 and (not getattr(a,'pipeline',False) or getattr(a,'native_pack','torch')!='direct'):
+        raise ValueError('--native-kv-max-batch-slots requires direct native pipeline')
     if getattr(a,'native_pack','torch')!='torch' and not getattr(a,'pipeline',False):
         raise ValueError('--native-pack requires --pipeline')
     if getattr(a,'local_continuous',False) and (getattr(a,'prefill_backend','native')!='gpu' or getattr(a,'local_single_width',False)):
@@ -271,6 +273,7 @@ if __name__=='__main__':
     p.add_argument('--local-prefill-batch-size',type=int,choices=range(1,17),default=16)
     p.add_argument('--local-single-width',action='store_true',help='experimental one-request wave graph; no mid-request width switch')
     p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
+    p.add_argument('--native-kv-max-batch-slots',type=int,choices=(4,8),default=4)
     p.add_argument('--native-pack',choices=['torch','numpy','direct'],default='torch')
     p.add_argument('--pipeline',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
