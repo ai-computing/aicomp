@@ -480,6 +480,9 @@ class OwnerExecutor:
                     return
 
 
+POLL = 0.5          # seconds between client-disconnect checks of a waiting handler (results wake it at once)
+_DONE = object()    # end-of-stream marker in a handler's token queue
+
 def serve_stage(owner, stage, port):
     if stage not in ("prefill", "decode"):
         raise ValueError("invalid stage")
@@ -559,7 +562,7 @@ def serve_stage(owner, stage, port):
                 state = dict(cancelled=False)
                 while True:
                     try:
-                        response = future.result(timeout=0.05)
+                        response = future.result(timeout=POLL)    # returns at completion; POLL checks the client
                         break
                     except FutureTimeout:
                         self.cancel_if_gone(rid, state)
@@ -629,20 +632,32 @@ def serve_stage(owner, stage, port):
                 send(chunk(dict(content=delta) if chat else delta))
 
             response, error = None, None
+            future.add_done_callback(lambda _f: tokens.put(_DONE))   # tokens are queued before completion
             while True:
                 try:
-                    out.append(tokens.get(timeout=0.05))
-                    text_delta()
-                    continue
+                    item = tokens.get(timeout=POLL)               # wakes on a token; POLL only checks the client
                 except queue.Empty:
-                    pass
-                if future.done() and tokens.empty():
+                    self.cancel_if_gone(rid, state)
+                    continue
+                done = item is _DONE
+                if not done:
+                    out.append(item)
+                while True:                                       # drain: one detokenization per wake-up
+                    try:
+                        item = tokens.get_nowait()
+                    except queue.Empty:
+                        break
+                    if item is _DONE:
+                        done = True
+                    else:
+                        out.append(item)
+                text_delta()
+                if done:
                     try:
                         response = future.result()
                     except BaseException as exc:
                         error = exc
                     break
-                self.cancel_if_gone(rid, state)
             if error is not None:
                 if started:
                     send(dict(error=str(error), status=getattr(error, "status", 500)))

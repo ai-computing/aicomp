@@ -295,6 +295,22 @@ class PagedKV:
                 self.k[layer][:, idx] = k[row].to(self.k.dtype)
                 self.v[layer][:, idx] = v[row].to(self.v.dtype)
 
+    # ---- whole spans (PD: KV computed elsewhere) ----
+    def span_index(self, slot, start, end):
+        return self.physical([slot] * (end - start), torch.arange(start, end, device=self.device))
+
+    def write_span(self, slot, start, keys, values):
+        """keys/values [layers, kv_heads, n, head_dim] for positions start .. start+n of `slot`, all layers in one
+        indexed copy (the PD admission of KV that another engine prefilled)"""
+        idx = self.span_index(slot, start, start + keys.shape[2])
+        self.k[:, :, idx] = keys.to(self.device, self.k.dtype, non_blocking=True)
+        self.v[:, :, idx] = values.to(self.device, self.v.dtype, non_blocking=True)
+
+    def read_span(self, slot, start, end):
+        """[layers, kv_heads, end - start, head_dim] keys and values of `slot` (the prefill side's export)"""
+        idx = self.span_index(slot, start, end)
+        return self.k[:, :, idx], self.v[:, :, idx]
+
     # ---- decode: attention over the pool in place ----
     def block_mask(self, slots, lengths):
         """every slot row of the query batch; row s attends to its first lengths positions (decode: + the new one)"""

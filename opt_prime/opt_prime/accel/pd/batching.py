@@ -54,6 +54,16 @@ class SlotKV:
                 self.v[layer, slot, :, pos:pos + n] = v[row]
 
 
+def prefill_chunk(model, kv, slot, ids, start, end, device):
+    """run prompt positions start..end of `slot` against its cached prefix, store their KV; last-position logits"""
+    cache = kv.prefix([slot], start) if start else None
+    out = model(torch.tensor([ids[start:end]], device=device), past_key_values=cache or DynamicCache(), use_cache=True,
+                position_ids=torch.arange(start, end, device=device)[None],
+                attention_mask=torch.ones(1, end, dtype=torch.long, device=device), logits_to_keep=1)
+    kv.write([slot], [start], out.past_key_values, slice(start, end))
+    return out.logits[0, -1]
+
+
 @dataclass
 class _Request:
     request: PDRequest
@@ -63,6 +73,7 @@ class _Request:
     prefilled: int = 0                 # prompt tokens already in the slot
     tokens: list = field(default_factory=list)
     cancelled: bool = False
+    pending: Optional[Future] = None   # PD: the prefill running elsewhere
 
 
 class ContinuousBatcher:
@@ -186,12 +197,7 @@ class ContinuousBatcher:
     def _prefill_chunk(self, r):
         ids = r.request.input_ids
         start, end = r.prefilled, min(r.prefilled + self.chunk, len(ids))
-        cache = self.kv.prefix([r.slot], start) if start else None
-        out = self.model(torch.tensor([ids[start:end]], device=self.device), past_key_values=cache or DynamicCache(),
-                         use_cache=True,
-                         position_ids=torch.arange(start, end, device=self.device)[None],
-                         attention_mask=torch.ones(1, end, dtype=torch.long, device=self.device), logits_to_keep=1)
-        self.kv.write([r.slot], [start], out.past_key_values, slice(start, end))
+        logits = prefill_chunk(self.model, self.kv, r.slot, ids, start, end, self.device)
         self.kv.length[r.slot] = r.prefilled = end
         self.stats['prefill_chunks'] += 1
         if end < len(ids):
@@ -199,7 +205,7 @@ class ContinuousBatcher:
         self.prefilling.popleft()
         if self.paged:
             self.kv.commit_prompt(r.slot)
-        token = select_token(out.logits[0, -1], r.request.sampling, len(ids))
+        token = select_token(logits, r.request.sampling, len(ids))
         if self._emit(r, token):
             self.decoding.append(r)
 
