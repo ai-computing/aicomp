@@ -56,6 +56,7 @@ class AttentionSpec:
     kv_lora_rank: int = 0         # MLA
     q_lora_rank: int = 0          # MLA (0 = no q compression)
     module_class: str = ""
+    output_gate: bool = False     # q_proj also produces a per-head output gate (Qwen3-Next, Qwen3.5/3.6)
 
     @property
     def keeps_kv(self) -> bool:

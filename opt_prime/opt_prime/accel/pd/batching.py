@@ -11,8 +11,8 @@ masked per slot, given their own positions, and each slot's new K/V column is wr
 so requests join and leave the batch every step and a long prompt delays the running batch by at most one chunk per
 step (chunked prefill). A finished or cancelled request frees its slot at once.
 
-Scope: uniform full-attention families (dense and MoE, `pd.torch_models`); per-layer or sliding geometries are
-rejected. One owner thread drives `step()`; `submit` / `cancel` are thread-safe.
+Scope: the families of `pd.torch_models` (dense, MoE; hybrid sliding/mixed-geometry ones with kv="paged", #127);
+One owner thread drives `step()`; `submit` / `cancel` are thread-safe.
 """
 from collections import deque
 from concurrent.futures import Future
@@ -56,11 +56,17 @@ class SlotKV:
 
 def prefill_chunk(model, kv, slot, ids, start, end, device):
     """run prompt positions start..end of `slot` against its cached prefix, store their KV; last-position logits"""
-    cache = kv.prefix([slot], start) if start else None
-    out = model(torch.tensor([ids[start:end]], device=device), past_key_values=cache or DynamicCache(), use_cache=True,
+    recurrent = bool(getattr(kv, "rstate", None))
+    if recurrent:
+        cache = kv.prefill_cache(slot, start)        # KV prefix + the request's linear-attention state
+    else:
+        cache = (kv.prefix([slot], start) if start else None) or DynamicCache()
+    out = model(torch.tensor([ids[start:end]], device=device), past_key_values=cache, use_cache=True,
                 position_ids=torch.arange(start, end, device=device)[None],
                 attention_mask=torch.ones(1, end, dtype=torch.long, device=device), logits_to_keep=1)
     kv.write([slot], [start], out.past_key_values, slice(start, end))
+    if recurrent:
+        kv.save_state(slot, out.past_key_values)
     return out.logits[0, -1]
 
 
@@ -86,8 +92,9 @@ class ContinuousBatcher:
         prefix_cache reuses cached prompt blocks (#46); host_kv_gib > 0 adds a host-DRAM tier of that size behind it
         (#52), with the reload-or-recompute rule of `HostKVTier` when reload_bandwidth and prefill_rate are given."""
         geometry = describe_model(model.config)
-        if not geometry.uniform or geometry.window is not None:
-            raise ValueError('continuous batching supports uniform full-attention families only')
+        hybrid = not geometry.uniform or geometry.window is not None or bool(geometry.recurrent)
+        if hybrid and kv != "paged":
+            raise ValueError("hybrid (sliding / mixed-geometry) families need kv='paged' (#127)")
         params = next(model.parameters())
         self.model, self.device, self.dtype = model.eval(), params.device, params.dtype
         if slots < 1 or prefill_chunk < 1 or max_context < 2:
@@ -95,15 +102,19 @@ class ContinuousBatcher:
         if kv == "paged":
             from opt_prime.accel.pd.paged import HostKVTier, PagedKV
             host = None
+            groups = geometry.groups
+            host_groups = [(len(g.layers), g.kv_heads, g.head_dim) for g in groups]
             if host_kv_gib:
                 blocks = HostKVTier.blocks_for(host_kv_gib, geometry.layers, geometry.kv_heads, page_size,
-                                               geometry.head_dim, self.dtype)
+                                               geometry.head_dim, self.dtype, groups=host_groups)
                 host = HostKVTier(geometry.layers, geometry.kv_heads, page_size, geometry.head_dim, self.dtype,
                                   blocks=blocks, pin=self.device.type == "cuda", reload_bandwidth=reload_bandwidth,
-                                  prefill_rate=prefill_rate)
+                                  prefill_rate=prefill_rate, groups=host_groups)
             self.kv = PagedKV(geometry.layers, slots, geometry.kv_heads, geometry.head_dim, self.dtype, self.device,
                               pages=pages or slots * max_context // page_size, page_size=page_size,
-                              max_context=max_context, prefix_cache=prefix_cache, host=host)
+                              max_context=max_context, prefix_cache=prefix_cache, host=host, groups=groups)
+            if geometry.recurrent:
+                self.kv.attach_recurrent(model, geometry.recurrent)
         elif kv == "slot":
             self.kv = SlotKV(geometry.layers, slots, geometry.kv_heads, max_context, geometry.head_dim,
                              self.dtype, self.device)
@@ -205,6 +216,8 @@ class ContinuousBatcher:
         self.prefilling.popleft()
         if self.paged:
             self.kv.commit_prompt(r.slot)
+            if self.kv.rstate:
+                self.kv.commit_state(r.slot)
         token = select_token(logits, r.request.sampling, len(ids))
         if self._emit(r, token):
             self.decoding.append(r)

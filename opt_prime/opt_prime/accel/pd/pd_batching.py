@@ -43,6 +43,12 @@ PEER_COPY = os.environ.get("OPT_PRIME_PEER_COPY", "0") == "1"
 
 
 def move_kv(t, device):
+    if isinstance(t, (list, tuple)):                           # hybrid models: one span per KV group
+        return [move_kv(x, device) for x in t]
+    return _move_one(t, device)
+
+
+def _move_one(t, device):
     """copy a KV span to `device`. Between GPUs the copy is staged through pinned host memory unless
     OPT_PRIME_PEER_COPY=1: on a PCIe host whose GPUs sit on different sockets, direct peer copies were found to deliver
     wrong data and to overwrite unrelated memory on the destination GPU (see docs/validation/batching/PD.md). Enable
@@ -66,6 +72,7 @@ class PrefillOut:
     prefill_cached: int = 0    # prompt tokens the prefill side did not recompute (its prefix cache)
     prefill_s: float = 0.0
     transfer_s: float = 0.0
+    state: dict = None         # linear-attention layers: {layer: (conv, recurrent)} after the prompt (#127)
 
 
 class TorchPrefillEngine:
@@ -75,13 +82,13 @@ class TorchPrefillEngine:
                  out_device=None):
         from opt_prime.accel.pd.paged import PagedKV
         g = describe_model(model.config)
-        if not g.uniform or g.window is not None:
-            raise ValueError("PD batching supports uniform full-attention families only")
         p = next(model.parameters())
         self.model, self.device, self.dtype = model.eval(), p.device, p.dtype
         self.kv = PagedKV(g.layers, 1, g.kv_heads, g.head_dim, self.dtype, self.device,
                           pages=pages or 4 * max_context // page_size, page_size=page_size, max_context=max_context,
-                          prefix_cache=prefix_cache)
+                          prefix_cache=prefix_cache, groups=g.groups)
+        if g.recurrent:
+            self.kv.attach_recurrent(model, g.recurrent)
         self.chunk, self.max_context = chunk, max_context
         self.out_device = torch.device(out_device) if out_device is not None else None
         self._stream = torch.cuda.Stream(self.out_device) if self.out_device is not None and \
@@ -101,6 +108,7 @@ class TorchPrefillEngine:
                 logits = prefill_chunk(self.model, self.kv, 0, ids, start, end, self.device)
                 start = end
             self.kv.commit_prompt(0)
+            state = self.kv.lane_state.pop(0, None) if self.kv.rstate else None
             token = select_token(logits, request.sampling, len(ids))
             keys, values = self.kv.read_span(0, send_from, len(ids))       # gathered copies, own memory
             if self.device.type == "cuda":
@@ -109,10 +117,12 @@ class TorchPrefillEngine:
             if self.out_device is not None and self.out_device != self.device:
                 with torch.cuda.stream(self._stream) if self._stream is not None else _nullctx():
                     keys, values = move_kv(keys, self.out_device), move_kv(values, self.out_device)
+                    if state:
+                        state = {k: tuple(move_kv(list(v), self.out_device)) for k, v in state.items()}
                 if self._stream is not None:
                     self._stream.synchronize()
             t2 = time.perf_counter()
-            return PrefillOut(token, send_from, keys, values, cached, t1 - t0, t2 - t1)
+            return PrefillOut(token, send_from, keys, values, cached, t1 - t0, t2 - t1, state)
         finally:
             self.kv.release(0)
 
@@ -205,15 +215,20 @@ class ProcessPrefillWorker:
                 f.set_exception(RuntimeError(f"prefill process: {error}"))
                 continue
             t0 = time.perf_counter()
+
+            def copy(x):                                             # own memory on this side (the child frees its)
+                if isinstance(x, (list, tuple)):
+                    return [copy(y) for y in x]
+                return move_kv(x, self.out_device) if stream is not None else x.to(self.out_device).clone()
+
+            with torch.cuda.stream(stream) if stream is not None else _nullctx():
+                k, v = copy(out.keys), copy(out.values)
+                state = {layer: tuple(copy(list(t))) for layer, t in out.state.items()} if out.state else None
             if stream is not None:
-                with torch.cuda.stream(stream):
-                    k, v = move_kv(out.keys, self.out_device), move_kv(out.values, self.out_device)
                 stream.synchronize()
-            else:
-                k, v = out.keys.to(self.out_device).clone(), out.values.to(self.out_device).clone()
             self._ack.put(key)                                           # the child may free its tensors now
             f.set_result(PrefillOut(out.token, out.start, k, v, out.prefill_cached, out.prefill_s,
-                                    out.transfer_s + time.perf_counter() - t0))
+                                    out.transfer_s + time.perf_counter() - t0, state))
 
     def close(self):
         self._req.put(None)
@@ -357,6 +372,8 @@ class PDBatcher(ContinuousBatcher):
                 self.kv.write_span(r.slot, out.start, out.keys, out.values)
             self.kv.length[r.slot] = r.prefilled = len(ids)
             self.kv.commit_prompt(r.slot)
+            if self.kv.rstate:
+                self.kv.commit_state(r.slot, out.state)
             s = self.stats
             s['prefills'] += 1
             s['transferred_tokens'] += len(ids) - out.start

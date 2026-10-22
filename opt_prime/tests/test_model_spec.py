@@ -35,7 +35,7 @@ def test_spec_matches_modules(family):
         a = l.attention
         if a.kind == "gqa":                                  # geometry agrees with the projection weights
             at = layer.self_attn
-            assert at.q_proj.weight.shape[0] == a.heads * a.head_dim
+            assert at.q_proj.weight.shape[0] == a.heads * a.head_dim * (2 if a.output_gate else 1)
             assert at.k_proj.weight.shape[0] == a.kv_heads * a.head_dim
         if l.moe is not None:
             assert l.moe.router.num_experts == l.moe.experts.num_experts and l.moe.router.top_k > 0

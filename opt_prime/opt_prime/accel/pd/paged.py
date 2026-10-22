@@ -9,6 +9,15 @@ model's own attention.
 
 The decode kernel is compiled once: the query batch is always all slots (unused rows have no pages) and the pool
 size is fixed. On CPU, flex attention runs eagerly (reference).
+
+Recurrent families (#127: Qwen3.5/3.6 Gated DeltaNet layers) keep a per-lane conv and recurrent state for their
+linear-attention layers (`attach_recurrent`): decode exposes the lanes' state buffers as HF linear-attention cache
+layers, which the kernels update in place; a prefill runs on the request's own state and commits it to its lane when
+the prompt is done. Prefix caching is off for these families (a block hit cannot rebuild the recurrent state).
+
+Hybrid families (#127: Gemma 3/4) keep one pool per KV group (`torch_models.KVGroup`: kind, window, kv_heads,
+head_dim), all indexed by the same page table. A sliding group's block mask lists only the pages inside each row's
+window (attention cost O(window)) and masks positions older than the window; each layer reads its group's mask.
 """
 from collections import OrderedDict
 import hashlib
@@ -32,9 +41,14 @@ def _flex(device_type):
     return _FLEX[device_type]
 
 
-def _paged_attention(module, query, key, value, attention_mask, scaling=None, dropout=0.0, **kwargs):
-    out = _flex(query.device.type)(query, key, value, block_mask=_CTX.block_mask, scale=scaling,
-                                   enable_gqa=key.shape[1] != query.shape[1])
+def _paged_attention(module, query, key, value, attention_mask, scaling=None, dropout=0.0, softcap=None, **kwargs):
+    group = _CTX.layer_group[getattr(module, "layer_idx", 0)][0]
+    score_mod = None
+    if softcap:                         # Gemma 2 style attention logit soft-capping
+        def score_mod(score, b, h, q, kv):
+            return torch.tanh(score / softcap) * softcap
+    out = _flex(query.device.type)(query, key, value, block_mask=_CTX.masks[group], scale=scaling,
+                                   score_mod=score_mod, enable_gqa=key.shape[1] != query.shape[1])
     return out.transpose(1, 2).contiguous(), None
 
 
@@ -46,6 +60,26 @@ AttentionInterface.register(NAME, _paged_attention)
 AttentionMaskInterface.register(NAME, _no_mask)
 
 
+def _layer_states(c):
+    """(conv, recurrent) of an HF linear-attention cache layer (per-state dicts since transformers 5.1x, tensors
+    before)"""
+    conv, rec = c.conv_states, c.recurrent_states
+    return (conv[0], rec[0]) if isinstance(conv, dict) else (conv, rec)
+
+
+def _seed_layer(c, conv, rec):
+    """make `c` hold (alias) the given state tensors, marked as having a previous state"""
+    if isinstance(c.conv_states, dict):
+        c.conv_states[0], c.recurrent_states[0] = conv, rec
+        c.conv_kernel_size[0] = conv.shape[-1]
+        c.is_conv_states_initialized[0] = c.is_recurrent_states_initialized[0] = c.has_previous_state[0] = True
+    else:
+        c.conv_states, c.recurrent_states = conv, rec
+        c.conv_kernel_size, c.max_batch_size = conv.shape[-1], conv.shape[0]
+        c.is_conv_states_initialized = c.is_recurrent_states_initialized = c.has_previous_state = True
+    c.device, c.dtype = conv.device, conv.dtype
+
+
 class _StepCache(Cache):
     """past_key_values of one paged decode step: `update` writes each row's new K/V into its page and returns the
     pool, which the attention reads through the block mask."""
@@ -53,10 +87,13 @@ class _StepCache(Cache):
     def __init__(self, kv, rows, positions):
         self.kv, self.rows = kv, rows                               # active query rows (= their slots)
         self.idx = kv.physical(rows, positions)                     # their new tokens' pool positions
-        self.layers = []
+        self.layers = kv.decode_state_layers()                      # linear-attention layers: the lanes' states
+
+    def has_previous_state(self, layer_idx=None, state_idx=None):
+        return layer_idx is None or layer_idx in self.kv.rstate
 
     def update(self, key_states, value_states, layer_idx, *args, **kwargs):
-        k, v = self.kv.k[layer_idx], self.kv.v[layer_idx]          # only active rows write (others own no pages)
+        k, v = self.kv.layer_kv(layer_idx)                          # only active rows write (others own no pages)
         k[:, self.idx] = key_states[self.rows, :, 0].transpose(0, 1).to(k.dtype)
         v[:, self.idx] = value_states[self.rows, :, 0].transpose(0, 1).to(v.dtype)
         return k[None], v[None]
@@ -94,14 +131,16 @@ class HostKVTier:
     than recomputing it: block_bytes / reload_bandwidth < page_size / prefill_rate."""
 
     def __init__(self, layers, kv_heads, page_size, head_dim, dtype, *, blocks, pin=False, reload_bandwidth=None,
-                 prefill_rate=None, medium="CPU"):
+                 prefill_rate=None, medium="CPU", groups=None):
+        """groups: [(layers, kv_heads, head_dim)] per KV group of a hybrid model (default: one group)"""
         if blocks < 1:
             raise ValueError("host tier needs at least one block")
-        shape = (blocks, layers, kv_heads, page_size, head_dim)
-        self.k = torch.empty(shape, dtype=dtype, pin_memory=pin)
-        self.v = torch.empty(shape, dtype=dtype, pin_memory=pin)
+        groups = groups or [(layers, kv_heads, head_dim)]
+        self.gk = [torch.empty((blocks, n, h, page_size, d), dtype=dtype, pin_memory=pin) for n, h, d in groups]
+        self.gv = [torch.empty_like(k, pin_memory=pin) for k in self.gk]
+        self.k, self.v = self.gk[0], self.gv[0]
         self.blocks, self.page_size, self.medium = blocks, page_size, medium
-        self.block_bytes = 2 * self.k[0].numel() * self.k.element_size()
+        self.block_bytes = 2 * sum(k[0].numel() * k.element_size() for k in self.gk)
         self.index = OrderedDict()               # block hash -> host block, least recently used first
         self.free = list(range(blocks))
         self.reload = (reload_bandwidth is None or prefill_rate is None or
@@ -109,8 +148,9 @@ class HostKVTier:
         self.stats = dict(offloaded=0, reloaded=0, evicted=0, hit_tokens=0)
 
     @staticmethod
-    def blocks_for(gib, layers, kv_heads, page_size, head_dim, dtype):
-        per = 2 * layers * kv_heads * page_size * head_dim * torch.empty((), dtype=dtype).element_size()
+    def blocks_for(gib, layers, kv_heads, page_size, head_dim, dtype, groups=None):
+        groups = groups or [(layers, kv_heads, head_dim)]
+        per = 2 * sum(n * h * d for n, h, d in groups) * page_size * torch.empty((), dtype=dtype).element_size()
         return int(gib * 2 ** 30) // per
 
 
@@ -122,12 +162,20 @@ class PagedKV:
     medium) / ("removed", hashes, medium) for KV-event publishing; medium None is the device."""
 
     def __init__(self, layers, slots, kv_heads, head_dim, dtype, device, *, pages, page_size=64, max_context=2048,
-                 prefix_cache=False, host=None):
+                 prefix_cache=False, host=None, groups=None):
+        """groups: `torch_models.KVGroup`s of a hybrid model; default one full-attention group of all layers"""
         if max_context % page_size:
             raise ValueError("max_context must be a multiple of page_size")
         self.page_size, self.pages, self.slots = page_size, pages, slots
-        self.k = torch.zeros(layers, kv_heads, pages * page_size, head_dim, dtype=dtype, device=device)
-        self.v = torch.zeros_like(self.k)
+        if groups is None:
+            from opt_prime.accel.pd.torch_models import KVGroup
+            groups = (KVGroup("full", None, kv_heads, head_dim, tuple(range(layers))),)
+        self.groups = tuple(groups)
+        self.gk = [torch.zeros(len(g.layers), g.kv_heads, pages * page_size, g.head_dim, dtype=dtype, device=device)
+                   for g in self.groups]
+        self.gv = [torch.zeros_like(k) for k in self.gk]
+        self.layer_group = {layer: (gi, i) for gi, g in enumerate(self.groups) for i, layer in enumerate(g.layers)}
+        self.k, self.v = self.gk[0], self.gv[0]          # one group: the single pool [layers, kv_heads, tokens, dim]
         self.max_pages = max_context // page_size
         self.max_context = max_context
         self.table = torch.zeros(slots, self.max_pages, dtype=torch.int32, device=device)      # logical -> physical
@@ -147,6 +195,62 @@ class PagedKV:
         if host is not None and not prefix_cache:
             raise ValueError("a host KV tier needs prefix_cache")
         self.host = host
+
+    def layer_kv(self, layer):
+        g, i = self.layer_group[layer]
+        return self.gk[g][i], self.gv[g][i]
+
+    # ---- recurrent (linear-attention) layers ----
+    rstate = {}                                  # layer -> (conv [slots, ...], recurrent [slots, ...]) when attached
+
+    def attach_recurrent(self, model, layers):
+        """allocate per-lane states for the linear-attention `layers`, shaped by a one-token probe of `model`"""
+        cfg = model.config.get_text_config() if hasattr(model.config, "get_text_config") else model.config
+        cache = DynamicCache(config=cfg)
+        with torch.inference_mode():
+            model(torch.ones(1, 1, dtype=torch.long, device=self.device), past_key_values=cache, use_cache=True)
+        self.rstate, self.lane_state, self._cfg = {}, {}, cfg
+        for layer in layers:
+            conv, rec = _layer_states(cache.layers[layer])
+            self.rstate[layer] = (torch.zeros((self.slots, *conv.shape[1:]), dtype=conv.dtype, device=self.device),
+                                  torch.zeros((self.slots, *rec.shape[1:]), dtype=rec.dtype, device=self.device))
+        self.prefix_cache = False                # a cached block cannot restore the recurrent state
+        if self.host is not None:
+            raise ValueError("the host KV tier needs prefix caching, which recurrent families do not support")
+
+    def decode_state_layers(self):
+        if not self.rstate:
+            return []
+        from transformers.cache_utils import LinearAttentionLayer
+        layers = [None] * (max(max(self.rstate), max(self.layer_group)) + 1)
+        for layer, (conv, rec) in self.rstate.items():
+            c = LinearAttentionLayer()
+            _seed_layer(c, conv, rec)
+            layers[layer] = c
+        return layers
+
+    def prefill_cache(self, slot, start):
+        """a full HF cache for one prefill chunk of `slot`: its KV prefix and its request's recurrent state"""
+        cache = DynamicCache(config=self._cfg)
+        if start:
+            idx = self.physical([slot] * start, torch.arange(start, device=self.device))
+            for layer in self.layer_group:
+                k, v = self.layer_kv(layer)
+                cache.layers[layer].update(k[:, idx][None], v[:, idx][None])
+            for layer, (conv, rec) in self.lane_state[slot].items():
+                _seed_layer(cache.layers[layer], conv.clone(), rec.clone())
+        return cache
+
+    def save_state(self, slot, cache):
+        self.lane_state[slot] = {layer: tuple(t.clone() for t in _layer_states(cache.layers[layer]))
+                                 for layer in self.rstate}
+
+    def commit_state(self, slot, state=None):
+        """the prompt is done: its recurrent state (this prefill's, or one handed over by PD) becomes the lane's"""
+        state = state if state is not None else self.lane_state.pop(slot, None)
+        for layer, (conv, rec) in (state or {}).items():
+            self.rstate[layer][0][slot].copy_(conv[0].to(self.device))
+            self.rstate[layer][1][slot].copy_(rec[0].to(self.device))
 
     # ---- pages ----
     def pages_for(self, tokens):
@@ -232,16 +336,18 @@ class PagedKV:
             host.stats["evicted"] += 1
             self.events.append(("removed", [victim], host.medium))
         block = host.free.pop()
-        host.k[block].copy_(self.k[:, :, self._span(page)], non_blocking=True)    # stream-ordered before reuse
-        host.v[block].copy_(self.v[:, :, self._span(page)], non_blocking=True)
+        for hk, hv, k, v in zip(host.gk, host.gv, self.gk, self.gv):           # stream-ordered before reuse
+            hk[block].copy_(k[:, :, self._span(page)], non_blocking=True)
+            hv[block].copy_(v[:, :, self._span(page)], non_blocking=True)
         host.index[h] = block
         host.stats["offloaded"] += 1
         self.events.append(("stored", [h], None, [], host.medium))
 
     def _reload(self, h, page):
         block = self.host.index[h]
-        self.k[:, :, self._span(page)].copy_(self.host.k[block], non_blocking=True)
-        self.v[:, :, self._span(page)].copy_(self.host.v[block], non_blocking=True)
+        for hk, hv, k, v in zip(self.host.gk, self.host.gv, self.gk, self.gv):
+            k[:, :, self._span(page)].copy_(hk[block], non_blocking=True)
+            v[:, :, self._span(page)].copy_(hv[block], non_blocking=True)
         self.host.stats["reloaded"] += 1
 
     def commit_prompt(self, slot):
@@ -283,50 +389,78 @@ class PagedKV:
     # ---- prefill (gather once per chunk) ----
     def prefix(self, slots, n):
         idx = torch.stack([self.physical([s] * n, torch.arange(n, device=self.device)) for s in slots])  # [B, n]
-        return DynamicCache(ddp_cache_data=[(self.k[layer][:, idx].transpose(0, 1), self.v[layer][:, idx].transpose(0, 1))
-                                            for layer in range(self.k.shape[0])])
+        data = []
+        for layer in sorted(self.layer_group):
+            k, v = self.layer_kv(layer)
+            data.append((k[:, idx].transpose(0, 1), v[:, idx].transpose(0, 1)))
+        return DynamicCache(ddp_cache_data=data)
 
     def write(self, slots, positions, cache, src):
         for layer, entry in enumerate(cache.layers):
+            if layer not in self.layer_group:               # linear-attention layers keep no KV
+                continue
             k, v = entry.keys[:, :, src], entry.values[:, :, src]
             n = k.shape[2]
+            pk, pv = self.layer_kv(layer)
             for row, (slot, pos) in enumerate(zip(slots, positions)):
                 idx = self.physical([slot] * n, torch.arange(pos, pos + n, device=self.device))
-                self.k[layer][:, idx] = k[row].to(self.k.dtype)
-                self.v[layer][:, idx] = v[row].to(self.v.dtype)
+                pk[:, idx] = k[row].to(pk.dtype)
+                pv[:, idx] = v[row].to(pv.dtype)
 
     # ---- whole spans (PD: KV computed elsewhere) ----
     def span_index(self, slot, start, end):
         return self.physical([slot] * (end - start), torch.arange(start, end, device=self.device))
 
     def write_span(self, slot, start, keys, values):
-        """keys/values [layers, kv_heads, n, head_dim] for positions start .. start+n of `slot`, all layers in one
-        indexed copy (the PD admission of KV that another engine prefilled)"""
-        idx = self.span_index(slot, start, start + keys.shape[2])
-        self.k[:, :, idx] = keys.to(self.device, self.k.dtype, non_blocking=True)
-        self.v[:, :, idx] = values.to(self.device, self.v.dtype, non_blocking=True)
+        """keys/values [layers, kv_heads, n, head_dim] for positions start .. start+n of `slot` (a list of those, one
+        per KV group, for hybrid models), each group in one indexed copy (the PD admission of KV that another engine
+        prefilled)"""
+        keys = keys if isinstance(keys, (list, tuple)) else [keys]
+        values = values if isinstance(values, (list, tuple)) else [values]
+        idx = self.span_index(slot, start, start + keys[0].shape[2])
+        for pk, pv, k, v in zip(self.gk, self.gv, keys, values):
+            pk[:, :, idx] = k.to(self.device, pk.dtype, non_blocking=True)
+            pv[:, :, idx] = v.to(self.device, pv.dtype, non_blocking=True)
 
     def read_span(self, slot, start, end):
-        """[layers, kv_heads, end - start, head_dim] keys and values of `slot` (the prefill side's export)"""
+        """[layers, kv_heads, end - start, head_dim] keys and values of `slot` (the prefill side's export); a list per
+        KV group for hybrid models"""
         idx = self.span_index(slot, start, end)
-        return self.k[:, :, idx], self.v[:, :, idx]
+        if len(self.gk) == 1:
+            return self.k[:, :, idx], self.v[:, :, idx]
+        return [k[:, :, idx] for k in self.gk], [v[:, :, idx] for v in self.gv]
 
     # ---- decode: attention over the pool in place ----
-    def block_mask(self, slots, lengths):
-        """every slot row of the query batch; row s attends to its first lengths positions (decode: + the new one)"""
+    def block_mask(self, slots, lengths, window=None):
+        """every slot row of the query batch; row s attends to its first lengths positions (decode: + the new one).
+        With a sliding `window` only the last `window` positions (the query's own included), and only their pages are
+        listed, so the kernel visits O(window) pages per row."""
         lens = torch.zeros(self.slots, dtype=torch.int32, device=self.device)
         lens[torch.as_tensor(slots, device=self.device)] = torch.as_tensor(lengths, dtype=torch.int32,
                                                                            device=self.device)
-        nblocks = (lens + self.page_size - 1) // self.page_size
         P, table, p2l = self.page_size, self.table, self.phys2log
-
-        def mask_mod(b, h, q, kv):
-            log_page = p2l[b, kv // P]
-            return (log_page >= 0) & (log_page * P + kv % P < lens[b])
-
-        indices = torch.zeros(self.slots, self.pages, dtype=torch.int32, device=self.device)   # width = KV blocks
+        end = (lens + P - 1) // P
         w = min(self.pages, self.max_pages)                    # a request never owns more pages than the pool
-        indices[:, :w] = table[:, :w]
+        indices = torch.zeros(self.slots, self.pages, dtype=torch.int32, device=self.device)   # width = KV blocks
+        if window is None:
+            nblocks = end
+
+            def mask_mod(b, h, q, kv):
+                log_page = p2l[b, kv // P]
+                return (log_page >= 0) & (log_page * P + kv % P < lens[b])
+
+            indices[:, :w] = table[:, :w]
+        else:
+            first = (lens - window).clamp(min=0) // P             # first page holding a position inside the window
+            nblocks = end - first
+            cols = (first[:, None] + torch.arange(w, device=self.device)[None]).clamp(max=w - 1)
+            indices[:, :w] = torch.gather(table[:, :w], 1, cols.long())
+
+            def mask_mod(b, h, q, kv):
+                log_page = p2l[b, kv // P]
+                pos = log_page * P + kv % P
+                return (log_page >= 0) & (pos < lens[b]) & (pos >= lens[b] - window)
+
         return BlockMask.from_kv_blocks(nblocks[:, None, None], indices[:, None, None, :], BLOCK_SIZE=(Q_BLOCK, P),
                                         mask_mod=mask_mod, seq_lengths=(1, self.pages * P))
 
@@ -337,7 +471,9 @@ class PagedKV:
         pos = torch.zeros(self.slots, 1, dtype=torch.long, device=self.device)
         ids[rows, 0] = torch.as_tensor(tokens, device=self.device)
         pos[rows, 0] = torch.as_tensor(lengths, device=self.device)
-        _CTX.block_mask = self.block_mask(slots, [n + 1 for n in lengths])
+        new = [n + 1 for n in lengths]
+        _CTX.masks = [self.block_mask(slots, new, g.window) for g in self.groups]
+        _CTX.layer_group = self.layer_group
         cache = _StepCache(self, rows, pos[rows, 0])
         cfg = model.config
         impl = cfg._attn_implementation
@@ -349,5 +485,5 @@ class PagedKV:
         finally:
             for c in {id(c): c for c in (cfg, getattr(cfg, "get_text_config", lambda: None)()) if c is not None}.values():
                 c._attn_implementation = impl
-            _CTX.block_mask = None
+            _CTX.masks = None
         return out.logits[rows, -1]
