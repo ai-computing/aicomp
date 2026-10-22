@@ -19,6 +19,31 @@ def batch(slots,n,final=False):
 
 
 class MemoryTest(unittest.TestCase):
+    def test_http_failure_preempts_kv_timeout(self):
+        import concurrent.futures
+        import requests
+        from unittest.mock import Mock
+        from memory_receiver import NativeKVClient
+        client=NativeKVClient.__new__(NativeKVClient)
+        client.poisoned=False
+        client.timeout=90
+        client.receiver_port=19202
+        client.http_url='http://127.0.0.1:19101'
+        client.http=Mock()
+        client.executor=Mock()
+        client.rx=Mock()
+        response=requests.Response()
+        response.status_code=503
+        future=concurrent.futures.Future()
+        future.set_result(response)
+        client.executor.submit.return_value=future
+        with self.assertRaises(requests.HTTPError):
+            client.prefill('test-model',[1000,1001],'views')
+        client.rx.poll.assert_not_called()
+        self.assertTrue(client.poisoned)
+        with self.assertRaises(RuntimeError):
+            client.prefill('test-model',[1000,1001],'views')
+
     def test_same_canonical_bytes(self):
         for n in (1,3,31,511):
             a=CanonicalAssembler('memory-test-139',n);b=LegacyAssembler('memory-test-139',n)
