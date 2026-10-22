@@ -169,3 +169,5 @@ with stalled event consumers. See [GPU_PIPELINE.md](GPU_PIPELINE.md).
 Eight-lane pipeline and prefill-side CPU packing measurements are in [GPU_EIGHT.md](GPU_EIGHT.md).
 
 Concurrent native prefill is opt-in with `--native-batch-size 8`; see [GPU_MULTIPLEX.md](GPU_MULTIPLEX.md) for protocol tests, numerical limits and HTTP results.
+
+Elementwise fusion and HTTP delivery experiments: [GPU_ELEMENTWISE.md](GPU_ELEMENTWISE.md). Both `--fused-elementwise` and `--async-text` are opt-in; full-serving improvement is not yet established.

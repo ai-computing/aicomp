@@ -78,6 +78,44 @@ class ServerTest(unittest.TestCase):
         g,calls=graph([4,9,5]);cancel=threading.Event();it=g.iter_tokens(3,cancel=cancel)
         self.assertEqual(next(it),4);cancel.set();self.assertEqual(list(it),[]);self.assertEqual(calls,[4])
 
+    def test_raw_token_events_preserve_unicode_and_usage(self):
+        class Fake:
+            args=types.SimpleNamespace(model='test');stopping=threading.Event()
+            tokenizer=types.SimpleNamespace(decode=lambda ids,**kw:{1:'\ufffd',2:'한',3:'한국',4:'한국'}[len(ids)])
+            def submit(self,j):
+                j.send('start')
+                for token in (1,2,3,4):j.send('token',token)
+                j.send('done',{'finish_reason':'stop','usage':{'completion_tokens':4}})
+        server=ThreadingHTTPServer(('127.0.0.1',0),handler(Fake()))
+        thread=threading.Thread(target=server.serve_forever);thread.start()
+        try:
+            for stream in (False,True):
+                request=Request(f'http://127.0.0.1:{server.server_port}/v1/completions',
+                    json.dumps({'prompt':[1,2],'stream':stream}).encode(),{'Content-Type':'application/json'})
+                with urlopen(request,timeout=3) as response:
+                    if stream:
+                        wire=response.read().decode()
+                        self.assertIn('data: [DONE]',wire)
+                        chunks=[json.loads(line[6:]) for line in wire.splitlines() if line.startswith('data: {')]
+                        self.assertEqual(''.join(c['choices'][0]['text'] for c in chunks),'한국')
+                        self.assertEqual(chunks[-1]['usage']['completion_tokens'],4)
+                    else:
+                        data=json.load(response)
+                        self.assertEqual(data['choices'][0]['text'],'한국')
+                        self.assertEqual(data['usage']['completion_tokens'],4)
+            Fake.tokenizer.decode=lambda ids,**kw:'A' if len(ids)==1 else 'B'
+            request=Request(f'http://127.0.0.1:{server.server_port}/v1/completions',
+                json.dumps({'prompt':[1,2]}).encode(),{'Content-Type':'application/json'})
+            with self.assertRaises(HTTPError) as error:urlopen(request,timeout=3)
+            self.assertEqual(error.exception.code,500)
+            request=Request(f'http://127.0.0.1:{server.server_port}/v1/completions',
+                json.dumps({'prompt':[1,2],'stream':True}).encode(),{'Content-Type':'application/json'})
+            with urlopen(request,timeout=3) as response:
+                wire=response.read().decode()
+                self.assertIn('detokenization failed',wire)
+                self.assertNotIn('data: [DONE]',wire)
+        finally:server.shutdown();server.server_close();thread.join()
+
     def test_http_stream_nonstream_and_rejection(self):
         class Fake:
             args=types.SimpleNamespace(model='test');stopping=threading.Event()

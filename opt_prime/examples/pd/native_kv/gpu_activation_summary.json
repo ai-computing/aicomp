@@ -1,0 +1,58 @@
+{
+  "paired_v2": {
+    "baseline": {
+      "ms_per_step": 10.515050359344968,
+      "all_tokens_equal": true
+    },
+    "fused_swiglu": {
+      "ms_per_step": 10.260225578122117,
+      "all_tokens_equal": true
+    }
+  },
+  "combined": {
+    "baseline": {
+      "ms_per_step": 10.518392296944512,
+      "all_tokens_equal": true
+    },
+    "fused_swiglu": {
+      "ms_per_step": 10.221910031305015,
+      "all_tokens_equal": true
+    }
+  },
+  "http_c8": {
+    "native": {
+      "aggregate_tok_s": 577.4897986532515,
+      "mean_ttft_ms": 264.4502850052959,
+      "mean_tpot_ms": 11.716464859270536
+    },
+    "gpu": {
+      "aggregate_tok_s": 535.2473393426324,
+      "mean_ttft_ms": 393.24879600462737,
+      "mean_tpot_ms": 10.589215210651544
+    }
+  },
+  "backlog_c8": {
+    "native": {
+      "aggregate_tok_s": 580.8032897770868,
+      "mean_ttft_ms": 260.6242665060563,
+      "mean_tpot_ms": 11.697106777555604
+    },
+    "gpu": {
+      "aggregate_tok_s": 538.7179159843463,
+      "mean_ttft_ms": 393.73726912526763,
+      "mean_tpot_ms": 10.594785377952935
+    }
+  },
+  "async_text_c8": {
+    "native": {
+      "aggregate_tok_s": 568.4969838061311,
+      "mean_ttft_ms": 269.69300675409613,
+      "mean_tpot_ms": 11.88440050097461
+    },
+    "gpu": {
+      "aggregate_tok_s": 525.3405173151725,
+      "mean_ttft_ms": 444.2101706226822,
+      "mean_tpot_ms": 10.460882287417029
+    }
+  }
+}
