@@ -4,7 +4,7 @@ import json
 import queue
 import time
 from types import SimpleNamespace
-from serve_gpu import Job
+from serve_gpu import Job,TextDecoder
 from gpu_pipeline_worker import PipelineWorker
 
 p = argparse.ArgumentParser(description=__doc__)
@@ -13,22 +13,26 @@ p.add_argument('--out', required=True)
 p.add_argument('--batch-size', type=int, default=4)
 p.add_argument('--native-batch-size', type=int, default=1)
 p.add_argument('--async-pack', action='store_true')
+p.add_argument('--async-text', action='store_true')
+p.add_argument('--fused-elementwise', action='store_true')
 p.add_argument('--adaptive-single', action='store_true')
 a = p.parse_args()
 args = SimpleNamespace(model_dir=a.model_dir, device='cuda:0', model='Qwen/Qwen3-8B-FP8',
-    native='http://127.0.0.1:19101', norm_mode='fused', fuse_mlp=True, fuse_qkv=True, batch_size=a.batch_size, adaptive_single=a.adaptive_single, native_batch_size=a.native_batch_size, native_batch_wait_ms=8, async_pack=a.async_pack)
+    native='http://127.0.0.1:19101', norm_mode='fused', fuse_mlp=True, fuse_qkv=True, batch_size=a.batch_size, adaptive_single=a.adaptive_single, native_batch_size=a.native_batch_size, native_batch_wait_ms=8, async_pack=a.async_pack, async_text=a.async_text, fused_elementwise=a.fused_elementwise)
 worker = PipelineWorker(args)
 body = {'model':args.model, 'prompt':[1000]*128, 'max_tokens':128,
         'temperature':0, 'ignore_eos':True}
 slow, fast = Job(body), Job(body)
 def consume(job):
     text = ''
+    decoder = TextDecoder(worker.tokenizer)
     deadline = time.monotonic()+30
     while time.monotonic() < deadline:
         kind, value = job.events.get(timeout=10)
         if kind == 'error': raise RuntimeError(value)
         if kind == 'text': text += value
-        if kind == 'done': return text, value
+        if kind == 'token': text += decoder.append(value)
+        if kind == 'done': return text+(decoder.append(final=True) if decoder.ids else ''), value
     raise TimeoutError('consumer')
 try:
     worker.submit(slow)

@@ -30,6 +30,9 @@ class BatchWorker(Worker):
             torch.set_num_interop_threads(1)
             model = load_model(a.model_dir, a.device, 'marlin', fuse_mlp=a.fuse_mlp, fuse_qkv=a.fuse_qkv)
             if a.norm_mode != 'none': install_fused_norms(model, a.norm_mode)
+            if getattr(a, 'fused_elementwise', False):
+                from gpu_activation import install_fused_swiglu, install_fused_post_attention
+                install_fused_swiglu(model); install_fused_post_attention(model)
             graph = BatchGraphDecoder(model, a.batch_size)
             tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']

@@ -47,8 +47,12 @@ class PipelineWorker(Worker):
             torch.set_num_interop_threads(1)
             model = load_model(a.model_dir, a.device, 'marlin', fuse_mlp=a.fuse_mlp, fuse_qkv=a.fuse_qkv)
             if a.norm_mode != 'none': install_fused_norms(model, a.norm_mode)
+            if getattr(a, 'fused_elementwise', False):
+                from gpu_activation import install_fused_swiglu, install_fused_post_attention
+                install_fused_swiglu(model); install_fused_post_attention(model)
             graph = BatchGraphDecoder(model, a.batch_size, adaptive_single=getattr(a, 'adaptive_single', False))
             tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
+            self.tokenizer = tokenizer
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
             eos = {eos} if isinstance(eos, int) else set(eos)
             def prefill():
@@ -181,13 +185,16 @@ class PipelineWorker(Worker):
                     state = states[lane]
                     job, decoder, prompt_count, generated, pending = state
                     state[3] = generated = generated+1
-                    delta = decoder.append(token)
-                    if delta: pending.append(('text', delta))
+                    if getattr(a, 'async_text', False): pending.append(('token', token))
+                    else:
+                        delta = decoder.append(token)
+                        if delta: pending.append(('text', delta))
                     stopped = token in eos and not job.body.get('ignore_eos', False)
                     if stopped: graph.cancel_lane(lane)
                     if not graph.remaining[lane]:
-                        delta = decoder.append(final=True)
-                        if delta: pending.append(('text', delta))
+                        if not getattr(a, 'async_text', False):
+                            delta = decoder.append(final=True)
+                            if delta: pending.append(('text', delta))
                         pending.append(('done', {'finish_reason': 'stop' if stopped else 'length',
                             'usage': {'prompt_tokens': prompt_count, 'completion_tokens': generated,
                                       'total_tokens': prompt_count+generated}}))
