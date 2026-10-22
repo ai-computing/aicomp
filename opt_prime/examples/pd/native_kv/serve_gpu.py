@@ -1,7 +1,7 @@
-"""Experimental loopback completions server; one dedicated GPU/native-KV worker.
+"""Experimental loopback completions server with one GPU/native-KV owner.
 
-A bounded FIFO serializes requests. This is not continuous batching. Each streamed
-token is read back and detokenized before the next graph replay.
+Default execution serializes requests; --batch-size enables experimental waves.
+Neither mode is continuous batching. Tokens are read back after each graph replay.
 """
 import argparse,json,queue,select,signal,socket,threading,time,uuid
 from dataclasses import dataclass,field
@@ -200,7 +200,10 @@ def handler(worker):
 
 
 def main(a):
-    worker=Worker(a)
+    if getattr(a,'batch_size',1)>1:
+        from gpu_batch_worker import BatchWorker
+        worker=BatchWorker(a)
+    else:worker=Worker(a)
     try:server=ThreadingHTTPServer(('127.0.0.1',a.port),handler(worker))
     except BaseException:
         worker.close();raise
@@ -214,6 +217,7 @@ def main(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--model-dir',required=True);p.add_argument('--device',default='cuda:0')
     p.add_argument('--native',default='http://127.0.0.1:19101');p.add_argument('--port',type=int,default=19111)
     p.add_argument('--model',default='Qwen/Qwen3-8B-FP8')

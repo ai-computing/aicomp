@@ -33,8 +33,9 @@ def request(url,body,barrier):
 
 
 def main(a):
-    rows=[];rng=random.Random(139)
+    rows=[]
     for n in map(int,a.lengths.split(',')):
+        rng=random.Random(139+n)  # Stable across selected lengths and concurrency.
         tokens=[rng.randrange(1000,30000) for _ in range(n)]
         body={'model':a.model,'prompt':tokens,'temperature':0,'max_tokens':a.output_tokens,
               'min_tokens':a.output_tokens,'ignore_eos':True,'stream':True}
