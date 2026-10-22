@@ -24,7 +24,7 @@ p.add_argument('--local-prefill-token-chunk', type=int, default=0)
 p.add_argument('--prompt-tokens',type=int,default=128)
 p.add_argument('--local-prefill-paged',action='store_true')
 p.add_argument('--local-continuous',action='store_true')
-p.add_argument('--native-pack',choices=['torch','numpy'],default='torch')
+p.add_argument('--native-pack',choices=['torch','numpy','direct'],default='torch')
 a = p.parse_args()
 if a.peer_count >= a.batch_size: p.error('peer count must leave one lane for stalled consumer')
 args = SimpleNamespace(model_dir=a.model_dir, device='cuda:0', model='Qwen/Qwen3-8B-FP8',

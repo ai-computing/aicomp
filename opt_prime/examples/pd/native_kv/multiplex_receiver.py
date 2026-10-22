@@ -3,16 +3,20 @@ import concurrent.futures
 import time
 import uuid
 import requests
+import zmq
 from memory_receiver import NativeKVClient, ViewAssembler
 from protocol import control, parse_message, read_string, u32, MAX_HEADER
 
 
 class MultiplexKVClient(NativeKVClient):
-    def prefill_many(self, model, prompts, on_complete=None):
+    def prefill_many(self, model, prompts, on_complete=None, *, direct=False):
         if self.poisoned: raise RuntimeError('failed client cannot be reused')
         if not 1 <= len(prompts) <= 16: raise ValueError('expected 1..16 prompts')
         if any(not 2 <= len(tokens) <= 2048 for tokens in prompts):
             raise ValueError('prompt length must be 2..2048')
+        if direct:
+            from pinned_receiver import PinnedAssembler
+            if not hasattr(self.rx, 'recv_into'): raise RuntimeError('direct receive requires pyzmq recv_into')
         start = time.perf_counter()
         pending = {}
         results = [None] * len(prompts)
@@ -26,7 +30,7 @@ class MultiplexKVClient(NativeKVClient):
                 # Each concurrent HTTP call owns its session; ZMQ stays on this thread.
                 future = pool.submit(requests.post, self.http_url+'/v1/completions', json=body, timeout=self.timeout)
                 pending[rid] = {'index':index, 'n':len(tokens)-1, 'future':future,
-                    'assembler':ViewAssembler(rid,len(tokens)-1), 'ready':False, 'done':False,
+                    'assembler':(PinnedAssembler(rid,len(tokens)-1) if direct else ViewAssembler(rid,len(tokens)-1)), 'ready':False, 'done':False,
                     'ready_ms':None, 'kv_ready_ms':None, 'batches':0}
             while pending:
                 if time.perf_counter()-start >= self.timeout: raise TimeoutError('multiplex KV receive')
@@ -43,16 +47,21 @@ class MultiplexKVClient(NativeKVClient):
                     del pending[rid]
                 if not pending: break
                 if not self.rx.poll(1): continue
-                parts = self.rx.recv_multipart(copy=False)
-                header = bytes(parts[0])
-                if len(parts) == 1:
+                if direct:
+                    header = bytes(self.rx.recv(copy=False))
+                    part_count = 2 if self.rx.getsockopt(zmq.RCVMORE) else 1
+                else:
+                    parts = self.rx.recv_multipart(copy=False)
+                    header = bytes(parts[0])
+                    part_count = len(parts)
+                if part_count == 1:
                     msg = parse_message([header])
                     state = pending.get(msg['id'])
                     if state is None or state['ready'] or state['done']: raise ValueError('unexpected ready ID')
                     state['ready'] = True
                     state['ready_ms'] = (time.perf_counter()-start)*1000
                     self.tx.send(control(msg['id'],2,range(state['n'])))
-                elif len(parts) == 2:
+                elif part_count == 2:
                     # Only route here; assembler validates the complete header and payload.
                     if not 36 <= len(header) <= MAX_HEADER or len(header)%4 or u32(header,len(header)-36)!=1:
                         raise ValueError('invalid batch envelope')
@@ -60,7 +69,9 @@ class MultiplexKVClient(NativeKVClient):
                     state = pending.get(rid)
                     if state is None or not state['ready'] or state['done']: raise ValueError('unexpected batch ID')
                     state['batches'] += 1
-                    if state['assembler'].accept(header,memoryview(parts[1])):
+                    done = (state['assembler'].receive(header,self.rx) if direct
+                            else state['assembler'].accept(header,memoryview(parts[1])))
+                    if done:
                         state['done'] = True
                         state['kv_ready_ms'] = (time.perf_counter()-start)*1000
                         self.tx.send(control(rid,3))
