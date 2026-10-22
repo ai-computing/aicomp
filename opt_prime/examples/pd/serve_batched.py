@@ -3,7 +3,10 @@
     python examples/pd/serve_batched.py --model unsloth/Llama-3.2-1B-Instruct --port 8000 --slots 32 --kv paged
     # Rebellions ATOM, the optimum-rbln decoder compiled with batch 8 (one lane per request):
     python examples/pd/serve_batched.py --model unsloth/Llama-3.2-1B-Instruct --backend atom --devices 0 --slots 8
-    # batched PD (#120): prefill on another GPU (or another venv via --pd-prefill-python), decode lanes batched:
+    # FuriosaAI RNGD through furiosa-llm (compiled .fxb), our rounds scheduler, engine prefix cache + host tier:
+    python examples/pd/serve_batched.py --model <hf dir> --backend rngd --fxb model.fxb --rngd-devices npu:0 \
+        --slots 8 --max-context 512 --kv-host-memory-gb 16
+    # batched PD (#120): prefill on another GPU (or another venv / NPU via --pd-prefill-python), decode lanes batched:
     python examples/pd/serve_batched.py --model ... --pd-prefill-device cuda:0 --device cuda:1
     # + prefix caching with KV events for the llm-d EPP (topic kv@<pod-ip>:<port>@<model>):
     python examples/pd/serve_batched.py --model ... --prefix-cache --kv-events tcp://*:5557 --pod-ip 192.0.2.5
@@ -44,7 +47,16 @@ def build(a):
     if a.kv_events:
         from opt_prime.accel.serve.kv_events import ZmqKVEventPublisher
         events = ZmqKVEventPublisher(a.kv_events, topic=f"kv@{a.pod_ip}:{a.port}@{a.model}", block_size=a.page_size)
-    if a.backend == "atom":
+    if a.backend == "rngd":
+        from types import SimpleNamespace
+        from transformers import AutoConfig, GenerationConfig
+        from opt_prime.accel.platforms.rngd.batching import FuriosaLLMBatcher
+        b = FuriosaLLMBatcher.from_artifact(a.model, a.fxb, devices=a.rngd_devices, max_context=a.max_context,
+                                            max_concurrency=a.slots, prefix_cache=not a.no_prefix_cache,
+                                            host_kv_gib=a.kv_host_memory_gb, kv_events=events, block_size=a.page_size)
+        model = SimpleNamespace(config=AutoConfig.from_pretrained(a.model),
+                                generation_config=GenerationConfig.from_pretrained(a.model))
+    elif a.backend == "atom":
         from opt_prime.accel.platforms.atom.engine import AtomRblnEngine
         engine = AtomRblnEngine(devices=a.devices, max_seq_len=a.max_context, batch_size=a.slots)
         engine.start(a.model)
@@ -74,8 +86,10 @@ if __name__ == "__main__":
     ap.add_argument("--slots", type=int, default=32); ap.add_argument("--kv", default="paged", choices=["slot", "paged"])
     ap.add_argument("--chunk", type=int, default=256); ap.add_argument("--max-context", type=int, default=2048)
     ap.add_argument("--max-output", type=int, default=1024); ap.add_argument("--dtype", default="bfloat16")
-    ap.add_argument("--device", default="cuda"); ap.add_argument("--backend", default="torch", choices=["torch", "atom"])
+    ap.add_argument("--device", default="cuda"); ap.add_argument("--backend", default="torch", choices=["torch", "atom", "rngd"])
     ap.add_argument("--devices", type=int, nargs="+", default=[0], help="ATOM devices (tensor parallel)")
+    ap.add_argument("--fxb", default=None, help="RNGD: furiosa-llm compiled artifact")
+    ap.add_argument("--rngd-devices", default="npu:0"); ap.add_argument("--no-prefix-cache", action="store_true")
     ap.add_argument("--pd-prefill-device", default=None, help="PD: torch prefill on this device (e.g. cuda:0)")
     ap.add_argument("--pd-prefill-python", default=None, help="PD: prefill_server under this interpreter")
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")

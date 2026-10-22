@@ -24,12 +24,26 @@ class BatchedService(CompletionAPI):
         self.state = "idle"                       # "poisoned" after an engine failure (readiness 503)
         if batcher.paged:
             self.metrics.extra = self._cache_metrics
+        elif hasattr(batcher, "hit_tokens"):      # NPU engines (ATOM own blocks, furiosa-llm): hit counters
+            def extra(lab):
+                out = [("vllm:prefix_cache_queries_total", "counter", "Prompt tokens looked up in the prefix cache.",
+                        [f"vllm:prefix_cache_queries_total{{{lab}}} {batcher.query_tokens}"]),
+                       ("vllm:prefix_cache_hits_total", "counter", "Prompt tokens served from the prefix cache.",
+                        [f"vllm:prefix_cache_hits_total{{{lab}}} {batcher.hit_tokens}"])]
+                size = getattr(batcher, "block_size", None)
+                if size:
+                    out.append(("vllm:cache_config_info", "gauge", "Information of the LLMEngine CacheConfig.",
+                                [f'vllm:cache_config_info{{{lab},block_size="{size}",enable_prefix_caching="True"}} 1']))
+                return out
+            self.metrics.extra = extra
 
     def _engines(self):
         return (self.batcher,)
 
     def gauges(self, waiting=0):
         b = self.batcher
+        if hasattr(b, "load"):                    # engines that schedule themselves (furiosa-llm)
+            return b.load(waiting)
         running = len(b.prefilling) + len(b.decoding)
         if b.paged:                               # unreferenced cached pages count as free
             used = 1.0 - (len(b.kv.free_pages) + len(b.kv.evictable)) / b.kv.pages
