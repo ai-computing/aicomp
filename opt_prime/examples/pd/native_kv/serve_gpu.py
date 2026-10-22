@@ -222,6 +222,8 @@ class GPUHTTPServer(ThreadingHTTPServer):
 
 
 def main(a):
+    if getattr(a,'native_pack','torch')!='torch' and not getattr(a,'pipeline',False):
+        raise ValueError('--native-pack requires --pipeline')
     if getattr(a,'local_continuous',False) and (getattr(a,'prefill_backend','native')!='gpu' or getattr(a,'local_single_width',False)):
         raise ValueError('--local-continuous requires GPU prefill and a fixed batch graph')
     if getattr(a,'local_single_width',False) and getattr(a,'prefill_backend','native')!='gpu':
@@ -260,6 +262,7 @@ if __name__=='__main__':
     p.add_argument('--local-prefill-batch-size',type=int,choices=range(1,17),default=16)
     p.add_argument('--local-single-width',action='store_true',help='experimental one-request wave graph; no mid-request width switch')
     p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
+    p.add_argument('--native-pack',choices=['torch','numpy'],default='torch')
     p.add_argument('--pipeline',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)
