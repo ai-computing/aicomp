@@ -18,8 +18,9 @@ Engines (--engine):
              the final norm + LM head on the host
   rngd-full  rngd-pd's `FullPrefillEngine` on RNGD chip --chip (Llama-3.1-8B geometry: Llama-3.1-8B, KONI-8B; #137):
              two layers per compiled graph, --width buckets (e.g. 256,512), LM head on the card; needs rngd-pd on the
-             path (with rngd-pd#16 on furiosa-torch 2026.4). Measured on KONI-8B, prompt -> first token: 31-34 ms up
-             to 256 tokens, 54-56 ms up to 512 (furiosa-llm `serve` on the same card: 56-61 ms)
+             path (with rngd-pd#16 on furiosa-torch 2026.4). Measured on KONI-8B with the KV on the host: 36-45 ms
+             up to 256 tokens, 55-58 ms up to 384, 61-76 ms at 480 (furiosa-llm `serve` on the same card, first
+             token over HTTP: 56-61 ms)
 """
 import argparse
 import json
