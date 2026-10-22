@@ -18,7 +18,8 @@ Workers:
     thread in this process copies it to the decode device (peer copy) and only then lets the child free it.
   - `SubprocessPrefillWorker(python, engine_args)`: `pd.prefill_server` under another interpreter / environment (an
     NPU SDK's venv), KV handed over in a shared-memory slab with one slot per decode lane.
-Any engine with `prefill(request, send_from) -> PrefillOut` can be a worker's engine.
+Any engine with `prefill(request, send_from) -> PrefillOut` can be a worker's engine;
+`platforms.atom.batching.AtomBatcher(prefill_worker=...)` decodes PD requests on ATOM (#123).
 """
 from collections import deque
 from concurrent.futures import Future, wait, FIRST_COMPLETED

@@ -18,7 +18,7 @@ Prefix reuse works on both sides:
 | `ProcessPrefillWorker(factory)` | child process (spawn) | CUDA IPC handle, receiver thread copies, then acks |
 | `SubprocessPrefillWorker(python, args)` | `pd.prefill_server` under another interpreter/venv (NPU SDKs) | shared-memory slab, one slot per decode lane |
 
-The served form is
+ATOM decode lanes accept the same workers (`AtomBatcher(prefill_worker=...)`, #123). The served form is
 `examples/pd/serve_batched.py --pd-prefill-device cuda:0` or `--pd-prefill-python ... --pd-prefill-args ...`.
 
 ## GPU: 2×A100 80GB PCIe, Llama-3.2-1B-Instruct
@@ -66,6 +66,28 @@ loop is CPU-bound, so the absolute numbers are lower than in the offline table: 
 process, without HTTP, gave the same TPOT. Compare the rows with each other, not with the table above. The serving
 change in this PR (handlers wake on results, and check for client disconnect every 0.5 s instead of polling every
 50 ms) raised aggregated throughput from 161 to 205 tok/s under the same contention.
+
+## NPU: RNGD prefill → ATOM decode (Qwen2.5-0.5B-Instruct)
+
+**Benchmark:** `examples/pd/npu_pd_bench.py` on the RNGD+ATOM host.
+- Decode: ATOM (B8, 17 KV blocks; `AtomBatcher` in PD mode).
+- Prefill: `pd.prefill_server --engine rngd-qwen` on one RNGD under the Furiosa SDK venv, handing KV over through the
+  shared-memory slab. ATOM stores KV as DLFloat16, so `AtomKVBlocks.import_span` converts it.
+- Load: 32 requests, 64–480-token prompts, 64 new tokens.
+
+| mode | tok/s | TTFT mean | TPOT mean | identical to aggregated |
+|---|---:|---:|---:|---:|
+| aggregated on ATOM (prefill + decode on ATOM) | 106.2 | 8.57 s | 72.1 ms | — |
+| **PD: RNGD prefill → ATOM decode** | **164.2** | **6.11 s** | **8.2 ms** | 24/32 (first token 30/32) |
+
+The ATOM decode batch no longer stops for prefills: TPOT drops from 72 to 8 ms. The differing outputs come from
+RNGD's and ATOM's bf16 numerics; the same comparison with a CPU fp32 prefill gives 25/32. That host was shared with
+other jobs (load average 75–135), so compare within a run.
+
+**HTTP** (`serve_batched.py --backend atom --atom-kv-blocks 17 --prefix-cache --pd-prefill-python <furiosa venv>
+--pd-prefill-args "--engine rngd-qwen --chip 2"`):
+- chat smoke: "The capital of France is Paris.";
+- Azure replay of 60 requests at 0.3× speed: 60/60 with HTTP 200, no 429, client/server TPOT 1.00.
 
 ## Limits
 

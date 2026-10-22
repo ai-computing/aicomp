@@ -63,3 +63,40 @@ each admission stalls the decode batch for one full prefill. That is why loaded 
   needs KV import into the SDK's pages, which optimum-rbln 0.11 does not expose.
 - Idle lanes run the dummy token at position 0 of their own page, so a B8 step costs the same with 1 or 8 requests.
 - No prefix caching on ATOM (#46 and #52 are torch-only): the SDK owns the pages.
+
+## Own block tables: prefix cache, host tier, PD decode lanes (#123)
+
+With more KV blocks than lanes (`AtomRblnEngine(kv_blocks=B + cache + 1)`), `AtomKVBlocks` assigns the blocks itself
+and passes them to the SDK as external block tables.
+
+**Probes** on ATOM, Llama-3.2-1B, 600-token prompt, B8 with 16 blocks:
+
+| path | time | tokens vs full prefill |
+|---|---:|---:|
+| full prefill on ATOM | 85.5 ms | — |
+| device copy of a 512-token prefix (`copy_kv_cache`) + suffix prefill from 512 | 0.8 + 17.5 ms | identical |
+| host round trip of a 512-token prefix (per-layer get / set, 16 MiB) + suffix prefill | 13.6 + 8.9 ms + suffix | identical |
+| KV computed on the host (CPU fp32 → bf16 → DLFloat16) imported, then decode | — | identical (8/8 tokens) |
+
+Notes on the SDK:
+- ATOM stores KV as DLFloat16 (sign/exponent/mantissa 1/6/9). The host staging buffer mirrors a layer's whole block
+  layout `[blocks, heads, ctx, head_dim]`, so a block's data is moved inside that buffer.
+- The SDK prefill accepts a start position that is a multiple of its chunk (128). Prefix entries are therefore kept
+  in 128-token units.
+
+**Benchmark:** `examples/pd/atom_prefix_bench.py`, B8, 4 shared 512-token prefixes, 32 requests with their own
+16–127-token suffixes, 32 new tokens. Each run compares against the no-cache run of the same invocation; this host is
+shared (load average 75–135 from other users' jobs), so absolute values differ between invocations.
+
+| blocks | mode | tok/s | TTFT mean | prefix hits | identical to off |
+|---:|---|---:|---:|---:|---:|
+| 17 | off | 208.6 | 2.24 s | 0 | — |
+| 17 | device prefix cache | **285.7** (1.37×) | 1.72 s | 9216 (18 copies) | 32/32 |
+| 17 (rerun) | off / device | 130.4 / **209.6** (1.61×) | 4.71 / 2.54 s | 0 / 9216 | 32/32 |
+| 10 (1 cache block) | off | 41.5 | 10.2 s | 0 | — |
+| 10 | device | 45.9 | 9.19 s | 2048 | 32/32 |
+| 10 | device + host tier (4 GiB) | 44.6 | 9.76 s | 11264 (9216 from host, 18 reloads) | 32/32 |
+
+With one cache block the host tier quadruples the reused prefix (2048 → 11264 tokens). Under that run's host load the
+reloads did not turn into throughput: host staging is CPU-side work. PD mode (KV prefilled elsewhere, ATOM decodes
+only) is measured in `PD.md`.
