@@ -233,7 +233,12 @@ class GPUHTTPServer(ThreadingHTTPServer):
 def main(a):
     if getattr(a,'fused_elementwise',False) and (not a.fuse_mlp or a.norm_mode!='fused'):
         raise ValueError('--fused-elementwise requires --fuse-mlp and --norm-mode fused')
-    if getattr(a,'pipeline',False):
+    if getattr(a,'prefill_backend','native')=='gpu':
+        if a.pipeline or a.async_text or a.async_pack or a.adaptive_single:
+            raise ValueError('GPU-local prefill does not support native pipeline/async/adaptive flags')
+        from gpu_local_worker import LocalWorker
+        worker=LocalWorker(a)
+    elif getattr(a,'pipeline',False):
         from gpu_pipeline_worker import PipelineWorker
         worker=PipelineWorker(a)
     elif getattr(a,'batch_size',1)>1:
@@ -254,6 +259,7 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fused-elementwise',action='store_true')
+    p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
     p.add_argument('--pipeline',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)
