@@ -2,6 +2,7 @@
 import json
 import queue
 import threading
+import concurrent.futures
 import time
 from collections import deque
 from pathlib import Path
@@ -41,7 +42,7 @@ class PipelineWorker(Worker):
             from gpu_decoder import load_model
             from gpu_batch_decoder import BatchGraphDecoder, pack_prefix
             from gpu_norms import install_fused_norms
-            from memory_receiver import NativeKVClient
+            from multiplex_receiver import MultiplexKVClient
             torch.set_num_threads(1)
             torch.set_num_interop_threads(1)
             model = load_model(a.model_dir, a.device, 'marlin', fuse_mlp=a.fuse_mlp, fuse_qkv=a.fuse_qkv)
@@ -52,50 +53,91 @@ class PipelineWorker(Worker):
             eos = {eos} if isinstance(eos, int) else set(eos)
             def prefill():
                 client = None
+                pack_pool = concurrent.futures.ThreadPoolExecutor(1) if getattr(a, 'async_pack', False) else None
                 try:
-                    client = NativeKVClient(a.native, 19201, 19202,
+                    client = MultiplexKVClient(a.native, 19201, 19202,
                         json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()))
                     producer_ready.set()
                     while not self.stopping.is_set():
                         if not credits.acquire(timeout=0.1): continue
-                        try: job = self.jobs.get(timeout=0.1)
+                        try: first = self.jobs.get(timeout=0.1)
                         except queue.Empty:
                             credits.release()
                             continue
-                        registry.add(job)
-                        handed_off = False
-                        started = False
-                        try:
+                        batch = [first]
+                        registry.add(first)
+                        deadline = time.monotonic()+getattr(a, 'native_batch_wait_ms', 2)/1000
+                        limit = min(a.batch_size, getattr(a, 'native_batch_size', 1))
+                        while len(batch) < limit and credits.acquire(blocking=False):
+                            try: job = self.jobs.get(timeout=max(0,deadline-time.monotonic()))
+                            except queue.Empty:
+                                credits.release()
+                                break
+                            batch.append(job)
+                            registry.add(job)
+                        valid = []
+                        for job in batch:
                             if self.stopping.is_set(): job.cancel.set()
-                            if job.cancel.is_set(): continue
-                            count = validate(job.body, a.model)
-                            tokens = job.body['prompt']
-                            if isinstance(tokens, str): tokens = tokenizer.encode(tokens, add_special_tokens=False)
-                            if not 2 <= len(tokens) <= 2048 or len(tokens)-1+count > 2048:
-                                raise ValueError('prompt/output exceeds capacity')
-                            if any(t < 0 or t >= model.config.vocab_size for t in tokens):
-                                raise ValueError('token out of range')
-                            started = True
+                            if job.cancel.is_set():
+                                retire(job)
+                                continue
+                            try:
+                                count = validate(job.body, a.model)
+                                tokens = job.body['prompt']
+                                if isinstance(tokens, str): tokens = tokenizer.encode(tokens, add_special_tokens=False)
+                                if not 2 <= len(tokens) <= 2048 or len(tokens)-1+count > 2048:
+                                    raise ValueError('prompt/output exceeds capacity')
+                                if any(t < 0 or t >= model.config.vocab_size for t in tokens):
+                                    raise ValueError('token out of range')
+                            except ValueError as exc:
+                                job.send('error', (400,str(exc)))
+                                retire(job)
+                                continue
                             job.send('start')
-                            views, _ = client.prefill(a.model, tokens, 'views')
-                            if self.stopping.is_set(): job.cancel.set()
-                            if job.cancel.is_set(): continue
-                            # CPU packing overlaps GPU decode; the queued packet owns its bytes.
-                            packed = pack_prefix(views.torch_layers())
-                            del views
-                            prepared.put_nowait((job, tokens, count, packed))
-                            del packed
-                            handed_off = True
-                        except ValueError as exc:
-                            job.send('error', (500, 'prefill failed') if started else (400, str(exc)))
-                            if client.poisoned: raise
+                            valid.append((job,tokens,count))
+                        if not valid: continue
+                        handed_off = set()
+                        packing = []
+                        def pack_one(index, views, stats, queued_at):
+                            job,tokens,count = valid[index]
+                            delivered = False
+                            try:
+                                if self.stopping.is_set(): job.cancel.set()
+                                if job.cancel.is_set(): return
+                                started = time.perf_counter()
+                                packed = pack_prefix(views.torch_layers())
+                                job.stage_metrics = {'native_batch':len(valid), 'input_tokens':len(tokens),
+                                    'native_ready_ms':stats.get('ready_ms'), 'native_kv_ms':stats.get('kv_ready_ms'),
+                                    'native_complete_ms':stats.get('complete_ms'),
+                                    'cpu_pack_queue_ms':(started-queued_at)*1000,
+                                    'cpu_pack_ms':(time.perf_counter()-started)*1000}
+                                prepared.put_nowait((job,tokens,count,packed))
+                                delivered = True
+                            finally:
+                                if not delivered: retire(job)
+                        def received(index, views, stats):
+                            # Claim lifetime/credit before handing the packet to a pack worker.
+                            handed_off.add(index)
+                            queued_at = time.perf_counter()
+                            if pack_pool is None: pack_one(index,views,stats,queued_at)
+                            else: packing.append(pack_pool.submit(pack_one,index,views,stats,queued_at))
+                        try:
+                            if len(valid) == 1:
+                                views,stats = client.prefill(a.model,valid[0][1],'views')
+                                received(0,views,stats)
+                                del views
+                            else:
+                                client.prefill_many(a.model,[tokens for _,tokens,_ in valid],received)
+                            for future in packing: future.result()
                         finally:
-                            if not handed_off: retire(job)
+                            for index,(job,_,_) in enumerate(valid):
+                                if index not in handed_off: retire(job)
                 except BaseException as exc:
                     self.error = exc
                     self.stopping.set()
                     producer_ready.set()
                 finally:
+                    if pack_pool is not None: pack_pool.shutdown(wait=True)
                     if client is not None: client.close()
             producer = threading.Thread(target=prefill, name='native-prefill-owner', daemon=False)
             producer.start()
@@ -111,7 +153,9 @@ class PipelineWorker(Worker):
                         del packed
                         retire(job)
                         continue
+                    import_start = time.perf_counter()
                     graph.load_packed_lane(lane, packed, tokens[-1], count)
+                    job.stage_metrics['gpu_import_ms'] = (time.perf_counter()-import_start)*1000
                     states[lane] = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
                     del packed
                 for lane, (job, _, _, _, pending) in list(states.items()):
@@ -125,6 +169,9 @@ class PipelineWorker(Worker):
                         except queue.Full: break
                         pending.popleft()
                     if not graph.remaining[lane] and not pending:
+                        if getattr(a, 'profile_stages', None):
+                            with open(a.profile_stages, 'a') as stream:
+                                stream.write(json.dumps(job.stage_metrics)+'\n')
                         del states[lane]
                         retire(job)
                 paused = [lane for lane, state in states.items() if state[4]]

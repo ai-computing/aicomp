@@ -226,6 +226,10 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--pipeline',action='store_true')
+    p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
+    p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)
+    p.add_argument('--async-pack',action='store_true')
+    p.add_argument('--profile-stages')
     p.add_argument('--adaptive-single',action='store_true',help='experimental width switching; output parity unresolved')
     p.add_argument('--batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--model-dir',required=True);p.add_argument('--device',default='cuda:0')
