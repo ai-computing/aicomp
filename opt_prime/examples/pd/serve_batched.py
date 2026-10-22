@@ -12,6 +12,8 @@
         --pd-prefill-python ~/venvs/furiosa-2026.4/bin/python --pd-prefill-args "--engine rngd-qwen --chip 2"
     # + prefix caching with KV events for the llm-d EPP (topic kv@<pod-ip>:<port>@<model>):
     python examples/pd/serve_batched.py --model ... --prefix-cache --kv-events tcp://*:5557 --pod-ip 192.0.2.5
+    # + a shared KV store (#128): LMCache-compatible chunks in Mooncake Store (vLLM + LMCache MP mode can share them):
+    python examples/pd/serve_batched.py --model ... --prefix-cache --remote-kv mooncake.json --remote-kv-keys lmcache
     # + a host-DRAM tier behind the prefix cache (#52):
     python examples/pd/serve_batched.py --model ... --prefix-cache --kv-host-memory-gb 16
     curl localhost:8000/v1/chat/completions -H 'x-request-id: a' -d '{"model": "...", "messages": [...], "stream": true}'
@@ -43,6 +45,20 @@ def prefill_worker(a, slots, config):
     return None
 
 
+def remote_tier(a, model):
+    """the shared KV store from --remote-kv (a JSON file of MooncakeDistributedStore.setup arguments), or None"""
+    if not a.remote_kv:
+        return None
+    import json
+    from opt_prime.accel.pd.kvstore import LMCacheMPKeys, MooncakeKVStore, OptimusKeys, RemoteKVTier
+    from opt_prime.accel.pd.torch_models import describe_model
+    g = describe_model(model.config)
+    keys = (LMCacheMPKeys if a.remote_kv_keys == "lmcache" else OptimusKeys)(a.remote_kv_model or a.model,
+                                                                             chunk_tokens=a.remote_kv_chunk)
+    return RemoteKVTier(MooncakeKVStore(json.load(open(a.remote_kv))), keys, layers=g.layers, kv_heads=g.kv_heads,
+                        head_dim=g.head_dim, dtype=next(model.parameters()).dtype)
+
+
 def build(a):
     tok = AutoTokenizer.from_pretrained(a.model)
     events = None
@@ -69,7 +85,7 @@ def build(a):
         model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
         kw = dict(slots=a.slots, max_context=a.max_context, kv=a.kv, page_size=a.page_size,
                   prefix_cache=a.prefix_cache, kv_events=events, host_kv_gib=a.kv_host_memory_gb,
-                  reload_bandwidth=a.reload_bandwidth, prefill_rate=a.prefill_rate)
+                  reload_bandwidth=a.reload_bandwidth, prefill_rate=a.prefill_rate, remote_kv=remote_tier(a, model))
         worker = prefill_worker(a, a.slots, model.config)
         if worker is not None:
             from opt_prime.accel.pd.pd_batching import PDBatcher
@@ -99,6 +115,10 @@ if __name__ == "__main__":
     ap.add_argument("--pd-prefill-python", default=None, help="PD: prefill_server under this interpreter")
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")
     ap.add_argument("--pd-prefill-pythonpath", default=None)
+    ap.add_argument("--remote-kv", default=None, help="JSON with Mooncake store setup arguments (shared KV, #128)")
+    ap.add_argument("--remote-kv-keys", default="lmcache", choices=["lmcache", "optimus"])
+    ap.add_argument("--remote-kv-model", default=None, help="model name in the keys (the vLLM/LMCache side's name)")
+    ap.add_argument("--remote-kv-chunk", type=int, default=256)
     ap.add_argument("--page-size", type=int, default=64)
     ap.add_argument("--prefix-cache", action="store_true"); ap.add_argument("--kv-events", default=None)
     ap.add_argument("--pod-ip", default="127.0.0.1"); ap.add_argument("--kv-host-memory-gb", type=float, default=0)

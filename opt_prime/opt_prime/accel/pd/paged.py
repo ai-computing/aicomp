@@ -162,7 +162,7 @@ class PagedKV:
     medium) / ("removed", hashes, medium) for KV-event publishing; medium None is the device."""
 
     def __init__(self, layers, slots, kv_heads, head_dim, dtype, device, *, pages, page_size=64, max_context=2048,
-                 prefix_cache=False, host=None, groups=None):
+                 prefix_cache=False, host=None, groups=None, remote=None):
         """groups: `torch_models.KVGroup`s of a hybrid model; default one full-attention group of all layers"""
         if max_context % page_size:
             raise ValueError("max_context must be a multiple of page_size")
@@ -195,6 +195,10 @@ class PagedKV:
         if host is not None and not prefix_cache:
             raise ValueError("a host KV tier needs prefix_cache")
         self.host = host
+        if remote is not None:                   # shared store (#128): LMCache-compatible chunks, e.g. Mooncake
+            if not prefix_cache or len(self.groups) != 1 or remote.chunk_tokens % page_size:
+                raise ValueError("a remote KV tier needs prefix_cache, one KV group and chunks of whole pages")
+        self.remote = remote
 
     def layer_kv(self, layer):
         g, i = self.layer_group[layer]
@@ -298,6 +302,8 @@ class PagedKV:
         self.table[slot, :need] = torch.tensor(pages, dtype=torch.int32, device=self.device)
         self.phys2log[slot, pages] = torch.arange(need, dtype=torch.int32, device=self.device)
         self.length[slot] = len(hit) * self.page_size
+        if self.remote is not None and prompt is not None:
+            self.length[slot] += self._fetch_remote(slot, prompt, self.length[slot])
         if prompt is not None:
             self.query_tokens += len(prompt)
             self.hit_tokens += self.length[slot]
@@ -350,9 +356,34 @@ class PagedKV:
             v[:, :, self._span(page)].copy_(hv[block], non_blocking=True)
         self.host.stats["reloaded"] += 1
 
+    def _fetch_remote(self, slot, prompt, have):
+        """continue the slot's cached prefix with the shared store's chunks; returns the tokens added"""
+        C = self.remote.chunk_tokens
+        if have % C:
+            return 0
+        keys = self.remote.chunk_keys(prompt)
+        got, k = 0, have // C
+        while k < len(keys) and (k + 1) * C <= len(prompt) - 1:     # >= 1 prompt token left to prefill
+            kv = self.remote.get(keys[k])
+            if kv is None:
+                break
+            self.write_span(slot, k * C, kv[0], kv[1])
+            got, k = got + C, k + 1
+        self.remote.stats["hit_tokens"] += got
+        return got
+
+    def _put_remote(self, slot, prompt):
+        """after the prompt: the shared store gets every full chunk (it skips keys it already has)"""
+        C = self.remote.chunk_tokens
+        for k, key in enumerate(self.remote.chunk_keys(prompt)):
+            keys, values = self.read_span(slot, k * C, (k + 1) * C)
+            self.remote.put_async(key, keys, values)
+
     def commit_prompt(self, slot):
         """after the slot's prefill: register its new full prompt blocks as cached"""
         prompt, hashes, start = self.pending.pop(slot, (None, [], 0))
+        if self.remote is not None and prompt is not None:
+            self._put_remote(slot, prompt)
         new = [(i, h) for i, h in enumerate(hashes) if i >= start and h not in self.cached]
         for i, h in new:
             page = self.owned[slot][i]
