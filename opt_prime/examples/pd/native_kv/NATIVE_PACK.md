@@ -119,3 +119,5 @@ Reproduction uses the worker command above with --native-pack torch for the base
 and --native-pack numpy --prompt-tokens128 for the shorter candidate. A fresh dedicated
 native server was used for the final same-packet check. All owned servers/checkers
 exited; GPU idle. Draft review only; no main merge.
+
+Follow-up: SAME_CACHE_PAUSE.md holds fixed native caches while changing pause schedules. All6144 positions match; concurrent native identical prompts produce differing caches and two output sequences. This narrows the earlier cross-peer failure without asserting vendor numerical determinism.
