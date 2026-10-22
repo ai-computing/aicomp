@@ -160,3 +160,23 @@ def test_pd_decode_side_host_tier():
         f = b.submit(PDRequest(rid, x, 8)); b.run_until_idle()
         assert f.result() == _greedy(model, x, 8)
     assert b.kv.host.stats["reloaded"] >= 1 and b.stats["decode_cached_tokens"] == 32
+
+
+def test_prefill_pool_spreads_requests_and_matches():
+    from opt_prime.accel.pd.pd_batching import PrefillWorkerPool
+    model = _llama()
+    workers = [PrefillWorker(TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16))
+               for _ in range(2)]
+    seen = []
+    for i, w in enumerate(workers):
+        orig = w.engine.prefill
+        w.engine.prefill = lambda r, s=0, i=i, orig=orig: (seen.append(i), orig(r, s))[1]
+    pool = PrefillWorkerPool(workers)
+    b = PDBatcher(model, pool, slots=4, max_context=128, page_size=16)
+    prompts = _prompts(6, seed=31)
+    fs = [b.submit(PDRequest(f"q{i}", p, 6)) for i, p in enumerate(prompts)]
+    b.run_until_idle()
+    for p, f in zip(prompts, fs):
+        assert f.result() == _greedy(model, p, 6)
+    assert set(seen) == {0, 1}                         # both workers prefilled
+    pool.close()

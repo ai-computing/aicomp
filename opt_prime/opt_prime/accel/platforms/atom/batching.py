@@ -223,13 +223,15 @@ class AtomKVBlocks:
         positions start..start+n; the SDK's KV tensors are (key, value) per layer in bfloat16"""
         import numpy as np
         block, n = self.lane_block[lane], keys.shape[2]
-        for i, (m, buf) in enumerate(zip(self.metas, self._staging())):
-            src = (keys[i // 2] if i % 2 == 0 else values[i // 2]).detach().to("cpu")
-            if buf.dtype == np.uint16:                       # the device holds DLFloat16
-                bits = src.to(torch.bfloat16).contiguous().view(torch.int16).numpy().view(np.uint16)
-                buf[block, :, start:start + n] = bf16_to_dlfloat(bits)
-            else:
-                buf[block, :, start:start + n] = src.float().numpy()
+        stage = self._staging()
+        # all layers converted at once ([layers, 2, kv_heads, n, head_dim], K then V), then one copy per KV tensor
+        kv = torch.stack([keys, values], dim=1).detach().to("cpu")
+        if stage[0].dtype == np.uint16:                      # the device holds DLFloat16
+            data = bf16_to_dlfloat(kv.to(torch.bfloat16).contiguous().view(torch.int16).numpy().view(np.uint16))
+        else:
+            data = kv.float().numpy()
+        for i, (m, buf) in enumerate(zip(self.metas, stage)):
+            buf[block, :, start:start + n] = data[i // 2, i % 2]
             self.io_rt.set_kv_cache_for_layer(m["name"], block, start, n, buf)
 
     def drain_events(self):

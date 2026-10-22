@@ -312,6 +312,34 @@ class SubprocessPrefillWorker:
                 pass
 
 
+class PrefillWorkerPool:
+    """several prefill workers (e.g. one `SubprocessPrefillWorker` per NPU chip): each request goes to the worker with
+    the fewest prefills in flight, so prefill capacity scales with the workers while the decode lanes stay batched"""
+
+    def __init__(self, workers):
+        if not workers:
+            raise ValueError("a prefill pool needs at least one worker")
+        self.workers = list(workers)
+        self._load = [0] * len(self.workers)
+        self._lock = threading.Lock()
+
+    def submit(self, request, send_from=0, slot=None) -> Future:
+        with self._lock:
+            i = min(range(len(self.workers)), key=self._load.__getitem__)
+            self._load[i] += 1
+        f = self.workers[i].submit(request, send_from=send_from, slot=slot)
+
+        def done(_):
+            with self._lock:
+                self._load[i] -= 1
+        f.add_done_callback(done)
+        return f
+
+    def close(self):
+        for w in self.workers:
+            w.close()
+
+
 class PDBatcher(ContinuousBatcher):
     """decode side of batched PD: paged decode lanes; prompts are prefilled by `worker` concurrently"""
 
