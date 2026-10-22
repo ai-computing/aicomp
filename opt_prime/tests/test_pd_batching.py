@@ -35,10 +35,20 @@ def _prompts(k, lo=3, hi=60, seed=0):
             for _ in range(k)]
 
 
+KV = pytest.mark.parametrize("kv", ["slot", "paged"])
+
+
+def _batcher(model, kv, **kw):
+    if kv == "paged":
+        kw.setdefault("page_size", 16)
+    return ContinuousBatcher(model, kv=kv, **kw)
+
+
+@KV
 @pytest.mark.parametrize("chunk", [1, 7, 256])
-def test_staggered_arrivals_match_single_request_runs(chunk):
+def test_staggered_arrivals_match_single_request_runs(chunk, kv):
     model = _llama()
-    b = ContinuousBatcher(model, slots=3, max_context=128, prefill_chunk=chunk)
+    b = _batcher(model, kv, slots=3, max_context=128, prefill_chunk=chunk)
     prompts = _prompts(7)
     lengths = [5, 17, 1, 9, 24, 3, 12]
     futures = []
@@ -68,9 +78,10 @@ def test_chunked_prefill_kv_equals_full_prefill():
     assert b.stats["prefill_chunks"] == 7
 
 
-def test_prefill_chunks_interleave_with_decode():
+@KV
+def test_prefill_chunks_interleave_with_decode(kv):
     model = _llama()
-    b = ContinuousBatcher(model, slots=2, max_context=128, prefill_chunk=4)
+    b = _batcher(model, kv, slots=2, max_context=128, prefill_chunk=4)
     short = b.submit(PDRequest("s", (1, 2, 3), 20))
     b.step()                                                 # short request prefilled, now decoding
     long_ = b.submit(PDRequest("l", tuple(range(1, 41)), 3))
@@ -84,11 +95,12 @@ def test_prefill_chunks_interleave_with_decode():
     assert long_.result() == _greedy(model, tuple(range(1, 41)), 3)
 
 
-def test_stop_tokens_cancellation_and_slot_reuse():
+@KV
+def test_stop_tokens_cancellation_and_slot_reuse(kv):
     model = _llama()
     p = (5, 6, 7, 8)
     ref = _greedy(model, p, 12)
-    b = ContinuousBatcher(model, slots=1, max_context=64, prefill_chunk=8)
+    b = _batcher(model, kv, slots=1, max_context=64, prefill_chunk=8)
     stop = b.submit(PDRequest("stop", p, 12, SamplingParams(stop_token_ids=(ref[4],))))
     gone = b.submit(PDRequest("gone", p, 12))                # waits for the only slot
     b.cancel("gone")
@@ -100,13 +112,14 @@ def test_stop_tokens_cancellation_and_slot_reuse():
     assert after.result() == ref and b.free == [0]
 
 
-def test_moe_family_and_rejections():
+@KV
+def test_moe_family_and_rejections(kv):
     torch.manual_seed(3)
     moe = Qwen3MoeForCausalLM(Qwen3MoeConfig(vocab_size=97, hidden_size=32, intermediate_size=64,
                                              moe_intermediate_size=16, num_hidden_layers=2, num_attention_heads=4,
                                              num_key_value_heads=2, head_dim=8, num_experts=4,
                                              num_experts_per_tok=2, max_position_embeddings=128)).eval()
-    b = ContinuousBatcher(moe, slots=2, max_context=64, prefill_chunk=5)
+    b = _batcher(moe, kv, slots=2, max_context=64, prefill_chunk=5)
     prompts = _prompts(3, 3, 20, seed=5)
     fs = [b.submit(PDRequest(f"m{i}", p, 6)) for i, p in enumerate(prompts)]
     b.run_until_idle()
@@ -114,3 +127,18 @@ def test_moe_family_and_rejections():
         assert f.result() == _greedy(moe, p, 6)
     with pytest.raises(ValueError):
         b.submit(PDRequest("big", tuple(range(1, 60)), 10))     # context exceeded
+
+
+
+def test_paged_admission_follows_pages_not_slots():
+    """with paged KV a request takes only the pages it needs; admission waits for pages, not for max_context"""
+    model = _llama()
+    b = ContinuousBatcher(model, kv="paged", slots=8, max_context=128, prefill_chunk=64, page_size=16, pages=6)
+    prompts = _prompts(5, 10, 30, seed=2)
+    fs = [b.submit(PDRequest(f"p{i}", p, 8)) for i, p in enumerate(prompts)]     # each needs 2-3 pages
+    b.step()
+    assert len(b.prefilling) + len(b.decoding) in (2, 3)                          # 6 pages hold 2-3 requests
+    b.run_until_idle()
+    for p, f in zip(prompts, fs):
+        assert f.result() == _greedy(model, p, 8)
+    assert len(b.kv.free_pages) == 6 and all(not o for o in b.kv.owned)
