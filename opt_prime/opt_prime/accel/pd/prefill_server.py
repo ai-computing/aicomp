@@ -16,6 +16,11 @@ Engines (--engine):
              --width takes a comma-separated list of compiled widths, and each prompt runs on the smallest that
              holds it (measured on Qwen2.5-0.5B: width 512 349 ms, 256 217 ms per prompt); the first token comes from
              the final norm + LM head on the host
+  rngd-full  rngd-pd's `FullPrefillEngine` on RNGD chip --chip (Llama-3.1-8B geometry: Llama-3.1-8B, KONI-8B; #137):
+             two layers per compiled graph, --width buckets (e.g. 256,512), LM head on the card; needs rngd-pd on the
+             path (with rngd-pd#16 on furiosa-torch 2026.4). Measured on KONI-8B with the KV on the host: 36-45 ms
+             up to 256 tokens, 55-58 ms up to 384, 61-76 ms at 480 (furiosa-llm `serve` on the same card, first
+             token over HTTP: 56-61 ms)
 """
 import argparse
 import json
@@ -61,16 +66,57 @@ class _RngdQwen:
         return keys, values, h @ self.head.T
 
 
+class _RngdFull:
+    """rngd-pd's whole-prompt prefill (FullPrefillEngine): Llama-3.1-8B geometry, one pass per width bucket"""
+    GEOMETRY = dict(hidden_size=4096, intermediate_size=14336, num_attention_heads=32, num_key_value_heads=8)
+
+    def __init__(self, a):
+        import torch
+        from transformers import AutoConfig, AutoModelForCausalLM
+        from rngd_pd.engines.model import ModelConfig
+        from rngd_pd.engines.prefill_full import FullPrefillEngine
+        config = AutoConfig.from_pretrained(a.model)
+        wrong = {k: getattr(config, k, None) for k, v in self.GEOMETRY.items() if getattr(config, k, None) != v}
+        if wrong or config.num_hidden_layers % 2:
+            raise ValueError(f"rngd-full needs Llama-3.1-8B geometry {self.GEOMETRY} and an even layer count, got {wrong}")
+        hf = AutoModelForCausalLM.from_pretrained(a.model, dtype=torch.float32).eval()
+        sd = {k: v.detach().numpy() for k, v in hf.state_dict().items()}
+        cfg = ModelConfig(hf.config)
+        del hf
+        widths = sorted(int(x) for x in str(a.width).split(","))
+        if widths[-1] > a.max_context:
+            raise ValueError(f"width {widths[-1]} exceeds --max-context {a.max_context}")
+        self.engine = FullPrefillEngine(cfg, sd, C=widths[0], group=2, chip=a.chip, cache_dir=None)
+        for width in widths[1:]:
+            self.engine.add_bucket(width)
+        self.widths, self.torch = widths, torch
+
+    def prefill(self, tokens):
+        """-> keys, values [layers, kv_heads, n, head_dim] (host, bf16) and last-position logits"""
+        torch = self.torch
+        n = len(tokens)
+        if n > self.widths[-1]:
+            raise ValueError(f"prompt of {n} tokens exceeds the compiled widths")
+        stage = self.engine.begin_device_prefill(list(tokens))
+        while not stage.advance(self.engine.ngroups):
+            pass
+        logits = torch.from_numpy(self.engine._logits(stage.x, n))
+        # per layer group: keys [NG, kv_heads, head_dim, C], values [NG, kv_heads, C, head_dim]
+        keys = torch.cat([k.cpu()[..., :n] for k in stage.Ks]).transpose(-1, -2)
+        values = torch.cat([v.cpu()[:, :, :n] for v in stage.Vs])
+        return keys, values, logits
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen"])
+    ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen", "rngd-full"])
     ap.add_argument("--model", required=True); ap.add_argument("--model-id", default=None)
     ap.add_argument("--shm", required=True); ap.add_argument("--slots", type=int, required=True)
     ap.add_argument("--layers", type=int, required=True); ap.add_argument("--kv-heads", type=int, required=True)
     ap.add_argument("--head-dim", type=int, required=True); ap.add_argument("--max-context", type=int, required=True)
     ap.add_argument("--device", default="cpu"); ap.add_argument("--dtype", default="bfloat16")
     ap.add_argument("--chunk", type=int, default=2048); ap.add_argument("--chip", type=int, default=0)
-    ap.add_argument("--width", default="512", help="compiled prompt widths (rngd-qwen), e.g. 256,512")
+    ap.add_argument("--width", default="512", help="compiled prompt widths (rngd-qwen, rngd-full), e.g. 256,512")
     a = ap.parse_args()
     import os
     if not os.path.isdir(a.model):                 # a hub ID: the local snapshot (engines below need a directory)
@@ -93,6 +139,8 @@ def main():
         from opt_prime.accel.pd.pd_batching import TorchPrefillEngine
         model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
         engine = TorchPrefillEngine(model, max_context=a.max_context, chunk=a.chunk)
+    elif a.engine == "rngd-full":
+        engine = _RngdFull(a)
     else:
         engine = _RngdQwen(a)
     print(json.dumps({"ready": True}), flush=True)

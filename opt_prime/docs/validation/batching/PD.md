@@ -131,6 +131,40 @@ prefill of this 0.5B model.
 **When RNGD prefill pays off.** It needs a faster RNGD prefill engine, more prefill chips (`PrefillWorkerPool`), or a
 model whose ATOM prefill is slower than RNGD's.
 
+## RNGD prefill at furiosa-llm speed: `rngd-full` (#137)
+
+`prefill_server --engine rngd-full` runs rngd-pd's `FullPrefillEngine`. It needs rngd-pd#16 on furiosa-torch 2026.4.
+- Two layers per compiled graph; width buckets 256/384/512.
+- Llama-3.1-8B geometry.
+- The LM head runs on the card.
+
+**Setup.**
+- Model: KONI-8B.
+- Hardware: one RNGD on the RNGD+ATOM host. Measured while the host's other RNGDs ran other users' jobs.
+- Comparison: furiosa-llm `serve` on the same card with its s512 FXB, over HTTP with `max_tokens=1`.
+
+| prompt | layers on the card | `_RngdFull.prefill` (first-token logits + KV on the host) | furiosa-llm `serve` (first token over HTTP) |
+|---:|---:|---:|---:|
+| 40–256 | 22.4 ms | 36–45 ms | 56–61 ms |
+| 300–384 | — | 55–58 ms | — |
+| 480 | 41.2 ms | 61–76 ms | 57–58 ms |
+
+**Breakdown at 480 tokens.**
+- Embedding upload: 3 ms.
+- Logits: 2 ms (the RMS norm of one row on the host, the matmul on the card).
+- KV download: 13 ms.
+
+**Overlap.** Overlapping the download of each layer group with the next group's pass gave no measurable gain.
+
+**Correctness** through `SubprocessPrefillWorker`, prompts of 40–480 tokens:
+- First token: equal to HF fp32 for 5/5 prompts.
+- Handed-over KV vs HF fp32: cosine ≥ 0.9999.
+- A 7-token greedy continuation from the handed-over KV equals HF's for 5/5 prompts.
+
+**Why the earlier throughput loss happened.** The old `rngd-qwen` engine took about 455 ms per prompt on a 0.5B model (above), which is why NPU PD lost throughput. ATOM decode of an 8B model is not compiled here, so RNGD prefill → ATOM decode with this engine is not measured yet.
+
+**Device sharing.** With another job on the same RNGD, the same prefill took 210–450 ms.
+
 ## Limits
 
 - Torch PD needs uniform full-attention families, as the batcher does.
