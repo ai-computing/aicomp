@@ -1,0 +1,1053 @@
+[
+  {
+    "case": "multiply",
+    "prompt": "What is 17 times 19? Reply with only the integer.",
+    "input_tokens": 28,
+    "expected": "323",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "323",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 28,
+        "total_tokens": 32,
+        "completion_tokens": 4,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 85.30694199725986,
+    "unfused": {
+      "text": "323",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 3,
+      "generated_until_eos": [
+        18,
+        17,
+        18
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.9615939871874
+    },
+    "torch-stats": {
+      "text": "323",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 3,
+      "generated_until_eos": [
+        18,
+        17,
+        18
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.4098420061637
+    },
+    "fused": {
+      "text": "323",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 3,
+      "generated_until_eos": [
+        18,
+        17,
+        18
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1052.7233780012466
+    }
+  },
+  {
+    "case": "factorial",
+    "prompt": "What is 6 factorial? Reply with only the integer.",
+    "input_tokens": 24,
+    "expected": "720",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "720",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 24,
+        "total_tokens": 28,
+        "completion_tokens": 4,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 34.031778981443495,
+    "unfused": {
+      "text": "720",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 3,
+      "generated_until_eos": [
+        22,
+        17,
+        15
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.5383650078438
+    },
+    "torch-stats": {
+      "text": "720",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 3,
+      "generated_until_eos": [
+        22,
+        17,
+        15
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.4020939844195
+    },
+    "fused": {
+      "text": "720",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 3,
+      "generated_until_eos": [
+        22,
+        17,
+        15
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1052.6722469949163
+    }
+  },
+  {
+    "case": "binary",
+    "prompt": "Convert the binary number 101101 to decimal. Reply with only the integer.",
+    "input_tokens": 32,
+    "expected": "45",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "45",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 32,
+        "total_tokens": 35,
+        "completion_tokens": 3,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 33.84666799684055,
+    "unfused": {
+      "text": "45",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        19,
+        20
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.4839970152825
+    },
+    "torch-stats": {
+      "text": "45",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        19,
+        20
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.9008260124829
+    },
+    "fused": {
+      "text": "45",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        19,
+        20
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1052.1144199883565
+    }
+  },
+  {
+    "case": "sort",
+    "prompt": "Sort [9, 1, 7, 3, 2] in ascending order. Reply with only a JSON array.",
+    "input_tokens": 39,
+    "expected": [
+      1,
+      2,
+      3,
+      7,
+      9
+    ],
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "[1, 2, 3, 7, 9]",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 39,
+        "total_tokens": 55,
+        "completion_tokens": 16,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 31.922893977025524,
+    "unfused": {
+      "text": "[1, 2, 3, 7, 9]",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 15,
+      "generated_until_eos": [
+        58,
+        16,
+        11,
+        220,
+        17,
+        11,
+        220,
+        18,
+        11,
+        220,
+        22,
+        11,
+        220,
+        24,
+        60
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.4854469972197
+    },
+    "torch-stats": {
+      "text": "[1, 2, 3, 7, 9]",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 15,
+      "generated_until_eos": [
+        58,
+        16,
+        11,
+        220,
+        17,
+        11,
+        220,
+        18,
+        11,
+        220,
+        22,
+        11,
+        220,
+        24,
+        60
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.9967160033993
+    },
+    "fused": {
+      "text": "[1, 2, 3, 7, 9]",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 15,
+      "generated_until_eos": [
+        58,
+        16,
+        11,
+        220,
+        17,
+        11,
+        220,
+        18,
+        11,
+        220,
+        22,
+        11,
+        220,
+        24,
+        60
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1052.214213006664
+    }
+  },
+  {
+    "case": "deduplicate",
+    "prompt": "Remove duplicates from [3, 1, 3, 2, 1] and sort ascending. Reply with only a JSON array.",
+    "input_tokens": 41,
+    "expected": [
+      1,
+      2,
+      3
+    ],
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "[1, 2, 3]",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 41,
+        "total_tokens": 51,
+        "completion_tokens": 10,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 35.859171010088176,
+    "unfused": {
+      "text": "[1, 2, 3]",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 9,
+      "generated_until_eos": [
+        58,
+        16,
+        11,
+        220,
+        17,
+        11,
+        220,
+        18,
+        60
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.5783859761432
+    },
+    "torch-stats": {
+      "text": "[1, 2, 3]",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 9,
+      "generated_until_eos": [
+        58,
+        16,
+        11,
+        220,
+        17,
+        11,
+        220,
+        18,
+        60
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.4572289793286
+    },
+    "fused": {
+      "text": "[1, 2, 3]",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 9,
+      "generated_until_eos": [
+        58,
+        16,
+        11,
+        220,
+        17,
+        11,
+        220,
+        18,
+        60
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1052.1100560144987
+    }
+  },
+  {
+    "case": "extract",
+    "prompt": "From {\"name\":\"Mina\",\"age\":27,\"city\":\"Busan\"}, return the age. Reply with only the integer.",
+    "input_tokens": 39,
+    "expected": "27",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "27",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 39,
+        "total_tokens": 42,
+        "completion_tokens": 3,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 32.87166799418628,
+    "unfused": {
+      "text": "27",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        17,
+        22
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.2874310249463
+    },
+    "torch-stats": {
+      "text": "27",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        17,
+        22
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.3776800034102
+    },
+    "fused": {
+      "text": "27",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        17,
+        22
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1051.8738380051218
+    }
+  },
+  {
+    "case": "logic",
+    "prompt": "All A are B. No B are C. Can any A be C? Reply only yes or no.",
+    "input_tokens": 34,
+    "expected": "no",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "No.",
+      "passed": false,
+      "usage": {
+        "prompt_tokens": 34,
+        "total_tokens": 37,
+        "completion_tokens": 3,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 29.711896990193054,
+    "unfused": {
+      "text": "No.",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        2753,
+        13
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.1199610070325
+    },
+    "torch-stats": {
+      "text": "No.",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        2753,
+        13
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1246.8512920022476
+    },
+    "fused": {
+      "text": "No.",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        2753,
+        13
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1051.8508910026867
+    }
+  },
+  {
+    "case": "reverse",
+    "prompt": "Reverse the string abcde. Reply with only the reversed string.",
+    "input_tokens": 25,
+    "expected": "edcba",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "edcba",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 25,
+        "total_tokens": 28,
+        "completion_tokens": 3,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 28.663744014920667,
+    "unfused": {
+      "text": "edcba",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        291,
+        93829
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.4431920188945
+    },
+    "torch-stats": {
+      "text": "edcba",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        291,
+        93829
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.184534004191
+    },
+    "fused": {
+      "text": "edcba",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 2,
+      "generated_until_eos": [
+        291,
+        93829
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1052.1240909874905
+    }
+  },
+  {
+    "case": "korean",
+    "prompt": "대한민국의 수도 이름만 한국어로 답하세요.",
+    "input_tokens": 26,
+    "expected": "서울",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "서울특별시",
+      "passed": false,
+      "usage": {
+        "prompt_tokens": 26,
+        "total_tokens": 31,
+        "completion_tokens": 5,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 31.89625102095306,
+    "unfused": {
+      "text": "서울특별시",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        26698,
+        126893,
+        134990,
+        29326
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.2078780035954
+    },
+    "torch-stats": {
+      "text": "서울특별시",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        26698,
+        126893,
+        134990,
+        29326
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.0730979985092
+    },
+    "fused": {
+      "text": "서울특별시",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        26698,
+        126893,
+        134990,
+        29326
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1051.996346010128
+    }
+  },
+  {
+    "case": "capital",
+    "prompt": "What is the capital of France? Reply with only the city name.",
+    "input_tokens": 26,
+    "expected": "Paris",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "Paris",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 26,
+        "total_tokens": 28,
+        "completion_tokens": 2,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 29.885103984270245,
+    "unfused": {
+      "text": "Paris",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 1,
+      "generated_until_eos": [
+        59604
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.375530007761
+    },
+    "torch-stats": {
+      "text": "Paris",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 1,
+      "generated_until_eos": [
+        59604
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1247.016890993109
+    },
+    "fused": {
+      "text": "Paris",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 1,
+      "generated_until_eos": [
+        59604
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1051.9718609866686
+    }
+  },
+  {
+    "case": "units",
+    "prompt": "Convert 3.5 kilometers to meters. Reply with only the integer.",
+    "input_tokens": 27,
+    "expected": "3500",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "3500",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 27,
+        "total_tokens": 32,
+        "completion_tokens": 5,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 31.840142997680232,
+    "unfused": {
+      "text": "3500",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        18,
+        20,
+        15,
+        15
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.082533015404
+    },
+    "torch-stats": {
+      "text": "3500",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        18,
+        20,
+        15,
+        15
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1246.8131259956863
+    },
+    "fused": {
+      "text": "3500",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        18,
+        20,
+        15,
+        15
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1051.8350380007178
+    }
+  },
+  {
+    "case": "subtract",
+    "prompt": "A box has 48 pencils. 17 are removed and then 9 are added. How many remain? Reply with only the integer.",
+    "input_tokens": 42,
+    "expected": "40",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "48 - 17 + 9 = 40\n\n**40**",
+      "passed": false,
+      "usage": {
+        "prompt_tokens": 42,
+        "total_tokens": 61,
+        "completion_tokens": 19,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 31.876025983365253,
+    "unfused": {
+      "text": "48 - 17 + 9 = 40\n\n**40**",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 18,
+      "generated_until_eos": [
+        19,
+        23,
+        481,
+        220,
+        16,
+        22,
+        488,
+        220,
+        24,
+        284,
+        220,
+        19,
+        15,
+        271,
+        334,
+        19,
+        15,
+        334
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1313.2832210103516
+    },
+    "torch-stats": {
+      "text": "48 - 17 + 9 = 40\n\n**40**",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 18,
+      "generated_until_eos": [
+        19,
+        23,
+        481,
+        220,
+        16,
+        22,
+        488,
+        220,
+        24,
+        284,
+        220,
+        19,
+        15,
+        271,
+        334,
+        19,
+        15,
+        334
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1246.7430990072899
+    },
+    "fused": {
+      "text": "48 - 17 + 9 = 40\n\n**40**",
+      "passed": false,
+      "ended_with_eos": true,
+      "tokens_before_eos": 18,
+      "generated_until_eos": [
+        19,
+        23,
+        481,
+        220,
+        16,
+        22,
+        488,
+        220,
+        24,
+        284,
+        220,
+        19,
+        15,
+        271,
+        334,
+        19,
+        15,
+        334
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1051.8481110048015
+    }
+  },
+  {
+    "case": "context-24",
+    "prompt": "Read these records:\nitem_000 = 1000\nitem_001 = 1001\nitem_002 = 1002\nitem_003 = 1003\nitem_004 = 1004\nitem_005 = 1005\nitem_006 = 1006\nitem_007 = 1007\nitem_008 = 1008\nitem_009 = 1009\nitem_010 = 1010\nitem_011 = 1011\nitem_012 = 1012\nitem_013 = 1013\nitem_014 = 1014\nitem_015 = 1015\nitem_016 = 1016\nitem_017 = 1017\nitem_018 = 1018\nitem_019 = 1019\nitem_020 = 1020\nitem_021 = 1021\nitem_022 = 1022\nitem_023 = 1023\nWhat is the value of item_019? Reply with only the integer.",
+    "input_tokens": 321,
+    "expected": "1019",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "1019",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 321,
+        "total_tokens": 326,
+        "completion_tokens": 5,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 99.25503600970842,
+    "unfused": {
+      "text": "1019",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        16,
+        24
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1314.1240649856627
+    },
+    "torch-stats": {
+      "text": "1019",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        16,
+        24
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1248.1720590149052
+    },
+    "fused": {
+      "text": "1019",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        16,
+        24
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1053.190219012322
+    }
+  },
+  {
+    "case": "context-64",
+    "prompt": "Read these records:\nitem_000 = 1000\nitem_001 = 1001\nitem_002 = 1002\nitem_003 = 1003\nitem_004 = 1004\nitem_005 = 1005\nitem_006 = 1006\nitem_007 = 1007\nitem_008 = 1008\nitem_009 = 1009\nitem_010 = 1010\nitem_011 = 1011\nitem_012 = 1012\nitem_013 = 1013\nitem_014 = 1014\nitem_015 = 1015\nitem_016 = 1016\nitem_017 = 1017\nitem_018 = 1018\nitem_019 = 1019\nitem_020 = 1020\nitem_021 = 1021\nitem_022 = 1022\nitem_023 = 1023\nitem_024 = 1024\nitem_025 = 1025\nitem_026 = 1026\nitem_027 = 1027\nitem_028 = 1028\nitem_029 = 1029\nitem_030 = 1030\nitem_031 = 1031\nitem_032 = 1032\nitem_033 = 1033\nitem_034 = 1034\nitem_035 = 1035\nitem_036 = 1036\nitem_037 = 1037\nitem_038 = 1038\nitem_039 = 1039\nitem_040 = 1040\nitem_041 = 1041\nitem_042 = 1042\nitem_043 = 1043\nitem_044 = 1044\nitem_045 = 1045\nitem_046 = 1046\nitem_047 = 1047\nitem_048 = 1048\nitem_049 = 1049\nitem_050 = 1050\nitem_051 = 1051\nitem_052 = 1052\nitem_053 = 1053\nitem_054 = 1054\nitem_055 = 1055\nitem_056 = 1056\nitem_057 = 1057\nitem_058 = 1058\nitem_059 = 1059\nitem_060 = 1060\nitem_061 = 1061\nitem_062 = 1062\nitem_063 = 1063\nWhat is the value of item_039? Reply with only the integer.",
+    "input_tokens": 801,
+    "expected": "1039",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "1039",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 801,
+        "total_tokens": 806,
+        "completion_tokens": 5,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 165.04523699404672,
+    "unfused": {
+      "text": "1039",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        18,
+        24
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1330.810562998522
+    },
+    "torch-stats": {
+      "text": "1039",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        18,
+        24
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1264.7841639991384
+    },
+    "fused": {
+      "text": "1039",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        18,
+        24
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1069.5585380017292
+    }
+  },
+  {
+    "case": "context-128",
+    "prompt": "Read these records:\nitem_000 = 1000\nitem_001 = 1001\nitem_002 = 1002\nitem_003 = 1003\nitem_004 = 1004\nitem_005 = 1005\nitem_006 = 1006\nitem_007 = 1007\nitem_008 = 1008\nitem_009 = 1009\nitem_010 = 1010\nitem_011 = 1011\nitem_012 = 1012\nitem_013 = 1013\nitem_014 = 1014\nitem_015 = 1015\nitem_016 = 1016\nitem_017 = 1017\nitem_018 = 1018\nitem_019 = 1019\nitem_020 = 1020\nitem_021 = 1021\nitem_022 = 1022\nitem_023 = 1023\nitem_024 = 1024\nitem_025 = 1025\nitem_026 = 1026\nitem_027 = 1027\nitem_028 = 1028\nitem_029 = 1029\nitem_030 = 1030\nitem_031 = 1031\nitem_032 = 1032\nitem_033 = 1033\nitem_034 = 1034\nitem_035 = 1035\nitem_036 = 1036\nitem_037 = 1037\nitem_038 = 1038\nitem_039 = 1039\nitem_040 = 1040\nitem_041 = 1041\nitem_042 = 1042\nitem_043 = 1043\nitem_044 = 1044\nitem_045 = 1045\nitem_046 = 1046\nitem_047 = 1047\nitem_048 = 1048\nitem_049 = 1049\nitem_050 = 1050\nitem_051 = 1051\nitem_052 = 1052\nitem_053 = 1053\nitem_054 = 1054\nitem_055 = 1055\nitem_056 = 1056\nitem_057 = 1057\nitem_058 = 1058\nitem_059 = 1059\nitem_060 = 1060\nitem_061 = 1061\nitem_062 = 1062\nitem_063 = 1063\nitem_064 = 1064\nitem_065 = 1065\nitem_066 = 1066\nitem_067 = 1067\nitem_068 = 1068\nitem_069 = 1069\nitem_070 = 1070\nitem_071 = 1071\nitem_072 = 1072\nitem_073 = 1073\nitem_074 = 1074\nitem_075 = 1075\nitem_076 = 1076\nitem_077 = 1077\nitem_078 = 1078\nitem_079 = 1079\nitem_080 = 1080\nitem_081 = 1081\nitem_082 = 1082\nitem_083 = 1083\nitem_084 = 1084\nitem_085 = 1085\nitem_086 = 1086\nitem_087 = 1087\nitem_088 = 1088\nitem_089 = 1089\nitem_090 = 1090\nitem_091 = 1091\nitem_092 = 1092\nitem_093 = 1093\nitem_094 = 1094\nitem_095 = 1095\nitem_096 = 1096\nitem_097 = 1097\nitem_098 = 1098\nitem_099 = 1099\nitem_100 = 1100\nitem_101 = 1101\nitem_102 = 1102\nitem_103 = 1103\nitem_104 = 1104\nitem_105 = 1105\nitem_106 = 1106\nitem_107 = 1107\nitem_108 = 1108\nitem_109 = 1109\nitem_110 = 1110\nitem_111 = 1111\nitem_112 = 1112\nitem_113 = 1113\nitem_114 = 1114\nitem_115 = 1115\nitem_116 = 1116\nitem_117 = 1117\nitem_118 = 1118\nitem_119 = 1119\nitem_120 = 1120\nitem_121 = 1121\nitem_122 = 1122\nitem_123 = 1123\nitem_124 = 1124\nitem_125 = 1125\nitem_126 = 1126\nitem_127 = 1127\nWhat is the value of item_071? Reply with only the integer.",
+    "input_tokens": 1569,
+    "expected": "1071",
+    "fuse_mlp": true,
+    "fuse_qkv": true,
+    "native": {
+      "text": "1071",
+      "passed": true,
+      "usage": {
+        "prompt_tokens": 1569,
+        "total_tokens": 1574,
+        "completion_tokens": 5,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0
+        },
+        "completion_tokens_details": null
+      },
+      "finish_reason": "stop"
+    },
+    "receive_ms": 295.4903899808414,
+    "unfused": {
+      "text": "1071",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        22,
+        16
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1338.527408981463
+    },
+    "torch-stats": {
+      "text": "1071",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        22,
+        16
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1273.2978410203941
+    },
+    "fused": {
+      "text": "1071",
+      "passed": true,
+      "ended_with_eos": true,
+      "tokens_before_eos": 4,
+      "generated_until_eos": [
+        16,
+        15,
+        22,
+        16
+      ],
+      "matches_native_text": true,
+      "fixed_budget_decode_ms": 1077.4510499904864
+    }
+  }
+]

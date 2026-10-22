@@ -30,7 +30,7 @@ def main(a):
     import torch,requests
     from transformers import AutoTokenizer
     torch.set_num_threads(a.cpu_threads);torch.set_num_interop_threads(1)
-    model=load_model(a.model_dir,a.device,'marlin')
+    model=load_model(a.model_dir,a.device,'marlin',fuse_mlp=a.fuse_mlp,fuse_qkv=a.fuse_qkv)
     if a.fused_norms:
         from gpu_norms import install_fused_norms
         install_fused_norms(model,a.norm_mode)
@@ -74,7 +74,7 @@ def main(a):
                              'import_ms':(imported-ready)*1000,'decode_ms':decode['decode_ms'],
                              'generated':generated,'text':tokenizer.decode(generated,skip_special_tokens=True),
                              'receive_detail':{k:v for k,v in recv.items() if k!='response'}}
-                    row.update(mode=mode,input_tokens=n,output_tokens=a.output_tokens,repeat=rep,transport=a.transport,packed_import=packed_import,streaming_import=streaming_import,fused_norms=a.fused_norms,norm_mode=a.norm_mode if a.fused_norms else None,cpu_threads=a.cpu_threads)
+                    row.update(mode=mode,input_tokens=n,output_tokens=a.output_tokens,repeat=rep,transport=a.transport,packed_import=packed_import,streaming_import=streaming_import,fused_norms=a.fused_norms,norm_mode=a.norm_mode if a.fused_norms else None,cpu_threads=a.cpu_threads,fuse_mlp=a.fuse_mlp,fuse_qkv=a.fuse_qkv)
                     rows.append(row);Path(a.out).write_text(json.dumps(rows,indent=2))
                     print(json.dumps({k:v for k,v in row.items() if k not in ('generated','text','receive_detail')}),flush=True)
     finally:
@@ -89,6 +89,8 @@ if __name__=='__main__':
     p.add_argument('--streaming-import',action='store_true')
     p.add_argument('--compare-imports',action='store_true',help='Rotate native/packed/streaming modes in each repetition')
     p.add_argument('--fused-norms',action='store_true')
+    p.add_argument('--fuse-mlp',action='store_true')
+    p.add_argument('--fuse-qkv',action='store_true')
     p.add_argument('--norm-mode',choices=['fused','torch-stats'],default='fused')
     p.add_argument('--http',default='http://127.0.0.1:19101');p.add_argument('--prefill-port',type=int,default=19201)
     p.add_argument('--receiver-port',type=int,default=19202)

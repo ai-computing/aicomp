@@ -137,3 +137,12 @@ Colocated RNGD+A100 follow-up, including live torch-stats parity and remaining l
 rotates it against native and packed modes. It is experimental and disabled by default:
 latency gains were not stable across lengths or CPU affinity settings. See
 [GPU_STREAMING.md](GPU_STREAMING.md) for positive and negative results.
+
+
+`--fuse-mlp` combines gate/up projections. `--fuse-qkv` combines decode QKV in the
+Flash path and retains original prefill weights (approximately0.9GB extra memory).
+Both are opt-in. `check_live_quality.py` compares EOS-truncated responses with native;
+`--short-only` selects the original12 smoke cases and `--long-only` selects3 retrieval
+cases. See [GPU_PROJECTION_FUSION.md](GPU_PROJECTION_FUSION.md):15 native-text matches
+are encouraging but not a broad quality guarantee, and current throughput timings do
+not include equivalent GPU HTTP streaming or concurrency.

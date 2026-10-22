@@ -7,12 +7,13 @@ import json
 from pathlib import Path
 
 
-def load_model(model_dir, device='cuda:0', weight_mode='marlin'):
+def load_model(model_dir, device='cuda:0', weight_mode='marlin', fuse_mlp=False, fuse_qkv=False):
     import torch
     from safetensors import safe_open
     from transformers import Qwen3Config, Qwen3ForCausalLM
     from transformers.models.qwen3.modeling_qwen3 import Qwen3RotaryEmbedding
     if weight_mode not in ('marlin','bf16'):raise ValueError('unknown weight mode')
+    if (fuse_mlp or fuse_qkv) and weight_mode!='marlin':raise ValueError('projection fusion requires Marlin')
     root=Path(model_dir)
     cfg=Qwen3Config.from_pretrained(root,local_files_only=True)
     if (cfg.num_hidden_layers,cfg.num_key_value_heads,cfg.head_dim)!=(36,8,128):
@@ -54,6 +55,38 @@ def load_model(model_dir, device='cuda:0', weight_mode='marlin'):
                     tensor=tensor.float()*scale.float().repeat_interleave(128,0).repeat_interleave(128,1)[:tensor.shape[0],:tensor.shape[1]]
                 model.get_submodule(path).register_parameter(param,torch.nn.Parameter(tensor.to(torch.bfloat16),requires_grad=False))
         print('Loaded',shard,weight_mode,flush=True)
+    def combined_projection(names):
+        weights=[];scales=[]
+        for name in names:
+            scale_name=name.replace('.weight','.weight_scale_inv')
+            with safe_open(root/index[name],framework='pt',device='cpu') as f:
+                weights.append(f.get_tensor(name).to(device))
+            with safe_open(root/index[scale_name],framework='pt',device='cpu') as f:
+                scales.append(f.get_tensor(scale_name).to(device))
+        if any(w.shape[0]%128 for w in weights):raise ValueError('unaligned projection widths')
+        return MarlinLinear(torch.cat(weights,dim=0),torch.cat(scales,dim=0))
+    if fuse_qkv:
+        for i,layer in enumerate(model.model.layers):
+            attention=layer.self_attn
+            attention.qkv_proj=combined_projection([f'model.layers.{i}.self_attn.{p}_proj.weight' for p in ('q','k','v')])
+            attention.qkv_sizes=(cfg.num_attention_heads*cfg.head_dim,cfg.num_key_value_heads*cfg.head_dim,cfg.num_key_value_heads*cfg.head_dim)
+        # Original projections remain for ordinary HF prefill; the extra copy costs ~0.9GB.
+        print('Fused decode QKV projections',len(model.model.layers),flush=True)
+    if fuse_mlp:
+        class FusedMLP(torch.nn.Module):
+            def __init__(self,old,projection):
+                super().__init__()
+                self.gate_up_proj=projection
+                self.down_proj=old.down_proj
+                self.act_fn=old.act_fn
+            def forward(self,x):
+                gate,up=self.gate_up_proj(x).chunk(2,dim=-1)
+                return self.down_proj(self.act_fn(gate)*up)
+        for i,layer in enumerate(model.model.layers):
+            # Output widths are block-aligned: concatenation preserves every FP8 block/scale.
+            combined=combined_projection([f'model.layers.{i}.mlp.{p}_proj.weight' for p in ('gate','up')])
+            layer.mlp=FusedMLP(layer.mlp,combined)
+        print('Fused gate/up projections',len(model.model.layers),flush=True)
     model.model.rotary_emb=Qwen3RotaryEmbedding(cfg).to(device)
     model.eval()
     if any(p.is_meta for p in model.parameters()):raise ValueError('unloaded model parameter')
@@ -219,9 +252,13 @@ def install_flash_decode(model, cu_q, cu_k, capacity, owned_cache):
             if hidden_states.shape[:2]!=(1,1) or past_key_values is not owned_cache:
                 return _original(hidden_states,position_embeddings,attention_mask,past_key_values,
                                  cache_position,**kwargs)
-            q=self.q_norm(self.q_proj(hidden_states).view(1,1,-1,self.head_dim)).transpose(1,2)
-            k=self.k_norm(self.k_proj(hidden_states).view(1,1,-1,self.head_dim)).transpose(1,2)
-            v=self.v_proj(hidden_states).view(1,1,-1,self.head_dim).transpose(1,2)
+            if hasattr(self,'qkv_proj'):
+                q,k,v=self.qkv_proj(hidden_states).split(self.qkv_sizes,dim=-1)
+            else:
+                q,k,v=self.q_proj(hidden_states),self.k_proj(hidden_states),self.v_proj(hidden_states)
+            q=self.q_norm(q.view(1,1,-1,self.head_dim)).transpose(1,2)
+            k=self.k_norm(k.view(1,1,-1,self.head_dim)).transpose(1,2)
+            v=v.view(1,1,-1,self.head_dim).transpose(1,2)
             cos,sin=position_embeddings
             q,k=apply_rotary_pos_emb(q,k,cos,sin)
             k,v=past_key_values.update(k,v,self.layer_idx,{'cache_position':cache_position})
