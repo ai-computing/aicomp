@@ -72,3 +72,5 @@ and full implementation review. No production default change. No weights/KV publ
 Owned HTTP process shut down and all diagnostic/test processes exited.
 
 Generated with Codex; maintainer review required.
+
+Follow-up same-run comparisons, graph-width/admission changes and additional worker checks: GPU_LOCAL_PAIRED.md.
