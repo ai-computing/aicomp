@@ -25,9 +25,13 @@ class LocalWorker(Worker):
             if a.fused_elementwise:
                 from gpu_activation import install_fused_swiglu, install_fused_post_attention
                 install_fused_swiglu(model); install_fused_post_attention(model)
-            graph = BatchGraphDecoder(model, a.batch_size)
+            batch_graph = BatchGraphDecoder(model, a.batch_size)
+            single_graph = (BatchGraphDecoder(model, 1) if getattr(a, 'local_single_width', False)
+                            and a.batch_size > 1 else batch_graph)
+            graph = batch_graph
             prefill = LocalPrefiller(a.model_dir, a.device)
             tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
+            self.tokenizer = tokenizer
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
             eos = {eos} if isinstance(eos, int) else set(eos)
             self.ready.set()
@@ -54,6 +58,11 @@ class LocalWorker(Worker):
                             valid.append((job, tokens, count))
                         except ValueError as exc: job.send('error', (400, str(exc)))
                     if not valid: continue
+                    graph = single_graph if len(valid) == 1 else batch_graph
+                    if getattr(a, 'profile_stages', None):
+                        with open(a.profile_stages, 'a') as log:
+                            log.write(json.dumps({'stage':'local_wave','requests':len(valid),
+                                'width':graph.batch_size,'input_lengths':[len(x[1]) for x in valid]})+'\n')
                     for job, _, _ in valid: job.send('start')
                     first_tokens, layers, offsets, _ = prefill.prefill([x[1] for x in valid])
                     states = {}
@@ -99,7 +108,7 @@ class LocalWorker(Worker):
                     for job in wave: job.send('error', (500, 'local generation failed'))
                     self.stopping.set()
                 finally:
-                    for lane in range(a.batch_size): graph.cancel_lane(lane)
+                    for lane in range(graph.batch_size): graph.cancel_lane(lane)
                     if self.stopping.is_set(): self.active.cancel.set()
                     self.active = None
         except BaseException as exc:

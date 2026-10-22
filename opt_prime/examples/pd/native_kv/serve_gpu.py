@@ -231,6 +231,8 @@ class GPUHTTPServer(ThreadingHTTPServer):
 
 
 def main(a):
+    if getattr(a,'local_single_width',False) and getattr(a,'prefill_backend','native')!='gpu':
+        raise ValueError('--local-single-width requires --prefill-backend gpu')
     if getattr(a,'fused_elementwise',False) and (not a.fuse_mlp or a.norm_mode!='fused'):
         raise ValueError('--fused-elementwise requires --fuse-mlp and --norm-mode fused')
     if getattr(a,'prefill_backend','native')=='gpu':
@@ -259,6 +261,7 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fused-elementwise',action='store_true')
+    p.add_argument('--local-single-width',action='store_true',help='experimental one-request wave graph; no mid-request width switch')
     p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
     p.add_argument('--pipeline',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
