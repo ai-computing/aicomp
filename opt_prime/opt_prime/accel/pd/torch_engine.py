@@ -19,7 +19,7 @@ class TorchCausalLMEngine:
     def __init__(self, model, *, model_id, revision, max_context, endpoint, prefix_only=False,
                  optimize_prefill=True, capture_logits=False):
         config = model.config
-        self.geometry = describe_model(config)
+        self.geometry = describe_model(config, model)
         self.optimize_prefill = optimize_prefill
         self.capture_logits = capture_logits
         if optimize_prefill and 'logits_to_keep' not in inspect.signature(model.forward).parameters:

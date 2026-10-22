@@ -7,12 +7,15 @@ def config(**changes):
     values=dict(model_type='qwen2',num_hidden_layers=2,num_key_value_heads=2,
                 num_attention_heads=4,hidden_size=32,sliding_window=None)
     values.update(changes)
-    return SimpleNamespace(**values)
+    if values['model_type']=='unknown':          # rejected by the family policy before any model is built
+        return SimpleNamespace(**values)
+    from transformers import AutoConfig           # geometry comes from the model built on the meta device (#105)
+    return AutoConfig.for_model(**values)
 
 
 class ModelCapabilityTests(unittest.TestCase):
     def test_unsupported_cache_and_attention_fail_closed(self):
-        for changes in ({'model_type':'unknown'}, {'sliding_window':4096},
+        for changes in ({'model_type':'unknown'}, {'sliding_window':4096,'use_sliding_window':True},
                         {'layer_types':['full_attention','sliding_attention']},
                         {'is_encoder_decoder':True}, {'add_cross_attention':True}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
