@@ -39,7 +39,7 @@ class PipelineWorker(Worker):
             import torch
             from transformers import AutoTokenizer
             from gpu_decoder import load_model
-            from gpu_batch_decoder import BatchGraphDecoder
+            from gpu_batch_decoder import BatchGraphDecoder, pack_prefix
             from gpu_norms import install_fused_norms
             from memory_receiver import NativeKVClient
             torch.set_num_threads(1)
@@ -80,8 +80,11 @@ class PipelineWorker(Worker):
                             views, _ = client.prefill(a.model, tokens, 'views')
                             if self.stopping.is_set(): job.cancel.set()
                             if job.cancel.is_set(): continue
-                            # Views retain their ZMQ frames until GPU import completes.
-                            prepared.put_nowait((job, tokens, count, views))
+                            # CPU packing overlaps GPU decode; the queued packet owns its bytes.
+                            packed = pack_prefix(views.torch_layers())
+                            del views
+                            prepared.put_nowait((job, tokens, count, packed))
+                            del packed
                             handed_off = True
                         except ValueError as exc:
                             job.send('error', (500, 'prefill failed') if started else (400, str(exc)))
@@ -102,14 +105,15 @@ class PipelineWorker(Worker):
             while not self.stopping.is_set():
                 free = [lane for lane in range(a.batch_size) if lane not in states]
                 for lane in free:
-                    try: job, tokens, count, views = prepared.get(timeout=0.02 if not states else 0)
+                    try: job, tokens, count, packed = prepared.get(timeout=0.02 if not states else 0)
                     except queue.Empty: break
                     if job.cancel.is_set():
+                        del packed
                         retire(job)
                         continue
-                    graph.load_lane(lane, views.torch_layers(), tokens[-1], count)
+                    graph.load_packed_lane(lane, packed, tokens[-1], count)
                     states[lane] = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
-                    del views
+                    del packed
                 for lane, (job, _, _, _, pending) in list(states.items()):
                     if job.cancel.is_set():
                         graph.cancel_lane(lane)

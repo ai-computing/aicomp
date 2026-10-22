@@ -9,6 +9,7 @@ from check_live_quality import CASES
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--model-dir', required=True)
 p.add_argument('--out', required=True)
+p.add_argument('--concurrency', type=int, default=4)
 a = p.parse_args()
 from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
@@ -23,7 +24,7 @@ def run(port, body):
     return r.json()
 native = [run(19101, b) for b in bodies]
 solo = [run(19111, b) for b in bodies]
-with concurrent.futures.ThreadPoolExecutor(4) as pool:
+with concurrent.futures.ThreadPoolExecutor(a.concurrency) as pool:
     concurrent = list(pool.map(lambda b: run(19111,b), bodies))
 rows = []
 for case, body, n, s, c in zip(CASES, bodies, native, solo, concurrent):

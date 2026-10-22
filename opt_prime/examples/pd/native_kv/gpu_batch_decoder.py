@@ -50,12 +50,14 @@ class BatchGraphDecoder:
                     causal=False, fa_version=2)
                 return attn.o_proj(out.reshape(width, 1, -1)), None
             module.forward = types.MethodType(forward, module)
+        self.logits_by_width = {}
         def step(width=batch_size):
             lengths.copy_(self.position + 1)
             logits = model(self.input_id[:width], past_key_values=self, cache_position=self.position[:width],
                 position_ids=self.position[:width, None], attention_mask={'full_attention': None},
                 use_cache=True, logits_to_keep=1).logits
             self.last_logits = logits
+            self.logits_by_width[width] = logits
             self.input_id[:width].copy_(torch.where(self.active[:width, None],
                 logits[:, -1].argmax(-1, keepdim=True), self.input_id[:width]))
             self.position[:width].add_(self.active[:width]).clamp_(max=capacity - 1)
@@ -78,23 +80,23 @@ class BatchGraphDecoder:
                 with torch.cuda.graph(self.single_graph): step(1)
 
     def load_lane(self, lane, layers, last_token, count):
+        self.load_packed_lane(lane, pack_prefix(layers), last_token, count)
+
+    def load_packed_lane(self, lane, host, last_token, count):
+        """Import a completed owned pinned packet; no CPU tensor packing here."""
         import torch
         if not 0 <= lane < self.batch_size or self.remaining[lane]:
             raise ValueError('lane unavailable')
-        if len(layers) != 36: raise ValueError('expected 36 layers')
-        n = layers[0][0].shape[2]
+        # RNGD registration changes PyTorch's default accelerator; query CUDA explicitly.
+        if (host.ndim != 4 or host.shape[0] != 72 or host.shape[2:] != (8, 128)
+                or host.dtype != torch.bfloat16 or host.device.type != 'cpu'
+                or not host.is_pinned('cuda') or not host.is_contiguous()):
+            raise ValueError(f'invalid packed prefix: shape={tuple(host.shape)} dtype={host.dtype} device={host.device} cuda_pinned={host.is_pinned("cuda")} contiguous={host.is_contiguous()}')
+        n = host.shape[1]
         if not 1 <= n < self.capacity or not 1 <= count <= self.capacity - n:
             raise ValueError('prefix/output outside capacity')
         if not 0 <= last_token < self.model.config.vocab_size: raise ValueError('invalid token')
-        for pair in layers:
-            for t in pair:
-                if t.shape != (1, 8, n, 128) or t.dtype != torch.bfloat16:
-                    raise ValueError('invalid canonical KV')
         with torch.inference_mode():
-            # One pinned upload; staging is fenced before reuse or caller release.
-            host = torch.empty((72, n, 8, 128), dtype=torch.bfloat16, pin_memory=True)
-            for i, pair in enumerate(layers):
-                for j, t in enumerate(pair): host[2*i+j].copy_(t[0].transpose(0, 1))
             packed = host.to(self.device, non_blocking=True)
             for i in range(36):
                 self.keys[i][lane, :n].copy_(packed[2*i])
@@ -128,3 +130,20 @@ class BatchGraphDecoder:
             if not self.remaining[lane] or (not ignore_eos and tokens[lane] in eos_ids):
                 self.cancel_lane(lane)
         return result
+
+
+def pack_prefix(layers):
+    """Own the received CPU KV in one pinned packet before handing it to GPU owner."""
+    import torch
+    if len(layers) != 36: raise ValueError('expected 36 layers')
+    n = layers[0][0].shape[2]
+    if not 1 <= n < 2048: raise ValueError('prefix outside capacity')
+    for pair in layers:
+        if len(pair) != 2: raise ValueError('expected K/V pair')
+        for t in pair:
+            if t.shape != (1, 8, n, 128) or t.dtype != torch.bfloat16 or t.device.type != 'cpu':
+                raise ValueError('invalid canonical CPU KV')
+    host = torch.empty((72, n, 8, 128), dtype=torch.bfloat16, pin_memory=True)
+    for i, pair in enumerate(layers):
+        for j, t in enumerate(pair): host[2*i+j].copy_(t[0].transpose(0, 1))
+    return host

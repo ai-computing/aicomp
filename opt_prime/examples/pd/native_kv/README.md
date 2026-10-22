@@ -165,3 +165,5 @@ remains serial; concurrent throughput and TTFT have not reached native parity.
 `--pipeline --batch-size 4` separates the native socket owner from the GPU owner,
 admits prepared prefixes into available lanes during decode, and pauses lanes
 with stalled event consumers. See [GPU_PIPELINE.md](GPU_PIPELINE.md).
+
+Eight-lane pipeline and prefill-side CPU packing measurements are in [GPU_EIGHT.md](GPU_EIGHT.md).
