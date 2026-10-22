@@ -3,7 +3,7 @@ import types
 
 
 class BatchGraphDecoder:
-    def __init__(self, model, batch_size=4, capacity=2048):
+    def __init__(self, model, batch_size=4, capacity=2048, adaptive_single=False):
         import torch
         from transformers.models.qwen3.modeling_qwen3 import apply_rotary_pos_emb
         from vllm.vllm_flash_attn.flash_attn_interface import flash_attn_varlen_func
@@ -31,32 +31,34 @@ class BatchGraphDecoder:
                 if past_key_values is not owner:
                     return _original(hidden_states, position_embeddings, attention_mask,
                                      past_key_values, cache_position, **kwargs)
+                width = hidden_states.shape[0]
                 if hasattr(attn, 'qkv_proj'):
                     q, k, v = attn.qkv_proj(hidden_states).split(attn.qkv_sizes, dim=-1)
                 else:
                     q, k, v = attn.q_proj(hidden_states), attn.k_proj(hidden_states), attn.v_proj(hidden_states)
-                q = attn.q_norm(q.view(batch_size, 1, -1, 128)).transpose(1, 2)
-                k = attn.k_norm(k.view(batch_size, 1, -1, 128)).transpose(1, 2)
-                v = v.view(batch_size, 1, 8, 128)
+                q = attn.q_norm(q.view(width, 1, -1, 128)).transpose(1, 2)
+                k = attn.k_norm(k.view(width, 1, -1, 128)).transpose(1, 2)
+                v = v.view(width, 1, 8, 128)
                 q, k = apply_rotary_pos_emb(q, k, *position_embeddings)
                 kc, vc = owner.keys[attn.layer_idx], owner.values[attn.layer_idx]
                 # Inactive lanes keep a bounded position and cannot affect another lane.
-                kc[lanes, owner.position] = k[:, :, 0]
-                vc[lanes, owner.position] = v[:, 0]
-                out = flash_attn_varlen_func(q[:, :, 0], kc, vc,
-                    max_seqlen_q=1, cu_seqlens_q=cu_q, max_seqlen_k=capacity,
-                    block_table=block_table, seqused_k=lengths, softmax_scale=attn.scaling,
+                kc[lanes[:width], owner.position[:width]] = k[:, :, 0]
+                vc[lanes[:width], owner.position[:width]] = v[:, 0]
+                out = flash_attn_varlen_func(q[:, :, 0], kc[:width], vc[:width],
+                    max_seqlen_q=1, cu_seqlens_q=cu_q[:width+1], max_seqlen_k=capacity,
+                    block_table=block_table[:width], seqused_k=lengths[:width], softmax_scale=attn.scaling,
                     causal=False, fa_version=2)
-                return attn.o_proj(out.reshape(batch_size, 1, -1)), None
+                return attn.o_proj(out.reshape(width, 1, -1)), None
             module.forward = types.MethodType(forward, module)
-        def step():
+        def step(width=batch_size):
             lengths.copy_(self.position + 1)
-            logits = model(self.input_id, past_key_values=self, cache_position=self.position,
-                position_ids=self.position[:, None], attention_mask={'full_attention': None},
+            logits = model(self.input_id[:width], past_key_values=self, cache_position=self.position[:width],
+                position_ids=self.position[:width, None], attention_mask={'full_attention': None},
                 use_cache=True, logits_to_keep=1).logits
             self.last_logits = logits
-            self.input_id.copy_(logits[:, -1].argmax(-1, keepdim=True))
-            self.position.add_(self.active).clamp_(max=capacity - 1)
+            self.input_id[:width].copy_(torch.where(self.active[:width, None],
+                logits[:, -1].argmax(-1, keepdim=True), self.input_id[:width]))
+            self.position[:width].add_(self.active[:width]).clamp_(max=capacity - 1)
         with torch.inference_mode():
             stream = torch.cuda.Stream(device=self.device)
             stream.wait_stream(torch.cuda.current_stream(self.device))
@@ -66,6 +68,14 @@ class BatchGraphDecoder:
             torch.cuda.synchronize(self.device)
             self.graph = torch.cuda.CUDAGraph()
             with torch.cuda.graph(self.graph): step()
+            self.single_graph = self.graph
+            if batch_size > 1 and adaptive_single:
+                with torch.cuda.stream(stream):
+                    for _ in range(3): step(1)
+                torch.cuda.current_stream(self.device).wait_stream(stream)
+                torch.cuda.synchronize(self.device)
+                self.single_graph = torch.cuda.CUDAGraph()
+                with torch.cuda.graph(self.single_graph): step(1)
 
     def load_lane(self, lane, layers, last_token, count):
         import torch
@@ -100,13 +110,19 @@ class BatchGraphDecoder:
         self.remaining[lane] = 0
         self.active[lane].fill_(False)
 
-    def step(self, eos_ids=(), ignore_eos=False):
-        if not any(self.remaining): return {}
-        self.graph.replay()
+    def step(self, eos_ids=(), ignore_eos=False, paused=()):
+        paused = set(paused)
+        if any(not 0 <= lane < self.batch_size for lane in paused):
+            raise ValueError('invalid paused lane')
+        if not any(n and lane not in paused for lane, n in enumerate(self.remaining)): return {}
+        for lane in paused: self.active[lane].fill_(False)
+        (self.graph if any(self.remaining[1:]) else self.single_graph).replay()
         tokens = self.input_id[:, 0].tolist()
+        for lane in paused:
+            if self.remaining[lane]: self.active[lane].fill_(True)
         result = {}
         for lane, remaining in enumerate(self.remaining):
-            if not remaining: continue
+            if not remaining or lane in paused: continue
             result[lane] = tokens[lane]
             self.remaining[lane] -= 1
             if not self.remaining[lane] or (not ignore_eos and tokens[lane] in eos_ids):

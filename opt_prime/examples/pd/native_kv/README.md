@@ -161,3 +161,7 @@ commands, supported limits, cancellation checks and the large c4 batching gap.
 `serve_gpu.py --batch-size 4` enables wave batching with independent KV positions.
 See [GPU_BATCH.md](GPU_BATCH.md) for measurements and limitations. Native prefill
 remains serial; concurrent throughput and TTFT have not reached native parity.
+
+`--pipeline --batch-size 4` separates the native socket owner from the GPU owner,
+admits prepared prefixes into available lanes during decode, and pauses lanes
+with stalled event consumers. See [GPU_PIPELINE.md](GPU_PIPELINE.md).
