@@ -162,6 +162,30 @@ def test_pd_decode_side_host_tier():
     assert b.kv.host.stats["reloaded"] >= 1 and b.stats["decode_cached_tokens"] == 32
 
 
+def test_pd_serves_prefix_cache_host_tier_and_events_with_metrics():
+    """one PD batcher with every serving feature on: decode-side prefix cache backed by the host tier, KV events,
+    and /metrics showing the prefills, handed-over tokens and host reloads"""
+    from opt_prime.accel.serve.batched import BatchedService
+    model = _llama()
+    engine = TorchPrefillEngine(copy.deepcopy(model), max_context=64, chunk=16, page_size=16, prefix_cache=False)
+    block_gib = 2 * 2 * 2 * 16 * 8 * 4 / 2 ** 30
+    events = ListKVEventPublisher(block_size=16)
+    b = PDBatcher(model, PrefillWorker(engine), slots=1, max_context=64, page_size=16, pages=4, prefix_cache=True,
+                  host_kv_gib=8 * block_gib, kv_events=events)
+    svc = BatchedService(b, model="m", vocab_size=97, max_output=8, render=str)
+    p, q = _prompts(2, 33, 34, seed=7)
+    for rid, x in (("p", p), ("q", q), ("p2", p)):
+        f = b.submit(PDRequest(rid, x, 8)); b.run_until_idle()
+        assert f.result() == _greedy(model, x, 8)
+    text = svc.metrics.render(*svc.gauges())
+    assert 'airm_pd_prefills_total{model_name="m",side="remote"} 3' in text
+    assert f'airm_pd_transferred_tokens_total{{model_name="m"}} {b.stats["transferred_tokens"]}' in text
+    assert 'vllm:prefix_cache_hits_total{model_name="m"} 32' in text
+    assert f'airm_kv_host_hit_tokens_total{{model_name="m"}} {b.kv.host.stats["hit_tokens"]}' in text
+    assert b.kv.host.stats["reloaded"] >= 1
+    assert any(e["type"] == "BlockStored" for batch in events.batches for e in batch[1])
+
+
 def test_prefill_pool_spreads_requests_and_matches():
     from opt_prime.accel.pd.pd_batching import PrefillWorkerPool
     model = _llama()

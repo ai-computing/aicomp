@@ -9,7 +9,8 @@
     # batched PD (#120): prefill on another GPU (or another venv / NPU via --pd-prefill-python), decode lanes batched:
     python examples/pd/serve_batched.py --model ... --pd-prefill-device cuda:0 --device cuda:1
     python examples/pd/serve_batched.py --model Qwen/Qwen2.5-0.5B-Instruct --backend atom --atom-kv-blocks 17 \
-        --pd-prefill-python ~/venvs/furiosa-2026.4/bin/python --pd-prefill-args "--engine rngd-qwen --chip 2"
+        --pd-prefill-python ~/venvs/furiosa-2026.4/bin/python --pd-prefill-args "--engine rngd-qwen --chip 2" \
+        --pd-remote-only    # every prompt prefilled on RNGD (default: each prompt goes to the faster side)
     # + prefix caching with KV events for the llm-d EPP (topic kv@<pod-ip>:<port>@<model>):
     python examples/pd/serve_batched.py --model ... --prefix-cache --kv-events tcp://*:5557 --pod-ip 192.0.2.5
     # + a shared KV store (#128): LMCache-compatible chunks in Mooncake Store (vLLM + LMCache MP mode can share them):
@@ -80,7 +81,8 @@ def build(a):
                                 kv_blocks=a.atom_kv_blocks)
         engine.start(a.model)
         b, model = engine.batcher(prefix_cache=a.prefix_cache, host_kv_gib=a.kv_host_memory_gb, kv_events=events,
-                                  prefill_worker=prefill_worker(a, a.slots, engine.model.config)), engine.model
+                                  prefill_worker=prefill_worker(a, a.slots, engine.model.config),
+                                  local_prefill=not a.pd_remote_only), engine.model
     else:
         model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
         kw = dict(slots=a.slots, max_context=a.max_context, kv=a.kv, page_size=a.page_size,
@@ -115,6 +117,8 @@ if __name__ == "__main__":
     ap.add_argument("--pd-prefill-python", default=None, help="PD: prefill_server under this interpreter")
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")
     ap.add_argument("--pd-prefill-pythonpath", default=None)
+    ap.add_argument("--pd-remote-only", action="store_true",
+                    help="PD on ATOM: every prompt is prefilled by the PD prefill side (no cost routing to ATOM)")
     ap.add_argument("--remote-kv", default=None, help="JSON with Mooncake store setup arguments (shared KV, #128)")
     ap.add_argument("--remote-kv-keys", default="lmcache", choices=["lmcache", "optimus"])
     ap.add_argument("--remote-kv-model", default=None, help="model name in the keys (the vLLM/LMCache side's name)")

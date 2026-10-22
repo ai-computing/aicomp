@@ -89,6 +89,48 @@ other jobs (load average 75–135), so compare within a run.
 - chat smoke: "The capital of France is Paris.";
 - Azure replay of 60 requests at 0.3× speed: 60/60 with HTTP 200, no 429, client/server TPOT 1.00.
 
+## Every serving feature in PD mode (#134)
+
+One HTTP server per column, with every serving feature on at once:
+- prefix cache backed by the host-DRAM tier;
+- KV events;
+- batched decode;
+- every prefill on the prefill side.
+
+The script `examples/pd/pd_feature_check.py` sends two bursts of the same 12 prompts. Each prompt has its own
+256/320-token prefix, which is more than the decode-side device cache holds, plus a 16–96-token suffix and 32 new
+tokens. It then reads `/metrics` and subscribes to the KV events.
+
+| | GPU PD (prefill cuda:0 → decode cuda:1, Llama-3.2-1B) | NPU PD (RNGD → ATOM, Qwen2.5-0.5B, `--pd-remote-only`) |
+|---|---:|---:|
+| `airm_pd_prefills_total` remote / local | 24 / 0 | 24 / 0 |
+| prefix hits / queried tokens | 4160 / 9046 | 3072 / 7594 |
+| hits served by the host tier | 2624 tokens (46 blocks offloaded) | 1792 tokens (7 offloaded, 7 reloaded) |
+| KV events | 148 (BlockStored GPU 53, CPU 46; BlockRemoved 49) | 33 (BlockStored GPU 19, CPU 7; BlockRemoved 7) |
+| round 2 vs round 1 throughput | 153.3 vs 56.6 tok/s | 86.9 vs 85.5 tok/s |
+| round 2 tokens identical to round 1 | 12/12 | 12/12 |
+
+**Why round 2 is not faster on NPU.** On the NPU, a hit saves only the KV hand-off. The RNGD prefill engine still
+computes the whole prompt.
+
+**Throughput.** `npu_pd_bench.py --prefixes 12 --prefix-len 256 --prefix-cache --host-gib 4`, 24 requests, 64 new
+tokens. Aggregated and PD ran in the same invocation, in alternating variants over 3 rounds. Other users' jobs kept
+the host at load average 370–400.
+
+| variant | prefilled remote / local | PD / aggregated tok/s | TPOT PD vs agg | TTFT PD vs agg | identical |
+|---|---:|---:|---:|---:|---:|
+| `--remote-only` | 24 / 0 | 0.24–0.29× | 7.8 vs 10.5–12.7 ms | 4.5 vs 0.9 s | 20/24 (first 22/24) |
+| cost routing (default) | 1 / 23 | 0.91–1.06× | 10.5–11.2 vs 10.5–11.9 ms | 0.88–0.94 vs 0.86–0.99 s | 23/24 |
+
+**Remote-only.** The decode batch never stops for a prompt, so TPOT is lower. Throughput, however, is bounded by one
+RNGD prefill chip: the research `rngd-qwen` engine takes about 455 ms per prompt, against about 30 ms for ATOM's own
+prefill of this 0.5B model.
+
+**Cost routing.** The router sees this and keeps prompts on ATOM.
+
+**When RNGD prefill pays off.** It needs a faster RNGD prefill engine, more prefill chips (`PrefillWorkerPool`), or a
+model whose ATOM prefill is slower than RNGD's.
+
 ## Limits
 
 - Torch PD needs uniform full-attention families, as the batcher does.

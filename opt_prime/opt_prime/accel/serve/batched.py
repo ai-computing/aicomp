@@ -34,7 +34,17 @@ class BatchedService(CompletionAPI):
                 if size:
                     out.append(("vllm:cache_config_info", "gauge", "Information of the LLMEngine CacheConfig.",
                                 [f'vllm:cache_config_info{{{lab},block_size="{size}",enable_prefix_caching="True"}} 1']))
-                return out
+                blocks = getattr(batcher, "blocks", None)
+                if blocks is not None and getattr(blocks, "host_bytes", 0):     # ATOM own blocks with a host tier
+                    st = blocks.stats
+                    out += [("airm_kv_host_hit_tokens_total", "counter", "Prompt tokens reloaded from the host tier.",
+                             [f"airm_kv_host_hit_tokens_total{{{lab}}} {blocks.host_hit_tokens}"]),
+                            ("airm_kv_offload_blocks_total", "counter",
+                             "Blocks written back from the device to the host tier.",
+                             [f"airm_kv_offload_blocks_total{{{lab}}} {st['host_offloads']}"]),
+                            ("airm_kv_reload_blocks_total", "counter", "Blocks reloaded from the host tier to the device.",
+                             [f"airm_kv_reload_blocks_total{{{lab}}} {st['host_reloads']}"])]
+                return out + self._pd_metrics(lab)
             self.metrics.extra = extra
 
     def _engines(self):
@@ -62,7 +72,23 @@ class BatchedService(CompletionAPI):
              [f"vllm:prefix_cache_queries_total{{{lab}}} {kv.query_tokens}"]),
             ("vllm:prefix_cache_hits_total", "counter", "Prompt tokens served from the prefix cache.",
              [f"vllm:prefix_cache_hits_total{{{lab}}} {kv.hit_tokens}"]),
-        ] + (self._host_metrics(lab, kv.host) if kv.host is not None else [])
+        ] + (self._host_metrics(lab, kv.host) if kv.host is not None else []) + self._pd_metrics(lab)
+
+    def _pd_metrics(self, lab):
+        """PD: prompts prefilled by the prefill worker(s) and here (ATOM routes each prompt), KV tokens handed over"""
+        b = self.batcher
+        if getattr(b, "worker", None) is None:
+            return []
+        if hasattr(b, "stats_pd"):
+            sides = b.stats_pd
+        else:                                     # PDBatcher: every prompt is prefilled remotely
+            sides = dict(remote=b.stats.get("prefills", 0), local=0)
+        out = [("airm_pd_prefills_total", "counter", "Prompts prefilled by the PD prefill worker (remote) or here (local).",
+                [f'airm_pd_prefills_total{{{lab},side="{k}"}} {v}' for k, v in sides.items()])]
+        if "transferred_tokens" in b.stats:
+            out.append(("airm_pd_transferred_tokens_total", "counter", "Prompt KV tokens received from the prefill side.",
+                        [f"airm_pd_transferred_tokens_total{{{lab}}} {b.stats['transferred_tokens']}"]))
+        return out
 
     @staticmethod
     def _host_metrics(lab, host):

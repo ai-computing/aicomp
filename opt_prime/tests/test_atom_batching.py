@@ -308,3 +308,33 @@ def test_pd_mode_routes_prompts_between_remote_and_local(fake_rebel):
     assert b.stats_pd["remote"] >= 1 and b.stats_pd["local"] >= 1
     assert [c for c in fake.calls if c[0] == "prefill"]       # some prompts did run on the decode device
     worker.close()
+
+
+def test_pd_remote_only_with_host_tier_events_and_metrics(fake_rebel):
+    """PD on ATOM with every serving feature on: all prompts prefilled remotely, decode-side prefix reuse through
+    the host tier, KV events, and /metrics showing the routing and the host traffic"""
+    import copy
+    from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+    from opt_prime.accel.serve.batched import BatchedService
+    model = _llama()
+    events = ListKVEventPublisher(block_size=16)
+    fake = _blocks_model(fake_rebel, model, batch=1, blocks=3)          # 1 lane + 1 cache block + scratch
+    worker = PrefillWorker(TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16))
+    b = AtomBatcher(fake, prefix_cache=True, host_kv_gib=1.0, kv_events=events, prefill_worker=worker,
+                    local_prefill=False)
+    svc = BatchedService(b, model="m", vocab_size=97, max_output=8, render=str)
+    p, q = _prompts(2, 40, 41, seed=7)
+    for rid, x in (("p", p), ("q", q), ("q2", q), ("p2", p)):     # q evicts p's entry to host; p2 reloads it
+        f = b.submit(PDRequest(rid, x, 6)); b.run_until_idle()
+        assert f.result() == _greedy(model, x, 6)
+    assert not [c for c in fake.calls if c[0] == "prefill"]
+    st = b.blocks.stats
+    assert st["host_reloads"] == 1 and b.blocks.host_hit_tokens == 32
+    text = svc.metrics.render(*svc.gauges())
+    assert 'airm_pd_prefills_total{model_name="m",side="remote"} 4' in text
+    assert 'airm_pd_prefills_total{model_name="m",side="local"} 0' in text
+    assert 'airm_kv_reload_blocks_total{model_name="m"} 1' in text
+    assert 'airm_kv_host_hit_tokens_total{model_name="m"} 32' in text
+    flat = [e for batch in events.batches for e in batch[1]]
+    assert any(e["type"] == "BlockStored" and e["medium"] == "CPU" for e in flat)
+    worker.close()
