@@ -1,6 +1,8 @@
 """Serve a Hugging Face causal LM with continuous batching and chunked prefill over the OpenAI-style HTTP API (#44).
 
     python examples/pd/serve_batched.py --model unsloth/Llama-3.2-1B-Instruct --port 8000 --slots 32 --kv paged
+    # Rebellions ATOM, the optimum-rbln decoder compiled with batch 8 (one lane per request):
+    python examples/pd/serve_batched.py --model unsloth/Llama-3.2-1B-Instruct --backend atom --devices 0 --slots 8
     # + prefix caching with KV events for the llm-d EPP (topic kv@<pod-ip>:<port>@<model>):
     python examples/pd/serve_batched.py --model ... --prefix-cache --kv-events tcp://*:5557 --pod-ip 192.0.2.5
     # + a host-DRAM tier behind the prefix cache (#52):
@@ -17,15 +19,21 @@ from opt_prime.accel.serve.llmd import serve_stage
 
 def build(a):
     tok = AutoTokenizer.from_pretrained(a.model)
-    model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
-    events = None
-    if a.kv_events:
-        from opt_prime.accel.serve.kv_events import ZmqKVEventPublisher
-        events = ZmqKVEventPublisher(a.kv_events, topic=f"kv@{a.pod_ip}:{a.port}@{a.model}", block_size=a.page_size)
-    b = ContinuousBatcher(model, slots=a.slots, max_context=a.max_context, prefill_chunk=a.chunk, kv=a.kv,
-                          page_size=a.page_size, prefix_cache=a.prefix_cache, kv_events=events,
-                          host_kv_gib=a.kv_host_memory_gb, reload_bandwidth=a.reload_bandwidth,
-                          prefill_rate=a.prefill_rate)
+    if a.backend == "atom":
+        from opt_prime.accel.platforms.atom.engine import AtomRblnEngine
+        engine = AtomRblnEngine(devices=a.devices, max_seq_len=a.max_context, batch_size=a.slots)
+        engine.start(a.model)
+        b, model = engine.batcher(), engine.model
+    else:
+        model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
+        events = None
+        if a.kv_events:
+            from opt_prime.accel.serve.kv_events import ZmqKVEventPublisher
+            events = ZmqKVEventPublisher(a.kv_events, topic=f"kv@{a.pod_ip}:{a.port}@{a.model}", block_size=a.page_size)
+        b = ContinuousBatcher(model, slots=a.slots, max_context=a.max_context, prefill_chunk=a.chunk, kv=a.kv,
+                              page_size=a.page_size, prefix_cache=a.prefix_cache, kv_events=events,
+                              host_kv_gib=a.kv_host_memory_gb, reload_bandwidth=a.reload_bandwidth,
+                              prefill_rate=a.prefill_rate)
     eos = model.generation_config.eos_token_id
     svc = BatchedService(b, model=a.model, vocab_size=model.config.get_text_config().vocab_size,
                          max_output=a.max_output, render=lambda t: tok.decode(t), tokenizer=tok,
@@ -39,7 +47,9 @@ if __name__ == "__main__":
     ap.add_argument("--slots", type=int, default=32); ap.add_argument("--kv", default="paged", choices=["slot", "paged"])
     ap.add_argument("--chunk", type=int, default=256); ap.add_argument("--max-context", type=int, default=2048)
     ap.add_argument("--max-output", type=int, default=1024); ap.add_argument("--dtype", default="bfloat16")
-    ap.add_argument("--device", default="cuda"); ap.add_argument("--page-size", type=int, default=64)
+    ap.add_argument("--device", default="cuda"); ap.add_argument("--backend", default="torch", choices=["torch", "atom"])
+    ap.add_argument("--devices", type=int, nargs="+", default=[0], help="ATOM devices (tensor parallel)")
+    ap.add_argument("--page-size", type=int, default=64)
     ap.add_argument("--prefix-cache", action="store_true"); ap.add_argument("--kv-events", default=None)
     ap.add_argument("--pod-ip", default="127.0.0.1"); ap.add_argument("--kv-host-memory-gb", type=float, default=0)
     ap.add_argument("--reload-bandwidth", type=float, default=None, help="bytes/s host->device (reload-or-recompute)")
