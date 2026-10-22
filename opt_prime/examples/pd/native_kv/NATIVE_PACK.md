@@ -121,3 +121,5 @@ native server was used for the final same-packet check. All owned servers/checke
 exited; GPU idle. Draft review only; no main merge.
 
 Follow-up: SAME_CACHE_PAUSE.md holds fixed native caches while changing pause schedules. All6144 positions match; concurrent native identical prompts produce differing caches and two output sequences. This narrows the earlier cross-peer failure without asserting vendor numerical determinism.
+
+Direct receive follow-up: DIRECT_RECEIVE.md documents the implemented opt-in recv_into path, framing checks,43 unit tests and250-265ms TTFTp95 results.

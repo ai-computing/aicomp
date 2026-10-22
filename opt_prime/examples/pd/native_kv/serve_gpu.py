@@ -262,7 +262,7 @@ if __name__=='__main__':
     p.add_argument('--local-prefill-batch-size',type=int,choices=range(1,17),default=16)
     p.add_argument('--local-single-width',action='store_true',help='experimental one-request wave graph; no mid-request width switch')
     p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
-    p.add_argument('--native-pack',choices=['torch','numpy'],default='torch')
+    p.add_argument('--native-pack',choices=['torch','numpy','direct'],default='torch')
     p.add_argument('--pipeline',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)
