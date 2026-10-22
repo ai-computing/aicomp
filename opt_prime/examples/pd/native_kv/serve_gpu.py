@@ -47,6 +47,7 @@ class Job:
     body:dict
     events:queue.Queue=field(default_factory=lambda:queue.Queue(maxsize=32))
     cancel:threading.Event=field(default_factory=threading.Event)
+    submitted_at:float=field(default_factory=time.perf_counter)
     def send(self,kind,value=None):
         while not self.cancel.is_set():
             try:self.events.put((kind,value),timeout=0.1);return True
@@ -63,6 +64,7 @@ class Worker:
         if self.error:raise RuntimeError('worker initialization failed') from self.error
     def submit(self,job):
         if self.stopping.is_set():raise RuntimeError('worker unavailable')
+        job.submitted_at=time.perf_counter()
         self.jobs.put_nowait(job)
     def run(self):
         client=None

@@ -18,6 +18,8 @@ class Registry:
         with self.lock: self.jobs[id(job)] = job
     def remove(self, job):
         with self.lock: self.jobs.pop(id(job), None)
+    def count(self):
+        with self.lock: return len(self.jobs)
     def set(self):
         with self.lock:
             for job in self.jobs.values(): job.cancel.set()
@@ -63,12 +65,21 @@ class PipelineWorker(Worker):
                     client = MultiplexKVClient(a.native, 19201, 19202,
                         json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()))
                     producer_ready.set()
+                    credit_wait_ms = 0.0
+                    wave_id = 0
                     while not self.stopping.is_set():
-                        if not credits.acquire(timeout=0.1): continue
+                        credit_start = time.perf_counter()
+                        acquired = credits.acquire(timeout=0.1)
+                        credit_wait_ms += (time.perf_counter()-credit_start)*1000
+                        if not acquired: continue
                         try: first = self.jobs.get(timeout=0.1)
                         except queue.Empty:
                             credits.release()
+                            credit_wait_ms = 0.0
                             continue
+                        first.admitted_at = time.perf_counter()
+                        wave_credit_wait_ms = credit_wait_ms
+                        credit_wait_ms = 0.0
                         batch = [first]
                         registry.add(first)
                         deadline = time.monotonic()+getattr(a, 'native_batch_wait_ms', 2)/1000
@@ -78,6 +89,7 @@ class PipelineWorker(Worker):
                             except queue.Empty:
                                 credits.release()
                                 break
+                            job.admitted_at = time.perf_counter()
                             batch.append(job)
                             registry.add(job)
                         valid = []
@@ -101,6 +113,10 @@ class PipelineWorker(Worker):
                             job.send('start')
                             valid.append((job,tokens,count))
                         if not valid: continue
+                        wave_id += 1
+                        received_offsets = []
+                        admitted_count = registry.count()
+                        pending_count = self.jobs.qsize()
                         handed_off = set()
                         packing = []
                         def pack_one(index, views, stats, queued_at):
@@ -113,11 +129,17 @@ class PipelineWorker(Worker):
                                 mode = getattr(a, 'native_pack', 'torch')
                                 packed = (views.host if mode == 'direct' else pack_native_views(views)
                                           if mode == 'numpy' else pack_prefix(views.torch_layers()))
-                                job.stage_metrics = {'native_batch':len(valid), 'input_tokens':len(tokens),
+                                job.stage_metrics = {'native_wave_id':wave_id, 'native_batch':len(valid), 'input_tokens':len(tokens),
+                                    'admission_wait_ms':(job.admitted_at-job.submitted_at)*1000,
+                                    'gather_validate_ms':(job.native_submitted_at-job.admitted_at)*1000,
+                                    'wave_credit_wait_ms':wave_credit_wait_ms,
+                                    'admitted_at_native_start':admitted_count,
+                                    'pending_at_native_start':pending_count,
                                     'native_ready_ms':stats.get('ready_ms'), 'native_kv_ms':stats.get('kv_ready_ms'),
                                     'native_complete_ms':stats.get('complete_ms'),
                                     'cpu_pack_queue_ms':(started-queued_at)*1000,
                                     'cpu_pack_ms':(time.perf_counter()-started)*1000}
+                                job.prepared_at = time.perf_counter()
                                 prepared.put_nowait((job,tokens,count,packed))
                                 delivered = True
                             finally:
@@ -126,8 +148,11 @@ class PipelineWorker(Worker):
                             # Claim lifetime/credit before handing the packet to a pack worker.
                             handed_off.add(index)
                             queued_at = time.perf_counter()
+                            received_offsets.append((queued_at-native_wave_start)*1000)
                             if pack_pool is None: pack_one(index,views,stats,queued_at)
                             else: packing.append(pack_pool.submit(pack_one,index,views,stats,queued_at))
+                        native_wave_start = time.perf_counter()
+                        for job,_,_ in valid: job.native_submitted_at = native_wave_start
                         try:
                             if len(valid) == 1 and getattr(a, 'native_pack', 'torch') != 'direct':
                                 views,stats = client.prefill(a.model,valid[0][1],'views')
@@ -137,6 +162,15 @@ class PipelineWorker(Worker):
                                 client.prefill_many(a.model,[tokens for _,tokens,_ in valid],received,
                                     direct=getattr(a, 'native_pack', 'torch') == 'direct')
                             for future in packing: future.result()
+                            if getattr(a, 'profile_stages', None):
+                                wave = {'native_wave_id':wave_id,'requests':len(valid),
+                                    'wave_ms':(time.perf_counter()-native_wave_start)*1000,
+                                    'credit_wait_ms':wave_credit_wait_ms,
+                                    'pending_before':pending_count,'pending_after':self.jobs.qsize(),
+                                    'admitted_before':admitted_count,'admitted_after':registry.count(),
+                                    'callback_ms':received_offsets}
+                                with open(str(a.profile_stages)+'.waves.jsonl','a') as stream:
+                                    stream.write(json.dumps(wave)+'\n')
                         finally:
                             for index,(job,_,_) in enumerate(valid):
                                 if index not in handed_off: retire(job)
@@ -162,8 +196,11 @@ class PipelineWorker(Worker):
                         retire(job)
                         continue
                     import_start = time.perf_counter()
+                    job.stage_metrics['prepared_wait_ms'] = (import_start-job.prepared_at)*1000
+                    job.stage_metrics['decode_active_at_import'] = sum(n>0 for n in graph.remaining)
                     graph.load_packed_lane(lane, packed, tokens[-1], count)
                     job.stage_metrics['gpu_import_ms'] = (time.perf_counter()-import_start)*1000
+                    job.stage_metrics['decode_start_ms'] = (time.perf_counter()-job.submitted_at)*1000
                     states[lane] = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
                     del packed
                 for lane, (job, _, _, _, pending) in list(states.items()):
@@ -189,10 +226,13 @@ class PipelineWorker(Worker):
                     state = states[lane]
                     job, decoder, prompt_count, generated, pending = state
                     state[3] = generated = generated+1
+                    if generated==1:job.stage_metrics['first_gpu_token_ms']=(time.perf_counter()-job.submitted_at)*1000
                     if getattr(a, 'async_text', False): pending.append(('token', token))
                     else:
                         delta = decoder.append(token)
-                        if delta: pending.append(('text', delta))
+                        if delta:
+                            if 'first_text_ready_ms' not in job.stage_metrics:job.stage_metrics['first_text_ready_ms']=(time.perf_counter()-job.submitted_at)*1000
+                            pending.append(('text', delta))
                     stopped = token in eos and not job.body.get('ignore_eos', False)
                     if stopped: graph.cancel_lane(lane)
                     if not graph.remaining[lane]:
