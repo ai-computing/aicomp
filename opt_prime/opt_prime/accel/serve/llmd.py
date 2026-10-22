@@ -45,54 +45,18 @@ class Prepared:
         return self.result
 
 
-class PDStageService:
-    """Single prepared source slot. Cancel/TTL can release only fenced prefill."""
+class CompletionAPI:
+    """OpenAI-style request parsing and responses shared by the stage services: token-ID / text prompts and chat
+    messages, sampling and stop fields, finish_reason and usage."""
 
-    def __init__(
-        self,
-        prefill,
-        decode,
-        transport,
-        *,
-        model,
-        vocab_size,
-        context,
-        max_output,
-        render,
-        ttl=60,
-        clock=time.monotonic,
-        eos_token_ids=(),
-        tokenizer=None
-    ):
-        if prefill.spec != decode.spec:
-            raise ValueError("engine specifications differ")
-        if min(vocab_size, context, max_output, ttl) <= 0:
+    def __init__(self, *, model, vocab_size, context, max_output, render, eos_token_ids=(), tokenizer=None):
+        if min(vocab_size, context, max_output) <= 0:
             raise ValueError("positive service limits required")
-        self.prefill, self.decode, self.transport = prefill, decode, transport
-        self.model, self.vocab_size, self.context = model, vocab_size, context
-        self.max_output, self.render, self.ttl, self.clock = (
-            max_output,
-            render,
-            ttl,
-            clock,
-        )
+        self.model, self.vocab_size, self.context, self.max_output = model, vocab_size, context, max_output
+        self.render = render
         self.eos_token_ids = tuple(eos_token_ids)
         self.tokenizer = tokenizer          # text prompts and chat messages (token-ID prompts need none)
-        self.prepared = None
-        self.runtime = None
-        self.state = "idle"
-        self.events = []
         self.metrics = StageMetrics(model)
-
-    def gauges(self, waiting=0):
-        """(running, waiting, KV lane usage) for /metrics: one lane, occupied unless idle"""
-        running = 1 if self.state in ("prefilling", "decoding") else 0
-        return running, waiting, 0.0 if self.state == "idle" else 1.0
-
-    def _event(self, stage, request_id):
-        self.events.append(dict(stage=stage, request_id=request_id, time=self.clock()))
-        if len(self.events) > 1024:
-            del self.events[:-1024]
 
     def _request(self, rid, body, chat=False):
         allowed = {
@@ -158,8 +122,7 @@ class PDStageService:
                                       () if ignore_eos else self.eos_token_ids)
         except ValueError as error:
             raise StageError(400, str(error))
-        if not sampling.greedy and not all(getattr(e, "supports_sampling", False)
-                                           for e in (self.prefill, self.decode)):
+        if not sampling.greedy and not all(getattr(e, "supports_sampling", False) for e in self._engines()):
             raise StageError(400, "engine supports greedy decoding only")
         if "cache_hit_threshold" in body and body["cache_hit_threshold"] != 0:
             raise StageError(400, "unsupported cache threshold")
@@ -197,6 +160,91 @@ class PDStageService:
                 raise StageError(400, "this stage has no tokenizer for text prompts")
             return [int(t) for t in self.tokenizer(prompt, add_special_tokens=True)["input_ids"]]
         return prompt
+
+    def _finish(self, request, stop_strings, tokens):
+        """(tokens, text, finish_reason): cut at the first stop string (the text excludes it, the tokens end with the
+        token that completed it); 'stop' also when the last token is a stop token."""
+        text = self.render(tokens)
+        stops = [s for s in stop_strings if s in text]
+        if stops:
+            for i in range(1, len(tokens) + 1):
+                partial = self.render(tokens[:i])
+                hit = min((partial.find(s) for s in stops if s in partial), default=-1)
+                if hit >= 0:
+                    return tokens[:i], partial[:hit], "stop"
+        stop_ids = request.sampling.stop_token_ids
+        return tokens, text, "stop" if tokens and tokens[-1] in stop_ids else "length"
+
+    def _prefill_reply(self, rid, chat=False):
+        if chat:
+            return dict(id=rid, object="chat.completion", model=self.model,
+                        choices=[dict(index=0, message=dict(role="assistant", content=""), finish_reason="stop")])
+        return dict(
+            id=rid,
+            object="text_completion",
+            model=self.model,
+            choices=[dict(index=0, text="", finish_reason="stop")],
+        )
+
+    def _engines(self):
+        """the engines that must support non-greedy sampling for it to be accepted"""
+        return ()
+
+    def _response(self, rid, request, tokens, text, finish, chat):
+        usage = dict(prompt_tokens=len(request.input_ids), completion_tokens=len(tokens),
+                     total_tokens=len(request.input_ids) + len(tokens))
+        if chat:
+            choice = dict(index=0, message=dict(role="assistant", content=text), token_ids=tokens, finish_reason=finish)
+        else:
+            choice = dict(index=0, text=text, token_ids=tokens, finish_reason=finish)
+        return dict(id=rid, object="chat.completion" if chat else "text_completion", created=int(time.time()),
+                    model=self.model, choices=[choice], usage=usage)
+
+
+class PDStageService(CompletionAPI):
+    """Single prepared source slot. Cancel/TTL can release only fenced prefill."""
+
+    def __init__(
+        self,
+        prefill,
+        decode,
+        transport,
+        *,
+        model,
+        vocab_size,
+        context,
+        max_output,
+        render,
+        ttl=60,
+        clock=time.monotonic,
+        eos_token_ids=(),
+        tokenizer=None
+    ):
+        if prefill.spec != decode.spec:
+            raise ValueError("engine specifications differ")
+        if ttl <= 0:
+            raise ValueError("positive service limits required")
+        super().__init__(model=model, vocab_size=vocab_size, context=context, max_output=max_output, render=render,
+                         eos_token_ids=eos_token_ids, tokenizer=tokenizer)
+        self.prefill, self.decode, self.transport = prefill, decode, transport
+        self.ttl, self.clock = ttl, clock
+        self.prepared = None
+        self.runtime = None
+        self.state = "idle"
+        self.events = []
+
+    def _engines(self):
+        return self.prefill, self.decode
+
+    def gauges(self, waiting=0):
+        """(running, waiting, KV lane usage) for /metrics: one lane, occupied unless idle"""
+        running = 1 if self.state in ("prefilling", "decoding") else 0
+        return running, waiting, 0.0 if self.state == "idle" else 1.0
+
+    def _event(self, stage, request_id):
+        self.events.append(dict(stage=stage, request_id=request_id, time=self.clock()))
+        if len(self.events) > 1024:
+            del self.events[:-1024]
 
     def cancel(self, rid):
         if self.state != "ready" or self.prepared.request.request_id != rid:
@@ -275,15 +323,7 @@ class PDStageService:
             self.runtime = PDRuntime(self.prepared, self.decode, self.transport)
             tokens = self.runtime.generate(request, cancellation=cancellation, on_token=on_token)
             tokens, text, finish = self._finish(request, stops, tokens)
-            usage = dict(prompt_tokens=len(request.input_ids), completion_tokens=len(tokens),
-                         total_tokens=len(request.input_ids) + len(tokens))
-            if chat:
-                choice = dict(index=0, message=dict(role="assistant", content=text), token_ids=tokens,
-                              finish_reason=finish)
-            else:
-                choice = dict(index=0, text=text, token_ids=tokens, finish_reason=finish)
-            response = dict(id=rid, object="chat.completion" if chat else "text_completion", created=int(time.time()),
-                            model=self.model, choices=[choice], usage=usage)
+            response = self._response(rid, request, tokens, text, finish, chat)
             self.prepared = None
             self.state = "idle"
             self._event("decode_complete", rid)
@@ -331,31 +371,6 @@ class PDStageService:
         self.state = "idle"
         self._event("recovered", None)
         return dict(state=self.state)
-
-    def _finish(self, request, stop_strings, tokens):
-        """(tokens, text, finish_reason): cut at the first stop string (the text excludes it, the tokens end with the
-        token that completed it); 'stop' also when the last token is a stop token."""
-        text = self.render(tokens)
-        stops = [s for s in stop_strings if s in text]
-        if stops:
-            for i in range(1, len(tokens) + 1):
-                partial = self.render(tokens[:i])
-                hit = min((partial.find(s) for s in stops if s in partial), default=-1)
-                if hit >= 0:
-                    return tokens[:i], partial[:hit], "stop"
-        stop_ids = request.sampling.stop_token_ids
-        return tokens, text, "stop" if tokens and tokens[-1] in stop_ids else "length"
-
-    def _prefill_reply(self, rid, chat=False):
-        if chat:
-            return dict(id=rid, object="chat.completion", model=self.model,
-                        choices=[dict(index=0, message=dict(role="assistant", content=""), finish_reason="stop")])
-        return dict(
-            id=rid,
-            object="text_completion",
-            model=self.model,
-            choices=[dict(index=0, text="", finish_reason="stop")],
-        )
 
 
 class OwnerExecutor:

@@ -59,3 +59,17 @@ Setup notes:
 - flex decoding lowers here only with a 128-row query block; `Q_BLOCK = 128`, with the KV block equal to the page.
 - The default pool equals `slots × max_context` (the same memory as the slot store). Pass `pages` to set a smaller
   KV budget: admission then waits for free pages, not for a free slot.
+
+## Serving over HTTP (#44 stage 2)
+
+`serve.batched.BatchedService` + `BatchedOwner` serve a `ContinuousBatcher` through `llmd.serve_stage` (the same
+HTTP layer as the PD stage): /v1/completions, /v1/chat/completions, SSE, cancellation on disconnect, /metrics.
+Requests are not limited to one lane: they wait for a free slot or free pages.
+
+Run with `examples/pd/serve_batched.py --model unsloth/Llama-3.2-1B-Instruct --slots 32 --kv paged`. The load was
+streaming chat requests with 64 new tokens each (`ignore_eos`), on an A100 in bf16:
+
+| concurrent requests | wall | throughput | TTFT p50 | end-to-end p50 |
+|---:|---:|---:|---:|---:|
+| 1 | 0.76 s | 85 tok/s | 11 ms | 0.75 s |
+| 32 | 1.97 s | **1037 tok/s** | 256 ms | 1.14 s |

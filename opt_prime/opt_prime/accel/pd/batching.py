@@ -66,6 +66,8 @@ class _Request:
 
 
 class ContinuousBatcher:
+    supports_sampling = True          # SamplingParams (torch engine: select_token), stop tokens
+
     def __init__(self, model, *, slots=8, max_context=2048, prefill_chunk=256, kv="slot", pages=None, page_size=64):
         """kv="slot": one max_context store per slot (copies the slots' prefixes every step); kv="paged": a page pool
         of `pages` pages (default: slots * max_context worth) read in place by flex attention (#108)."""
