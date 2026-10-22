@@ -18,9 +18,12 @@ p.add_argument('--async-text', action='store_true')
 p.add_argument('--fused-elementwise', action='store_true')
 p.add_argument('--adaptive-single', action='store_true')
 p.add_argument('--local-single-width', action='store_true')
+p.add_argument('--local-prefill-batch-size', type=int, default=16)
+p.add_argument('--peer-count', type=int, choices=range(1,16), default=1)
 a = p.parse_args()
+if a.peer_count >= a.batch_size: p.error('peer count must leave one lane for stalled consumer')
 args = SimpleNamespace(model_dir=a.model_dir, device='cuda:0', model='Qwen/Qwen3-8B-FP8',
-    native='http://127.0.0.1:19101', norm_mode='fused', fuse_mlp=True, fuse_qkv=True, batch_size=a.batch_size, local_single_width=a.local_single_width, adaptive_single=a.adaptive_single, native_batch_size=a.native_batch_size, native_batch_wait_ms=8, async_pack=a.async_pack, async_text=a.async_text, fused_elementwise=a.fused_elementwise)
+    native='http://127.0.0.1:19101', norm_mode='fused', fuse_mlp=True, fuse_qkv=True, batch_size=a.batch_size, local_single_width=a.local_single_width, local_prefill_batch_size=a.local_prefill_batch_size, adaptive_single=a.adaptive_single, native_batch_size=a.native_batch_size, native_batch_wait_ms=8, async_pack=a.async_pack, async_text=a.async_text, fused_elementwise=a.fused_elementwise)
 if a.prefill_backend == 'gpu':
     from gpu_local_worker import LocalWorker
     worker = LocalWorker(args)
@@ -28,7 +31,9 @@ else:
     worker = PipelineWorker(args)
 body = {'model':args.model, 'prompt':[1000]*128, 'max_tokens':128,
         'temperature':0, 'ignore_eos':True}
-slow, fast = Job(body), Job(body)
+slow = Job(body)
+peers = [Job(body) for _ in range(a.peer_count)]
+fast = peers[0]
 def consume(job):
     text = ''
     decoder = TextDecoder(worker.tokenizer)
@@ -47,8 +52,12 @@ try:
     worker.submit(baseline)
     baseline_text, baseline_done = consume(baseline)
     worker.submit(slow)
-    worker.submit(fast)
+    for peer in peers: worker.submit(peer)
     fast_text, fast_done = consume(fast)
+    for peer in peers[1:]:
+        text, done = consume(peer)
+        assert text == fast_text
+        assert done['usage']['completion_tokens'] == 128
     stalled_events = slow.events.qsize()
     assert stalled_events == slow.events.maxsize, stalled_events
     slow_text, slow_done = consume(slow)
@@ -66,7 +75,7 @@ try:
     follow_text, follow_done = consume(followup)
     assert follow_text == baseline_text
     assert follow_done['usage']['completion_tokens'] == 128
-    result = {'stalled_events':stalled_events, 'peer_tokens':128, 'resumed_tokens':128,
+    result = {'stalled_events':stalled_events, 'peer_count':len(peers), 'peer_tokens':128, 'resumed_tokens':128,
               'texts_equal':True, 'cancel_followup_tokens':128,
               'cancel_matches_same_width_baseline':True,
               'single_vs_batched_text_equal':follow_text == fast_text}
