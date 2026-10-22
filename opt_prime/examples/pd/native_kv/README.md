@@ -129,3 +129,5 @@ Norm optimization is opt-in. `--fused-norms --norm-mode torch-stats` preserves t
 reference variance/rsqrt operations and passed the recorded bitwise unit checks.
 The fully fused default norm mode changes native-KV outputs and is diagnostic only.
 No current result establishes full native-speed serving or native FP8 quality parity.
+
+Colocated RNGD+A100 follow-up, including live torch-stats parity and remaining latency gap: [GPU_COLOCATED.md](GPU_COLOCATED.md). `--cpu-threads` controls the client copy worker count; default remains4.

@@ -29,7 +29,7 @@ def native_request(session,url,model,tokens,count):
 def main(a):
     import torch,requests
     from transformers import AutoTokenizer
-    torch.set_num_threads(4);torch.set_num_interop_threads(1)
+    torch.set_num_threads(a.cpu_threads);torch.set_num_interop_threads(1)
     model=load_model(a.model_dir,a.device,'marlin')
     if a.fused_norms:
         from gpu_norms import install_fused_norms
@@ -61,7 +61,7 @@ def main(a):
                              'import_ms':(imported-ready)*1000,'decode_ms':decode['decode_ms'],
                              'generated':generated,'text':tokenizer.decode(generated,skip_special_tokens=True),
                              'receive_detail':{k:v for k,v in recv.items() if k!='response'}}
-                    row.update(mode=mode,input_tokens=n,output_tokens=a.output_tokens,repeat=rep,transport=a.transport,packed_import=a.packed_import,fused_norms=a.fused_norms,norm_mode=a.norm_mode if a.fused_norms else None)
+                    row.update(mode=mode,input_tokens=n,output_tokens=a.output_tokens,repeat=rep,transport=a.transport,packed_import=a.packed_import,fused_norms=a.fused_norms,norm_mode=a.norm_mode if a.fused_norms else None,cpu_threads=a.cpu_threads)
                     rows.append(row);Path(a.out).write_text(json.dumps(rows,indent=2))
                     print(json.dumps({k:v for k,v in row.items() if k not in ('generated','text','receive_detail')}),flush=True)
     finally:
@@ -71,6 +71,7 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--model-dir',required=True);p.add_argument('--device',default='cuda:0')
+    p.add_argument('--cpu-threads',type=int,choices=range(1,33),default=4)
     p.add_argument('--packed-import',action='store_true')
     p.add_argument('--fused-norms',action='store_true')
     p.add_argument('--norm-mode',choices=['fused','torch-stats'],default='fused')
