@@ -83,3 +83,5 @@ separate sender, libzmq and decode scheduling before implementing a new transpor
 All owned servers stopped after this experiment. Compact metrics, affinity and memory
 snapshots are in placement_summary.json. Local raw files retain all request measurements,
 server logs and receive intervals; generated text is excluded from the published summary.
+
+Follow-up:PRODUCER_PLACEMENT.md tests producer default/local/default with GPU placement fixed. The candidate worsens latency; preferred native memory locality is not realized.

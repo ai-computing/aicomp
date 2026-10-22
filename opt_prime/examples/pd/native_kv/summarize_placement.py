@@ -11,16 +11,25 @@ def main():
     p.add_argument('--out',required=True)
     a=p.parse_args();root=Path(a.input_dir)
     states=json.loads((root/'placement_runstate.json').read_text())
-    assert len(states)==3 and all(x['state']=='complete' and x['exit_code']==0 for x in states)
+    producer = 'native_exit' in states[0]
+    assert len(states)==3 and all(x['state']=='complete' and
+        (x['gpu_exit']==0 and x['native_exit'] in (0,-15) if producer else x['exit_code']==0) for x in states)
+    def memory(snapshot):
+        item={k:v for k,v in snapshot.items() if k!='numastat'}
+        totals=next(line for line in snapshot['numastat'].splitlines() if line.startswith('Total')).split()[1:]
+        item['memory_mb_by_node']=list(map(float,totals[:-1]));item['memory_mb_total']=float(totals[-1])
+        return item
     result=[]
     for state in states:
         label=state['label']
         arrivals=json.loads((root/f'{label}_arrival.json').read_text())
         assert len(arrivals)==4 and all(x['successes']==96 and x['errors']==0 for x in arrivals)
-        row={k:v for k,v in state.items() if k not in ('pid','numastat')}
-        totals=next(line for line in state['numastat'].splitlines() if line.startswith('Total')).split()[1:]
-        row['memory_mb_by_node']=list(map(float,totals[:-1]))
-        row['memory_mb_total']=float(totals[-1])
+        if producer:
+            row={k:v for k,v in state.items() if k not in ('native_pid','gpu_pid','gpu_snapshot','native_snapshots')}
+            row['gpu_snapshot']=memory(state['gpu_snapshot'])
+            row['native_snapshots']=[memory(x) for x in state['native_snapshots']]
+        else:
+            row=memory({k:v for k,v in state.items() if k!='pid'})
         row['arrivals']=[{k:v for k,v in x.items() if k!='results'} for x in arrivals]
         stages=[json.loads(s) for s in (root/f'{label}_stages.jsonl').read_text().splitlines()]
         receives=[json.loads(s) for s in (root/f'{label}_receive.jsonl').read_text().splitlines()]
