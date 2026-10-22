@@ -19,6 +19,21 @@ def batch(slots,n,final=False):
 
 
 class MemoryTest(unittest.TestCase):
+    def test_callback_only_receives_validated_batch(self):
+        from unittest.mock import Mock
+        callback=Mock()
+        a=ViewAssembler('memory-test-139',3,on_batch=callback)
+        h,p=batch(range(4),3)
+        with self.assertRaises(ValueError):a.accept(h,p[:-1])
+        callback.assert_not_called()
+        a.accept(h,p)
+        self.assertEqual(callback.call_count,1)
+        slots,values=callback.call_args.args
+        np.testing.assert_array_equal(slots,np.arange(4))
+        self.assertEqual(values.shape,(4,8,3,128))
+        with self.assertRaises(ValueError):a.accept(h,p)
+        self.assertEqual(callback.call_count,1)
+
     def test_http_failure_preempts_kv_timeout(self):
         import concurrent.futures
         import requests

@@ -42,26 +42,39 @@ def main(a):
         for n in map(int,a.lengths.split(',')):
             tokens=[rng.randrange(1000,30000) for _ in range(n)]
             for rep in range(-a.warmups,a.repeats):
-                modes=['native','heterogeneous']
-                if rep%2:modes.reverse()
+                modes=['native','packed','streaming'] if a.compare_imports else ['native','heterogeneous']
+                if a.compare_imports:
+                    offset=rep%len(modes);modes=modes[offset:]+modes[:offset]
+                elif rep%2:modes.reverse()
                 for mode in modes:
+                    streaming_import=a.streaming_import or mode=='streaming'
+                    packed_import=a.packed_import or mode=='packed'
                     if mode=='native':
                         row=native_request(session,a.http,a.model,tokens,a.output_tokens)
                     else:
                         start=time.perf_counter()
-                        views,recv=client.prefill(a.model,tokens,'views')
+                        stage_ms=0
+                        if streaming_import:graph.begin_prefix(len(tokens)-1)
+                        prepared=time.perf_counter()
+                        def on_batch(slots,values):
+                            nonlocal stage_ms
+                            t=time.perf_counter();graph.stage_prefix_slots(slots,values)
+                            stage_ms+=(time.perf_counter()-t)*1000
+                        views,recv=client.prefill(a.model,tokens,'views',on_batch=on_batch if streaming_import else None)
                         ready=time.perf_counter()
-                        graph.load_prefix(views.torch_layers(),tokens[-1],packed_import=a.packed_import)
+                        if streaming_import:graph.finish_prefix(tokens[-1])
+                        else:graph.load_prefix(views.torch_layers(),tokens[-1],packed_import=packed_import)
                         imported=time.perf_counter()
                         generated,decode=graph.generate(a.output_tokens)
                         end=time.perf_counter()
                         row={'ttft_ms':(imported-start)*1000+decode['first_decode_ms'],
                              'tpot_ms':decode['tpot_ms'],'total_ms':(end-start)*1000,
                              'tok_s':a.output_tokens/(end-start),'receive_ms':(ready-start)*1000,
+                             'prepare_ms':(prepared-start)*1000,'stage_callback_ms':stage_ms,
                              'import_ms':(imported-ready)*1000,'decode_ms':decode['decode_ms'],
                              'generated':generated,'text':tokenizer.decode(generated,skip_special_tokens=True),
                              'receive_detail':{k:v for k,v in recv.items() if k!='response'}}
-                    row.update(mode=mode,input_tokens=n,output_tokens=a.output_tokens,repeat=rep,transport=a.transport,packed_import=a.packed_import,fused_norms=a.fused_norms,norm_mode=a.norm_mode if a.fused_norms else None,cpu_threads=a.cpu_threads)
+                    row.update(mode=mode,input_tokens=n,output_tokens=a.output_tokens,repeat=rep,transport=a.transport,packed_import=packed_import,streaming_import=streaming_import,fused_norms=a.fused_norms,norm_mode=a.norm_mode if a.fused_norms else None,cpu_threads=a.cpu_threads)
                     rows.append(row);Path(a.out).write_text(json.dumps(rows,indent=2))
                     print(json.dumps({k:v for k,v in row.items() if k not in ('generated','text','receive_detail')}),flush=True)
     finally:
@@ -73,6 +86,8 @@ if __name__=='__main__':
     p.add_argument('--model-dir',required=True);p.add_argument('--device',default='cuda:0')
     p.add_argument('--cpu-threads',type=int,choices=range(1,33),default=4)
     p.add_argument('--packed-import',action='store_true')
+    p.add_argument('--streaming-import',action='store_true')
+    p.add_argument('--compare-imports',action='store_true',help='Rotate native/packed/streaming modes in each repetition')
     p.add_argument('--fused-norms',action='store_true')
     p.add_argument('--norm-mode',choices=['fused','torch-stats'],default='fused')
     p.add_argument('--http',default='http://127.0.0.1:19101');p.add_argument('--prefill-port',type=int,default=19201)
