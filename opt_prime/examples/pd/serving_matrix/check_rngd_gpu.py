@@ -13,6 +13,8 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("--model", required=True)
 p.add_argument("--exports", nargs="+", required=True)
 p.add_argument("--output", required=True)
+p.add_argument("--eos-aware", action="store_true")
+p.add_argument("--max-output", type=int, default=32)
 p.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
 a = p.parse_args()
 model = (
@@ -28,9 +30,11 @@ model = (
 rows = []
 
 
-def decode(token, cache):
+def decode(token, cache, eos_ids):
     tokens = [token]
-    for _ in range(31):
+    for _ in range(a.max_output - 1):
+        if tokens[-1] in eos_ids:
+            break
         o = model(
             input_ids=torch.tensor([[tokens[-1]]], device="cuda"),
             past_key_values=cache,
@@ -61,6 +65,9 @@ def relative_many(actual, expected):
 with torch.inference_mode():
     for path in a.exports:
         r = torch.load(path, weights_only=True)
+        eos = set(r["eos_ids"]) if a.eos_aware else set()
+        assert not a.eos_aware or eos, "export lacks EOS IDs"
+        assert a.max_output > 0
         o = model(
             input_ids=torch.tensor([r["ids"]], device="cuda"),
             use_cache=True,
@@ -72,7 +79,7 @@ with torch.inference_mode():
         matched_k = [retained_export(k, layer) for k, layer in zip(r["keys"], layers)]
         matched_v = [retained_export(v, layer) for v, layer in zip(r["values"], layers)]
         logits = o.logits[0, -1].cpu()
-        native = decode(int(logits.argmax()), o.past_key_values)
+        native = decode(int(logits.argmax()), o.past_key_values, eos)
         cache = DynamicCache(config=model.config)
         for i, (k, v) in enumerate(zip(r["keys"], r["values"])):
             dk, dv = [t[None].to(device="cuda", dtype=model.dtype) for t in (k, v)]
@@ -84,9 +91,12 @@ with torch.inference_mode():
             assert torch.equal(
                 cache.layers[i].values[0].cpu(), retained_export(v, cache.layers[i])
             )
-        transferred = decode(int(r["logits"].argmax()), cache)
+        transferred = decode(int(r["logits"].argmax()), cache, eos)
         row = {
             "export": Path(path).name,
+            "case": r.get("metadata", {}).get("case"),
+            "native_stop": "eos" if native[-1] in eos else "length",
+            "pd_stop": "eos" if transferred[-1] in eos else "length",
             "decode_dtype": a.dtype,
             "key_layer_relative_rms": [relative(x, y) for x, y in zip(matched_k, keys)],
             "value_layer_relative_rms": [

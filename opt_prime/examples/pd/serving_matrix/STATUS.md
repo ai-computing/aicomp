@@ -35,3 +35,23 @@ Implemented all26 Gemma layers with local/global semantics. Actual128 output ini
 Supersedes older Gemma native-reference claims: a sliding-only native artifact allowed future-token effects after the first global attention layer. The global fix is in upstream draft optimum-rbln#827 (ed7934d). A rebuilt artifact preserves52/52 prefix slots under suffix perturbation and matches RNGD-imported ATOM32-token continuations at128/2K/8K; every raw-state restore/readback also passes. Gemma8K RNGD warm prefill+export1.547–1.552s, GPU32-token match and52retained slots exact. These are fixed fixtures, not production PD or broad quality completion. See evidence225 and both accompanying experiment records.
 
 Remaining four-model requirements: diverse prompts and meaningful EOS-aware output; production Gemma hybrid and KONI PD scheduler integration; cache eviction/host restore/cancellation/recovery under heterogeneous HTTP load; genuine producer-compute/transfer overlap; controlled end-to-end latency/throughput comparison and hardware batch coverage. Scope remains Qwen3-0.6B, Qwen3-4B, KONI-8B, Gemma3-1B across GPU/RNGD/ATOM.
+
+## EOS-aware direct semantics (#227)
+
+192 GPU/ATOM runs across four models,12 cases each,2 repeats, all EOS-ended. Cross-backend tokens match12/12 cases for both Qwens and KONI,11/12 for Gemma;96 within-backend repeat pairs exact. Inputs range23–6428 tokens. Token identity coexists with shared wrong answers (Qwen4B arithmetic52; Qwen0.6B Korean capital Incheon; Gemma arithmetic40). Gemma longest arithmetic differs30 GPU vs25 ATOM. Research runner now unions generation-config EOS with tokenizer EOS, preventing KONI continuation past turn-end. See evidence227 and its experiment record. RNGD semantic/production PD integration remains pending.
+
+## RNGD semantic handoff follow-up (#227)
+
+All four models now execute the same four short chat cases through RNGD prefill and GPU/ATOM continuation.32/32 decoder comparisons match native tokens through EOS,48prefill runs finite/repeat-exact. Exact saved IDs and true KV lengths verified, excluding right padding; per-model52/56/72/64slots read back exactly. Qwen/KONI original/portable importer logits agree; Gemma raw native-state roundtrip also passes. Inputs23–143 tokens (compiled width128 or512), so long semantic fixtures remain pending. This is host-staged full-prefix handoff, not actual compute/transfer overlap or production PD serving. See semantic-rngd227 record and evidence227.
+
+## Medium semantic handoff (#227)
+
+Inputs1526–1643tokens in width2048 buckets now pass all32 model/case/decoder EOS comparisons (four models,four cases,GPU/ATOM).48prefill runs finite/repeat-exact; true IDs/KV lengths and52/56/72/64slot readbacks verified. Native GPU/ATOM sequences agree for these cases, including shared wrong answers documented earlier. Approximately6K semantic inputs and production heterogeneous serving/overlap remain open. See semantic-mid227 experiment and evidence227.
+
+## Six-thousand-token partial results (#227)
+
+KONI (6137–6143 tokens) and Qwen3-0.6B (6026–6031 tokens) pass16/16 GPU/ATOM EOS comparisons across eight questions, with24producer repeats. Readbacks64/56slots exact; both ATOM importers agree. Gemma remains live in the owned queue, Qwen3-4B follows. No live PD or overlap claim. See semantic-long227 record and selected evidence227.
+
+Gemma long-context update:6423–6428tokens,12producer runs, GPU3/4 and ATOM4/4 EOS matches; cumulative23/24. Arithmetic nativeGPU30 vs RNGD/ATOM25, both wrong; nativeGPU FP32 also30.52slot readbacks and native ATOM roundtrip exact. Same layer equations on GPU choose3 at BF16/FP32; accumulating RNGD numerical differences tracked in #233. Qwen3-4B queue remains live.
+
+Final6K matrix:48producer runs,31/32 EOS comparisons across four models/four questions/two decoders. Qwen3-4B4/4 on each decoder,72slots exact; the original queue exited0. Gemma arithmetic mismatch remains#233. Real live PD integration starts under#234; no overall-goal completion claim.

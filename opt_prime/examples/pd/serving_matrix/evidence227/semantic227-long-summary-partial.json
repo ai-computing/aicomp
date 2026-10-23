@@ -1,0 +1,32 @@
+{
+  "koni": {
+    "prefill_runs": 12,
+    "input_tokens": [
+      6138,
+      6137,
+      6139,
+      6143
+    ],
+    "warm_s_range": [
+      2.672275032964535,
+      2.966325203073211
+    ],
+    "gpu_match": 4,
+    "atom_match": 4
+  },
+  "qwen06b": {
+    "prefill_runs": 12,
+    "input_tokens": [
+      6026,
+      6027,
+      6031,
+      6031
+    ],
+    "warm_s_range": [
+      1.307630694936961,
+      1.4571205369429663
+    ],
+    "gpu_match": 4,
+    "atom_match": 4
+  }
+}
