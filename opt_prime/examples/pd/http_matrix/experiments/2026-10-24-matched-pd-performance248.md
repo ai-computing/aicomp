@@ -131,3 +131,13 @@ New isolated worktree aicomp-heteroperf-248, branch exp/248-heterogeneous-http f
 Reverse queue exited0; all144blockB batches pass parity (288acrossA/B). At8192/c4 blockB native/PD/DP2 tok/s: Qwen06=19.8565/18.4056/39.3672; Qwen4=12.6604/15.1194/24.9782; KONI=12.3868/14.0186/24.6388; Gemma=19.5801/17.7899/38.4918. Same-two-GPU DP2 advantage persists; PD versus one-GPU native is variable. Summary: perf248-summary-b-longc4.json.
 
 After confirming no GPU processes, launched /tmp/run_perf248_long128.py from aicomp-perf-248. Raw queue log:analysis/serving-matrix-201/perf248-long128.log. Output128,inputs128/8192,concurrency1/4/8,repeat3. Separate NPU host benchmark does not share these GPU-host compute resources.
+
+Qwen3-0.6B long128 extension complete:54batches (native/PD/DP2,2input lengths,3concurrencies,3repeats), all parity pass. At8192input/output128/c8 native65.7449,PD74.6555,DP2120.6477tok/s; c4=60.8016/62.2604/98.9765. Summary:perf248-qwen06b-long128-summary.json. Queue advanced to Qwen3-4B native. Reverse-block evidence published in PR251commitb367fdf; body updated to explicitly report PD variability.
+
+Qwen3-4B native-long128 completed18batches with parity.8192input/c1,c4,c8 throughput27.2032,41.5924,44.3198tok/s. Queue advanced toPD; comparative result pending.
+
+Qwen3-4B long128 three-mode comparison complete:54batches pass parity.8192/c8 native44.3198,PD46.7759,DP280.4156tok/s; summary perf248-qwen4b-long128-summary.json. Queue moved toKONI. Producer-side copy-overlap design constraints recorded in analysis/serving-matrix-201/chunk-overlap-plan.md; no implementation/performance claim.
+
+KONI native-long128 completed18batches with parity; GPU queue advanced toPD. Separate perf/47-chunk-copy worktree at273952a contains a pending two-GPU exact-KV/first-token oracle (dense/hybrid,send_from0/7/29/35,cached repeat). Tests are not executed while performance GPUs are occupied; no copy-overlap implementation or passing-test claim. Need observe RED on idle allocated GPUs before implementation and add failure/lifetime/recurrent/timeline checks.
+
+KONI PD-long128 completed18batches with parity.8192input/c1,c4,c8 throughput27.2150,44.6598,50.1311tok/s; native c8=42.8652. DP2 running. Heterogeneous Qwen4producer confirmed alive at7m32s with CPU activity and~31.8GiBRSS; readiness not yet reached, within1800second bound.
