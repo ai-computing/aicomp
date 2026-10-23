@@ -47,3 +47,7 @@ Live GPU faults#201: Qwen0.6/Qwen4 cancellation, producer-exit503/readiness, SHM
 KONI/Gemma GPU lifecycle completed; allfour pass cancellation/reuse, producer death/readiness503, slab unlink and producer replacement. Concurrent-decode isolation is being tested separately and not claimed here.
 
 Allfour live GPU isolation runs pass: active512-token decode survives other-request producer death with exact output; all baseline lifecycle gates retained.
+
+#263 held-out suite: Qwen3-0.6B/Qwen3-4B/KONI-8B/Gemma3-1B inputs frozen (36/model); scorer distinguishes parsed answer, JSON format and exact token parity. Tests9passed after9expected failures. Hardware results pending; #256/#261 remain open.
+
+#263 evaluator verification:10focused passed; full prior collection533passed/15skipped/253subtests. Frozen fixtures hashed before inference; GPU route queue started, hardware results pending.

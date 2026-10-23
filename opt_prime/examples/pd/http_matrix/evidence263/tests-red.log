@@ -1,0 +1,237 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+____________________ test_score[{"answer":"73"}-True-True] _____________________
+
+text = '{"answer":"73"}', correct = True, formatted = True
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+______________ test_score[{"answer":"73","note":"ok"}-True-False] ______________
+
+text = '{"answer":"73","note":"ok"}', correct = True, formatted = False
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+____________________ test_score[{"answer":73}-False-False] _____________________
+
+text = '{"answer":73}', correct = False, formatted = False
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+___________________ test_score[The answer is 73-False-False] ___________________
+
+text = 'The answer is 73', correct = False, formatted = False
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+___________________ test_score[{"answer":"173"}-False-True] ____________________
+
+text = '{"answer":"173"}', correct = False, formatted = True
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+___________ test_score[{"answer":"wrong","answer":"73"}-False-False] ___________
+
+text = '{"answer":"wrong","answer":"73"}', correct = False, formatted = False
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+_______________ test_score[{"answer":"73"} trailing-False-False] _______________
+
+text = '{"answer":"73"} trailing', correct = False, formatted = False
+
+    @pytest.mark.parametrize('text,correct,formatted', [
+        ('{"answer":"73"}', True, True),
+        ('{"answer":"73","note":"ok"}', True, False),
+        ('{"answer":73}', False, False),
+        ('The answer is 73', False, False),
+        ('{"answer":"173"}', False, True),
+        ('{"answer":"wrong","answer":"73"}', False, False),
+        ('{"answer":"73"} trailing', False, False),
+    ])
+    def test_score(text, correct, formatted):
+>       got = module().score(text, '73')
+
+opt_prime/tests/test_heldout_quality.py:25:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+__________ test_paired_regressions_are_not_hidden_by_equal_aggregate ___________
+
+    def test_paired_regressions_are_not_hidden_by_equal_aggregate():
+>       m = module()
+
+opt_prime/tests/test_heldout_quality.py:29:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+___________ test_context_builder_keeps_retrieval_fact_inside_budget ____________
+
+    def test_context_builder_keeps_retrieval_fact_inside_budget():
+        class CharacterTokenizer:
+            def apply_chat_template(self, messages, **kwargs):
+                return list(messages[0]['content'].encode())
+>       m = module()
+
+opt_prime/tests/test_heldout_quality.py:46:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def module():
+>       assert path.exists(), 'held-out evaluator is not implemented'
+E       AssertionError: held-out evaluator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-heldout-quality-263/opt_prime/examples/pd/http_matrix/heldout_quality.py').exists
+
+opt_prime/tests/test_heldout_quality.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[{"answer":"73"}-True-True]
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[{"answer":"73","note":"ok"}-True-False]
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[{"answer":73}-False-False]
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[The answer is 73-False-False]
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[{"answer":"173"}-False-True]
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[{"answer":"wrong","answer":"73"}-False-False]
+FAILED opt_prime/tests/test_heldout_quality.py::test_score[{"answer":"73"} trailing-False-False]
+FAILED opt_prime/tests/test_heldout_quality.py::test_paired_regressions_are_not_hidden_by_equal_aggregate
+FAILED opt_prime/tests/test_heldout_quality.py::test_context_builder_keeps_retrieval_fact_inside_budget
+9 failed in 0.04s

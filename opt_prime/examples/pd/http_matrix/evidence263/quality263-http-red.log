@@ -1,0 +1,48 @@
+.........F                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_http_runner_supplies_required_request_id_and_frozen_tokens ________
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-175/test_http_runner_supplies_requ0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7448e7185a20>
+
+    def test_http_runner_supplies_required_request_id_and_frozen_tokens(tmp_path, monkeypatch):
+        import json
+        import sys
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        seen = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                seen.append((self.headers.get('x-request-id'), body))
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps({'choices': [{'text': '{"answer":"73"}',
+                    'token_ids': [9], 'finish_reason': 'stop'}]}).encode())
+            def log_message(self, *args):
+                pass
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        fixture = tmp_path / 'input.json'
+        output = tmp_path / 'output.jsonl'
+        fixture.write_text(json.dumps({'model':'model', 'max_tokens':128,
+            'cases':[{'case':'a','ids':[4,5], 'input_sha256':'hash','expected':'73'}]}))
+        monkeypatch.setattr(sys, 'argv', ['heldout_quality', 'run', '--fixtures',str(fixture),
+            '--endpoint',f'http://127.0.0.1:{server.server_port}', '--route','test', '--output',str(output)])
+        try:
+            module().main()
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
+>       assert seen[0][0], 'stage HTTP API requires a nonempty request ID'
+E       AssertionError: stage HTTP API requires a nonempty request ID
+E       assert None
+
+opt_prime/tests/test_heldout_quality.py:87: AssertionError
+----------------------------- Captured stdout call -----------------------------
+a True True
+=========================== short test summary info ============================
+FAILED opt_prime/tests/test_heldout_quality.py::test_http_runner_supplies_required_request_id_and_frozen_tokens
+1 failed, 9 passed in 0.97s

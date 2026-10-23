@@ -51,3 +51,29 @@ Run from the repository root. Omit the producer arguments for native control. `p
 Subprocess producers expose a boolean `ready` property; pools require every configured member that implements it to be ready. Batched `/ready` and `/health` return503 after a known terminal failure/close, and new completions receive retryable503 before admission. A healthy replacement at an idle boundary restores availability without poisoning the decoder. Individual request errors do not make a still-running producer unready.
 
 No pool member is silently removed and no request is automatically retried. Workers without this optional property retain prior behavior. Existing requests keep their existing completion/error handling. See producer-readiness246 for the real subprocess/HTTP reproduction and regression results.
+
+### Held-out structured answers (#263)
+
+`heldout_quality.py` freezes 36 synthetic cases per model: four addition,
+passkey, and Korean table variants at short/~2K/~8K lengths. It renders the
+model's chat template with thinking disabled, then sends the same input IDs
+to each route. Inputs and hashes are frozen in `evidence263/` before inference.
+Decompress each `*-fixtures.json.gz` with `gzip -dk` to reuse the exact inputs.
+
+```bash
+python heldout_quality.py run --fixtures INPUT.json --endpoint http://localhost:8000 \
+  --route native-gpu --output RESULTS.jsonl
+```
+
+Use normal EOS, greedy sampling, output cap128, no prefix/host caching. The
+runner refuses output overwrite, retains raw text/token IDs, and stops on
+an HTTP/inference failure. Start the server using the same runtime/model
+configuration being compared; the runner does not launch or alter it.
+
+`answer_correct` requires an exact string answer in a parsed JSON object;
+`format_correct` separately requires exactly one `answer` key. Duplicate keys,
+non-string answers, trailing prose and malformed JSON fail. Thus this measures
+structured-answer adherence, not unrestricted semantic quality. `compare`
+requires matching case sets and input hashes and reports both correct→wrong
+and wrong→correct transitions plus exact token matches. Do not erase existing
+strict token failures or infer general equivalence from these 36 synthetic cases.
