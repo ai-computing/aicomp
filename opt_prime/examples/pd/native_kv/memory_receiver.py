@@ -141,7 +141,7 @@ class NativeKVClient:
         self.executor = concurrent.futures.ThreadPoolExecutor(1)
         self.ctx = zmq.Context()
         self.rx, self.tx = self.ctx.socket(zmq.PULL),self.ctx.socket(zmq.PUSH)
-        self.rx.setsockopt(zmq.MAXMSGSIZE,(32 if max_batch_slots == 4 else 36)*1024*1024)
+        self.rx.setsockopt(zmq.MAXMSGSIZE,32*1024*1024)   # per frame; 8 slots x 2047 x 2048 B still fits
         self.rx.setsockopt(zmq.RCVHWM,32)
         self.tx.setsockopt(zmq.SNDTIMEO,int(timeout*1000))
         self.poisoned = False

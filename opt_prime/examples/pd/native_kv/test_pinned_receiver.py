@@ -56,7 +56,7 @@ class PinnedReceiveTest(unittest.TestCase):
 
     def test_eight_slot_tcp_frames_exact_at_capacity(self):
         context=zmq.Context();tx=context.socket(zmq.PUSH);rx=context.socket(zmq.PULL)
-        rx.setsockopt(zmq.MAXMSGSIZE,36*1024*1024);rx.setsockopt(zmq.RCVTIMEO,5000)
+        rx.setsockopt(zmq.MAXMSGSIZE,32*1024*1024);rx.setsockopt(zmq.RCVTIMEO,5000)
         port=rx.bind_to_random_port('tcp://127.0.0.1');tx.connect(f'tcp://127.0.0.1:{port}')
         try:
             for n in (1,511,2047):

@@ -18,8 +18,9 @@ values/builds are compatible. The initial4 probe did not change the previously o
 ## Receiver implementation
 
 Add opt-in --native-kv-max-batch-slots8 to the direct native pipeline (default4).
-The client sets the cap before connecting;36MiB ZMQ message bound covers the largest
-8-slot payload plus metadata at2047 positions. Default retains32MiB and4-slot validation.
+The client sets the cap before connecting. The 32 MiB ZMQ limit applies per frame, and the
+largest 8-slot payload (8 x 2047 x 2048 B = 33,538,048 B) fits under it, so the limit is unchanged;
+the exact-size `recv_into` check is what bounds the payload. The default keeps 4-slot validation.
 Only4/8 caps are accepted. Non-direct/single-flight legacy paths reject the larger cap.
 The cap does not configure the sender: it must be set separately in the native CLI.
 
