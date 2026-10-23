@@ -39,3 +39,5 @@ A real terminated subprocess producer previously left /ready200 and new requests
 Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} from existing accumulated batcher durations. Repeated scrapes do not add observations; missing timing keys are omitted. Tiny real-model admission test covers fixed worker-reported durations and legacy omissions. These counters are worker-reported admitted-handoff sums, not request latency or proof of zero cost for workers that do not measure stages. Full CPU suite:467passed,17skipped,135subtests,1existing warning. See pd-stage-metrics249 experiment.
 
 #258 dense hybrid KV: actual Gemma failure reproduced; mapping/group validation corrected.31focused and505full CPU tests pass; live rerun pending.
+
+#258 corrected live Gemma32ce5d5:24batches,20/20token checks,60/60timed texts exact;84remote/0local/0errors. Shape crash fixed in recorded hardware matrix; overall numerical/quality boundaries remain.
