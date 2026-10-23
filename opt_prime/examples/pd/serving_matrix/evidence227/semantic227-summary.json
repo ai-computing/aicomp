@@ -1,0 +1,482 @@
+{
+  "gemma": {
+    "cases": [
+      {
+        "case": "capital-0",
+        "input_tokens": 23,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-0",
+        "input_tokens": 24,
+        "tokens_equal": true,
+        "gpu_text": "42\n",
+        "atom_text": "42\n",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-0",
+        "input_tokens": 24,
+        "tokens_equal": true,
+        "gpu_text": "서울특별시",
+        "atom_text": "서울특별시",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-0",
+        "input_tokens": 28,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-100",
+        "input_tokens": 1623,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-100",
+        "input_tokens": 1624,
+        "tokens_equal": true,
+        "gpu_text": "40\n",
+        "atom_text": "40\n",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-100",
+        "input_tokens": 1624,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-100",
+        "input_tokens": 1628,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-400",
+        "input_tokens": 6423,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-400",
+        "input_tokens": 6424,
+        "tokens_equal": false,
+        "gpu_text": "30",
+        "atom_text": "25",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-400",
+        "input_tokens": 6424,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-400",
+        "input_tokens": 6428,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      }
+    ],
+    "exact_cases": 11,
+    "gpu_eos_runs": 24,
+    "atom_eos_runs": 24,
+    "repeat_pairs_exact": 24,
+    "input_range": [
+      23,
+      6428
+    ]
+  },
+  "qwen4b": {
+    "cases": [
+      {
+        "case": "capital-0",
+        "input_tokens": 26,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-0",
+        "input_tokens": 27,
+        "tokens_equal": true,
+        "gpu_text": "52",
+        "atom_text": "52",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-0",
+        "input_tokens": 31,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-0",
+        "input_tokens": 31,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-100",
+        "input_tokens": 1526,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-100",
+        "input_tokens": 1527,
+        "tokens_equal": true,
+        "gpu_text": "42",
+        "atom_text": "42",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-100",
+        "input_tokens": 1531,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-100",
+        "input_tokens": 1531,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-400",
+        "input_tokens": 6026,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-400",
+        "input_tokens": 6027,
+        "tokens_equal": true,
+        "gpu_text": "42",
+        "atom_text": "42",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-400",
+        "input_tokens": 6031,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-400",
+        "input_tokens": 6031,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      }
+    ],
+    "exact_cases": 12,
+    "gpu_eos_runs": 24,
+    "atom_eos_runs": 24,
+    "repeat_pairs_exact": 24,
+    "input_range": [
+      26,
+      6031
+    ]
+  },
+  "qwen06b": {
+    "cases": [
+      {
+        "case": "capital-0",
+        "input_tokens": 26,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-0",
+        "input_tokens": 27,
+        "tokens_equal": true,
+        "gpu_text": "17 + 25 = 42\n\nReply with only the integer: **42**.",
+        "atom_text": "17 + 25 = 42\n\nReply with only the integer: **42**.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-0",
+        "input_tokens": 31,
+        "tokens_equal": true,
+        "gpu_text": "대한민국의 수도는 서울입니다.",
+        "atom_text": "대한민국의 수도는 서울입니다.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-0",
+        "input_tokens": 31,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-100",
+        "input_tokens": 1526,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-100",
+        "input_tokens": 1527,
+        "tokens_equal": true,
+        "gpu_text": "17 + 25 = 42\n\nReply with only the integer: 42.",
+        "atom_text": "17 + 25 = 42\n\nReply with only the integer: 42.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-100",
+        "input_tokens": 1531,
+        "tokens_equal": true,
+        "gpu_text": "대한민국의 수도는 **인천**입니다.",
+        "atom_text": "대한민국의 수도는 **인천**입니다.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-100",
+        "input_tokens": 1531,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-400",
+        "input_tokens": 6026,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-400",
+        "input_tokens": 6027,
+        "tokens_equal": true,
+        "gpu_text": "17 + 25 = 42",
+        "atom_text": "17 + 25 = 42",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-400",
+        "input_tokens": 6031,
+        "tokens_equal": true,
+        "gpu_text": "대한민국의 수도는 **인천**입니다.",
+        "atom_text": "대한민국의 수도는 **인천**입니다.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-400",
+        "input_tokens": 6031,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      }
+    ],
+    "exact_cases": 12,
+    "gpu_eos_runs": 24,
+    "atom_eos_runs": 24,
+    "repeat_pairs_exact": 24,
+    "input_range": [
+      26,
+      6031
+    ]
+  },
+  "koni": {
+    "cases": [
+      {
+        "case": "capital-0",
+        "input_tokens": 138,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-0",
+        "input_tokens": 137,
+        "tokens_equal": true,
+        "gpu_text": "17 + 25 = 42.",
+        "atom_text": "17 + 25 = 42.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-0",
+        "input_tokens": 139,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-0",
+        "input_tokens": 143,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-100",
+        "input_tokens": 1638,
+        "tokens_equal": true,
+        "gpu_text": "The capital of France is Paris.",
+        "atom_text": "The capital of France is Paris.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-100",
+        "input_tokens": 1637,
+        "tokens_equal": true,
+        "gpu_text": "42",
+        "atom_text": "42",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-100",
+        "input_tokens": 1639,
+        "tokens_equal": true,
+        "gpu_text": "대한민국의 수도는 서울입니다.",
+        "atom_text": "대한민국의 수도는 서울입니다.",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-100",
+        "input_tokens": 1643,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "capital-400",
+        "input_tokens": 6138,
+        "tokens_equal": true,
+        "gpu_text": "Paris",
+        "atom_text": "Paris",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "arithmetic-400",
+        "input_tokens": 6137,
+        "tokens_equal": true,
+        "gpu_text": "42",
+        "atom_text": "42",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "korean-400",
+        "input_tokens": 6139,
+        "tokens_equal": true,
+        "gpu_text": "서울",
+        "atom_text": "서울",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      },
+      {
+        "case": "retrieval-400",
+        "input_tokens": 6143,
+        "tokens_equal": true,
+        "gpu_text": "MAPLE",
+        "atom_text": "MAPLE",
+        "gpu_stop": "eos",
+        "atom_stop": "eos"
+      }
+    ],
+    "exact_cases": 12,
+    "gpu_eos_runs": 24,
+    "atom_eos_runs": 24,
+    "repeat_pairs_exact": 24,
+    "input_range": [
+      137,
+      6143
+    ]
+  }
+}
