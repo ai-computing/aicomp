@@ -1,0 +1,106 @@
+{
+  "qwen06b": {
+    "revision_ref": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "files": {
+      "config.json": {
+        "bytes": 726,
+        "sha256": "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd"
+      },
+      "generation_config.json": {
+        "bytes": 239,
+        "sha256": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2"
+      },
+      "model.safetensors": {
+        "bytes": 1503300328,
+        "sha256": "f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b"
+      },
+      "tokenizer.json": {
+        "bytes": 11422654,
+        "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+      }
+    }
+  },
+  "qwen4b": {
+    "revision_ref": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "files": {
+      "config.json": {
+        "bytes": 726,
+        "sha256": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a"
+      },
+      "generation_config.json": {
+        "bytes": 239,
+        "sha256": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2"
+      },
+      "model-00001-of-00003.safetensors": {
+        "bytes": 3957900840,
+        "sha256": "328a91d3122359d5547f9d79521205bc0a46e1f79a792dfe650e99fc2d651223"
+      },
+      "model-00002-of-00003.safetensors": {
+        "bytes": 3987450520,
+        "sha256": "6cd087b316306a68c562436b5492edbcf6e16c6dba3a1308279caa5a58e21ca5"
+      },
+      "model-00003-of-00003.safetensors": {
+        "bytes": 99630640,
+        "sha256": "e4bf436957184f4eeb86a80e9db394503f1f56446b2e6b7edeac5b81470f4ca1"
+      },
+      "tokenizer.json": {
+        "bytes": 11422654,
+        "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+      }
+    }
+  },
+  "koni": {
+    "revision_ref": "0172bf7e73977ae213613529f3d2d5400a33f678",
+    "files": {
+      "config.json": {
+        "bytes": 880,
+        "sha256": "1a9a5f1cf563a1f466da4f346de2ae05e3173830ce4574b0a7fde2f6a1c910de"
+      },
+      "generation_config.json": {
+        "bytes": 121,
+        "sha256": "6dfff99bc787def8f28d84f2e6676a4087fa762a321c5ba40e1643197acf929c"
+      },
+      "model-00001-of-00004.safetensors": {
+        "bytes": 4976698672,
+        "sha256": "123364524e7400dbd8ba16eb1f504285be2894dce54c60463af3f1b3b71bcad2"
+      },
+      "model-00002-of-00004.safetensors": {
+        "bytes": 4999802720,
+        "sha256": "2a59149b0398679cd4f368dfe788217622d074587d2c9ef683fb1faaef013049"
+      },
+      "model-00003-of-00004.safetensors": {
+        "bytes": 4915916176,
+        "sha256": "1b206208c0cb675d2c13c0875f311f677e236b8534c6c113571edce3a6cd71da"
+      },
+      "model-00004-of-00004.safetensors": {
+        "bytes": 1168138808,
+        "sha256": "87c832910f96446cb79229fd2fa5d8c4f40d52e0d6899a8db4e756842f40ac66"
+      },
+      "tokenizer.json": {
+        "bytes": 9085657,
+        "sha256": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4"
+      }
+    }
+  },
+  "gemma": {
+    "revision_ref": "5b11413a10db4e486ef16a20101fd028f8f2499c",
+    "files": {
+      "config.json": {
+        "bytes": 902,
+        "sha256": "c5b2136c452797c0c52cba5793ced59d95453dfdc3444433b03e27699ff1c2cd"
+      },
+      "generation_config.json": {
+        "bytes": 233,
+        "sha256": "faa83f23a56aee7b9722f2a7263f6419341b62496d604a78775aeff9660701c3"
+      },
+      "model.safetensors": {
+        "bytes": 1999811208,
+        "sha256": "3d4ef8d71c14db7e448a09ebe891cfb6bf32c57a9b44499ae0d1c098e48516b6"
+      },
+      "tokenizer.json": {
+        "bytes": 33384568,
+        "sha256": "4667f2089529e8e7657cfb6d1c19910ae71ff5f28aa7ab2ff2763330affad795"
+      }
+    }
+  }
+}

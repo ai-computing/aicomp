@@ -57,3 +57,22 @@ Local exact orchestrator commands:
 Per-route argv/environment and raw HTTP outputs are retained; first-stage ATOM tokenizer equality passed. No final ATOM scores yet.
 
 Qwen3-4B GPU pair completed:36/36 answers and36/36 JSON format on both routes; exacttoken36/36; correct→wrong0 and wrong→correct0. Prior long-free-generation mismatch in#256 remains open.
+
+## GPU pair completion and provenance
+
+All288 GPU-route responses completed, no HTTP/inference failures; owned local GPU/RNGD processes exited and devices idle.
+
+| Model | NativeGPU structured score | RNGD→GPU score | Exact token pairs | Correct→wrong / wrong→correct |
+|---|---:|---:|---:|---:|
+| Qwen3-0.6B |32/36|34/36|34/36|0 / 2|
+| Qwen3-4B |36/36|36/36|36/36|0 / 0|
+| KONI-8B |31/36|31/36|35/36|0 / 0|
+| Gemma3-1B |0/36|0/36|32/36|0 / 0|
+
+Gemma's zero score measures strict requested JSON/string-answer adherence, not zero content accuracy: code fences are emitted by both routes. Manual comparison of all four differing pairs: three differ only in whitespace; one Korean lookup changes native`null` to correct`춘천` on RNGD→GPU. The frozen primary scorer is unchanged. KONI's one changed pair differs only in JSON whitespace. Historical long-output strict-token failures remain open.
+
+ATOM partial completion: Qwen0.6 native33/36 and RNGD33/36 structured answers,36/36 exact token pairs; Qwen4 native36/36 and identical to its GPU outputs. Qwen4 RNGD→ATOM and both KONI/Gemma ATOM routes remain pending.
+
+Both hosts' complete source weight shards, config.json, generation_config.json and tokenizer.json were hashed: all21 files (~27.67GB per host) SHA256-identical across four models. Source revisions and individual hashes are retained in quality263-{local,remote}-model-hashes.json and quality263-model-identity.json. This checks checkpoint source identity, not compiled-artifact internals.
+
+Auditor summarize_quality263.py verifies fixture-file hashes, case/input-hash correspondence, response fields, scores recomputed from raw text, and paired transitions. Pending routes remain explicitly not_collected/starting; they are not treated as passes.

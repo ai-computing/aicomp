@@ -1,0 +1,30 @@
+{
+  "qwen06b": {
+    "all_bytes_sha256_equal": true,
+    "files": 4,
+    "weight_files": 1,
+    "total_bytes": 1514723947,
+    "remote_revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+  },
+  "qwen4b": {
+    "all_bytes_sha256_equal": true,
+    "files": 6,
+    "weight_files": 3,
+    "total_bytes": 8056405619,
+    "remote_revision": "1cfa9a7208912126459214e8b04321603b3df60c"
+  },
+  "koni": {
+    "all_bytes_sha256_equal": true,
+    "files": 7,
+    "weight_files": 4,
+    "total_bytes": 16069643034,
+    "remote_revision": "0172bf7e73977ae213613529f3d2d5400a33f678"
+  },
+  "gemma": {
+    "all_bytes_sha256_equal": true,
+    "files": 4,
+    "weight_files": 1,
+    "total_bytes": 2033196911,
+    "remote_revision": "5b11413a10db4e486ef16a20101fd028f8f2499c"
+  }
+}

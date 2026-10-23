@@ -77,3 +77,16 @@ structured-answer adherence, not unrestricted semantic quality. `compare`
 requires matching case sets and input hashes and reports both correct→wrong
 and wrong→correct transitions plus exact token matches. Do not erase existing
 strict token failures or infer general equivalence from these 36 synthetic cases.
+
+Reproduce the recorded partial audit after unpacking the frozen inputs:
+
+```bash
+gzip -dk evidence263/*-fixtures.json.gz
+python evidence263/summarize_quality263.py
+```
+
+The auditor recomputes scores, checks fixture hashes and case correspondence,
+and leaves uncollected routes explicit. Gemma's strict score is zero on both
+GPU routes because outputs contain Markdown code fences; this does not mean
+zero content accuracy. Its four changed pairs comprise three whitespace changes
+and one `null`→correct-city answer. No scoring rules were changed after inference.

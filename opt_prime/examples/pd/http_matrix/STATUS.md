@@ -53,3 +53,5 @@ Allfour live GPU isolation runs pass: active512-token decode survives other-requ
 #263 evaluator verification:10focused passed; full prior collection533passed/15skipped/253subtests. Frozen fixtures hashed before inference; GPU route queue started, hardware results pending.
 
 #263 first GPU pairs complete: Qwen0.6 native32/36 versus RNGD34/36, no paired regression,34/36 token equality; Qwen4 both36/36, alltokens equal. KONI/Gemma and ATOM queues still running; old long-output failures are retained.
+
+#263 all288 GPU responses complete; structured scores native/RNGD:Q06 32/34,Q4 36/36,KONI31/31,Gemma0/0 (code fences, not zero content accuracy). Exacttoken pairs34/36,36/36,35/36,32/36. Q06 ATOM pair33/33 scores and36/36 tokens equal; Q4nativeATOM36/36. All source weight shards/config/tokenizer SHA256 match between hosts. Remaining fiveATOM routes active.
