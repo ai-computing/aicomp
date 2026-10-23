@@ -1,5 +1,10 @@
 # Native KV interoperability experiment — 2026-10-22
 
+Measurement outputs named in this directory's write-ups (`*_summary.json`, `*_manifest.json`,
+profiles, quality and backpressure JSON) are not tracked in git; they are kept with the research
+records outside the repository. The write-ups keep the numbers, and the commands that produce each
+file are unchanged.
+
 ## Environment and identities
 
 - RNGD+ATOM host, 2 x AMD EPYC 9254, 96 logical CPUs, approximately 1.5 TiB RAM.
