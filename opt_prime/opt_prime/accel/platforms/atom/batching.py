@@ -26,6 +26,9 @@ block tables. That enables:
   - a host-DRAM tier: device entries evicted for space are copied to host memory (per-layer `get_kv_cache_for_layer`
     through a 2 MiB-aligned staging buffer that mirrors the layer's block layout) and written back on a later hit;
   - KV events (BlockStored / BlockRemoved, device and CPU tiers) and prefix-hit counters, as for the GPU pool.
+Hybrid fresh PD imports global layers into their assigned block and the latest sliding window into the request
+lane. Source dtype metadata may differ from physical storage, so staging validates allocation size. Hybrid prefix
+and host-cache restoration remain unsupported; remote hybrid requests must return their full prompt KV.
 Idle lanes then decode on a reserved scratch block. Measured on ATOM (Llama-3.2-1B, 600-token prompt): full prefill
 85.5 ms; device copy of a 512-token prefix 0.8 ms + 17.5 ms suffix prefill; host reload 8.9 ms; tokens identical.
 """
@@ -74,6 +77,7 @@ class AtomKVBlocks:
         from opt_prime.accel.pd.paged import block_hashes
         self._hashes = block_hashes
         rc = model.rbln_config
+        self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
         self.unit, self.lanes = rc.prefill_chunk_size, lanes
         self.blocks = rc.kvcache_num_blocks
         if self.blocks < lanes + 1:
@@ -87,7 +91,7 @@ class AtomKVBlocks:
         self.entries = OrderedDict()             # block -> prompt unit hashes (unreferenced, least recent first)
         self.index = {}                          # unit hash -> a block holding that prefix
         self.copy_rt, self.io_rt = model.model[0], model.model[1]
-        self.metas = [m if isinstance(m, dict) else {k: getattr(m, k) for k in ("name", "shape", "dtype")
+        self.metas = [m if isinstance(m, dict) else {k: getattr(m, k) for k in ("name", "shape", "dtype", "layer_type")
                                                      if hasattr(m, k)} for m in rc.kvcache_metas]
         self.host_bytes, self.host_used = host_bytes, 0
         self.host = OrderedDict()                # last unit hash -> (hashes, tokens, [per-layer arrays])
@@ -106,7 +110,13 @@ class AtomKVBlocks:
             self._stage = []
             for m in self.metas:
                 n = self.io_rt.get_kv_cache_size_for_layer(m["name"])
-                dt = np.uint16 if m.get("dtype", "bfloat16") == "bfloat16" else np.float32
+                count = int(np.prod(m["shape"]))
+                if n == count * 2:
+                    dt = np.uint16  # physical DLFloat16, even when source metadata says float32
+                elif n == count * 4:
+                    dt = np.float32
+                else:
+                    raise ValueError("unsupported physical KV element size")
                 self._stage.append(aligned_tensor(n // np.dtype(dt).itemsize, dtype=dt, alignment=2 << 20,
                                                   tensor_type="np").reshape(m["shape"]))
         return self._stage
@@ -229,8 +239,27 @@ class AtomKVBlocks:
         """PD: write KV computed elsewhere ([layers, kv_heads, n, head_dim], any float dtype) into the lane's block at
         positions start..start+n; the SDK's KV tensors are (key, value) per layer in bfloat16"""
         import numpy as np
+        if keys.ndim != 4 or values.ndim != 4:
+            raise ValueError("KV export must have layer/head/token/dimension axes")
         block, n = self.lane_block[lane], keys.shape[2]
+        if self.hybrid_cache and start:
+            raise ValueError("hybrid PD requires a full prefix from position zero")
+        if keys.shape != values.shape or len(self.metas) != keys.shape[0] * 2:
+            raise ValueError("KV export geometry does not match compiled cache")
         stage = self._staging()
+        if len({buf.dtype for buf in stage}) != 1:
+            raise ValueError("mixed physical KV formats are unsupported")
+        destinations = []
+        for m, buf in zip(self.metas, stage):
+            if (keys.shape[1], keys.shape[3]) != (buf.shape[1], buf.shape[3]):
+                raise ValueError("KV export heads/dimensions do not match compiled cache")
+            local = self.hybrid_cache and m.get("layer_type") == "sliding_attention"
+            if self.hybrid_cache and m.get("layer_type") not in ("sliding_attention", "full_attention"):
+                raise ValueError("unknown hybrid KV layer type")
+            dest, offset, kept = (lane, 0, min(n, buf.shape[2])) if local else (block, start, n)
+            if dest is None or not 0 <= dest < buf.shape[0] or offset < 0 or offset + kept > buf.shape[2]:
+                raise ValueError("KV import exceeds assigned cache capacity")
+            destinations.append((dest, offset, kept))
         # all layers converted at once ([layers, 2, kv_heads, n, head_dim], K then V), then one copy per KV tensor
         kv = torch.stack([keys, values], dim=1).detach().to("cpu")
         if stage[0].dtype == np.uint16:                      # the device holds DLFloat16
@@ -238,8 +267,9 @@ class AtomKVBlocks:
         else:
             data = kv.float().numpy()
         for i, (m, buf) in enumerate(zip(self.metas, stage)):
-            buf[block, :, start:start + n] = data[i // 2, i % 2]
-            self.io_rt.set_kv_cache_for_layer(m["name"], block, start, n, buf)
+            dest, offset, kept = destinations[i]
+            buf[dest, :, offset:offset + kept] = data[i // 2, i % 2, :, n - kept:]
+            self.io_rt.set_kv_cache_for_layer(m["name"], dest, offset, kept, buf)
 
     def drain_events(self):
         out, self.events = self.events, []
@@ -263,8 +293,8 @@ class AtomBatcher(ContinuousBatcher):
         local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first)."""
         rc = model.rbln_config
         self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
-        if self.hybrid_cache and (prefix_cache or host_kv_gib or prefill_worker is not None):
-            raise ValueError("hybrid sliding cache restoration is not implemented for prefix/host cache or PD")
+        if self.hybrid_cache and (prefix_cache or host_kv_gib):
+            raise ValueError("hybrid sliding cache restoration is not implemented for prefix/host cache")
         self.lanes = rc.batch_size
         decoders = getattr(model, "decoders", None) or {}
         if self.lanes not in decoders:
@@ -446,6 +476,8 @@ class AtomBatcher(ContinuousBatcher):
                     self.prefilling.remove(r)
                 try:
                     out = r.pending.result()
+                    if self.hybrid_cache and (out.start != 0 or out.keys.shape[2] != len(r.request.input_ids)):
+                        raise ValueError("hybrid PD requires the full prompt KV")
                 except BaseException as error:        # this request fails; the lanes go on
                     with self._lock:
                         self._finish(r, error)
@@ -455,6 +487,9 @@ class AtomBatcher(ContinuousBatcher):
                 t0 = time.perf_counter()
                 if out.keys.shape[2]:
                     self.blocks.import_span(r.slot, out.start, out.keys, out.values)
+                if self.hybrid_cache:
+                    self.decoder.dec_attn_mask[r.slot].zero_()
+                    self.decoder.dec_attn_mask[r.slot, :len(ids)] = 1
                 # remote cost per prompt: the prefill itself, its transfer and the import here
                 self._remote_s = _ema(self._remote_s, (out.prefill_s or 0.0) + (out.transfer_s or 0.0) +
                                       time.perf_counter() - t0)
