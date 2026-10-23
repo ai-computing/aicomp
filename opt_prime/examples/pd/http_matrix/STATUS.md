@@ -33,3 +33,7 @@ All four native/PD BF16 lifecycle configurations pass across128/2048/8192tokens.
 ## Producer-aware readiness (#246)
 
 A real terminated subprocess producer previously left /ready200 and new requests failed500. The service now reports503 and rejects new admissions with retryable503 until explicit healthy replacement; single request errors preserve readiness. Pools require all configured members because routing still includes them.30focused tests and full468passed/15skipped/135subtests. Legacy workers without the optional readiness property retain their prior behavior. Historical #244 hardware evidence predates this new post-failure503 contract; no automatic restart claim.
+
+## Matched performance block A (#248)
+
+Four models times native/PD/DP2 completed144measured batches with parity. Inputs128/8192, outputs32, concurrency1/4, three repeats. DP2 leads all four at8192/c4. BlockA is ordered and has a short concurrent CPU-test window during KONI; quiet reversed-order replication and longer outputs remain. No within-request compute/copy overlap in this Torch baseline. See evidence248 and matched-pd-performance248 record.

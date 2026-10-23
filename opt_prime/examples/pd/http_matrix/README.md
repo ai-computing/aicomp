@@ -51,3 +51,25 @@ Run from the repository root. Omit the producer arguments for native control. `p
 Subprocess producers expose a boolean `ready` property; pools require every configured member that implements it to be ready. Batched `/ready` and `/health` return503 after a known terminal failure/close, and new completions receive retryable503 before admission. A healthy replacement at an idle boundary restores availability without poisoning the decoder. Individual request errors do not make a still-running producer unready.
 
 No pool member is silently removed and no request is automatically retried. Workers without this optional property retain prior behavior. Existing requests keep their existing completion/error handling. See producer-readiness246 for the real subprocess/HTTP reproduction and regression results.
+
+### Matched HTTP performance (#248)
+
+`benchmark.py` starts isolated production server processes, warms each endpoint, checks nonstream token IDs separately, then measures simultaneous SSE request batches. Run from the repository root with a locally cached checkpoint:
+
+```bash
+PYTHONPATH=opt_prime python opt_prime/examples/pd/http_matrix/benchmark.py \
+  --model "$MODEL" --mode native --lengths 128 8192 --outputs 32 \
+  --concurrency 1 4 --repeats 3 --output native.json
+PYTHONPATH=opt_prime python opt_prime/examples/pd/http_matrix/benchmark.py \
+  --model "$MODEL" --mode pd --lengths 128 8192 --outputs 32 \
+  --concurrency 1 4 --repeats 3 --reference native.json --output pd.json
+PYTHONPATH=opt_prime python opt_prime/examples/pd/http_matrix/benchmark.py \
+  --model "$MODEL" --mode dp2 --lengths 128 8192 --outputs 32 \
+  --concurrency 1 4 --repeats 3 --reference native.json --output dp2.json
+```
+
+Where the SIGPIPE candidate is needed, pass `--http-module /tmp/pd-http-safe.py` from the earlier command to all three invocations. The module is trusted executable code. Native uses cuda:1; PD uses cuda:0 for prefill and cuda:1 for decode; DP2 uses two independent processes and explicit client round-robin routing. Use only GPUs allocated to the experiment. Each decoder has four slots by default, so DP2 has eight total slots versus four for PD; each server process has four CPU threads. This compares the same GPU count for PD/DP2, not identical decoder capacity.
+
+Both caches are disabled and producer/local chunks are256. Warmup, loading and separate token-ID checks are excluded from timed batches. JSON retains raw per-request SSE events' first-arrival latency, E2E latency, estimated TPOT, reconstructed text equality, whole-batch throughput and final server metrics. SSE events can coalesce tokens: first-event latency and estimated TPOT are not per-token engine timings. `passed` records workflow/count success; `parity_passed` additionally requires reference token/text equality. A parity failure saves evidence and exits unsuccessfully.
+
+Repeat modes in reverse order against the same native reference and do not run CPU regression suites concurrently with final measurements. These Torch PD baselines gather and transfer the whole KV after prefill; they do not implement within-request compute/copy overlap. Existing HTTP transfer histograms do not observe the batched worker timing path; zero observations do not mean zero transfer cost. See issue249 for separate accumulated worker duration counters.
