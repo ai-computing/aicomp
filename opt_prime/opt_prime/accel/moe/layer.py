@@ -165,12 +165,18 @@ class OffloadedLayer:
         if prof is not None: tp = _ph(prof, "split", tp)
         # 3) launch every device tier that owns experts of this layer (needs nothing from the host)
         out = None
-        for t, tier in enumerate(self.tiers):
-            if tier.blocking or not has[t]:
-                continue
-            li, w = select_pairs(local_d[top_k_index], top_k_weights, own_idx == t)
-            y = tier.run(self.handles[t], hidden, li, w)
-            out = y if out is None else out + y
+        try:
+            for t, tier in enumerate(self.tiers):
+                if tier.blocking or not has[t]:
+                    continue
+                li, w = select_pairs(local_d[top_k_index], top_k_weights, own_idx == t)
+                y = tier.run(self.handles[t], hidden, li, w)
+                out = y if out is None else out + y
+        except BaseException:
+            if native is not None:                 # collect the posted native jobs before raising
+                acc = self._host_buf("acc", tuple(hidden.shape), dev.type == "cuda")
+                _NATIVE["lib"].moe_disp_wait(_NATIVE["disp"], hidden.shape[0], hidden.shape[1], acc.data_ptr())
+            raise
         if out is None:
             out = torch.zeros_like(hidden)
 

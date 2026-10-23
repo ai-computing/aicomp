@@ -1,4 +1,5 @@
 """Regression cases found while reviewing #73 (CPU only)."""
+import ctypes
 import json
 import os
 from pathlib import Path
@@ -6,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -13,6 +15,7 @@ import torch
 from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from opt_prime.accel.moe.backends import ExpertBackend, Handle
 from opt_prime.accel.moe.batched import opt_batched_mm, opt_grouped_mm
 from opt_prime.accel.moe.config import MoEOffloadConfig
 from opt_prime.accel.moe.layer import OffloadedLayer
@@ -122,6 +125,91 @@ int main(void) {
     result = subprocess.run([str(exe)], capture_output=True, text=True,
                             env=dict(os.environ, ASAN_OPTIONS='detect_leaks=0'), timeout=10)
     assert result.returncode == 0, result.stderr
+
+
+
+_TIER_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
+                            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+
+
+class SlowNativeTier(ExpertBackend):
+    """blocking tier for the native dispatcher: call n sleeps delays[n - 1] s, then out[r, :] = n * sum of the row's
+    weights"""
+    blocking = True
+
+    def __init__(self, delays):
+        self.delays, self.calls, self.done = list(delays), 0, 0
+        self.fn = _TIER_FN(self._tier)
+
+    def _tier(self, ctx, R, H, x, k, idx, w, out):
+        self.calls += 1
+        n = self.calls
+        time.sleep(self.delays[n - 1] if n <= len(self.delays) else 0)
+        ws = (ctypes.c_float * (R * k)).from_address(w)
+        o = (ctypes.c_float * (R * H)).from_address(out)
+        for r in range(R):
+            o[r * H:(r + 1) * H] = [n * sum(ws[r * k:(r + 1) * k])] * H
+        self.done += 1
+        return 0
+
+    def load(self, w):
+        return Handle(w.spec, w.global_ids, None)
+
+    def native_tier(self, h, bf16_weights=False):
+        return ctypes.cast(self.fn, ctypes.c_void_p).value, None
+
+
+class FailOnceDeviceTier(ExpertBackend):
+    blocking = False
+
+    def __init__(self):
+        self.failed = False
+
+    def run(self, h, hidden, local_index, weights):
+        if not self.failed:
+            self.failed = True
+            raise RuntimeError('device tier failed')
+        return torch.zeros_like(hidden)
+
+
+def _native_dispatch_or_skip():
+    from opt_prime.accel.platforms.cpu.native import load_dispatch
+    lib = load_dispatch()
+    if lib is None:
+        pytest.skip('native dispatcher unavailable')
+    return lib
+
+
+def test_native_dispatch_is_waited_for_when_a_device_tier_raises():
+    _native_dispatch_or_skip()
+    device, host = FailOnceDeviceTier(), SlowNativeTier([0.3])
+    spec = ExpertSpec(2, 4, 2, dtype=torch.bfloat16)
+    handles = [Handle(spec, [0], None), Handle(spec, [0, 1], None)]
+    layer = OffloadedLayer(2, [device, host], handles, [[0], [1]], ['dev', 'host'],
+                           MoEOffloadConfig(native_dispatch=True), GenericAdapter())
+    x, ids, w = torch.ones(2, 4, dtype=torch.bfloat16), torch.tensor([[0, 1], [1, 0]]), torch.tensor([[.5, .25], [.75, .5]])
+    with pytest.raises(RuntimeError, match='device tier failed'):
+        layer.forward(x, ids, w)
+    assert host.done == 1, 'the failed call returned while its native job was still running'
+    out = layer.forward(x, ids, w)
+    assert host.calls == 2
+    torch.testing.assert_close(out, torch.tensor([[.5] * 4, [1.5] * 4], dtype=torch.bfloat16))
+
+
+def test_native_start_drains_jobs_of_a_call_that_was_not_waited_for():
+    lib = _native_dispatch_or_skip()
+    tier = SlowNativeTier([0.3])
+    d = ctypes.c_void_p(lib.moe_disp_new())
+    idx, w = torch.tensor([[0], [0]]), torch.tensor([[.5], [.25]])
+    x, acc = torch.ones(2, 4, dtype=torch.bfloat16), torch.zeros(2, 4)
+    owner, local, counts = torch.zeros(1, dtype=torch.int32), torch.zeros(1, dtype=torch.int32), torch.zeros(1, dtype=torch.int64)
+    blocking, fns, ctxs = (ctypes.c_int8 * 1)(1), (ctypes.c_void_p * 1)(tier.native_tier(None)[0]), (ctypes.c_void_p * 1)()
+    for _ in range(2):                          # the first call raised before moe_disp_wait
+        lib.moe_disp_start(d, 2, 1, 4, idx.data_ptr(), w.data_ptr(), x.data_ptr(), owner.data_ptr(), local.data_ptr(),
+                           1, blocking, fns, ctxs, counts.data_ptr())
+    assert lib.moe_disp_wait(d, 2, 4, acc.data_ptr()) == 0
+    assert tier.calls == 2
+    torch.testing.assert_close(acc, torch.tensor([[1.] * 4, [.5] * 4]))
 
 
 @pytest.mark.parametrize('fn', [opt_batched_mm, opt_grouped_mm])

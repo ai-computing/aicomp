@@ -119,6 +119,13 @@ int moe_disp_start(void *dp, int R, int k, int H, const int64_t *idx, const floa
         for (int t = 0; t < ntiers; t++)
             if (cnt[t]) { nrows[t]++; if (cnt[t] > kmax[t]) kmax[t] = cnt[t]; }
     }
+    // jobs of a previous call that was never waited for (the caller raised) may still read their buffers
+    for (int i = 0; i < d->n; i++) {
+        job_t *jb = &d->jobs[d->posted[i]];
+        while (atomic_load_explicit(&jb->state, memory_order_acquire) != 2) { }
+        atomic_store(&jb->state, 0);
+    }
+    d->n = 0;
     for (int t = 0; t < ntiers; t++) {
         if (!nrows[t]) continue;
         job_t *jb = &d->jobs[t];
