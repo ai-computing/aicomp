@@ -142,3 +142,36 @@ def test_multilane_hybrid_defers_partial_cache_until_decode_admission(fake_rebel
     f=b.submit(PDRequest('hybrid',_prompts(1,20,35)[0],3));b.step()
     assert b.stats['progress_spans']==0, 'idle hybrid decode lanes can overwrite partial local KV'
     w.finish(0);b.run_until_idle();assert len(f.result())==3 and b.stats['progress_spans']==2
+
+
+@pytest.mark.parametrize('outcome', ['error', 'cancel'])
+def test_prefetched_partial_failure_preserves_active_decode_and_source_ownership(fake_rebel, outcome):
+    from opt_prime.accel.pd.runtime import RequestCancelled
+    fake, w, b = setup(fake_rebel, prefetch=True)
+    p, q = _prompts(2, 20, 35)
+    first = b.submit(PDRequest('first', p, 12))
+    second = b.submit(PDRequest('second', q, 3))
+    b.step(); w.finish(0); b.step()
+    assert b.decoding and b._prefetched.slot == -1
+    pending, progress, _ = w.jobs[1]
+    assert progress.coverage.pending and not pending.done()
+    imported = b.stats['progress_spans']
+    if outcome == 'error':
+        pending.set_exception(RuntimeError('partial source failed'))
+    else:
+        assert b.cancel('second')
+    while not first.done():
+        b.step()
+        assert b.stats['progress_spans'] == imported
+    if outcome == 'cancel':
+        assert not pending.done() and not b.idle
+        w.finish(1)
+    b.run_until_idle()
+    with pytest.raises(RuntimeError if outcome == 'error' else RequestCancelled):
+        second.result()
+    assert b.idle and not b.poisoned and b.free == [0]
+    # Compare with the same BF16 source/cache path without the failed prefetch.
+    _, control_worker, control = setup(fake_rebel)
+    expected = control.submit(PDRequest('reference', p, 12))
+    control.step(); control_worker.finish(0); control.run_until_idle()
+    assert first.result() == expected.result()

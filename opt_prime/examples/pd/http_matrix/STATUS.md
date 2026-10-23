@@ -81,3 +81,5 @@ Long source24/24 conditions at2K/8K have exact KV/logits. ATOM partial import an
 ## Streaming hardware fault checks (#265)
 
 Runtime33d6cb0: allfour GPU cancellation/reuse and partial-producer-death checks passed. Active512-token decode remains exact to same-route no-fault reference; kill at5/6/4/10 tokens. All child exits0 and local devices idle. Auditor reproduces summary. First harness-only AttributeError and interrupted follow-up retained. Long ATOM Q06 complete16batches/32sequences exact, median completion reduction35.66% without prefetch/39.25% with prefetch; remaining models running. ATOM hardware faults remain pending.
+
+Qwen4 long ATOM completed16batches/32sequences exact: median completion reduction21.26% prefetchoff/22.90% on,3samples/mode. Gemma/KONI pending. Added two partial-prefetch failure/cancellation regressions; related39passed in5.00s. Production unchanged; previous full626-test run predates these two added tests.
