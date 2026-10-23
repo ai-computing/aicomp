@@ -56,7 +56,7 @@ try:
             b.blocks.admit(0, ids)
             block = b.blocks.lane_block[0]
             z = b._prefill(0, ids).logits[0, -1].float()
-            native, _ = decode(int(z.argmax()), n)
+            native, native_logits = decode(int(z.argmax()), n)
             variants = {}
             vectors = []
             for name in ["original", "portable"]:
@@ -79,6 +79,10 @@ try:
                 vectors.append(logits)
                 variants[name] = {
                     "tokens": tokens,
+                    "first_decode_top5": [
+                        {"token": int(i), "logit": float(logits[0, i])}
+                        for i in logits[0].topk(5).indices
+                    ],
                     "native_equal": tokens == native,
                     "readback_exact_slots": exact,
                     "import_s": elapsed,
@@ -87,6 +91,10 @@ try:
                 "export": Path(path).name,
                 "input_tokens": n,
                 "native_tokens": native,
+                "native_first_decode_top5": [
+                    {"token": int(i), "logit": float(native_logits[0, i])}
+                    for i in native_logits[0].topk(5).indices
+                ],
                 "variants": variants,
                 "importer_logits_exact": torch.equal(*vectors),
             }
