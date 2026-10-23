@@ -90,3 +90,9 @@ EOS/cancellation/recovery and sustained performance; model-size/length compariso
 under matched resource budgets. Numerical mismatches require diagnosis or quality
 checks, not silent acceptance. No native-engine performance parity or source-copy
 compute-overlap claim is made here.
+
+## KONI long-prefix probe (#219)
+
+`rngd_koni_sweep.py --width 2048 --output PREFIX` reuses the validated-environment Llama3.1 FullPrefillEngine and pins the KONI checkpoint. The untiled graph fails RMS lowering at[2048,4096]. `--rms-tile 512` selects a process-local graph with row-tiled normalization; full2K attention is unchanged. This candidate is still under actual-device validation. `probe_rms219.py` records isolated kernel feasibility; `test_koni_export.py` and `test_rowwise_rms.py` check host layout/normalization and rejection paths.
+
+After a successful export, use the GPU checker or `check_rngd_atom.py --kv-blocks 1` with the existing B1/context9216/k1 KONI artifact. The checkpoint's three-block artifact is not available. No installed SDK modification, real transfer overlap, or numerical parity is implied by compiling. See experiments/2026-10-23-koni-rngd-long219.md and evidence219/.
