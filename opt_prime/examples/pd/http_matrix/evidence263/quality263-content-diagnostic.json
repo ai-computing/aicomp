@@ -1,0 +1,609 @@
+{
+  "scope": "Post-hoc exploratory diagnostic. Frozen primary scores unchanged; this is not a replacement acceptance criterion. Only an outer JSON/unlabelled fence and integer-to-string arithmetic answers are relaxed.",
+  "models": {
+    "qwen06b": {
+      "routes": {
+        "native-gpu": {
+          "cases": 36,
+          "primary_correct": 32,
+          "content_correct": 32,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "korean_table-1-0",
+              "expected": "목포",
+              "answer": "부산",
+              "text": "{\n  \"answer\": \"부산\"\n}"
+            },
+            {
+              "case": "passkey-3-0",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-2048",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-8192",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            }
+          ]
+        },
+        "rngd-gpu": {
+          "cases": 36,
+          "primary_correct": 34,
+          "content_correct": 34,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "passkey-3-0",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-8192",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            }
+          ]
+        },
+        "native-atom": {
+          "cases": 36,
+          "primary_correct": 33,
+          "content_correct": 33,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "passkey-3-0",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-2048",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-8192",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            }
+          ]
+        },
+        "rngd-atom": {
+          "cases": 36,
+          "primary_correct": 33,
+          "content_correct": 33,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "passkey-3-0",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-2048",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            },
+            {
+              "case": "passkey-3-8192",
+              "expected": "SBYZEGE7",
+              "answer": "SYBZEGE7",
+              "text": "{\n  \"answer\": \"SYBZEGE7\"\n}"
+            }
+          ]
+        }
+      },
+      "content_differences": {
+        "native-gpu vs rngd-gpu": [
+          {
+            "case": "korean_table-1-0",
+            "left": "부산",
+            "right": "목포",
+            "expected": "목포"
+          },
+          {
+            "case": "passkey-3-2048",
+            "left": "SYBZEGE7",
+            "right": "SBYZEGE7",
+            "expected": "SBYZEGE7"
+          }
+        ],
+        "native-gpu vs native-atom": [
+          {
+            "case": "korean_table-1-0",
+            "left": "부산",
+            "right": "목포",
+            "expected": "목포"
+          }
+        ],
+        "native-gpu vs rngd-atom": [
+          {
+            "case": "korean_table-1-0",
+            "left": "부산",
+            "right": "목포",
+            "expected": "목포"
+          }
+        ],
+        "rngd-gpu vs native-atom": [
+          {
+            "case": "passkey-3-2048",
+            "left": "SBYZEGE7",
+            "right": "SYBZEGE7",
+            "expected": "SBYZEGE7"
+          }
+        ],
+        "rngd-gpu vs rngd-atom": [
+          {
+            "case": "passkey-3-2048",
+            "left": "SBYZEGE7",
+            "right": "SYBZEGE7",
+            "expected": "SBYZEGE7"
+          }
+        ],
+        "native-atom vs rngd-atom": []
+      }
+    },
+    "qwen4b": {
+      "routes": {
+        "native-gpu": {
+          "cases": 36,
+          "primary_correct": 36,
+          "content_correct": 36,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": []
+        },
+        "rngd-gpu": {
+          "cases": 36,
+          "primary_correct": 36,
+          "content_correct": 36,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": []
+        },
+        "native-atom": {
+          "cases": 36,
+          "primary_correct": 36,
+          "content_correct": 36,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": []
+        },
+        "rngd-atom": {
+          "cases": 36,
+          "primary_correct": 36,
+          "content_correct": 36,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": []
+        }
+      },
+      "content_differences": {
+        "native-gpu vs rngd-gpu": [],
+        "native-gpu vs native-atom": [],
+        "native-gpu vs rngd-atom": [],
+        "rngd-gpu vs native-atom": [],
+        "rngd-gpu vs rngd-atom": [],
+        "native-atom vs rngd-atom": []
+      }
+    },
+    "koni": {
+      "routes": {
+        "native-gpu": {
+          "cases": 36,
+          "primary_correct": 31,
+          "content_correct": 31,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "korean_table-0-0",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "{\"answer\": \"부산\"}"
+            },
+            {
+              "case": "arithmetic-1-0",
+              "expected": "83",
+              "answer": "48 + 35 = 83",
+              "text": "{\n  \"answer\": \"48 + 35 = 83\"\n}"
+            },
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "The sum of 32 and 11 is 43.",
+              "text": "{\n  \"answer\": \"The sum of 32 and 11 is 43.\"\n}"
+            },
+            {
+              "case": "passkey-0-8192",
+              "expected": "34HYL6W8",
+              "answer": null,
+              "text": "34HYL6W8"
+            },
+            {
+              "case": "passkey-2-8192",
+              "expected": "WMLLRJUL",
+              "answer": null,
+              "text": "WMLLRJUL"
+            }
+          ]
+        },
+        "rngd-gpu": {
+          "cases": 36,
+          "primary_correct": 31,
+          "content_correct": 31,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "korean_table-0-0",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "{\"answer\": \"부산\"}"
+            },
+            {
+              "case": "arithmetic-1-0",
+              "expected": "83",
+              "answer": "48 + 35 = 83",
+              "text": "{\n  \"answer\": \"48 + 35 = 83\"\n}"
+            },
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "The sum of 32 and 11 is 43.",
+              "text": "{\n  \"answer\": \"The sum of 32 and 11 is 43.\"\n}"
+            },
+            {
+              "case": "passkey-0-8192",
+              "expected": "34HYL6W8",
+              "answer": null,
+              "text": "34HYL6W8"
+            },
+            {
+              "case": "passkey-2-8192",
+              "expected": "WMLLRJUL",
+              "answer": null,
+              "text": "WMLLRJUL"
+            }
+          ]
+        },
+        "native-atom": {
+          "cases": 36,
+          "primary_correct": 31,
+          "content_correct": 31,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "korean_table-0-0",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "{\"answer\": \"부산\"}"
+            },
+            {
+              "case": "arithmetic-1-0",
+              "expected": "83",
+              "answer": "48 + 35 = 83",
+              "text": "{\n  \"answer\": \"48 + 35 = 83\"\n}"
+            },
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "The sum of 32 and 11 is 43.",
+              "text": "{\n  \"answer\": \"The sum of 32 and 11 is 43.\"\n}"
+            },
+            {
+              "case": "passkey-0-8192",
+              "expected": "34HYL6W8",
+              "answer": null,
+              "text": "34HYL6W8"
+            },
+            {
+              "case": "passkey-2-8192",
+              "expected": "WMLLRJUL",
+              "answer": null,
+              "text": "WMLLRJUL"
+            }
+          ]
+        },
+        "rngd-atom": {
+          "cases": 36,
+          "primary_correct": 31,
+          "content_correct": 31,
+          "outer_fence": 0,
+          "arithmetic_integer": 0,
+          "content_errors": [
+            {
+              "case": "korean_table-0-0",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "{\"answer\": \"부산\"}"
+            },
+            {
+              "case": "arithmetic-1-0",
+              "expected": "83",
+              "answer": "48 + 35 = 83",
+              "text": "{\n  \"answer\": \"48 + 35 = 83\"\n}"
+            },
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "The sum of 32 and 11 is 43.",
+              "text": "{\n  \"answer\": \"The sum of 32 and 11 is 43.\"\n}"
+            },
+            {
+              "case": "passkey-0-8192",
+              "expected": "34HYL6W8",
+              "answer": null,
+              "text": "34HYL6W8"
+            },
+            {
+              "case": "passkey-2-8192",
+              "expected": "WMLLRJUL",
+              "answer": null,
+              "text": "WMLLRJUL"
+            }
+          ]
+        }
+      },
+      "content_differences": {
+        "native-gpu vs rngd-gpu": [],
+        "native-gpu vs native-atom": [],
+        "native-gpu vs rngd-atom": [],
+        "rngd-gpu vs native-atom": [],
+        "rngd-gpu vs rngd-atom": [],
+        "native-atom vs rngd-atom": []
+      }
+    },
+    "gemma": {
+      "routes": {
+        "native-gpu": {
+          "cases": 36,
+          "primary_correct": 0,
+          "content_correct": 29,
+          "outer_fence": 36,
+          "arithmetic_integer": 8,
+          "content_errors": [
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```\n"
+            },
+            {
+              "case": "korean_table-3-0",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "korean_table-0-2048",
+              "expected": "춘천",
+              "answer": null,
+              "text": "```json\nnull\n```"
+            },
+            {
+              "case": "arithmetic-2-2048",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-0-8192",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\"answer\": \"33\"}\n```"
+            },
+            {
+              "case": "korean_table-3-8192",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            }
+          ]
+        },
+        "rngd-gpu": {
+          "cases": 36,
+          "primary_correct": 0,
+          "content_correct": 30,
+          "outer_fence": 36,
+          "arithmetic_integer": 8,
+          "content_errors": [
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-3-0",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-2048",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-0-8192",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": \"33\"\n}\n```"
+            },
+            {
+              "case": "korean_table-3-8192",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            }
+          ]
+        },
+        "native-atom": {
+          "cases": 36,
+          "primary_correct": 0,
+          "content_correct": 29,
+          "outer_fence": 36,
+          "arithmetic_integer": 8,
+          "content_errors": [
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-3-0",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "korean_table-0-2048",
+              "expected": "춘천",
+              "answer": null,
+              "text": "```json\nnull\n```"
+            },
+            {
+              "case": "arithmetic-2-2048",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-0-8192",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\"answer\":\"33\"}\n```"
+            },
+            {
+              "case": "korean_table-3-8192",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            }
+          ]
+        },
+        "rngd-atom": {
+          "cases": 36,
+          "primary_correct": 0,
+          "content_correct": 29,
+          "outer_fence": 36,
+          "arithmetic_integer": 8,
+          "content_errors": [
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-3-0",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "korean_table-0-2048",
+              "expected": "춘천",
+              "answer": null,
+              "text": "```json\nnull\n```"
+            },
+            {
+              "case": "arithmetic-2-2048",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "korean_table-0-8192",
+              "expected": "춘천",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "expected": "43",
+              "answer": "33",
+              "text": "```json\n{\"answer\":\"33\"}\n```"
+            },
+            {
+              "case": "korean_table-3-8192",
+              "expected": "속초",
+              "answer": "부산",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            }
+          ]
+        }
+      },
+      "content_differences": {
+        "native-gpu vs rngd-gpu": [
+          {
+            "case": "korean_table-0-2048",
+            "left": null,
+            "right": "춘천",
+            "expected": "춘천"
+          }
+        ],
+        "native-gpu vs native-atom": [],
+        "native-gpu vs rngd-atom": [],
+        "rngd-gpu vs native-atom": [
+          {
+            "case": "korean_table-0-2048",
+            "left": "춘천",
+            "right": null,
+            "expected": "춘천"
+          }
+        ],
+        "rngd-gpu vs rngd-atom": [
+          {
+            "case": "korean_table-0-2048",
+            "left": "춘천",
+            "right": null,
+            "expected": "춘천"
+          }
+        ],
+        "native-atom vs rngd-atom": []
+      }
+    }
+  }
+}

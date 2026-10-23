@@ -63,3 +63,5 @@ Allfour live GPU isolation runs pass: active512-token decode survives other-requ
 ## Final held-out evaluation (#263)
 
 All 576 responses completed normally. Qwen3-4B: 36/36 structured answers and exact tokens on all four routes. Qwen3-0.6B and Gemma retain cross-route content counterexamples; all six route pairs are audited. Final published artifact auditor reproduces the summary exactly. Owned evaluation Pod absent. See evidence263 and the heldout-quality263 experiment; numerical compatibility and source streaming remain open.
+
+Post-hoc #263 content diagnostic (primary unchanged): Gemma29/30/29/29 of36 correct after only outer-fence/arithmetic-int relaxation, vs frozen primary0/0/0/0. Six or seven content errors and one cross-route answer difference remain. Other model scores unchanged. All16 raw JSONL inputs byte-identical to published evidence; analyzer self-checks/reproduction pass. Exploratory, not an acceptance-rule change.
