@@ -34,4 +34,22 @@ python3 bench_arrival_http.py --rates 12 --requests 384 --out rolling12.json
 # Repeat both benchmark commands, writing wave6.json and wave12.json.
 ```
 
-Results pending; do not recommend this flag until matched hardware checks complete.
+Measured core commit:7a89f6b (hashes in rolling_manifest.json).
+
+|Mode/load|Native TTFTp95 ms|GPU TTFTp95 ms|Native/GPU tok/s|GPU success|
+|---|---:|---:|---:|---:|
+|rolling6/s|161.55|256.06|441.90/439.22|96/96|
+|wave6/s|157.13|271.44|441.66/438.52|96/96|
+|rolling12/s|300.32|269.14|877.98/913.17|384/384|
+|wave12/s|295.64|1184.19|883.08/886.05|384/384|
+|rolling12/s repeat|237.80|266.35|881.62/912.48|384/384|
+
+The rolling/wave/rolling sequence supports removing the whole-wave barrier at high
+load:GPU TTFTp95 falls77.3-77.5%, with throughput up3.0-3.1%. All phases succeed.
+This is one wave run bracketed by two rolling runs, not a broad capacity study.
+Native high-load TTFT varies238-300ms; rolling266-269ms is near that range, but low-load
+rolling256ms remains slower than native162ms. Keep the option experimental and off by
+default pending wider repetitions, burst/overload and cancellation/backpressure hardware
+checks. No change to decoder arithmetic; long retrieval smoke tests are not full quality
+evaluation. Goal remains unmet. Owned GPU/native servers stopped after measurement.
+
