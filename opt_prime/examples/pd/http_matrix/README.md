@@ -45,3 +45,9 @@ PYTHONPATH=opt_prime python opt_prime/examples/pd/http_matrix/validate.py \
 ```
 
 Run from the repository root. Omit the producer arguments for native control. `passed` means lifecycle/count assertions passed; concurrent/serial token equality is reported separately, including failed numerical comparisons. See gpu-live-pd240 for the complete default-policy, FP32 and matching-policy results.
+
+### Terminal producer availability
+
+Subprocess producers expose a boolean `ready` property; pools require every configured member that implements it to be ready. Batched `/ready` and `/health` return503 after a known terminal failure/close, and new completions receive retryable503 before admission. A healthy replacement at an idle boundary restores availability without poisoning the decoder. Individual request errors do not make a still-running producer unready.
+
+No pool member is silently removed and no request is automatically retried. Workers without this optional property retain prior behavior. Existing requests keep their existing completion/error handling. See producer-readiness246 for the real subprocess/HTTP reproduction and regression results.

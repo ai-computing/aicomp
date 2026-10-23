@@ -47,6 +47,11 @@ class BatchedService(CompletionAPI):
                 return out + self._pd_metrics(lab)
             self.metrics.extra = extra
 
+    @property
+    def ready(self):
+        worker = getattr(self.batcher, "worker", None)
+        return self.state != "poisoned" and getattr(worker, "ready", True)
+
     def _engines(self):
         return (self.batcher,)
 
@@ -138,6 +143,8 @@ class BatchedOwner:
         svc, b = self.service, self.service.batcher
         if svc.state == "poisoned":
             raise StageError(503, "owner quarantined; restart required", retryable=True)
+        if not svc.ready:
+            raise StageError(503, "prefill producer unavailable", retryable=True)
         _stage, rid, body = args
         request, stops = svc._request(rid, body, chat)
         if len(b.by_id) >= self.capacity:

@@ -281,6 +281,13 @@ class SubprocessPrefillWorker:
             self.close()
             raise
 
+    @property
+    def ready(self):
+        """Terminal producer failure/closure is distinct from a single rejected request."""
+        with self._lock:
+            return (not self._closed and self._failed is None and self._proc.poll() is None
+                    and self._recv.is_alive())
+
     def submit(self, request, send_from=0, slot=None) -> Future:
         if slot is None or not 0 <= slot < self.slab.shape[0]:
             raise ValueError("SubprocessPrefillWorker needs a valid decode lane (slot)")
@@ -407,6 +414,11 @@ class PrefillWorkerPool:
         self.workers = list(workers)
         self._load = [0] * len(self.workers)
         self._lock = threading.Lock()
+
+    @property
+    def ready(self):
+        # The pool still routes to every member; no implicit removal/retry of a failed producer.
+        return all(getattr(worker, "ready", True) for worker in self.workers)
 
     def submit(self, request, send_from=0, slot=None) -> Future:
         with self._lock:

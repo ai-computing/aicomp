@@ -1,0 +1,1 @@
+{"before": {"status": 200, "body": {"ready": true, "stage": "decode"}}, "after_worker_exit": {"status": 200, "body": {"ready": true, "stage": "decode"}}, "new_request": {"status": 500, "body": {"error": "engine failed; owner retained", "retryable": false}}, "terminal_failure": true, "service_state": "idle"}
