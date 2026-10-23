@@ -462,7 +462,7 @@ class Optimus_p:
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
         self.checkpoint = checkpoint
-        self.ckpt_dir = f"checkpoint_{ckpt_dir_postfix}_{self.tpl.stage}" or f"checkpoint_{self.tpl.stage}"
+        self.ckpt_dir = f"checkpoint_{ckpt_dir_postfix}_{self.tpl.stage}" if ckpt_dir_postfix else f"checkpoint_{self.tpl.stage}"
         if self.checkpoint == True:
             os.makedirs(self.ckpt_dir, exist_ok=True)
 
@@ -1176,6 +1176,10 @@ class Optimus_p:
             print("[LoRA] No LoRA config set, skipping save.")
             return
 
+        # DP replicas are identical → only DP rank 0 saves
+        if (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size != 0:
+            return
+
         if lora_dir is None:
             lora_dir = f"lora_checkpoint_stage_{self.tpl.stage}"
         else:
@@ -1245,7 +1249,11 @@ class Optimus_p:
         if self.checkpoint != True:
             return
 
-        ckpt_path = os.path.join(self.ckpt_dir, f"ckpt_step_{step}_epoch_{epoch}.pt")
+        # DP replicas are identical → only DP rank 0 saves, one file per TP shard
+        if (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size != 0:
+            return
+        tp = f"_tp{self.get_rank() % self.tpl.tp_size}" if self.tpl.tp_size > 1 else ""
+        ckpt_path = os.path.join(self.ckpt_dir, f"ckpt_step_{step}_epoch_{epoch}{tp}.pt")
 
         torch.save({
             'epoch': epoch,
@@ -1256,7 +1264,7 @@ class Optimus_p:
         print(f"Checkpoint saved: {ckpt_path}")
 
         ckpt_files = sorted(
-                glob.glob(os.path.join(self.ckpt_dir, "ckpt_step_*.pt")),
+                glob.glob(os.path.join(self.ckpt_dir, f"ckpt_step_*{tp}.pt")),
                 key=os.path.getmtime,
                 reverse=True
                 )
@@ -1268,7 +1276,8 @@ class Optimus_p:
         if self.checkpoint != True:
             return
 
-        ckpt_path = os.path.join(self.ckpt_dir, f"ckpt_step_{step}_epoch_{epoch}.pt")
+        tp = f"_tp{self.get_rank() % self.tpl.tp_size}" if self.tpl.tp_size > 1 else ""
+        ckpt_path = os.path.join(self.ckpt_dir, f"ckpt_step_{step}_epoch_{epoch}{tp}.pt")
 
         ckpt = torch.load(ckpt_path)
 
