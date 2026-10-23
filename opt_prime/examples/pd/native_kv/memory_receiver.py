@@ -151,15 +151,18 @@ class NativeKVClient:
             self.close()
             raise
 
-    def prefill(self, model, tokens, mode='fast', on_batch=None):
+    def prefill(self, model, tokens, mode='fast', on_batch=None, *, start_pos=0):
         if self.poisoned:raise RuntimeError('failed client cannot be reused; restart dedicated server')
         if not 2 <= len(tokens) <= 2048:raise ValueError('prompt length must be 2..2048')
+        if type(start_pos) is not int or not 0 <= start_pos < len(tokens)-1:
+            raise ValueError('source prefix offset must leave at least one exported position')
+        positions = len(tokens)-1-start_pos
         if mode not in ('fast','legacy','views'):raise ValueError('unknown assembly mode')
         if on_batch is not None and mode!='views':raise ValueError('batch callback requires views')
         start = time.perf_counter()
         request_id = 'perf-kv-'+uuid.uuid4().hex
-        assembler = (ViewAssembler(request_id,len(tokens)-1,on_batch) if mode=='views' else
-                     {'fast':CanonicalAssembler,'legacy':LegacyAssembler}[mode](request_id,len(tokens)-1))
+        assembler = (ViewAssembler(request_id,positions,on_batch) if mode=='views' else
+                     {'fast':CanonicalAssembler,'legacy':LegacyAssembler}[mode](request_id,positions))
         body={'model':model,'prompt':tokens,'max_tokens':1,'min_tokens':0,'temperature':0,'ignore_eos':True,'stream':False,
               'kv_transfer_params':{'remote_decoder':f'127.0.0.1:{self.receiver_port}','id':request_id}}
         future = self.executor.submit(self.http.post,self.http_url+'/v1/completions',json=body,timeout=self.timeout)
@@ -181,7 +184,7 @@ class NativeKVClient:
                     if ready or msg['id']!=request_id:raise ValueError('unexpected ready')
                     ready=True
                     ready_ms=(time.perf_counter()-start)*1000
-                    self.tx.send(control(request_id,2,range(len(tokens)-1)))
+                    self.tx.send(control(request_id,2,range(positions),start_pos=start_pos))
                     continue
                 if not ready or len(parts)!=2:raise ValueError('unexpected batch')
                 batch_ms.append((time.perf_counter()-start)*1000)
@@ -195,7 +198,7 @@ class NativeKVClient:
             self.tx.send(control(request_id,3))
             response=future.result(timeout=max(0.001,deadline-time.perf_counter()))
             response.raise_for_status()
-            result={'mode':mode,'input_tokens':len(tokens),'kv_ready_ms':(kv_ready-start)*1000,
+            result={'mode':mode,'input_tokens':len(tokens),'start_pos':start_pos,'exported_positions':positions,'kv_ready_ms':(kv_ready-start)*1000,
                     'complete_ms':(time.perf_counter()-start)*1000,'parse_pack_ms':parse_s*1000,
                     'bytes':assembler.data.nbytes,'batches':batch_count,'ready_ms':ready_ms,
                     'batch_arrival_ms':batch_ms,'response':response.json()}
