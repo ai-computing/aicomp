@@ -1,0 +1,23 @@
+[
+  {
+    "input_tokens": 128,
+    "positions": 127,
+    "byte_exact": true,
+    "owned_after_release": true,
+    "cuda_pinned": true
+  },
+  {
+    "input_tokens": 512,
+    "positions": 511,
+    "byte_exact": true,
+    "owned_after_release": true,
+    "cuda_pinned": true
+  },
+  {
+    "input_tokens": 1024,
+    "positions": 1023,
+    "byte_exact": true,
+    "owned_after_release": true,
+    "cuda_pinned": true
+  }
+]

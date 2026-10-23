@@ -1,0 +1,13 @@
+{
+  "base_commit": "abaaef4",
+  "native_sdk": "2026.4.0",
+  "native_binary_sha256": "ed459cf42ee5359da01093846d3d8bd260e487f2b602f5cdc71dc87743a29761",
+  "adapter_binary_sha256": "01ed8da07fc98f8d76c1e124f43eebac58dd9fd0652c5c6e33fbd62a2790e288",
+  "files": {
+    "adapter.c": "f4735b72752b1e06799beb40177b8eb4767b45ca54374363d4d02318c15b292f",
+    "bootstrap.py": "f96084667fd286bf189e40a1a097a19f9fd7167edb50a5de151bb168a19a532e",
+    "test_adapter.c": "5e3f6a60949ce97c24de639f0ebe767f39d141eb579fe1c7b3fc335753a95da5",
+    "bench_export.py": "5df143d1a99e3b874fbcf20d21c07411c99764cb563cef89b4ed7ae87fb9c2f2",
+    "run_benchmark.py": "0beca4eae7b9c5908fa7a1f1c613bf58755091e396ba4ab60319d20944adb064"
+  }
+}

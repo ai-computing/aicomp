@@ -1,0 +1,59 @@
+[
+  {
+    "source": "shared",
+    "mixed_lengths": false,
+    "outputs_per_lane": 128,
+    "lanes": 16,
+    "pause_valid_prefix_exact": true,
+    "paused_matches_unpaused": true,
+    "matching_positions": 2048,
+    "positions": 2048,
+    "identical_input_lanes_equal": true,
+    "steps": 236
+  },
+  {
+    "source": "mixed",
+    "mixed_lengths": true,
+    "outputs_per_lane": 128,
+    "lanes": 16,
+    "pause_valid_prefix_exact": true,
+    "paused_matches_unpaused": true,
+    "matching_positions": 2048,
+    "positions": 2048,
+    "identical_input_lanes_equal": true,
+    "steps": 236
+  },
+  {
+    "source": "native_parallel",
+    "mixed_lengths": false,
+    "outputs_per_lane": 128,
+    "lanes": 16,
+    "pause_valid_prefix_exact": true,
+    "paused_matches_unpaused": true,
+    "matching_positions": 2048,
+    "positions": 2048,
+    "identical_input_lanes_equal": true,
+    "steps": 236,
+    "native_packets_equal": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ],
+    "first_differing_slots": [
+      null,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      null
+    ],
+    "distinct_output_sequences": 2
+  }
+]

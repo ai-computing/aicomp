@@ -1,0 +1,981 @@
+{
+  "performance": {
+    "prefix_overlap_perf": {
+      "peak_gpu_bytes": 32020514816,
+      "rows": [
+        {
+          "input_tokens": 128,
+          "backend": "native_http",
+          "samples": 3,
+          "median_ttft_ms": 20.758629019837826
+        },
+        {
+          "input_tokens": 128,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.0,
+          "samples": 3,
+          "ttft_ms": [
+            48.51856699679047,
+            48.101610998855904,
+            53.58190697734244
+          ],
+          "median_ttft_ms": 48.51856699679047,
+          "median_gpu_prefix_ms": 0,
+          "median_import_ms": 1.2052349920850247,
+          "transfer_bytes": 18726912,
+          "median_native_ready_ms": 21.368604007875547,
+          "median_native_kv_ms": 33.99868600536138
+        },
+        {
+          "input_tokens": 128,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.5,
+          "samples": 3,
+          "ttft_ms": [
+            48.11801100731827,
+            43.844983010785654,
+            44.27838799892925
+          ],
+          "median_ttft_ms": 44.27838799892925,
+          "median_gpu_prefix_ms": 19.644869986223057,
+          "median_import_ms": 1.551041001221165,
+          "transfer_bytes": 9289728,
+          "median_native_ready_ms": 21.64244797313586,
+          "median_native_kv_ms": 29.323109018150717
+        },
+        {
+          "input_tokens": 128,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.75,
+          "samples": 3,
+          "ttft_ms": [
+            42.10617602802813,
+            43.27825698419474,
+            42.040658998303115
+          ],
+          "median_ttft_ms": 42.10617602802813,
+          "median_gpu_prefix_ms": 20.85693000117317,
+          "median_import_ms": 1.5122640179470181,
+          "transfer_bytes": 4571136,
+          "median_native_ready_ms": 21.187384001677856,
+          "median_native_kv_ms": 27.31805801158771
+        },
+        {
+          "input_tokens": 512,
+          "backend": "native_http",
+          "samples": 3,
+          "median_ttft_ms": 50.932715996168554
+        },
+        {
+          "input_tokens": 512,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.0,
+          "samples": 3,
+          "ttft_ms": [
+            89.35358299640939,
+            91.32909099571407,
+            92.24786001141183
+          ],
+          "median_ttft_ms": 91.32909099571407,
+          "median_gpu_prefix_ms": 0,
+          "median_import_ms": 3.578811010811478,
+          "transfer_bytes": 75350016,
+          "median_native_ready_ms": 49.3662100052461,
+          "median_native_kv_ms": 73.6856080184225
+        },
+        {
+          "input_tokens": 512,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.5,
+          "samples": 3,
+          "ttft_ms": [
+            96.50238600443117,
+            99.50474102515727,
+            100.57100097765215
+          ],
+          "median_ttft_ms": 99.50474102515727,
+          "median_gpu_prefix_ms": 27.99455198692158,
+          "median_import_ms": 2.5594359904062003,
+          "transfer_bytes": 37601280,
+          "median_native_ready_ms": 51.70132700004615,
+          "median_native_kv_ms": 82.80769598786719
+        },
+        {
+          "input_tokens": 512,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.75,
+          "samples": 3,
+          "ttft_ms": [
+            83.89635098865256,
+            81.70261100167409,
+            79.25367000279948
+          ],
+          "median_ttft_ms": 81.70261100167409,
+          "median_gpu_prefix_ms": 38.62618398852646,
+          "median_import_ms": 1.8896350229624659,
+          "transfer_bytes": 18726912,
+          "median_native_ready_ms": 52.32157799764536,
+          "median_native_kv_ms": 65.6369999924209
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "native_http",
+          "samples": 3,
+          "median_ttft_ms": 89.40449799410999
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.0,
+          "samples": 3,
+          "ttft_ms": [
+            143.23572101420723,
+            142.61459099361673,
+            152.62137597892433
+          ],
+          "median_ttft_ms": 143.23572101420723,
+          "median_gpu_prefix_ms": 0,
+          "median_import_ms": 6.843114009825513,
+          "transfer_bytes": 150847488,
+          "median_native_ready_ms": 88.72924000024796,
+          "median_native_kv_ms": 122.65096901683137
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.5,
+          "samples": 3,
+          "ttft_ms": [
+            173.19030000362545,
+            166.15283000282943,
+            172.48861800180748
+          ],
+          "median_ttft_ms": 172.48861800180748,
+          "median_gpu_prefix_ms": 45.63409899128601,
+          "median_import_ms": 4.2960850114468485,
+          "transfer_bytes": 75350016,
+          "median_native_ready_ms": 92.12903198204003,
+          "median_native_kv_ms": 153.5277479852084
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.75,
+          "samples": 3,
+          "ttft_ms": [
+            117.97679599840194,
+            120.92013499932364,
+            124.71169998752885
+          ],
+          "median_ttft_ms": 120.92013499932364,
+          "median_gpu_prefix_ms": 62.86209702375345,
+          "median_import_ms": 2.7957650017924607,
+          "transfer_bytes": 37601280,
+          "median_native_ready_ms": 91.54960201703943,
+          "median_native_kv_ms": 103.52102501201443
+        }
+      ]
+    },
+    "prefix_overlap_repeat": {
+      "peak_gpu_bytes": 32021538816,
+      "rows": [
+        {
+          "input_tokens": 128,
+          "backend": "native_http",
+          "samples": 3,
+          "median_ttft_ms": 21.723978978116065
+        },
+        {
+          "input_tokens": 128,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.0,
+          "samples": 3,
+          "ttft_ms": [
+            111.62867202074267,
+            52.56944798748009,
+            87.27444100077264
+          ],
+          "median_ttft_ms": 87.27444100077264,
+          "median_gpu_prefix_ms": 0,
+          "median_import_ms": 1.3022139901295304,
+          "transfer_bytes": 18726912,
+          "median_native_ready_ms": 29.42527298000641,
+          "median_native_kv_ms": 64.31951298145577
+        },
+        {
+          "input_tokens": 128,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.75,
+          "samples": 3,
+          "ttft_ms": [
+            51.07577799935825,
+            48.47250701277517,
+            47.92348699993454
+          ],
+          "median_ttft_ms": 48.47250701277517,
+          "median_gpu_prefix_ms": 22.653385996818542,
+          "median_import_ms": 1.7969140026252717,
+          "transfer_bytes": 4571136,
+          "median_native_ready_ms": 22.7133090083953,
+          "median_native_kv_ms": 32.92000599321909
+        },
+        {
+          "input_tokens": 128,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.875,
+          "samples": 3,
+          "ttft_ms": [
+            45.461689005605876,
+            55.31027301913127,
+            50.84628800977953
+          ],
+          "median_ttft_ms": 50.84628800977953,
+          "median_gpu_prefix_ms": 21.163152996450663,
+          "median_import_ms": 1.7229560180567205,
+          "transfer_bytes": 2211840,
+          "median_native_ready_ms": 22.011255990946665,
+          "median_native_kv_ms": 33.590531995287165
+        },
+        {
+          "input_tokens": 512,
+          "backend": "native_http",
+          "samples": 3,
+          "median_ttft_ms": 51.68980700545944
+        },
+        {
+          "input_tokens": 512,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.0,
+          "samples": 3,
+          "ttft_ms": [
+            183.9639289828483,
+            123.47668499569409,
+            131.6947230079677
+          ],
+          "median_ttft_ms": 131.6947230079677,
+          "median_gpu_prefix_ms": 0,
+          "median_import_ms": 3.7616019835695624,
+          "transfer_bytes": 75350016,
+          "median_native_ready_ms": 51.49979700217955,
+          "median_native_kv_ms": 114.01265501626767
+        },
+        {
+          "input_tokens": 512,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.75,
+          "samples": 3,
+          "ttft_ms": [
+            82.80971899512224,
+            107.65179400914349,
+            100.87854400626384
+          ],
+          "median_ttft_ms": 100.87854400626384,
+          "median_gpu_prefix_ms": 39.77799098356627,
+          "median_import_ms": 2.0638990099541843,
+          "transfer_bytes": 18726912,
+          "median_native_ready_ms": 66.76691598840989,
+          "median_native_kv_ms": 83.97241498460062
+        },
+        {
+          "input_tokens": 512,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.875,
+          "samples": 3,
+          "ttft_ms": [
+            75.75751101830974,
+            74.61720198625699,
+            94.51489400817081
+          ],
+          "median_ttft_ms": 75.75751101830974,
+          "median_gpu_prefix_ms": 43.966694007394835,
+          "median_import_ms": 1.8709749856498092,
+          "transfer_bytes": 9289728,
+          "median_native_ready_ms": 51.69062700588256,
+          "median_native_kv_ms": 58.570194989442825
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "native_http",
+          "samples": 3,
+          "median_ttft_ms": 106.97921199607663
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.0,
+          "samples": 3,
+          "ttft_ms": [
+            353.1599159759935,
+            334.1129769978579,
+            374.22275700373575
+          ],
+          "median_ttft_ms": 353.1599159759935,
+          "median_gpu_prefix_ms": 0,
+          "median_import_ms": 6.94639899302274,
+          "transfer_bytes": 150847488,
+          "median_native_ready_ms": 105.48380299587734,
+          "median_native_kv_ms": 327.3285119794309
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.75,
+          "samples": 3,
+          "ttft_ms": [
+            182.0825529866852,
+            126.55497502419166,
+            204.844783002045
+          ],
+          "median_ttft_ms": 182.0825529866852,
+          "median_gpu_prefix_ms": 70.31000600545667,
+          "median_import_ms": 2.999678981723264,
+          "transfer_bytes": 37601280,
+          "median_native_ready_ms": 105.56847701082006,
+          "median_native_kv_ms": 152.89725200273097
+        },
+        {
+          "input_tokens": 1024,
+          "backend": "internal_heterogeneous",
+          "fraction": 0.875,
+          "samples": 3,
+          "ttft_ms": [
+            192.4123489880003,
+            130.68319301237352,
+            134.76164199528284
+          ],
+          "median_ttft_ms": 134.76164199528284,
+          "median_gpu_prefix_ms": 86.0250889963936,
+          "median_import_ms": 2.2999229840934277,
+          "transfer_bytes": 18726912,
+          "median_native_ready_ms": 93.90427800826728,
+          "median_native_kv_ms": 117.10299798869528
+        }
+      ]
+    }
+  },
+  "quality": {
+    "prefix_overlap_quality": {
+      "cases": 21,
+      "native_pass": 18,
+      "peak_gpu_bytes": 32221014016,
+      "cases_detail": [
+        {
+          "case": "multiply",
+          "input_tokens": 28,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "factorial",
+          "input_tokens": 24,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "binary",
+          "input_tokens": 32,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "sort",
+          "input_tokens": 39,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "deduplicate",
+          "input_tokens": 41,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "extract",
+          "input_tokens": 39,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "logic",
+          "input_tokens": 34,
+          "native_pass": false,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": false,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": false,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "reverse",
+          "input_tokens": 25,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "korean",
+          "input_tokens": 26,
+          "native_pass": false,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": false,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": false,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "capital",
+          "input_tokens": 26,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "units",
+          "input_tokens": 27,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "subtract",
+          "input_tokens": 42,
+          "native_pass": false,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": false,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": false,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-40-0",
+          "input_tokens": 592,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-40-20",
+          "input_tokens": 592,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-40-39",
+          "input_tokens": 592,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-80-0",
+          "input_tokens": 1152,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-80-40",
+          "input_tokens": 1152,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-80-79",
+          "input_tokens": 1152,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-120-0",
+          "input_tokens": 1712,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-120-60",
+          "input_tokens": 1712,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-120-119",
+          "input_tokens": 1712,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.0,
+              "passed": true,
+              "matches_native_text": true
+            },
+            {
+              "fraction": 0.75,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        }
+      ]
+    },
+    "prefix_overlap_quality875": {
+      "cases": 21,
+      "native_pass": 18,
+      "peak_gpu_bytes": 32219973632,
+      "cases_detail": [
+        {
+          "case": "multiply",
+          "input_tokens": 28,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "factorial",
+          "input_tokens": 24,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "binary",
+          "input_tokens": 32,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "sort",
+          "input_tokens": 39,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "deduplicate",
+          "input_tokens": 41,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "extract",
+          "input_tokens": 39,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "logic",
+          "input_tokens": 34,
+          "native_pass": false,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": false,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "reverse",
+          "input_tokens": 25,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "korean",
+          "input_tokens": 26,
+          "native_pass": false,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": false,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "capital",
+          "input_tokens": 26,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "units",
+          "input_tokens": 27,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "subtract",
+          "input_tokens": 42,
+          "native_pass": false,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": false,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-40-0",
+          "input_tokens": 592,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-40-20",
+          "input_tokens": 592,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-40-39",
+          "input_tokens": 592,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-80-0",
+          "input_tokens": 1152,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-80-40",
+          "input_tokens": 1152,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-80-79",
+          "input_tokens": 1152,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-120-0",
+          "input_tokens": 1712,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-120-60",
+          "input_tokens": 1712,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        },
+        {
+          "case": "retrieval-120-119",
+          "input_tokens": 1712,
+          "native_pass": true,
+          "variants": [
+            {
+              "fraction": 0.875,
+              "passed": true,
+              "matches_native_text": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
