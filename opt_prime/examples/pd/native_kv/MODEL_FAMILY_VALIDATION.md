@@ -1,5 +1,13 @@
 # Model-family validation: Qwen, KONI, Gemma
 
+Follow-up: Gemma text-prefill causality was repaired and tested in
+[optimum-rbln PR827](https://github.com/RBLN-SW/optimum-rbln/pull/827). A separate
+Qwen3 RNGD graph and host handoff passed the finite fixture in
+[aicomp PR198](https://github.com/ai-computing/aicomp/pull/198). KONI artifacts were
+found outside the standard cache and successfully reconnected; see
+[koni_reconnect/README.md](koni_reconnect/README.md). The table below records the
+earlier standard-worker/cache checks, not these new experimental paths.
+
 2026-10-23, code baseline7ffd71d plus diagnostic scripts. Same isolated Pod and SDK
 setup as ATOM_CONTAINER_EXPERIMENT.md; one ATOM and one RNGD, fusion4/Mesh2 for research
 prefill. No shared artifact modifications or model compilation. Results are in
