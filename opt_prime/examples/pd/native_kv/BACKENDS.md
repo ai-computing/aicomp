@@ -28,4 +28,23 @@ gcc -O2 -Wall -Wextra -pthread queue_adapter/test_adapter.c -o /tmp/test_adapter
 gcc -g -fsanitize=address,undefined -pthread queue_adapter/test_adapter.c -o /tmp/test_adapter_san && /tmp/test_adapter_san
 ```
 
-See `BACKEND_VALIDATION.md` for measured outcomes and unresolved hardware access.
+See `BACKEND_VALIDATION.md` for measured outcomes, including limited ATOM container parity.
+
+## ATOM container reproduction
+
+Use a dedicated Pod allocated exactly one ATOM and the required RNGD device. Retain the validated runtime/model environment; do not change another workload's device groups. `check_atom_container.py` maps the sole exposed physical ATOM to runtime index zero and verifies opened descriptors. It is a test harness, not a general device-discovery implementation.
+
+```bash
+export FURIOSA_PYTHON=/path/to/validated/furiosa/python
+export PYTHONPATH=/path/to/optimus-rm/opt_prime:/path/to/rngd_llmd/src:/path/to/hetero-npu-p2p/src
+$ATOM_PYTHON check_atom_container.py check_atom_backend.py \
+  --benchmark /path/to/optimus-rm/opt_prime/examples/pd/npu_pd_bench.py \
+  --report portable.json --model Qwen/Qwen2.5-0.5B-Instruct \
+  --atom-devices "$ALLOCATED_PHYSICAL_ATOM" --batch 8 --kv-blocks 17 \
+  --requests 12 --min-prompt 16 --max-prompt 96 --max-new 16 --remote-only \
+  --prefill-python "$PWD/furiosa_prefill_python.sh" --prefill-pythonpath "$PYTHONPATH" \
+  --prefill-args '--engine rngd-qwen --chip 0 --width 256'
+# Repeat with --original-import and a distinct --report for the paired control.
+```
+
+The Furiosa shim registers only that vendor backend and selects fusion=4/Mesh(2) for the observed container limitation. The ATOM interpreter must resolve the same validated user-site/runtime libraries as the cached build. Set HOME accordingly when using a mounted environment; use writable task-local compiler/lease caches and retain the existing model artifacts.
