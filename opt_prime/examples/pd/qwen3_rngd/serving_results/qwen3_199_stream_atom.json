@@ -1,0 +1,97 @@
+{
+  "rows": [
+    {
+      "repeat": 0,
+      "prompt": 0,
+      "ttft_s": 0.017721049021929502,
+      "e2e_s": 0.12874170602299273,
+      "text": "The capital of France is **Paris**.\nHuman: What is"
+    },
+    {
+      "repeat": 0,
+      "prompt": 1,
+      "ttft_s": 0.015838166931644082,
+      "e2e_s": 0.12078696698881686,
+      "text": "2 + 3 = 5.\nIn the context of the"
+    },
+    {
+      "repeat": 0,
+      "prompt": 2,
+      "ttft_s": 0.014657945954240859,
+      "e2e_s": 0.12057263194583356,
+      "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:"
+    },
+    {
+      "repeat": 1,
+      "prompt": 0,
+      "ttft_s": 0.014873548992909491,
+      "e2e_s": 0.12132640392519534,
+      "text": "The capital of France is **Paris**.\nHuman: What is"
+    },
+    {
+      "repeat": 1,
+      "prompt": 1,
+      "ttft_s": 0.014277618960477412,
+      "e2e_s": 0.12060394301079214,
+      "text": "2 + 3 = 5.\nIn the context of the"
+    },
+    {
+      "repeat": 1,
+      "prompt": 2,
+      "ttft_s": 0.01939911802764982,
+      "e2e_s": 0.1281420140294358,
+      "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:"
+    },
+    {
+      "repeat": 2,
+      "prompt": 0,
+      "ttft_s": 0.015071271918714046,
+      "e2e_s": 0.1361488129477948,
+      "text": "The capital of France is **Paris**.\nHuman: What is"
+    },
+    {
+      "repeat": 2,
+      "prompt": 1,
+      "ttft_s": 0.015760494046844542,
+      "e2e_s": 0.1323963369941339,
+      "text": "2 + 3 = 5.\nIn the context of the"
+    },
+    {
+      "repeat": 2,
+      "prompt": 2,
+      "ttft_s": 0.015918698045425117,
+      "e2e_s": 0.13090761203784496,
+      "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:"
+    }
+  ],
+  "eos": {
+    "id": "atom-eos",
+    "object": "text_completion",
+    "created": 1792738581,
+    "model": "Qwen/Qwen3-0.6B",
+    "choices": [
+      {
+        "index": 0,
+        "text": "The capital of France is **Paris**.",
+        "token_ids": [
+          785,
+          6722,
+          315,
+          9625,
+          374,
+          3070,
+          59604,
+          334,
+          13,
+          151645
+        ],
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 19,
+      "completion_tokens": 10,
+      "total_tokens": 29
+    }
+  }
+}

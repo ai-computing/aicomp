@@ -28,6 +28,8 @@ class SingleBlockTarget:
                 or m.get("layer_type", "full_attention") != "full_attention"
             ):
                 raise ValueError("requires uniform full-attention cache geometry")
+        self.hybrid_cache = False
+        self.single_block = True
         self.io_rt = model.model[1]
         self.lane_block = [0]
         self._stage = None

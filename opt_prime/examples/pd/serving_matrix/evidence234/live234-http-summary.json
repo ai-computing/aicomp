@@ -1,0 +1,47 @@
+{
+  "gemma": {
+    "responses": 14,
+    "remote_prefills": 16,
+    "local_prefills": 0,
+    "cancellation_reuse": true,
+    "input_tokens": [
+      23,
+      24,
+      28
+    ]
+  },
+  "qwen06b": {
+    "responses": 14,
+    "remote_prefills": 16,
+    "local_prefills": 0,
+    "cancellation_reuse": true,
+    "input_tokens": [
+      26,
+      27,
+      31
+    ]
+  },
+  "qwen4b": {
+    "responses": 14,
+    "remote_prefills": 16,
+    "local_prefills": 0,
+    "cancellation_reuse": true,
+    "input_tokens": [
+      26,
+      27,
+      31
+    ]
+  },
+  "koni": {
+    "responses": 14,
+    "remote_prefills": 16,
+    "local_prefills": 0,
+    "cancellation_reuse": true,
+    "input_tokens": [
+      137,
+      138,
+      139,
+      143
+    ]
+  }
+}

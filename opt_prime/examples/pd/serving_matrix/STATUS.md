@@ -55,3 +55,15 @@ KONI (6137–6143 tokens) and Qwen3-0.6B (6026–6031 tokens) pass16/16 GPU/ATOM
 Gemma long-context update:6423–6428tokens,12producer runs, GPU3/4 and ATOM4/4 EOS matches; cumulative23/24. Arithmetic nativeGPU30 vs RNGD/ATOM25, both wrong; nativeGPU FP32 also30.52slot readbacks and native ATOM roundtrip exact. Same layer equations on GPU choose3 at BF16/FP32; accumulating RNGD numerical differences tracked in #233. Qwen3-4B queue remains live.
 
 Final6K matrix:48producer runs,31/32 EOS comparisons across four models/four questions/two decoders. Qwen3-4B4/4 on each decoder,72slots exact; the original queue exited0. Gemma arithmetic mismatch remains#233. Real live PD integration starts under#234; no overall-goal completion claim.
+
+## Live worker integration (#234)
+
+Reusable Gemma producer matches original RNGD K/V/full logits4/4 at width128. Real SubprocessPrefillWorker5requests match K/V/token and recover after an oversized request;15CPU tests plus5subtests pass. No communication-protocol change. Full live HTTP, other adapters and long/lifecycle conditions remain open; #233 numerical limits retained.
+
+## Four-model actual HTTP PD (#234/#236)
+
+All four models:56/56 normal/concurrent/reuse responses equal native ATOM,64RNGD prefills and0local fallbacks. Cancellation/disconnect reuse passes. B1, cache-off, short prompts; KONI uses existingk1 artifact with#236. HTTP uses#214 SIGPIPE fix. No live-transfer-overlap or throughput gain claim. Width2048 live queue passes all four models; width8192 live queue pending; long/cache/hardware-batch/performance scope remains.
+
+Medium live HTTP:1526–1643tokens,56/56 exact outputs and64remote/0local; short+medium112responses/128remote. Same cancellation/disconnect reuse checks pass. Long live queue active; full goal remains open. See live-http-mid234.
+
+Long live HTTP follow-up: all four width8192 routes pass56/56responses and64remote/0local prefills, cancellation/disconnect reuse included. Short+medium+long168/168responses/192remote. All queue stages exited0. HardwareB1, nativeATOM equality only; no quality, performance or overlap claim. See live-http-long234 record/evidence234.

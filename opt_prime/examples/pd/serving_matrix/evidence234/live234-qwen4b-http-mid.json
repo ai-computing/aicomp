@@ -1,0 +1,400 @@
+{
+  "worker": "live_rngd_subprocess_prefill",
+  "rows": [
+    {
+      "case": "capital-100",
+      "request": "normal-0-0",
+      "response": {
+        "id": "normal-0-0",
+        "object": "text_completion",
+        "created": 1792763846,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 1.5593066349392757
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "normal-0-1",
+      "response": {
+        "id": "normal-0-1",
+        "object": "text_completion",
+        "created": 1792763847,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              19,
+              17,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1527,
+          "completion_tokens": 3,
+          "total_tokens": 1530
+        }
+      },
+      "latency_s": 0.9446719089755788
+    },
+    {
+      "case": "korean-100",
+      "request": "normal-0-2",
+      "response": {
+        "id": "normal-0-2",
+        "object": "text_completion",
+        "created": 1792763848,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "서울",
+            "token_ids": [
+              26698,
+              126893,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 1.038334756041877
+    },
+    {
+      "case": "retrieval-100",
+      "request": "normal-0-3",
+      "response": {
+        "id": "normal-0-3",
+        "object": "text_completion",
+        "created": 1792763849,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              17617,
+              867,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 1.0008713440038264
+    },
+    {
+      "case": "capital-100",
+      "request": "normal-1-0",
+      "response": {
+        "id": "normal-1-0",
+        "object": "text_completion",
+        "created": 1792763850,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 1.0365961409406736
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "normal-1-1",
+      "response": {
+        "id": "normal-1-1",
+        "object": "text_completion",
+        "created": 1792763851,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              19,
+              17,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1527,
+          "completion_tokens": 3,
+          "total_tokens": 1530
+        }
+      },
+      "latency_s": 0.9256328369956464
+    },
+    {
+      "case": "korean-100",
+      "request": "normal-1-2",
+      "response": {
+        "id": "normal-1-2",
+        "object": "text_completion",
+        "created": 1792763852,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "서울",
+            "token_ids": [
+              26698,
+              126893,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 0.9329322580015287
+    },
+    {
+      "case": "retrieval-100",
+      "request": "normal-1-3",
+      "response": {
+        "id": "normal-1-3",
+        "object": "text_completion",
+        "created": 1792763853,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              17617,
+              867,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 0.9429352049482986
+    },
+    {
+      "case": "capital-100",
+      "request": "concurrent-0",
+      "response": {
+        "id": "concurrent-0",
+        "object": "text_completion",
+        "created": 1792763854,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.9035777349490672
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "concurrent-1",
+      "response": {
+        "id": "concurrent-1",
+        "object": "text_completion",
+        "created": 1792763855,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              19,
+              17,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1527,
+          "completion_tokens": 3,
+          "total_tokens": 1530
+        }
+      },
+      "latency_s": 1.836488423985429
+    },
+    {
+      "case": "korean-100",
+      "request": "concurrent-2",
+      "response": {
+        "id": "concurrent-2",
+        "object": "text_completion",
+        "created": 1792763856,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "서울",
+            "token_ids": [
+              26698,
+              126893,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 2.7430692090420052
+    },
+    {
+      "case": "retrieval-100",
+      "request": "concurrent-3",
+      "response": {
+        "id": "concurrent-3",
+        "object": "text_completion",
+        "created": 1792763857,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              17617,
+              867,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 3.6805838339496404
+    },
+    {
+      "case": "capital-100",
+      "request": "after-cancel",
+      "response": {
+        "id": "after-cancel",
+        "object": "text_completion",
+        "created": 1792763858,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.8944114779587835
+    },
+    {
+      "case": "capital-100",
+      "request": "after-disconnect",
+      "response": {
+        "id": "after-disconnect",
+        "object": "text_completion",
+        "created": 1792763860,
+        "model": "Qwen/Qwen3-4B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.9089197190478444
+    }
+  ],
+  "stats_pd": {
+    "remote": 16,
+    "local": 0
+  },
+  "free": [
+    0
+  ],
+  "cancellation_reuse": true
+}

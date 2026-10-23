@@ -1,0 +1,44 @@
+{
+  "models": [
+    {
+      "model": "gemma",
+      "responses": 14,
+      "remote": 16,
+      "local": 0,
+      "cancellation_reuse": true,
+      "input_min": 6423,
+      "input_max": 6428
+    },
+    {
+      "model": "qwen06b",
+      "responses": 14,
+      "remote": 16,
+      "local": 0,
+      "cancellation_reuse": true,
+      "input_min": 6026,
+      "input_max": 6031
+    },
+    {
+      "model": "qwen4b",
+      "responses": 14,
+      "remote": 16,
+      "local": 0,
+      "cancellation_reuse": true,
+      "input_min": 6026,
+      "input_max": 6031
+    },
+    {
+      "model": "koni",
+      "responses": 14,
+      "remote": 16,
+      "local": 0,
+      "cancellation_reuse": true,
+      "input_min": 6137,
+      "input_max": 6143
+    }
+  ],
+  "total_responses": 56,
+  "remote_prefills": 64,
+  "local_fallbacks": 0,
+  "hardware_batch": 1
+}

@@ -1,0 +1,490 @@
+{
+  "worker": "live_rngd_subprocess_prefill",
+  "rows": [
+    {
+      "case": "capital-100",
+      "request": "normal-0-0",
+      "response": {
+        "id": "normal-0-0",
+        "object": "text_completion",
+        "created": 1792763718,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.9969441100256518
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "normal-0-1",
+      "response": {
+        "id": "normal-0-1",
+        "object": "text_completion",
+        "created": 1792763718,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "17 + 25 = 42\n\nReply with only the integer: 42.",
+            "token_ids": [
+              16,
+              22,
+              488,
+              220,
+              17,
+              20,
+              284,
+              220,
+              19,
+              17,
+              271,
+              20841,
+              448,
+              1172,
+              279,
+              7546,
+              25,
+              220,
+              19,
+              17,
+              13,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1527,
+          "completion_tokens": 22,
+          "total_tokens": 1549
+        }
+      },
+      "latency_s": 0.6752042719163001
+    },
+    {
+      "case": "korean-100",
+      "request": "normal-0-2",
+      "response": {
+        "id": "normal-0-2",
+        "object": "text_completion",
+        "created": 1792763719,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "대한민국의 수도는 **인천**입니다.",
+            "token_ids": [
+              66845,
+              23573,
+              125496,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 14,
+          "total_tokens": 1545
+        }
+      },
+      "latency_s": 0.6178859820356593
+    },
+    {
+      "case": "retrieval-100",
+      "request": "normal-0-3",
+      "response": {
+        "id": "normal-0-3",
+        "object": "text_completion",
+        "created": 1792763719,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              17617,
+              867,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 0.5457541500218213
+    },
+    {
+      "case": "capital-100",
+      "request": "normal-1-0",
+      "response": {
+        "id": "normal-1-0",
+        "object": "text_completion",
+        "created": 1792763720,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.5465415481012315
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "normal-1-1",
+      "response": {
+        "id": "normal-1-1",
+        "object": "text_completion",
+        "created": 1792763721,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "17 + 25 = 42\n\nReply with only the integer: 42.",
+            "token_ids": [
+              16,
+              22,
+              488,
+              220,
+              17,
+              20,
+              284,
+              220,
+              19,
+              17,
+              271,
+              20841,
+              448,
+              1172,
+              279,
+              7546,
+              25,
+              220,
+              19,
+              17,
+              13,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1527,
+          "completion_tokens": 22,
+          "total_tokens": 1549
+        }
+      },
+      "latency_s": 0.6642461880110204
+    },
+    {
+      "case": "korean-100",
+      "request": "normal-1-2",
+      "response": {
+        "id": "normal-1-2",
+        "object": "text_completion",
+        "created": 1792763721,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "대한민국의 수도는 **인천**입니다.",
+            "token_ids": [
+              66845,
+              23573,
+              125496,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 14,
+          "total_tokens": 1545
+        }
+      },
+      "latency_s": 0.6021285310853273
+    },
+    {
+      "case": "retrieval-100",
+      "request": "normal-1-3",
+      "response": {
+        "id": "normal-1-3",
+        "object": "text_completion",
+        "created": 1792763722,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              17617,
+              867,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 0.5523455439833924
+    },
+    {
+      "case": "capital-100",
+      "request": "concurrent-0",
+      "response": {
+        "id": "concurrent-0",
+        "object": "text_completion",
+        "created": 1792763722,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.5414341390132904
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "concurrent-1",
+      "response": {
+        "id": "concurrent-1",
+        "object": "text_completion",
+        "created": 1792763723,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "17 + 25 = 42\n\nReply with only the integer: 42.",
+            "token_ids": [
+              16,
+              22,
+              488,
+              220,
+              17,
+              20,
+              284,
+              220,
+              19,
+              17,
+              271,
+              20841,
+              448,
+              1172,
+              279,
+              7546,
+              25,
+              220,
+              19,
+              17,
+              13,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1527,
+          "completion_tokens": 22,
+          "total_tokens": 1549
+        }
+      },
+      "latency_s": 1.227440306916833
+    },
+    {
+      "case": "korean-100",
+      "request": "concurrent-2",
+      "response": {
+        "id": "concurrent-2",
+        "object": "text_completion",
+        "created": 1792763724,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "대한민국의 수도는 **인천**입니다.",
+            "token_ids": [
+              66845,
+              23573,
+              125496,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 14,
+          "total_tokens": 1545
+        }
+      },
+      "latency_s": 1.8558082920499146
+    },
+    {
+      "case": "retrieval-100",
+      "request": "concurrent-3",
+      "response": {
+        "id": "concurrent-3",
+        "object": "text_completion",
+        "created": 1792763724,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              17617,
+              867,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1531,
+          "completion_tokens": 3,
+          "total_tokens": 1534
+        }
+      },
+      "latency_s": 2.406756103038788
+    },
+    {
+      "case": "capital-100",
+      "request": "after-cancel",
+      "response": {
+        "id": "after-cancel",
+        "object": "text_completion",
+        "created": 1792763725,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.6081401809351519
+    },
+    {
+      "case": "capital-100",
+      "request": "after-disconnect",
+      "response": {
+        "id": "after-disconnect",
+        "object": "text_completion",
+        "created": 1792763727,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              59604,
+              151645
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1526,
+          "completion_tokens": 2,
+          "total_tokens": 1528
+        }
+      },
+      "latency_s": 0.550125173991546
+    }
+  ],
+  "stats_pd": {
+    "remote": 16,
+    "local": 0
+  },
+  "free": [
+    0
+  ],
+  "cancellation_reuse": true
+}
