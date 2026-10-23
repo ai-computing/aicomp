@@ -1,7 +1,8 @@
-"""Experimental loopback completions server; one dedicated GPU/native-KV worker.
+"""Experimental loopback completions server with one GPU/native-KV owner.
 
-A bounded FIFO serializes requests. This is not continuous batching. Each streamed
-token is read back and detokenized before the next graph replay.
+Default execution serializes requests; --batch-size enables experimental waves.
+--pipeline overlaps native prefill with continuous GPU lane admission.
+Tokens are read back after each graph replay.
 """
 import argparse,json,queue,select,signal,socket,threading,time,uuid
 from dataclasses import dataclass,field
@@ -51,6 +52,15 @@ class Job:
             try:self.events.put((kind,value),timeout=0.1);return True
             except queue.Full:pass
         return False
+    def try_send(self,kind,value=None):
+        # Multi-lane owners must never wait on one HTTP consumer.
+        if self.cancel.is_set():return False
+        try:self.events.put_nowait((kind,value));return True
+        except queue.Full:return False
+    def fail(self,status,message):
+        # Terminal error that cannot block: best-effort enqueue, then cancel so a
+        # consumer that misses it still ends with 'request cancelled'.
+        self.try_send('error',(status,message));self.cancel.set()
 
 
 class Worker:
@@ -74,6 +84,9 @@ class Worker:
             a=self.args;torch.set_num_threads(1);torch.set_num_interop_threads(1)
             model=load_model(a.model_dir,a.device,'marlin',fuse_mlp=a.fuse_mlp,fuse_qkv=a.fuse_qkv)
             if a.norm_mode!='none':install_fused_norms(model,a.norm_mode)
+            if getattr(a,'fused_elementwise',False):
+                from gpu_activation import install_fused_swiglu,install_fused_post_attention
+                install_fused_swiglu(model);install_fused_post_attention(model)
             graph=GraphDecoder(model,2048,'flash')
             tokenizer=AutoTokenizer.from_pretrained(a.model_dir,local_files_only=True)
             eos=json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
@@ -148,13 +161,13 @@ def handler(worker):
             self.send_json(503 if worker.stopping.is_set() else 200,{'ready':not worker.stopping.is_set()})
         def do_POST(self):
             if self.path!='/v1/completions':return self.send_json(404,{'error':'not found'})
-            job=None;headers_sent=False
+            job=None;headers_sent=False;token_decoder=None
             try:
                 length=int(self.headers.get('Content-Length','0'))
                 if not 0<length<=1024*1024:raise ValueError('invalid body size')
                 body=json.loads(self.rfile.read(length));validate(body,worker.args.model)
                 job=Job(body);worker.submit(job)
-                rid='cmpl-'+uuid.uuid4().hex;created=int(time.time());text=''
+                rid='cmpl-'+uuid.uuid4().hex;created=int(time.time());text='';token_decoder=None
                 def chunk(delta='',reason=None,usage=None):
                     data={'id':rid,'object':'text_completion','created':created,'model':worker.args.model,
                           'choices':[{'index':0,'text':delta,'finish_reason':reason}]}
@@ -166,6 +179,10 @@ def handler(worker):
                 while True:
                     try:kind,value=job.events.get(timeout=0.1)
                     except queue.Empty:
+                        if job.cancel.is_set():
+                            if headers_sent:send_event({'error':{'message':'request cancelled'}})
+                            else:self.send_json(503,{'error':'request cancelled'})
+                            break
                         if time.monotonic()>=deadline:raise
                         readable,_,_=select.select([self.connection],[],[],0)
                         if readable and not self.connection.recv(1,socket.MSG_PEEK):break
@@ -176,7 +193,14 @@ def handler(worker):
                     elif kind=='text':
                         text+=value
                         if body.get('stream',False):send_event(chunk(value))
+                    elif kind=='token':
+                        if token_decoder is None:token_decoder=TextDecoder(worker.tokenizer)
+                        delta=token_decoder.append(value);text+=delta
+                        if delta and body.get('stream',False):send_event(chunk(delta))
                     elif kind=='done':
+                        if token_decoder is not None:
+                            delta=token_decoder.append(final=True);text+=delta
+                            if delta and body.get('stream',False):send_event(chunk(delta))
                         if body.get('stream',False):
                             send_event(chunk(reason=value['finish_reason'],usage=value['usage']))
                             self.wfile.write(b'data: [DONE]\n\n');self.wfile.flush()
@@ -188,7 +212,9 @@ def handler(worker):
                         else:self.send_json(status,{'error':message})
                         break
             except (ValueError,TypeError) as exc:
-                if not headers_sent:self.send_json(400,{'error':str(exc)})
+                status,message=(500,'detokenization failed') if token_decoder is not None else (400,str(exc))
+                if headers_sent:send_event({'error':{'message':message}})
+                else:self.send_json(status,{'error':message})
             except queue.Full:self.send_json(503,{'error':'queue full'})
             except RuntimeError:self.send_json(503,{'error':'worker unavailable'})
             except queue.Empty:
@@ -199,9 +225,22 @@ def handler(worker):
     return Handler
 
 
+class GPUHTTPServer(ThreadingHTTPServer):
+    # Accept a burst before the bounded worker queue applies admission control.
+    request_queue_size=128
+
+
 def main(a):
-    worker=Worker(a)
-    try:server=ThreadingHTTPServer(('127.0.0.1',a.port),handler(worker))
+    if getattr(a,'fused_elementwise',False) and (not a.fuse_mlp or a.norm_mode!='fused'):
+        raise ValueError('--fused-elementwise requires --fuse-mlp and --norm-mode fused')
+    if getattr(a,'pipeline',False):
+        from gpu_pipeline_worker import PipelineWorker
+        worker=PipelineWorker(a)
+    elif getattr(a,'batch_size',1)>1:
+        from gpu_batch_worker import BatchWorker
+        worker=BatchWorker(a)
+    else:worker=Worker(a)
+    try:server=GPUHTTPServer(('127.0.0.1',a.port),handler(worker))
     except BaseException:
         worker.close();raise
     server.daemon_threads=True
@@ -214,6 +253,15 @@ def main(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--fused-elementwise',action='store_true')
+    p.add_argument('--pipeline',action='store_true')
+    p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
+    p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)
+    p.add_argument('--async-text',action='store_true')
+    p.add_argument('--async-pack',action='store_true')
+    p.add_argument('--profile-stages')
+    p.add_argument('--adaptive-single',action='store_true',help='experimental width switching; output parity unresolved')
+    p.add_argument('--batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--model-dir',required=True);p.add_argument('--device',default='cuda:0')
     p.add_argument('--native',default='http://127.0.0.1:19101');p.add_argument('--port',type=int,default=19111)
     p.add_argument('--model',default='Qwen/Qwen3-8B-FP8')

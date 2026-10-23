@@ -155,3 +155,19 @@ nonstream responses, bounded FIFO admission and one dedicated worker. It is not 
 batched production backend. `bench_http.py` compares identical requests over HTTP;
 `check_http_quality.py` checks EOS/response text. See [GPU_HTTP.md](GPU_HTTP.md) for
 commands, supported limits, cancellation checks and the large c4 batching gap.
+
+## Experimental batched HTTP decode
+
+`serve_gpu.py --batch-size 4` enables wave batching with independent KV positions.
+See [GPU_BATCH.md](GPU_BATCH.md) for measurements and limitations. Native prefill
+remains serial; concurrent throughput and TTFT have not reached native parity.
+
+`--pipeline --batch-size 4` separates the native socket owner from the GPU owner,
+admits prepared prefixes into available lanes during decode, and pauses lanes
+with stalled event consumers. See [GPU_PIPELINE.md](GPU_PIPELINE.md).
+
+Eight-lane pipeline and prefill-side CPU packing measurements are in [GPU_EIGHT.md](GPU_EIGHT.md).
+
+Concurrent native prefill is opt-in with `--native-batch-size 8`; see [GPU_MULTIPLEX.md](GPU_MULTIPLEX.md) for protocol tests, numerical limits and HTTP results.
+
+Elementwise fusion and HTTP delivery experiments: [GPU_ELEMENTWISE.md](GPU_ELEMENTWISE.md). Both `--fused-elementwise` and `--async-text` are opt-in; full-serving improvement is not yet established.
