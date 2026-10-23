@@ -25,15 +25,30 @@ def main():
     p.add_argument("--model", required=True)
     p.add_argument("--output", required=True)
     p.add_argument("--prefix-cache", action="store_true")
+    p.add_argument("--backend", choices=["torch", "atom"], default="torch")
+    p.add_argument("--atom-kv-blocks", type=int, default=3)
+    p.add_argument("--host-kv-gib", type=float, default=0)
     p.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     a = p.parse_args()
+    if a.backend == "atom" and a.dtype != "bfloat16":
+        p.error("ATOM precision is determined by the compiled artifact")
+    if a.host_kv_gib < 0 or (a.host_kv_gib and not a.prefix_cache):
+        p.error("host KV requires --prefix-cache and a nonnegative capacity")
+    devices = []
+    if a.backend == "atom":
+        nodes = list(Path("/dev").glob("rbln[0-9]*"))
+        assert len(nodes) == 1, "requires one isolated allocated ATOM"
+        devices = [int(nodes[0].name[4:])]
     torch.set_num_threads(4)
     args = SimpleNamespace(
         model=a.model,
-        backend="torch",
+        backend=a.backend,
         device="cuda:0",
         dtype=a.dtype,
-        slots=4,
+        slots=4 if a.backend == "torch" else 1,
+        devices=devices,
+        atom_kv_blocks=a.atom_kv_blocks,
+        pd_remote_only=False,
         max_context=9216,
         max_output=256,
         kv="paged",
@@ -41,7 +56,7 @@ def main():
         chunk=256,
         prefix_cache=a.prefix_cache,
         kv_events=None,
-        kv_host_memory_gb=0,
+        kv_host_memory_gb=a.host_kv_gib,
         reload_bandwidth=None,
         prefill_rate=None,
         remote_kv=None,
@@ -51,11 +66,17 @@ def main():
     result = {
         "model_name": Path(a.model).name,
         "prefix_cache": a.prefix_cache,
+        "host_kv_gib": a.host_kv_gib,
         "passed": False,
         "scope": "HTTP lifecycle and completion counts; numerical equality reported separately",
         "torch": torch.__version__,
-        "dtype": a.dtype,
-        "device": torch.cuda.get_device_name(0),
+        "dtype": a.dtype if a.backend == "torch" else "compiled artifact",
+        "backend": a.backend,
+        "slots": args.slots,
+        "atom_kv_blocks": a.atom_kv_blocks if a.backend == "atom" else None,
+        "device": torch.cuda.get_device_name(0)
+        if a.backend == "torch"
+        else "allocated ATOM",
         "cases": [],
     }
     output = Path(a.output)
@@ -209,6 +230,16 @@ def main():
             if a.prefix_cache:
                 assert result["prefix_hit_tokens"] > 0, (
                     "cache enabled without observed hits"
+                )
+            if a.host_kv_gib:
+                host_hits = [
+                    float(line.rsplit(" ", 1)[1])
+                    for line in result["metrics"].splitlines()
+                    if line.startswith("airm_kv_host_hit_tokens_total{")
+                ]
+                result["host_hit_tokens"] = sum(host_hits)
+                assert host_hits and result["host_hit_tokens"] > 0, (
+                    "host tier not exercised"
                 )
             result["passed"] = True
         except Exception as exc:  # noqa: BLE001 - preserve failed hardware evidence
