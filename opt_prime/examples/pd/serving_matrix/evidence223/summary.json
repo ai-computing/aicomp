@@ -1,0 +1,20 @@
+{
+  "baseline_commit": "a754c26",
+  "cpu_tests": {
+    "passed": 38,
+    "failed": 2,
+    "reason": "existing DynamicCache pytree registration failure; same parent cases as #221"
+  },
+  "checkpoint_sha256": "3d4ef8d71c14db7e448a09ebe891cfb6bf32c57a9b44499ae0d1c098e48516b6",
+  "aborted_run": {
+    "width": 2048,
+    "exit_code": 143,
+    "reason": "intentional termination after128 correctness failure; sample/runtime stride mismatch"
+  },
+  "source_sha256": {
+    "gemma_parts.py": "51209fcd511bafe311e7b990b92ec73499de72949b8b6dc83139cbd420554617",
+    "rngd_gemma_sweep.py": "07862c2379438693847050752ebf609f354bae0d4a0b090503460efa7ae835da",
+    "check_rngd_gpu.py": "b5f8d05d982a829a18ea5d262bd73bc4ee07409546c3d5931c31b24d95de6587",
+    "cache_comparison.py": "4d93675482e01cb57211d0834891fba5458ccd555b801f8645ccacef0539e781"
+  }
+}

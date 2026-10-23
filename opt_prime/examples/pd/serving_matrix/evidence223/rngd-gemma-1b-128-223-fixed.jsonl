@@ -1,0 +1,3 @@
+{"model": "unsloth/gemma-3-1b-it", "revision": "5b11413a10db4e486ef16a20101fd028f8f2499c", "width": 128, "repeat": 0, "prefill_s": 0.05642146000172943, "repeat_exact": true, "first_token": 9079, "kv_shape": [26, 1, 128, 256]}
+{"model": "unsloth/gemma-3-1b-it", "revision": "5b11413a10db4e486ef16a20101fd028f8f2499c", "width": 128, "repeat": 1, "prefill_s": 0.04482502304017544, "repeat_exact": true, "first_token": 9079, "kv_shape": [26, 1, 128, 256]}
+{"model": "unsloth/gemma-3-1b-it", "revision": "5b11413a10db4e486ef16a20101fd028f8f2499c", "width": 128, "repeat": 2, "prefill_s": 0.0450761360116303, "repeat_exact": true, "first_token": 9079, "kv_shape": [26, 1, 128, 256]}

@@ -1,0 +1,5 @@
+{"compile_start": true, "width": 128}
+{"compile_s": 27.83816281799227}
+{"tensor": "hidden", "shape": [128, 1152], "relative_rms": 0.002774829277768731}
+{"tensor": "keys", "shape": [128, 1, 256], "relative_rms": 0.00010522184311412275}
+{"tensor": "values", "shape": [128, 1, 256], "relative_rms": 0.00014604766329284757}
