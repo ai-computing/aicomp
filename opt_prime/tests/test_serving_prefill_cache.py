@@ -72,3 +72,19 @@ def test_producer_chunk_controls_real_prefill_boundaries(tmp_path, monkeypatch):
         args.pd_prefill_chunk = chunk
         with pytest.raises(ValueError, match="positive"):
             factory.prefill_worker(args, 1, model.config)
+
+
+@pytest.mark.parametrize('backend,source,target', [('torch', 'cpu', 'cpu'), ('atom', 'cuda:0', 'cpu'),
+                                                   ('torch', None, 'cuda:1')])
+def test_copy_overlap_rejects_unsupported_route_before_model_load(backend, source, target, monkeypatch):
+    path = Path(__file__).parents[1] / 'examples/pd/serve_batched.py'
+    spec = importlib.util.spec_from_file_location('serve_overlap_test', path)
+    factory = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(factory)
+    args = SimpleNamespace(model='must-not-load', pd_prefill_device=source, pd_prefill_python=None,
+                           backend=backend, device=target, dtype='float32', pd_prefill_copy_overlap=True)
+    def unexpected_load(*args, **kwargs):
+        pytest.fail('unsupported copy route reached model loading')
+    monkeypatch.setattr(factory.AutoModelForCausalLM, 'from_pretrained', unexpected_load)
+    with pytest.raises(ValueError, match='CUDA'):
+        factory.prefill_worker(args, 1, None)

@@ -37,3 +37,7 @@ A real terminated subprocess producer previously left /ready200 and new requests
 ## Batched producer timing (#249)
 
 Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} from existing accumulated batcher durations. Repeated scrapes do not add observations; missing timing keys are omitted. Tiny real-model admission test covers fixed worker-reported durations and legacy omissions. These counters are worker-reported admitted-handoff sums, not request latency or proof of zero cost for workers that do not measure stages. Full CPU suite:467passed,17skipped,135subtests,1existing warning. See pd-stage-metrics249 experiment.
+
+## Chunk-copy overlap (#47), 2026-10-24
+
+Opt-in Torch GPU token-chunk copies implemented with two pending spans, pinned-host staging, source readiness events and completion before handoff. Focused CUDA correctness/failure checks pass; CPU suite 504 passed, 43 skipped, 253 subtests. Actual CUDA timeline, four-model serving speedup, large-KV curve and RNGD/ATOM layer-wise export remain open. Default remains whole-span transfer. See experiments/2026-10-24-chunk-copy47.md.

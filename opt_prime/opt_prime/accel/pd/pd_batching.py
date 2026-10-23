@@ -22,7 +22,7 @@ Any engine with `prefill(request, send_from) -> PrefillOut` can be a worker's en
 `platforms.atom.batching.AtomBatcher(prefill_worker=...)` decodes PD requests on ATOM (#123).
 """
 from collections import deque
-from concurrent.futures import Future, wait, FIRST_COMPLETED
+from concurrent.futures import Future, wait, FIRST_COMPLETED, ThreadPoolExecutor
 from dataclasses import dataclass
 import queue
 import threading
@@ -75,11 +75,63 @@ class PrefillOut:
     state: dict = None         # linear-attention layers: {layer: (conv, recurrent)} after the prompt (#127)
 
 
+class _ChunkCopy:
+    """Bounded host-staged copies; gathered source spans stay owned until both DMA legs finish."""
+
+    def __init__(self, source, target, start, length):
+        self.source, self.target = torch.cuda.Stream(source), torch.cuda.Stream(target)
+        self.start, self.length = start, length
+        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="kv-copy")
+        self.pending = deque()
+        self.output = None
+
+    def submit(self, kv, start, end):
+        if len(self.pending) == 2:
+            self.pending.popleft().result()
+        spans = kv.read_span(0, start, end)
+        ready = torch.cuda.Event()
+        ready.record(torch.cuda.current_stream(self.source.device))
+        self.pending.append(self.pool.submit(self._copy, spans, ready, start - self.start))
+
+    @torch.inference_mode()
+    def _copy(self, spans, ready, offset):
+        grouped = isinstance(spans[0], (list, tuple))
+        tensors = list(spans[0]) + list(spans[1]) if grouped else list(spans)
+        hosts = [torch.empty(t.shape, dtype=t.dtype, pin_memory=True) for t in tensors]
+        try:
+            with torch.cuda.stream(self.source):
+                self.source.wait_event(ready)
+                for host, tensor in zip(hosts, tensors):
+                    host.copy_(tensor, non_blocking=True)
+            self.source.synchronize()
+            with torch.cuda.stream(self.target):
+                if self.output is None:
+                    self.output = [torch.empty((*t.shape[:-2], self.length, t.shape[-1]),
+                                               dtype=t.dtype, device=self.target.device) for t in tensors]
+                for dest, host in zip(self.output, hosts):
+                    dest[..., offset:offset + host.shape[-2], :].copy_(host, non_blocking=True)
+        finally:
+            # Keep pinned and gathered buffers alive even when a later copy raises.
+            self.source.synchronize()
+            self.target.synchronize()
+        n = len(tensors) // 2
+        return (self.output[:n], self.output[n:]) if grouped else tuple(self.output)
+
+    def finish(self):
+        result = None
+        while self.pending:
+            result = self.pending.popleft().result()
+        return result
+
+    def close(self):
+        self.pool.shutdown(wait=True)
+
+
 class TorchPrefillEngine:
     """prefill only, on its own device: chunked over a paged KV with a prefix cache; returns the KV span to send"""
 
     def __init__(self, model, *, max_context=2048, chunk=2048, page_size=64, pages=None, prefix_cache=True,
-                 out_device=None):
+                 out_device=None, copy_overlap=False):
         from opt_prime.accel.pd.paged import PagedKV
         g = describe_model(model.config)
         p = next(model.parameters())
@@ -91,6 +143,12 @@ class TorchPrefillEngine:
             self.kv.attach_recurrent(model, g.recurrent)
         self.chunk, self.max_context = chunk, max_context
         self.out_device = torch.device(out_device) if out_device is not None else None
+        if self.out_device is not None and self.out_device.type == "cuda" and self.out_device.index is None:
+            self.out_device = torch.device("cuda", torch.cuda.current_device())
+        if copy_overlap and (self.device.type != "cuda" or self.out_device is None or
+                             self.out_device.type != "cuda" or self.out_device == self.device):
+            raise ValueError("copy_overlap requires distinct CUDA source and destination devices")
+        self.copy_overlap = copy_overlap
         self._stream = torch.cuda.Stream(self.out_device) if self.out_device is not None and \
             self.out_device.type == "cuda" and self.out_device != self.device else None
 
@@ -101,19 +159,33 @@ class TorchPrefillEngine:
         cached = self.kv.alloc(0, len(ids), prompt=ids)
         if cached is None:
             raise RuntimeError("prefill KV pool too small for the prompt")
+        copier = None
         try:
+            if self.copy_overlap and send_from < len(ids):
+                copier = _ChunkCopy(self.device, self.out_device, send_from, len(ids) - send_from)
+                if send_from < cached:
+                    copier.submit(self.kv, send_from, cached)
             start, logits = cached, None
             while start < len(ids):
                 end = min(start + self.chunk, len(ids))
                 logits = prefill_chunk(self.model, self.kv, 0, ids, start, end, self.device)
+                if copier is not None and end > send_from:
+                    copier.submit(self.kv, max(start, send_from), end)
                 start = end
             self.kv.commit_prompt(0)
             state = self.kv.lane_state.pop(0, None) if self.kv.rstate else None
             token = select_token(logits, request.sampling, len(ids))
-            keys, values = self.kv.read_span(0, send_from, len(ids))       # gathered copies, own memory
+            if copier is None:
+                keys, values = self.kv.read_span(0, send_from, len(ids))
             if self.device.type == "cuda":
-                torch.cuda.synchronize(self.device)                          # prefill time = compute, not launch
+                if copier is not None:
+                    torch.cuda.current_stream(self.device).synchronize()
+                else:
+                    torch.cuda.synchronize(self.device)
             t1 = time.perf_counter()
+            # With overlap, transfer_s measures the unhidden copy tail, not total DMA duration.
+            if copier is not None:
+                keys, values = copier.finish()
             if self.out_device is not None and self.out_device != self.device:
                 with torch.cuda.stream(self._stream) if self._stream is not None else _nullctx():
                     keys, values = move_kv(keys, self.out_device), move_kv(values, self.out_device)
@@ -124,7 +196,11 @@ class TorchPrefillEngine:
             t2 = time.perf_counter()
             return PrefillOut(token, send_from, keys, values, cached, t1 - t0, t2 - t1, state)
         finally:
-            self.kv.release(0)
+            try:
+                if copier is not None:
+                    copier.close()
+            finally:
+                self.kv.release(0)
 
 
 class PrefillWorker:
