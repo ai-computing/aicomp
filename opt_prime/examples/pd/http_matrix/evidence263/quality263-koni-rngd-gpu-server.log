@@ -1,0 +1,12 @@
+
+Loading weights:   0%|          | 0/291 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 291/291 [00:00<00:00, 9293.00it/s]
+{"compile_start": "rms", "width": 8192}
+{"compile_done": "rms", "seconds": 0.47516164201078936}
+{"compile_start": "attention", "width": 8192}
+{"compile_done": "attention", "seconds": 0.5700391250429675}
+{"compile_start": "ffn", "width": 8192}
+{"compile_done": "ffn", "seconds": 0.19021520903334022}
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+/usr/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

@@ -47,3 +47,21 @@ Live GPU faults#201: Qwen0.6/Qwen4 cancellation, producer-exit503/readiness, SHM
 KONI/Gemma GPU lifecycle completed; allfour pass cancellation/reuse, producer death/readiness503, slab unlink and producer replacement. Concurrent-decode isolation is being tested separately and not claimed here.
 
 Allfour live GPU isolation runs pass: active512-token decode survives other-request producer death with exact output; all baseline lifecycle gates retained.
+
+#263 held-out suite: Qwen3-0.6B/Qwen3-4B/KONI-8B/Gemma3-1B inputs frozen (36/model); scorer distinguishes parsed answer, JSON format and exact token parity. Tests9passed after9expected failures. Hardware results pending; #256/#261 remain open.
+
+#263 evaluator verification:10focused passed; full prior collection533passed/15skipped/253subtests. Frozen fixtures hashed before inference; GPU route queue started, hardware results pending.
+
+#263 first GPU pairs complete: Qwen0.6 native32/36 versus RNGD34/36, no paired regression,34/36 token equality; Qwen4 both36/36, alltokens equal. KONI/Gemma and ATOM queues still running; old long-output failures are retained.
+
+#263 all288 GPU responses complete; structured scores native/RNGD:Q06 32/34,Q4 36/36,KONI31/31,Gemma0/0 (code fences, not zero content accuracy). Exacttoken pairs34/36,36/36,35/36,32/36. Q06 ATOM pair33/33 scores and36/36 tokens equal; Q4nativeATOM36/36. All source weight shards/config/tokenizer SHA256 match between hosts. Remaining fiveATOM routes active.
+
+#263 Qwen4allfour routes complete:each36/36 structured answers and all36 token sequences equal acrossGPU/RNGD/ATOM. KONI/GemmaATOM pending; historical#256 remains open.
+
+#263 six-pair audit: Q06 passkey-3-2048 correct on RNGD→GPU but wrong on bothATOM routes; no universal quality-equivalence claim. KONI allfour complete31/36 scores; nativeGPU/nativeATOM andRNGD-GPU/RNGD-ATOM each36/36 exacttokens. OnlyGemma RNGD-ATOM pending.
+
+## Final held-out evaluation (#263)
+
+All 576 responses completed normally. Qwen3-4B: 36/36 structured answers and exact tokens on all four routes. Qwen3-0.6B and Gemma retain cross-route content counterexamples; all six route pairs are audited. Final published artifact auditor reproduces the summary exactly. Owned evaluation Pod absent. See evidence263 and the heldout-quality263 experiment; numerical compatibility and source streaming remain open.
+
+Post-hoc #263 content diagnostic (primary unchanged): Gemma29/30/29/29 of36 correct after only outer-fence/arithmetic-int relaxation, vs frozen primary0/0/0/0. Six or seven content errors and one cross-route answer difference remain. Other model scores unchanged. All16 raw JSONL inputs byte-identical to published evidence; analyzer self-checks/reproduction pass. Exploratory, not an acceptance-rule change.

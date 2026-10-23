@@ -1,0 +1,44 @@
+ATOM_BINDING {"visible_count": 1, "physical": 1, "opened": ["/dev/rbln1"]}
+{"compile_start": "rms", "width": 8192}
+{"compile_done": "rms", "seconds": 0.9926180159673095}
+{"compile_start": "attention", "width": 8192}
+{"compile_done": "attention", "seconds": 159.76363624306396}
+{"compile_start": "ffn", "width": 8192}
+{"compile_done": "ffn", "seconds": 181.0874745339388}
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+arithmetic-0-0 True True
+passkey-0-0 True True
+korean_table-0-0 False True
+arithmetic-1-0 False True
+passkey-1-0 True True
+korean_table-1-0 True True
+arithmetic-2-0 False True
+passkey-2-0 True True
+korean_table-2-0 True True
+arithmetic-3-0 True True
+passkey-3-0 True True
+korean_table-3-0 True True
+arithmetic-0-2048 True True
+passkey-0-2048 True True
+korean_table-0-2048 True True
+arithmetic-1-2048 True True
+passkey-1-2048 True True
+korean_table-1-2048 True True
+arithmetic-2-2048 True True
+passkey-2-2048 True True
+korean_table-2-2048 True True
+arithmetic-3-2048 True True
+passkey-3-2048 True True
+korean_table-3-2048 True True
+arithmetic-0-8192 True True
+passkey-0-8192 False False
+korean_table-0-8192 True True
+arithmetic-1-8192 True True
+passkey-1-8192 True True
+korean_table-1-8192 True True
+arithmetic-2-8192 True True
+passkey-2-8192 False False
+korean_table-2-8192 True True
+arithmetic-3-8192 True True
+passkey-3-8192 True True
+korean_table-3-8192 True True

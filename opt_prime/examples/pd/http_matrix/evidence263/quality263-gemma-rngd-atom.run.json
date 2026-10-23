@@ -1,0 +1,16 @@
+{
+  "stage": "complete",
+  "route": "rngd-atom",
+  "model": "unsloth/gemma-3-1b-it",
+  "runtime_commit": "3e16c33",
+  "torch": "2.11.0+cpu",
+  "tokenizer_inputs_equal": true,
+  "cases": 36,
+  "context": 9216,
+  "batch_size": 1,
+  "kv_blocks": 3,
+  "cache": false,
+  "producer_width": 8192,
+  "answer_correct": 0,
+  "format_correct": 0
+}
