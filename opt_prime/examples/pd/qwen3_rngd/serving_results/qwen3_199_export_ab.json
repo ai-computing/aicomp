@@ -1,0 +1,170 @@
+[
+  {
+    "repeat": 0,
+    "prompt": 0,
+    "n": 19,
+    "seconds": {
+      "baseline": 0.6998434429988265,
+      "host_stack": 0.051616474986076355
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 0,
+    "prompt": 1,
+    "n": 19,
+    "seconds": {
+      "baseline": 0.706331770052202,
+      "host_stack": 0.05393066303804517
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 0,
+    "prompt": 2,
+    "n": 22,
+    "seconds": {
+      "baseline": 0.6959986350266263,
+      "host_stack": 0.055388121982105076
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 1,
+    "prompt": 0,
+    "n": 19,
+    "seconds": {
+      "host_stack": 0.05561624700203538,
+      "baseline": 0.7183967599412426
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 1,
+    "prompt": 1,
+    "n": 19,
+    "seconds": {
+      "host_stack": 0.05398259300272912,
+      "baseline": 0.6937722340226173
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 1,
+    "prompt": 2,
+    "n": 22,
+    "seconds": {
+      "host_stack": 0.05680075008422136,
+      "baseline": 0.6885809010127559
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 2,
+    "prompt": 0,
+    "n": 19,
+    "seconds": {
+      "baseline": 0.7037170620169491,
+      "host_stack": 0.0628558739554137
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 2,
+    "prompt": 1,
+    "n": 19,
+    "seconds": {
+      "baseline": 0.7075157429790124,
+      "host_stack": 0.06747303693555295
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 2,
+    "prompt": 2,
+    "n": 22,
+    "seconds": {
+      "baseline": 0.8293483580928296,
+      "host_stack": 0.04779647197574377
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 3,
+    "prompt": 0,
+    "n": 19,
+    "seconds": {
+      "host_stack": 0.0541782429208979,
+      "baseline": 0.6991903349990025
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 3,
+    "prompt": 1,
+    "n": 19,
+    "seconds": {
+      "host_stack": 0.059191674925386906,
+      "baseline": 0.8156559279887006
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  },
+  {
+    "repeat": 3,
+    "prompt": 2,
+    "n": 22,
+    "seconds": {
+      "host_stack": 0.04451628401875496,
+      "baseline": 0.6997385469730943
+    },
+    "kv_logits_exact": [
+      true,
+      true,
+      true
+    ]
+  }
+]
