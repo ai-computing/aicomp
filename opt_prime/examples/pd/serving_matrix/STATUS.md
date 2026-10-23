@@ -15,3 +15,7 @@ Qwen3-4B RNGD2048 warm570–575ms;32-token fixture output matches GPU and ATOM n
 
 ## KONI capacity and Gemma reference
 KONI8B context9216/B1/three blocks fails graph conversion;one block completes16 runs through8K+128,8/8 repeat pairs exact,3/8 full/EOS GPU output matches (including both8K cases). Raw results and capacity record attached. GPU Gemma FP32 reference added;8K32-token output matches ATOM, shorter cases remain divergent. Full four-model objective remains active.
+
+## RNGD long-prefix follow-up (#217)
+
+Qwen3-0.6B2K finite/repeat-exact; GPU BF16/FP32 continuation32 tokens exact. ATOM importer logits match but native continuation differs at second token due to measured18.25 tie versus18.375 imported winner. Experimental8192 guard enabled only in this research variant; hardware compilation still pending. Full scope remains open.
