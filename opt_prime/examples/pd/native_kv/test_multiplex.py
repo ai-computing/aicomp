@@ -120,6 +120,25 @@ class MultiplexTest(unittest.TestCase):
         self.assertEqual(completed,[0,1,2]);self.assertGreater(clock[0],c.timeout)
         self.assertFalse(c.poisoned)
 
+    def test_suffix_offset_and_short_packet(self):
+        c=self.client();pool=Mock();messages=deque();future=concurrent.futures.Future()
+        response=Mock();response.json.return_value={};future.set_result(response)
+        def submit(fn,url,json,timeout):
+            rid=json['kv_transfer_params']['id'];messages.append([control(rid,1)])
+            for first in range(0,72,4):messages.append(batch(rid,range(first,first+4),1,77,first==68))
+            return future
+        pool.submit.side_effect=submit;c.rx.poll.return_value=True
+        c.rx.recv_multipart.side_effect=lambda copy:messages.popleft()
+        with patch('multiplex_receiver.concurrent.futures.ThreadPoolExecutor',return_value=pool):
+            result=c.prefill_many('model',[[1,2,3,4]],start_pos=2)
+        self.assertEqual(result[0][1]['exported_positions'],1)
+        self.assertEqual(result[0][0].nbytes,72*2048)
+        self.assertTrue(np.all(np.frombuffer(result[0][0].tobytes(),dtype=np.uint16)==77))
+        header=c.tx.send.call_args_list[0].args[0]
+        self.assertEqual(u32(header,len(header)-20),2)
+        for offset in (-1,True,3):
+            with self.assertRaises(ValueError):c.prefill_many('model',[[1,2,3,4]],start_pos=offset)
+
     def test_unknown_id_poisoned(self):
         c=self.client();pool=Mock();pool.submit.return_value=concurrent.futures.Future()
         c.rx.poll.return_value=True;c.rx.recv_multipart.return_value=[control('unregistered-id',1)]

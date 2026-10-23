@@ -9,11 +9,13 @@ from protocol import control, parse_message, read_string, u32, MAX_HEADER
 
 
 class MultiplexKVClient(NativeKVClient):
-    def prefill_many(self, model, prompts, on_complete=None, *, direct=False):
+    def prefill_many(self, model, prompts, on_complete=None, *, direct=False, start_pos=0):
         if self.poisoned: raise RuntimeError('failed client cannot be reused')
         if not 1 <= len(prompts) <= 16: raise ValueError('expected 1..16 prompts')
         if any(not 2 <= len(tokens) <= 2048 for tokens in prompts):
             raise ValueError('prompt length must be 2..2048')
+        if type(start_pos) is not int or any(not 0 <= start_pos < len(t)-1 for t in prompts):
+            raise ValueError('invalid shared source prefix offset')
         remaining = iter(enumerate(prompts))
         exhausted = False
         results = [None] * len(prompts)
@@ -26,10 +28,10 @@ class MultiplexKVClient(NativeKVClient):
             results[index] = (data, stats)
             if on_complete is not None: on_complete(index, data, stats)
         self.prefill_stream(model, acquire, complete, lambda: exhausted,
-                            max_pending=len(prompts), direct=direct)
+                            max_pending=len(prompts), direct=direct, start_pos=start_pos)
         return results
 
-    def prefill_stream(self, model, acquire, on_complete, stopped, *, max_pending=8, direct=False):
+    def prefill_stream(self, model, acquire, on_complete, stopped, *, max_pending=8, direct=False, start_pos=0):
         """Continuously replenish bounded requests from nonblocking acquire().
 
         acquire() returns (tokens, context) or None. Stop admission when stopped()
@@ -37,6 +39,8 @@ class MultiplexKVClient(NativeKVClient):
         callback owns completed data and the caller owns all acquired contexts.
         """
         if self.poisoned: raise RuntimeError('failed client cannot be reused')
+        if type(start_pos) is not int or not 0 <= start_pos < 2047:
+            raise ValueError('invalid shared source prefix offset')
         if not 1 <= max_pending <= 16: raise ValueError('expected 1..16 pending requests')
         if direct:
             from pinned_receiver import PinnedAssembler
@@ -50,14 +54,16 @@ class MultiplexKVClient(NativeKVClient):
                     if item is None: break
                     tokens, context = item
                     if not 2 <= len(tokens) <= 2048: raise ValueError('prompt length must be 2..2048')
+                    if start_pos >= len(tokens)-1: raise ValueError('prefix must leave a suffix')
+                    positions = len(tokens)-1-start_pos
                     start = time.perf_counter()
                     rid = 'multi-kv-'+uuid.uuid4().hex
                     body = {'model':model, 'prompt':tokens, 'max_tokens':1, 'min_tokens':0,
                         'temperature':0, 'ignore_eos':True, 'stream':False,
                         'kv_transfer_params':{'remote_decoder':f'127.0.0.1:{self.receiver_port}', 'id':rid}}
                     future = pool.submit(requests.post, self.http_url+'/v1/completions', json=body, timeout=self.timeout)
-                    pending[rid] = {'index':context, 'start':start, 'n':len(tokens)-1, 'future':future,
-                        'assembler':(PinnedAssembler(rid,len(tokens)-1) if direct else ViewAssembler(rid,len(tokens)-1)),
+                    pending[rid] = {'index':context, 'start':start, 'n':positions, 'future':future,
+                        'assembler':(PinnedAssembler(rid,positions) if direct else ViewAssembler(rid,positions)),
                         'ready':False, 'done':False, 'ready_ms':None, 'kv_ready_ms':None, 'batches':0}
                 for rid, state in list(pending.items()):
                     if time.perf_counter()-state['start'] >= self.timeout:
@@ -67,7 +73,7 @@ class MultiplexKVClient(NativeKVClient):
                     response.raise_for_status()
                     if not state['done']: continue
                     stats = {k:state[k] for k in ('ready_ms','kv_ready_ms','batches')}
-                    stats.update(complete_ms=(time.perf_counter()-state['start'])*1000, response=response.json())
+                    stats.update(start_pos=start_pos,exported_positions=state['n'],complete_ms=(time.perf_counter()-state['start'])*1000, response=response.json())
                     result = (state['assembler'].data, stats)
                     if on_complete is not None: on_complete(state['index'], *result)
                     del pending[rid]
@@ -88,7 +94,7 @@ class MultiplexKVClient(NativeKVClient):
                     if state is None or state['ready'] or state['done']: raise ValueError('unexpected ready ID')
                     state['ready'] = True
                     state['ready_ms'] = (time.perf_counter()-state['start'])*1000
-                    self.tx.send(control(msg['id'],2,range(state['n'])))
+                    self.tx.send(control(msg['id'],2,range(state['n']),start_pos=start_pos))
                 elif part_count == 2:
                     # Only route here; assembler validates the complete header and payload.
                     if not 36 <= len(header) <= MAX_HEADER or len(header)%4 or u32(header,len(header)-36)!=1:

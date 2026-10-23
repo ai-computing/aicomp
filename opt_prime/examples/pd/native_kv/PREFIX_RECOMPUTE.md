@@ -1,9 +1,9 @@
 # GPU prefix recomputation and native suffix transfer (#162, in progress)
 
 Parent d3d54af / PR161. The native exporter can omit a prefix using the control
-request start-position field. This first implementation adds a bounded single-flight
-API, not the overlapping GPU-generation path yet. Full transfer remains the default;
-rolling serving is unchanged.
+request start-position field. The API below supports bounded suffix receive; PREFIX_OVERLAP.md now documents a
+working single-request GPU-prefix/native-suffix prototype and its measurements. Full
+transfer remains the serving default; rolling serving is unchanged.
 
 ```python
 packet, stats = client.prefill(model, tokens, 'views', start_pos=prefix_length)
@@ -37,9 +37,9 @@ latencies in the artifact are not an end-to-end speedup claim. Owned server stop
 
 ## Remaining work
 
-Build an opt-in prototype that computes a causal GPU prefix while native prefill runs,
-then imports native suffix KV. GPU-prefill arithmetic differs from native; validate
-combined-cache output quality explicitly. Measure matched latency, GPU memory and
-interference with active decode before integrating bounded serving admission. This API
-alone does not achieve native performance. Existing parent diagnostic manifests describe
-the parent version; suffix_api_manifest.json identifies the updated probe and API.
+The overlap prototype is implemented and measured in PREFIX_OVERLAP.md. Integrate a
+bounded opt-in serving path, including joint prefix/suffix ownership, chunked GPU work,
+active-decode interference and cancellation/overload validation. The prototype alone
+does not establish native HTTP performance. Parent diagnostic manifests describe the
+parent version; suffix_api_manifest.json identifies this API's initial validation and
+prefix_overlap_manifest.json identifies the current prototype.
