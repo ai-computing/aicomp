@@ -30,9 +30,14 @@ from opt_prime.accel.serve.llmd import serve_stage
 def prefill_worker(a, slots, config):
     """the PD prefill side from the flags, or None (aggregated serving)"""
     if a.pd_prefill_device:
+        chunk = getattr(a, "pd_prefill_chunk", 2048)
+        if chunk <= 0:
+            raise ValueError("PD prefill chunk must be positive")
         from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
         m = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.pd_prefill_device).eval()
-        return PrefillWorker(TorchPrefillEngine(m, max_context=a.max_context, out_device=a.device
+        return PrefillWorker(TorchPrefillEngine(m, max_context=a.max_context, chunk=chunk,
+                                                prefix_cache=not getattr(a, "pd_prefill_no_prefix_cache", False),
+                                                out_device=a.device
                                                 if a.backend == "torch" else "cpu"))
     if a.pd_prefill_python:
         import os, shlex
@@ -118,6 +123,10 @@ if __name__ == "__main__":
     ap.add_argument("--fxb", default=None, help="RNGD: furiosa-llm compiled artifact")
     ap.add_argument("--rngd-devices", default="npu:0"); ap.add_argument("--no-prefix-cache", action="store_true")
     ap.add_argument("--pd-prefill-device", default=None, help="PD: torch prefill on this device (e.g. cuda:0)")
+    ap.add_argument("--pd-prefill-chunk", type=int, default=2048,
+                    help="Torch --pd-prefill-device producer chunk size (default: 2048)")
+    ap.add_argument("--pd-prefill-no-prefix-cache", action="store_true",
+                    help="disable prefix reuse in the Torch --pd-prefill-device producer (decoder policy unchanged)")
     ap.add_argument("--pd-prefill-python", default=None, help="PD: prefill_server under this interpreter")
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")
     ap.add_argument("--pd-prefill-pythonpath", default=None)

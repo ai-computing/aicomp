@@ -17,3 +17,17 @@ Use `--backend atom` in an isolated allocation exposing exactly one ATOM. Existi
 Inputs128/2048/8192 and clients4/8 are queued over one ATOM execution lane, not hardware batching. All four cache-off runs pass lifecycle checks and48/48 concurrent/serial comparisons. Both Qwen device/host cache cases pass12/12 each. Gemma requires the causal-prefill SDK graph correction and #210 hybrid local-table/mask fix; its prefix/host/PD restoration remains unsupported. KONI's one-block configuration has no spare prefix block.
 
 See experiments/2026-10-23-atom-http211.md and evidence/atom-http-*.json. Files ending `fixed` include #214's HTTP MSG_NOSIGNAL fix; the Qwen0.6 matched rerun preserves all output sequences and eliminates the observed native disconnect backtraces. This does not establish all RNGD/heterogeneous routes or real transfer overlap.
+
+### Torch PD producer reproducibility controls
+
+`serve_batched.py --pd-prefill-device cuda:0` keeps producer prefix caching enabled and uses a 2048-token producer chunk by default. These are independent of decoder `--prefix-cache` and local `--chunk`.
+
+To compare BF16 native and PD under uncached, matching chunk execution:
+
+```bash
+python examples/pd/serve_batched.py --model "$MODEL" --device cuda:1 --slots 4 \
+  --max-context 9216 --chunk 256 --pd-prefill-device cuda:0 \
+  --pd-prefill-no-prefix-cache --pd-prefill-chunk 256
+```
+
+The new flags affect the in-process Torch producer only. Nonpositive producer chunks are rejected. Disabling reuse or using smaller chunks can increase prefill work/overhead; these options do not promise a speedup or universal bitwise equality. CPU factory and four-model GPU controls are recorded under issue #241.
