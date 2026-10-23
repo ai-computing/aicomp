@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "lifecycle_passed": true,
+  "stage": "complete",
+  "model": "/tmp/serving-matrix-models/Qwen3-4B",
+  "faults": {
+    "cancel": {
+      "entry": {
+        "sequence": 2,
+        "phase": "start",
+        "tokens": 8192,
+        "time": 296565.348185361
+      },
+      "status": 499,
+      "reuse_exact": true
+    },
+    "worker_exit": {
+      "entry": {
+        "sequence": 4,
+        "phase": "start",
+        "tokens": 8192,
+        "time": 296572.416442224
+      },
+      "pending_status": 500,
+      "later_status": 503,
+      "readiness": 503,
+      "slab_unlinked": true,
+      "replacement_exact": true
+    }
+  },
+  "control_tokens": [
+    576,
+    6722,
+    315,
+    9625,
+    374,
+    12095,
+    624,
+    14582,
+    25,
+    3555,
+    374,
+    279,
+    6722,
+    315,
+    9625,
+    5267,
+    16141,
+    25,
+    576,
+    6722,
+    315,
+    9625,
+    374,
+    12095,
+    624,
+    14582,
+    25,
+    3555,
+    374,
+    279,
+    6722,
+    315
+  ],
+  "native_tokens_equal": true
+}

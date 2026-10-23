@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "lifecycle_passed": true,
+  "stage": "complete",
+  "model": "/tmp/serving-matrix-models/KONI-8B",
+  "faults": {
+    "cancel": {
+      "entry": {
+        "sequence": 2,
+        "phase": "start",
+        "tokens": 8192,
+        "time": 296749.281197132
+      },
+      "status": 499,
+      "reuse_exact": true
+    },
+    "worker_exit": {
+      "entry": {
+        "sequence": 4,
+        "phase": "start",
+        "tokens": 8192,
+        "time": 296756.839923111
+      },
+      "pending_status": 500,
+      "later_status": 503,
+      "readiness": 503,
+      "slab_unlinked": true,
+      "replacement_exact": true
+    }
+  },
+  "control_tokens": [
+    578,
+    6864,
+    315,
+    9822,
+    374,
+    12366,
+    13,
+    720,
+    3957,
+    420,
+    2038,
+    11190,
+    30,
+    1442,
+    779,
+    11,
+    4587,
+    1095,
+    757,
+    1440,
+    422,
+    499,
+    617,
+    904,
+    1023,
+    4860,
+    13,
+    720,
+    38766,
+    1303,
+    33025,
+    2696
+  ],
+  "native_tokens_equal": true
+}

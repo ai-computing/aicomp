@@ -41,3 +41,9 @@ Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} fro
 #258 dense hybrid KV: actual Gemma failure reproduced; mapping/group validation corrected.31focused and505full CPU tests pass; live rerun pending.
 
 #258 corrected live Gemma32ce5d5:24batches,20/20token checks,60/60timed texts exact;84remote/0local/0errors. Shape crash fixed in recorded hardware matrix; overall numerical/quality boundaries remain.
+
+Live GPU faults#201: Qwen0.6/Qwen4 cancellation, producer-exit503/readiness, SHM unlink and replacement exact-output checks pass. KONI/Gemma pending; long-output numerical failures remain.
+
+KONI/Gemma GPU lifecycle completed; allfour pass cancellation/reuse, producer death/readiness503, slab unlink and producer replacement. Concurrent-decode isolation is being tested separately and not claimed here.
+
+Allfour live GPU isolation runs pass: active512-token decode survives other-request producer death with exact output; all baseline lifecycle gates retained.
