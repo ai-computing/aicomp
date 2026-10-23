@@ -49,11 +49,11 @@ Raw results: `pd05-r2/` and `pd15-r2/`, including `runs.jsonl`, `result.json`
 and source/environment provenance. Offline quality: `quality-pd05-r2.json`
 and `quality-pd15-r2.json`. Unit suite: `tests-final.log`,22tests passed.
 
-From the workspace root, run the appropriate final config with:
+From the workspace root, with `FURIOSA_PYTHON` set to the Python of the furiosa 2026.4 environment, run the appropriate final config with:
 
 ```sh
 PYTHONPATH=aicomp-integration/opt_prime:hetero-npu-p2p/src:rngd_llmd/src \
- /home/gspark/venvs/furiosa-2026.4/bin/python \
+ "$FURIOSA_PYTHON" \
  aicomp-integration/opt_prime/examples/pd/validate_qwen_pd.py \
  --config experiments/qwen_pd_extension_20261019/pd05-config-r2.json
 ```
