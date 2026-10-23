@@ -27,7 +27,7 @@ python3 test_spec.py
 compiles/loads its own B1/context512/3KV-block artifact under qwen3-197-atom, compares
 CPU FP32 prefill, native ATOM prefill and imported RNGD KV, and writes
 qwen3_197_atom.json. It uses both the existing and portable importers and reads back
-every imported slot. These scripts run a finite fixture, not an HTTP service.
+every imported slot. These two scripts run a finite fixture; the experimental HTTP adapter is described below.
 
 ## Hardware evidence (2026-10-23)
 
@@ -58,6 +58,53 @@ semantics; hardware records are essential evidence beyond those tests.
 ## Limits
 
 Other sizes, longer prompts, concurrent requests, prefix reuse, cancellation and
-production recovery/lifetime behavior are unvalidated. The handoff has not been
-wired into npu_pd_bench/serve_batched. Keep model-specific math in this prefiller;
+production recovery/lifetime behavior are unvalidated. The handoff is exposed by the explicit experimental `serve.py` adapter below;
+it is not automatically registered in npu_pd_bench/serve_batched. Keep model-specific math in this prefiller;
 the portable56-slot import succeeded without communication-library changes.
+
+
+## Experimental HTTP adapter and export improvement (#199)
+
+`serve.py` reuses the existing optimus-rm `SubprocessPrefillWorker`, ATOM batcher,
+`BatchedService` and `BatchedOwner`. `worker_python.sh` redirects only the expected
+prefill worker module launch to `worker.py`; model-specific math stays in
+`prefill.py`. This is an explicit experiment requiring the existing optimus-rm
+runtime on PYTHONPATH, not a new production backend in this checkout.
+
+Place PR195's `furiosa_prefill_python.sh` alongside `worker_python.sh` and use its
+single-card allocation/bootstrap instructions. Keep the task's own compiled
+artifact cache and validated interpreters. The HTTP listener binds only loopback.
+The service is fixed to Qwen3-0.6B, B1/context512/3KV blocks, no prefix caching.
+Prompts above `--width` (default128) are rejected before worker submission. Decode
+requests may queue; only one lane executes. SIGTERM drains queued work before
+closing the worker and slab. Disconnect cancellation and fault recovery have not
+been hardware-validated in this experiment.
+
+```bash
+python3 -m unittest discover -s . -p 'test_*.py'
+# In the writable scratch directory with the validated fixture/artifacts:
+"$ATOM_PYTHON" check_atom_container.py serve.py --cache-dir "$PWD/qwen3-197-atom"
+# Another process in the same allocated Pod:
+"$ATOM_PYTHON" bench_http.py --name pd
+"$ATOM_PYTHON" bench_stream.py --name pd
+# Stop/drain the service, then restart with --local-prefill for the same ATOM-only baseline.
+```
+
+The export fix replaces device-side `torch.stack(...).cpu()` with per-layer
+`.cpu()` followed by CPU stacking. The device graph and width remain unchanged.
+To reproduce the alternating A/B, save the old implementation in the scratch
+working directory (not over the new prefiller):
+
+```bash
+git show 353d15090aa7908e0bb2ea5422f047e59ea9273d:opt_prime/examples/pd/qwen3_rngd/prefill.py > prefill_baseline.py
+./furiosa_prefill_python.sh -m bench_export
+```
+
+Measured warm prefill: 728.435→55.823ms mean (nine pairs); all twelve paired K,V
+and full-logit comparisons exact. Detailed serving results and limitations are
+in `SERVING_EXPERIMENT.md` and `serving_results/`. The old roughly719ms measurement
+above is historical, before this export fix. Width32/64 were also measured but
+changed numerical values, so the verified improvement retains width128.
+
+`safe_open` must be iterated through `.keys()` in this SDK environment; the
+specific lint exemption preserves that behavior.

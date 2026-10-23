@@ -14,7 +14,7 @@ c = json.loads((path / "config.json").read_text())
 w = {}
 for shard in sorted(path.glob("*.safetensors")):
     with safe_open(shard, framework="pt") as f:
-        for key in f:
+        for key in f.keys():  # noqa: SIM118 - safe_open is not iterable
             w[key] = f.get_tensor(key).float()
 e = Prefill(c, w, width=128, chip=0)
 print("READY", flush=True)

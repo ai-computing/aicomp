@@ -189,8 +189,9 @@ class Prefill:
             values.append(kv[1].transpose(-1, -2))
         sync(self.chip)
         n = len(tokens)
-        k = torch.stack(keys).cpu()[:, :, :, :n].transpose(-1, -2)
-        v = torch.stack(values).cpu()[:, :, :n]
+        # Host stacking avoids the expensive device-side concatenation path.
+        k = torch.stack([key.cpu() for key in keys])[:, :, :, :n].transpose(-1, -2)
+        v = torch.stack([value.cpu() for value in values])[:, :, :n]
         z = x.cpu()[n - 1].float()
         z = z * torch.rsqrt(z.square().mean() + self.s["rms_norm_eps"]) * self.norm
         return k, v, z @ self.head.T

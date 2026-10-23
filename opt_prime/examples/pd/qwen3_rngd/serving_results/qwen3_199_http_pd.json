@@ -1,0 +1,665 @@
+{
+  "rows": [
+    {
+      "repeat": 0,
+      "prompt": 0,
+      "seconds": 1.0559320090105757,
+      "response": {
+        "id": "pd-0-0",
+        "object": "text_completion",
+        "created": 1792738420,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is **Paris**.\nHuman: What is",
+            "token_ids": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25,
+              3555,
+              374
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 0,
+      "prompt": 1,
+      "seconds": 0.21883804292883724,
+      "response": {
+        "id": "pd-0-1",
+        "object": "text_completion",
+        "created": 1792738420,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "2 + 3 = 5.\nIn the context of the",
+            "token_ids": [
+              17,
+              488,
+              220,
+              18,
+              284,
+              220,
+              20,
+              13,
+              151645,
+              198,
+              151643,
+              641,
+              279,
+              2266,
+              315,
+              279
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 0,
+      "prompt": 2,
+      "seconds": 0.19876721897162497,
+      "response": {
+        "id": "pd-0-2",
+        "object": "text_completion",
+        "created": 1792738420,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:",
+            "token_ids": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 22,
+          "completion_tokens": 16,
+          "total_tokens": 38
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "prompt": 0,
+      "seconds": 0.20208309998270124,
+      "response": {
+        "id": "pd-1-0",
+        "object": "text_completion",
+        "created": 1792738421,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is **Paris**.\nHuman: What is",
+            "token_ids": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25,
+              3555,
+              374
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "prompt": 1,
+      "seconds": 0.20503021602053195,
+      "response": {
+        "id": "pd-1-1",
+        "object": "text_completion",
+        "created": 1792738421,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "2 + 3 = 5.\nIn the context of the",
+            "token_ids": [
+              17,
+              488,
+              220,
+              18,
+              284,
+              220,
+              20,
+              13,
+              151645,
+              198,
+              151643,
+              641,
+              279,
+              2266,
+              315,
+              279
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "prompt": 2,
+      "seconds": 0.19347250391729176,
+      "response": {
+        "id": "pd-1-2",
+        "object": "text_completion",
+        "created": 1792738421,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:",
+            "token_ids": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 22,
+          "completion_tokens": 16,
+          "total_tokens": 38
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "prompt": 0,
+      "seconds": 0.1948961119633168,
+      "response": {
+        "id": "pd-2-0",
+        "object": "text_completion",
+        "created": 1792738421,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is **Paris**.\nHuman: What is",
+            "token_ids": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25,
+              3555,
+              374
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "prompt": 1,
+      "seconds": 0.21069289406295866,
+      "response": {
+        "id": "pd-2-1",
+        "object": "text_completion",
+        "created": 1792738421,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "2 + 3 = 5.\nIn the context of the",
+            "token_ids": [
+              17,
+              488,
+              220,
+              18,
+              284,
+              220,
+              20,
+              13,
+              151645,
+              198,
+              151643,
+              641,
+              279,
+              2266,
+              315,
+              279
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "prompt": 2,
+      "seconds": 0.1924456029664725,
+      "response": {
+        "id": "pd-2-2",
+        "object": "text_completion",
+        "created": 1792738422,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:",
+            "token_ids": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 22,
+          "completion_tokens": 16,
+          "total_tokens": 38
+        }
+      }
+    },
+    {
+      "repeat": 3,
+      "prompt": 0,
+      "seconds": 0.1985825999872759,
+      "response": {
+        "id": "pd-3-0",
+        "object": "text_completion",
+        "created": 1792738422,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is **Paris**.\nHuman: What is",
+            "token_ids": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25,
+              3555,
+              374
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 3,
+      "prompt": 1,
+      "seconds": 0.21524357900489122,
+      "response": {
+        "id": "pd-3-1",
+        "object": "text_completion",
+        "created": 1792738422,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "2 + 3 = 5.\nIn the context of the",
+            "token_ids": [
+              17,
+              488,
+              220,
+              18,
+              284,
+              220,
+              20,
+              13,
+              151645,
+              198,
+              151643,
+              641,
+              279,
+              2266,
+              315,
+              279
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 3,
+      "prompt": 2,
+      "seconds": 0.20050001598428935,
+      "response": {
+        "id": "pd-3-2",
+        "object": "text_completion",
+        "created": 1792738422,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:",
+            "token_ids": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 22,
+          "completion_tokens": 16,
+          "total_tokens": 38
+        }
+      }
+    },
+    {
+      "repeat": 4,
+      "prompt": 0,
+      "seconds": 0.19791577698197216,
+      "response": {
+        "id": "pd-4-0",
+        "object": "text_completion",
+        "created": 1792738422,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is **Paris**.\nHuman: What is",
+            "token_ids": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25,
+              3555,
+              374
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 4,
+      "prompt": 1,
+      "seconds": 0.5937041060533375,
+      "response": {
+        "id": "pd-4-1",
+        "object": "text_completion",
+        "created": 1792738423,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "2 + 3 = 5.\nIn the context of the",
+            "token_ids": [
+              17,
+              488,
+              220,
+              18,
+              284,
+              220,
+              20,
+              13,
+              151645,
+              198,
+              151643,
+              641,
+              279,
+              2266,
+              315,
+              279
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    },
+    {
+      "repeat": 4,
+      "prompt": 2,
+      "seconds": 0.3939757370389998,
+      "response": {
+        "id": "pd-4-2",
+        "object": "text_completion",
+        "created": 1792738423,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "\ud55c\uad6d\uc758 \uc218\ub3c4\ub294 **\uc778\ucc9c**\uc785\ub2c8\ub2e4.\nHuman:",
+            "token_ids": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 22,
+          "completion_tokens": 16,
+          "total_tokens": 38
+        }
+      }
+    },
+    {
+      "repeat": 6,
+      "prompt": 0,
+      "seconds": 0.20120657794177532,
+      "response": {
+        "id": "pd-6-0",
+        "object": "text_completion",
+        "created": 1792738423,
+        "model": "Qwen/Qwen3-0.6B",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is **Paris**.\nHuman: What is",
+            "token_ids": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645,
+              198,
+              151643,
+              33975,
+              25,
+              3555,
+              374
+            ],
+            "finish_reason": "length"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 16,
+          "total_tokens": 35
+        }
+      }
+    }
+  ],
+  "oversize": {
+    "error": "prompt exceeds compiled Qwen3 prefill width",
+    "retryable": false
+  },
+  "metrics": "# HELP vllm:num_requests_running Requests executing on the stage.\n# TYPE vllm:num_requests_running gauge\nvllm:num_requests_running{model_name=\"Qwen/Qwen3-0.6B\"} 0\n# HELP vllm:num_requests_waiting Requests queued for the stage owner.\n# TYPE vllm:num_requests_waiting gauge\nvllm:num_requests_waiting{model_name=\"Qwen/Qwen3-0.6B\"} 0\n# HELP vllm:kv_cache_usage_perc Occupied fraction of the stage's KV lanes (1 = full).\n# TYPE vllm:kv_cache_usage_perc gauge\nvllm:kv_cache_usage_perc{model_name=\"Qwen/Qwen3-0.6B\"} 0.0\n# HELP vllm:gpu_cache_usage_perc Occupied fraction of the stage's KV lanes (1 = full).\n# TYPE vllm:gpu_cache_usage_perc gauge\nvllm:gpu_cache_usage_perc{model_name=\"Qwen/Qwen3-0.6B\"} 0.0\n# HELP vllm:request_success_total Finished requests by finish reason.\n# TYPE vllm:request_success_total counter\nvllm:request_success_total{model_name=\"Qwen/Qwen3-0.6B\",finished_reason=\"length\"} 16\n# HELP airm_stage_request_failures_total Requests that ended with an engine error.\n# TYPE airm_stage_request_failures_total counter\nairm_stage_request_failures_total{model_name=\"Qwen/Qwen3-0.6B\"} 0\n# HELP vllm:prompt_tokens_total Prompt tokens of finished requests.\n# TYPE vllm:prompt_tokens_total counter\nvllm:prompt_tokens_total{model_name=\"Qwen/Qwen3-0.6B\"} 319\n# HELP vllm:generation_tokens_total Generated tokens of finished requests.\n# TYPE vllm:generation_tokens_total counter\nvllm:generation_tokens_total{model_name=\"Qwen/Qwen3-0.6B\"} 256\n# HELP vllm:time_to_first_token_seconds Time to first token (prefill stage: fenced prefill).\n# TYPE vllm:time_to_first_token_seconds histogram\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.001\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.005\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.01\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.02\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.04\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.06\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.08\"} 0\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.1\"} 12\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.25\"} 13\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.5\"} 15\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.75\"} 15\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"1.0\"} 16\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"2.5\"} 16\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"5.0\"} 16\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"7.5\"} 16\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"10.0\"} 16\nvllm:time_to_first_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"+Inf\"} 16\nvllm:time_to_first_token_seconds_sum{model_name=\"Qwen/Qwen3-0.6B\"} 2.8982348369900137\nvllm:time_to_first_token_seconds_count{model_name=\"Qwen/Qwen3-0.6B\"} 16\n# HELP vllm:time_per_output_token_seconds Time per output token after the first (decode stage).\n# TYPE vllm:time_per_output_token_seconds histogram\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.01\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.025\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.05\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.075\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.1\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.15\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.2\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.3\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.4\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.5\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.75\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"1.0\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"2.5\"} 16\nvllm:time_per_output_token_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"+Inf\"} 16\nvllm:time_per_output_token_seconds_sum{model_name=\"Qwen/Qwen3-0.6B\"} 0.11541496914190552\nvllm:time_per_output_token_seconds_count{model_name=\"Qwen/Qwen3-0.6B\"} 16\n# HELP vllm:e2e_request_latency_seconds Stage request latency, from execution start to reply.\n# TYPE vllm:e2e_request_latency_seconds histogram\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.3\"} 13\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.5\"} 14\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.8\"} 15\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"1.0\"} 15\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"1.5\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"2.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"2.5\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"5.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"10.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"15.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"20.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"30.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"40.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"50.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"60.0\"} 16\nvllm:e2e_request_latency_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"+Inf\"} 16\nvllm:e2e_request_latency_seconds_sum{model_name=\"Qwen/Qwen3-0.6B\"} 4.629459374118596\nvllm:e2e_request_latency_seconds_count{model_name=\"Qwen/Qwen3-0.6B\"} 16\n# HELP airm_kv_transfer_seconds KV transfer time from the prefill source to the decode destination.\n# TYPE airm_kv_transfer_seconds histogram\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.0005\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.001\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.0025\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.005\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.01\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.025\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.05\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.1\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.25\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"0.5\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"1.0\"} 0\nairm_kv_transfer_seconds_bucket{model_name=\"Qwen/Qwen3-0.6B\",le=\"+Inf\"} 0\nairm_kv_transfer_seconds_sum{model_name=\"Qwen/Qwen3-0.6B\"} 0.0\nairm_kv_transfer_seconds_count{model_name=\"Qwen/Qwen3-0.6B\"} 0\n# HELP vllm:prefix_cache_queries_total Prompt tokens looked up in the prefix cache.\n# TYPE vllm:prefix_cache_queries_total counter\nvllm:prefix_cache_queries_total{model_name=\"Qwen/Qwen3-0.6B\"} 319\n# HELP vllm:prefix_cache_hits_total Prompt tokens served from the prefix cache.\n# TYPE vllm:prefix_cache_hits_total counter\nvllm:prefix_cache_hits_total{model_name=\"Qwen/Qwen3-0.6B\"} 0\n# HELP vllm:cache_config_info Information of the LLMEngine CacheConfig.\n# TYPE vllm:cache_config_info gauge\nvllm:cache_config_info{model_name=\"Qwen/Qwen3-0.6B\",block_size=\"128\",enable_prefix_caching=\"True\"} 1\n# HELP airm_pd_prefills_total Prompts prefilled by the PD prefill worker (remote) or here (local).\n# TYPE airm_pd_prefills_total counter\nairm_pd_prefills_total{model_name=\"Qwen/Qwen3-0.6B\",side=\"remote\"} 16\nairm_pd_prefills_total{model_name=\"Qwen/Qwen3-0.6B\",side=\"local\"} 0\n"
+}
