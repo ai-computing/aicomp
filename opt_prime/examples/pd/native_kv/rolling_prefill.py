@@ -4,25 +4,12 @@ import time
 from serve_gpu import validate
 
 
-def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepared, retire, recompute=None):
+def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepared, retire, recompute=None, stream_uploads=None):
     a = worker.args
     owned = {}
-    uploads = {}
-    streaming = getattr(a, 'stream_native_kv', False)
+    streaming = stream_uploads is not None
     def chunk(context, first, last, packet):
-        from gpu_stream_upload import StreamingUpload
-        job = context[0]
-        started = time.perf_counter()
-        if id(job) not in uploads:
-            uploads[id(job)] = StreamingUpload(packet, a.device)
-            job.stage_metrics['upload_alloc_ms'] = (time.perf_counter()-started)*1000
-        started = time.perf_counter()
-        uploads[id(job)].stage(first, last)
-        elapsed = (time.perf_counter()-started)*1000
-        metrics = job.stage_metrics
-        metrics['upload_submit_ms'] = metrics.get('upload_submit_ms', 0)+elapsed
-        metrics['upload_submit_max_ms'] = max(metrics.get('upload_submit_max_ms', 0),elapsed)
-
+        stream_uploads.publish(context[0], first, last, packet)
 
     def acquire():
         if worker.stopping.is_set() or not credits.acquire(blocking=False): return None
@@ -71,7 +58,7 @@ def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepar
         delivered = False
         try:
             if worker.stopping.is_set(): job.cancel.set()
-            if job.cancel.is_set() and recompute is None: return
+            if job.cancel.is_set() and recompute is None and not streaming: return
             job.stage_metrics.update(native_ready_ms=stats.get('ready_ms'),
                 native_kv_ms=stats.get('kv_ready_ms'), native_complete_ms=stats.get('complete_ms'),
                 cpu_pack_queue_ms=0.0, cpu_pack_ms=0.0)
@@ -79,14 +66,10 @@ def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepar
             if recompute is not None:
                 recompute.native_complete(job, None if packet is None else packet.host)
             else:
-                prepared.put_nowait((job, tokens, count, uploads[id(job)] if streaming else packet.host))
-                if streaming: uploads.pop(id(job))
+                prepared.put_nowait((job, tokens, count, packet if streaming else packet.host))
             delivered = True
         finally:
-            if not delivered:
-                upload = uploads.pop(id(job), None)
-                if upload is not None: upload.close()
-                retire(job)
+            if not delivered: retire(job)
 
     try:
         client.prefill_stream(a.model, acquire, complete, worker.stopping.is_set,
@@ -95,9 +78,11 @@ def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepar
                              **({'get_start_pos':lambda tokens, ctx:ctx[0].prefix_length}
                                 if recompute is not None else {}))
     finally:
-        for upload in uploads.values(): upload.close()
         for job in owned.values():
-            if recompute is None: retire(job)
+            if streaming:
+                job.cancel.set()
+                prepared.put_nowait((job, [], 0, None))
+            elif recompute is None: retire(job)
             else:
                 job.cancel.set()
                 recompute.native_complete(job, None)

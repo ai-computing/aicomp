@@ -29,6 +29,7 @@ class PipelineWorker(Worker):
     def run(self):
         producer = None
         recompute = None
+        stream_uploads = None
         registry = Registry()
         self.active = registry
         a = self.args
@@ -63,6 +64,9 @@ class PipelineWorker(Worker):
                 local = LocalPrefiller(a.model_dir, a.device)
                 recompute = RecomputeJoin(a.batch_size, a.recompute_prefix, a.recompute_chunk_tokens,
                     ChunkedPrefiller(local), lambda:torch.cuda.synchronize(a.device))
+            if getattr(a, 'stream_native_kv', False):
+                from gpu_stream_upload import UploadQueue
+                stream_uploads = UploadQueue(a.batch_size, a.device)
             tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
             self.tokenizer = tokenizer
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
@@ -77,7 +81,7 @@ class PipelineWorker(Worker):
                     if getattr(a, 'rolling_native', False):
                         from rolling_prefill import run_rolling
                         run_rolling(self, client, tokenizer, model.config.vocab_size,
-                                    credits, registry, prepared, retire, recompute)
+                                    credits, registry, prepared, retire, recompute, stream_uploads)
                         return
                     credit_wait_ms = 0.0
                     wave_id = 0
@@ -201,6 +205,7 @@ class PipelineWorker(Worker):
             if self.error: raise self.error
             self.ready.set()
             while not self.stopping.is_set():
+                if stream_uploads is not None: stream_uploads.advance()
                 if recompute is not None: recompute.advance()
                 free = [lane for lane in range(a.batch_size) if lane not in states]
                 for lane in free:
@@ -213,14 +218,15 @@ class PipelineWorker(Worker):
                         try: job, tokens, count, packed = prepared.get(timeout=0.02 if not states else 0)
                         except queue.Empty: break
                     if job.cancel.is_set():
-                        if getattr(a, 'stream_native_kv', False): packed.close()
+                        if stream_uploads is not None: stream_uploads.discard(job)
                         del packed
                         retire(job)
                         continue
                     import_start = time.perf_counter()
                     job.stage_metrics['prepared_wait_ms'] = (import_start-job.prepared_at)*1000
                     job.stage_metrics['decode_active_at_import'] = sum(n>0 for n in graph.remaining)
-                    if getattr(a, 'stream_native_kv', False):
+                    if stream_uploads is not None:
+                        packed = stream_uploads.take(job)
                         try:
                             data = packed.finish()
                             graph.load_device_lane(lane, [(data[2*i],data[2*i+1]) for i in range(36)], tokens[-1], count)
@@ -285,11 +291,11 @@ class PipelineWorker(Worker):
             if producer is not None: producer.join(timeout=110)
             if producer is not None and producer.is_alive():
                 self.error = RuntimeError('native prefill owner did not stop')
-            if getattr(a, 'stream_native_kv', False) and (producer is None or not producer.is_alive()):
+            if stream_uploads is not None and (producer is None or not producer.is_alive()):
+                stream_uploads.close()
                 while True:
                     try: job, _, _, upload = prepared.get_nowait()
                     except queue.Empty: break
-                    upload.close()
                     retire(job)
             if recompute is not None and (producer is None or not producer.is_alive()):
                 for job in recompute.close(): retire(job)

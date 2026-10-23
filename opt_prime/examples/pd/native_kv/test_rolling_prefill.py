@@ -92,22 +92,29 @@ class RollingOwnershipTest(unittest.TestCase):
             retire(join.pop_ready()['job'])
             self.assertEqual(retired,[job]);self.assertTrue(credits.acquire(False))
 
-    def test_stream_upload_is_handed_off_without_waiting_in_receiver(self):
-        worker,job,credits,registry,retired,retire=self.setup_worker()
-        worker.args.stream_native_kv=True;worker.args.device='cuda:0'
-        client=Mock();prepared=queue.Queue(1);upload=Mock()
-        def stream(model,acquire,complete,stopped,**kwargs):
-            _,context=acquire()
-            self.assertIn('on_batch',kwargs)
+    def test_streaming_keeps_cancelled_credit_until_gpu_owner_consumes(self):
+        from gpu_stream_upload import UploadQueue
+        for failed in (False,True):
+            worker,job,credits,registry,retired,retire=self.setup_worker()
+            client=Mock();prepared=queue.Queue(1);uploads=UploadQueue(1,'cuda:0')
             packet=SimpleNamespace(host='host')
-            kwargs['on_batch'](context,0,4,packet)
-            complete(context,packet,dict(ready_ms=1,kv_ready_ms=2,complete_ms=3))
-        client.prefill_stream.side_effect=stream
-        with patch('rolling_prefill.validate',return_value=2),patch('gpu_stream_upload.StreamingUpload',return_value=upload):
-            run_rolling(worker,client,Mock(),100,credits,registry,prepared,retire)
-        self.assertIs(prepared.get()[3],upload)
-        self.assertFalse(retired)
-        upload.close.assert_not_called()
-        retire(job)
+            def stream(model,acquire,complete,stopped,**kwargs):
+                _,context=acquire()
+                kwargs['on_batch'](context,0,4,packet)
+                job.cancel.set()
+                if failed:raise TimeoutError('native')
+                complete(context,packet,dict(ready_ms=1,kv_ready_ms=2,complete_ms=3))
+            client.prefill_stream.side_effect=stream
+            with patch('rolling_prefill.validate',return_value=2):
+                if failed:
+                    with self.assertRaises(TimeoutError):
+                        run_rolling(worker,client,Mock(),100,credits,registry,prepared,retire,stream_uploads=uploads)
+                else:
+                    run_rolling(worker,client,Mock(),100,credits,registry,prepared,retire,stream_uploads=uploads)
+            self.assertFalse(retired);self.assertFalse(credits.acquire(False))
+            self.assertIs(prepared.get()[0],job)
+            uploads.discard(job);retire(job)
+            self.assertTrue(credits.acquire(False));self.assertEqual(retired,[job])
+            uploads.close()
 
 if __name__=='__main__':unittest.main()
