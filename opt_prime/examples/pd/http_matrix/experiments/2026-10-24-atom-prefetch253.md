@@ -159,3 +159,20 @@ Runtime 3e16c33; 48 timed batches, eight fixed-output check groups and four norm
 | 8192 | 128 | 4 | 35.016 | 48.231 | +37.74% |
 
 Host-call overlap: off0/60, on36/60, union24.246s. Not a device-kernel trace. Single-request throughput remains approximately flat; queued requests benefit. Prefetch compares on/off identical producer, not general native GPU numerical equivalence. Gemma has now started in the existing queue.
+
+## Gemma3-1B completed; all four prefetch models validated
+
+Runtime3e16c33.48timed batches,8fixed-output groups,4normal-EOS groups and cancellation/producer-exit checks passed. Cold858.059s excluded. Raw atom253-gemma-a.json and producer.jsonl; summarize_atom253.py generated atom253-gemma-summary.json. Same input/output/concurrency/repeat configuration as earlier models.
+
+| Input | Output | Concurrency | Off tok/s | On tok/s | Change |
+|---:|---:|---:|---:|---:|---:|
+|128|32|1|16.664|16.535|-0.77%|
+|128|32|4|16.743|19.107|+14.12%|
+|128|128|1|43.419|43.446|+0.06%|
+|128|128|4|43.410|66.293|+52.71%|
+|8192|32|1|14.966|14.939|-0.18%|
+|8192|32|4|15.022|16.911|+12.57%|
+|8192|128|1|39.513|40.051|+1.36%|
+|8192|128|4|40.000|59.148|+47.87%|
+
+Host-call overlap off0/60, on36/60, union30.108s; not device kernel tracing. All four models now have48batches each (192total) with on/off equivalence and lifecycle checks. This does not resolve old nativeATOM-vs-PD fixed-output Gemma post-EOS differences or GPU numerical/quality boundaries. Requested deletion of only the owned prefetch253 Pod after complete JSON/trace retrieval.

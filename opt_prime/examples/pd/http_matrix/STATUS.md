@@ -47,3 +47,5 @@ KONI hardware prefetch validation complete:48timed batches exact,8fixed-output/4
 Qwen3-4B also passes48timed batches,8fixed/4EOS groups and live cancellation/producer-exit isolation. c4 median gains21.20–41.00%; c1 near-neutral. Qwen0.6/Gemma remain pending. This does not resolve the separate GPU decoder pre-EOS drift in#256.
 
 Qwen3-0.6B: 48 prefetch off/on batches and fixed-output/EOS/lifecycle checks passed. At 8K input/output128/c4, 35.016 -> 48.231 tok/s (+37.74%); c1 roughly neutral. Gemma hardware validation remains pending.
+
+Gemma completed48batches and output/EOS/lifecycle checks. Allfour models192batches pass prefetch on/off parity. Gemma8K/output128/c4 +47.87%; separate GPU and native-reference numerical issues remain.
