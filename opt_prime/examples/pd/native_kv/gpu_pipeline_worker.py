@@ -205,7 +205,7 @@ class PipelineWorker(Worker):
             if self.error: raise self.error
             self.ready.set()
             while not self.stopping.is_set():
-                if stream_uploads is not None: stream_uploads.advance()
+                if stream_uploads is not None and not any(graph.remaining): stream_uploads.advance()
                 if recompute is not None: recompute.advance()
                 free = [lane for lane in range(a.batch_size) if lane not in states]
                 for lane in free:
@@ -257,7 +257,9 @@ class PipelineWorker(Worker):
                         del states[lane]
                         retire(job)
                 paused = [lane for lane, state in states.items() if state[4]]
-                output = graph.step(ignore_eos=True, paused=paused)
+                output = graph.step(ignore_eos=True, paused=paused,
+                    during_replay=stream_uploads.advance if stream_uploads is not None else None)
+                if not output and stream_uploads is not None: stream_uploads.advance()
                 if not output and (states or recompute is not None): time.sleep(0.001)
                 for lane, token in output.items():
                     state = states[lane]

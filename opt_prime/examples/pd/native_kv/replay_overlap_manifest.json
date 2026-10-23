@@ -1,0 +1,20 @@
+{
+  "parent": "9ab1a92",
+  "sha256": {
+    "gpu_batch_decoder.py": "244bd41e7ca85661d9fe59828500c2b389c165eeb7c850a5484070c7a62e1168",
+    "gpu_pipeline_worker.py": "b2017c29293954ad534e4111dc913a2d57b42fb392bc44864fff08fea8c04185",
+    "summarize_cuda_overlap.py": "92f4a5522edf8a754a490a433dda589d6dcdd03d80e464a60b5a5c4ea2a66d1f",
+    "test_trace_overlap.py": "c4fce92d2410c2880d555c776ef4fcb03ed2a2604747bc9c8916e168234bd209",
+    "test_decode_overlap.py": "0e3ddcb5a8db19556886ce7f633421c7b43b30f089c283ec82f09d77339a474f"
+  },
+  "traces": {
+    "owner-stream-trace.nsys-rep": {
+      "bytes": 33047728,
+      "sha256": "50ff5b873ded6e48b8d973ea7a5eb1d7b6194825712193e099721b9470a6bece"
+    },
+    "replay-owner-trace.nsys-rep": {
+      "bytes": 33492095,
+      "sha256": "a3659d870d092e65211051b0ad948e38943c763dda33a1e5672924960f36f3c6"
+    }
+  }
+}
