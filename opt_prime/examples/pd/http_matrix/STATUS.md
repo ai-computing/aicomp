@@ -50,3 +50,7 @@ Reverse-order blockB completed: 192 total timed batches passed parity. Long/c8 A
 #258 dense hybrid KV: actual Gemma failure reproduced; mapping/group validation corrected.31focused and505full CPU tests pass; live rerun pending.
 
 #265 groundwork: coverage validation and reserved partial hybrid-cache import implemented;22focused and556full tests pass (15skip,253subtests). Admitted-prefix overwrite regression fixed. Not connected to worker/owner/source paths yet; no hardware overlap claim.
+
+## Layer-progress receiver and GPU owner (#265)
+
+Opt-in subprocess progress validation and incremental GPU imports implemented; partial state remains private until complete. CPU/CUDA focused18pass; full574pass,15skip,253subtests. Invalid boolean ID and capacity error regressions fixed. Controlled producers only: real RNGD source adapters, ATOM owner, and hardware overlap/performance remain pending. See layer-stream265 record/evidence265.

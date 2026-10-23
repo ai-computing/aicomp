@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_invalid_stream_capacity_fails_only_its_future ______________
+
+children = (<function children.<locals>.make at 0x748344d9ef80>, [<Popen: returncode: None args: ['/tmp/pytest-of-gspark/pytest-185/test_inval...>], ['psm_1f20e252'], PosixPath('/tmp/pytest-of-gspark/pytest-185/test_invalid_stream_capacity_f0/gate'))
+
+    def test_invalid_stream_capacity_fails_only_its_future(children):
+        w,gate=make_stream(children)
+>       bad=w.submit(PDRequest('too-long',tuple(range(9)),1),slot=0)
+
+tests/test_subprocess_layer_progress.py:114:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <opt_prime.accel.pd.pd_batching.SubprocessPrefillWorker object at 0x748344d83ca0>
+request = PDRequest(request_id='too-long', input_ids=(0, 1, 2, 3, 4, 5, 6, 7, 8), max_new_tokens=1, sampling=SamplingParams(temperature=0.0, top_p=1.0, top_k=0, seed=None, stop_token_ids=()))
+send_from = 0, slot = 0
+
+    def submit(self, request, send_from=0, slot=None) -> Future:
+        if slot is None or not 0 <= slot < self.slab.shape[0]:
+            raise ValueError("SubprocessPrefillWorker needs a valid decode lane (slot)")
+        if self.stream_layers and (type(send_from) is not int or
+                not 0 <= send_from <= len(request.input_ids) <= self.slab.shape[-2]):
+>           raise ValueError("invalid streamed KV suffix")
+E           ValueError: invalid streamed KV suffix
+
+opt_prime/accel/pd/pd_batching.py:393: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_subprocess_layer_progress.py::test_invalid_stream_capacity_fails_only_its_future
+1 failed in 1.52s

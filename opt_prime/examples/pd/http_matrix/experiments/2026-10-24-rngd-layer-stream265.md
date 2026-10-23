@@ -39,3 +39,25 @@ Raw logs: /tmp/stream265-red.log, /tmp/stream265-import-red-controlled.log, /tmp
 ## Conclusion
 
 Only validation/import primitives are implemented. Still required: opt-in progress wire messages, source adapters, owner drain/commit/failure integration, ATOM cache-ownership handling, actual overlap traces, same-route exactness and long-context/large-KV performance. Existing #47 export-only0.1–4GB curve showed chunking slower but reduced incremental staging to~67MB; it does not prove RNGD streaming improvement. Preserve that negative control and measure the new path when connected.
+
+## Opt-in receiver and GPU owner integration
+
+Receiver now negotiates `kv_progress: 1`, validates layer/token coverage and exact final suffix length, exposes borrowed shared-memory slices, and wakes the scheduling owner on progress. The GPU owner imports partial spans without admitting decode or publishing prefix state until complete coverage; CUDA writes are fenced before cancellation can reuse pages. Default whole-result protocol remains unchanged. Real source adapters and ATOM owner integration remain pending: these are controlled-producer tests, not a hardware streaming speedup measurement.
+
+Validation uses the same environment and package working directory as above. Additional commands:
+
+```bash
+OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 TORCH_DEVICE_BACKEND_AUTOLOAD=0 \
+  /home/gspark/venvs/pt213/bin/python -m pytest tests/test_subprocess_layer_progress.py tests/test_pd_stream_admission.py -q
+```
+
+- Real subprocess/SHM protocol tests cover partial visibility, invalid/overlapping/holey coverage, producer exit, cancellation and immediate same-slot reuse, cached suffix offsets, and capability rejection.
+- Real tiny Gemma decoder tests compare controlled streaming and whole-result producers on CPU and CUDA, including partial non-admission, failures, cancellation and reuse.
+- CUDA page8 fixture failed in Triton (`K >= 16`); ordinary whole-result control reproduced the compiler error. That control's outer exception assertion also failed. CUDA tests now use page16; CPU remains page8. No production kernel/default changed.
+- Capacity regression first failed: invalid streaming capacity raised synchronously. It now completes the request Future with an error while preserving producer readiness and successful subsequent requests.
+- Boolean response-ID regression first failed: Python `True == 1` routed malformed progress to another in-flight request. Exact integer type validation now rejects it before lookup.
+- Latest focused run:18 passed,15 warnings,9.44s. Pre-ID-guard full suite:573 passed,15 skipped,253 subtests,27 warnings,165.62s. Final post-guard full suite recorded below when complete.
+
+Evidence logs retain the failing controls and successful reruns. No claim of source-compute/transfer overlap, hardware speedup, ATOM integration, or universal numerical parity.
+
+Final post-ID-guard full regression: **574 passed, 15 skipped, 253 subtests passed**,27 warnings in164.46s. Exit0; `/tmp/stream265-final-regression.log`. Source adapters and ATOM streaming remain unimplemented.

@@ -38,6 +38,16 @@ class LayerProgress:
             pending,self._pending=self._pending,[]
             return pending
 
+    @property
+    def pending(self):
+        with self._lock:
+            return bool(self._pending)
+
+    @property
+    def finished(self):
+        with self._lock:
+            return self._closed
+
     def finish(self):
         with self._lock:
             if self._closed:

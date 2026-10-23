@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_boolean_response_id_cannot_alias_another_inflight_request ________
+
+children = (<function children.<locals>.make at 0x7c91f15a70a0>, [<Popen: returncode: None args: ['/tmp/pytest-of-gspark/pytest-188/test_boole...>], ['psm_19b6ddc5'], PosixPath('/tmp/pytest-of-gspark/pytest-188/test_boolean_response_id_canno0/gate'))
+
+    def test_boolean_response_id_cannot_alias_another_inflight_request(children):
+        w,gate=make_stream(children,'bad_id')
+        first=w.submit(PDRequest('first',(1,2),1),slot=0)
+        second=w.submit(PDRequest('second',(1,2),1),slot=1)
+        gate.touch()
+        for f in [first,second]:
+            with pytest.raises(RuntimeError):f.result(timeout=3)
+>       assert second.kv_progress.drain()==[], 'boolean ID was routed to integer request1'
+E       AssertionError: boolean ID was routed to integer request1
+E       assert [(0, 0, tenso...ch.bfloat16))] == []
+E
+E         Left contains one more item: (0, 0, tensor([[[[1., 1.]]]], dtype=torch.bfloat16), tensor([[[[1., 1.]]]], dtype=torch.bfloat16))
+E         Use -v to get more diff
+
+tests/test_subprocess_layer_progress.py:132: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_subprocess_layer_progress.py::test_boolean_response_id_cannot_alias_another_inflight_request
+1 failed in 1.43s
