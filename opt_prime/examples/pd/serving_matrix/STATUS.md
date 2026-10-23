@@ -47,3 +47,7 @@ All four models now execute the same four short chat cases through RNGD prefill 
 ## Medium semantic handoff (#227)
 
 Inputs1526–1643tokens in width2048 buckets now pass all32 model/case/decoder EOS comparisons (four models,four cases,GPU/ATOM).48prefill runs finite/repeat-exact; true IDs/KV lengths and52/56/72/64slot readbacks verified. Native GPU/ATOM sequences agree for these cases, including shared wrong answers documented earlier. Approximately6K semantic inputs and production heterogeneous serving/overlap remain open. See semantic-mid227 experiment and evidence227.
+
+## Six-thousand-token partial results (#227)
+
+KONI (6137–6143 tokens) and Qwen3-0.6B (6026–6031 tokens) pass16/16 GPU/ATOM EOS comparisons across eight questions, with24producer repeats. Readbacks64/56slots exact; both ATOM importers agree. Gemma remains live in the owned queue, Qwen3-4B follows. No live PD or overlap claim. See semantic-long227 record and selected evidence227.
