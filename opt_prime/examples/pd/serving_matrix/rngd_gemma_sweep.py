@@ -6,18 +6,10 @@ import time
 from pathlib import Path
 
 import torch
-from gemma_parts import (
-    FlatGemmaLayer,
-    attention_inputs,
-    final_logits,
-    initial_hidden,
-    layer_parameters,
-)
+from gemma_prefill import Prefill
 from huggingface_hub import snapshot_download
 from inputs import exact_prompt
-from rngd_pd.engines.fsdk import CompileModule, FCConfig, dev_str, hint, sync
 from safetensors import safe_open
-from semantic_export import valid_prefix
 from transformers import AutoTokenizer
 
 MODEL = "unsloth/gemma-3-1b-it"
@@ -30,7 +22,6 @@ p.add_argument("--cases", nargs="+")
 a = p.parse_args()
 path = Path(snapshot_download(MODEL, revision=REVISION, local_files_only=True))
 c = json.loads((path / "config.json").read_text())
-module = FlatGemmaLayer(c)
 weights = {}
 for shard in sorted(path.glob("*.safetensors")):
     with safe_open(shard, framework="pt") as f:
@@ -60,35 +51,9 @@ else:
         a.width,
     )
     cases = [{"case": "fixed", "ids": ids}]
-dev = dev_str(0)
 start = time.perf_counter()
-params = [layer_parameters(weights, i) for i in range(c["num_hidden_layers"])]
-rot, mask = attention_inputs(c, a.width, 0)
-sample = (
-    torch.zeros(a.width, c["hidden_size"], dtype=torch.bfloat16),
-    *params[0][0],
-    *params[0][1],
-    rot.to(torch.bfloat16),
-    mask.to(torch.bfloat16),
-)
 print(json.dumps({"compile_start": True, "width": a.width}), flush=True)
-# Match the contiguous runtime tensors; zeros_like preserves transposed weight strides.
-compiled = CompileModule.from_module(
-    module,
-    tuple(torch.zeros(t.shape, dtype=t.dtype) for t in sample),
-    compiler_config=FCConfig(tactic_hint=hint("ForLlmModelPrefill")),
-)
-compiled.to(dev)
-params = [
-    tuple(t.contiguous().to(dev) for t in (*norms, *mats)) for norms, mats in params
-]
-# Only two distinct positional/mask inputs, reused across the layer schedule.
-positions = {}
-for index in [0, 5]:
-    positions[index] = tuple(
-        t.to(torch.bfloat16).to(dev) for t in attention_inputs(c, a.width, index)
-    )
-sync(0)
+engine = Prefill(c, weights, width=a.width)
 print(
     json.dumps(
         {"ready": True, "init_s": time.perf_counter() - start, "width": a.width}
@@ -98,28 +63,10 @@ print(
 with torch.inference_mode(), open(a.output + ".jsonl", "w", buffering=1) as f:
     for case_index, case in enumerate(cases):
         ids = case["ids"]
-        padded_ids = ids + [tok.pad_token_id] * (a.width - len(ids))
         previous = None
         for repeat in range(3):
             start = time.perf_counter()
-            x = initial_hidden(weights["model.embed_tokens.weight"], padded_ids).to(dev)
-            keys = []
-            values = []
-            for i, layer in enumerate(params):
-                local = (i + 1) % c.get("sliding_window_pattern", 6) != 0
-                x, k, v = compiled(x, *layer, *positions[0 if local else 5])
-                keys.append(k)
-                values.append(v)
-            sync(0)
-            k = torch.stack([t.cpu().permute(1, 0, 2) for t in keys])
-            v = torch.stack([t.cpu().permute(1, 0, 2) for t in values])
-            k, v, last_hidden = valid_prefix(k, v, x.cpu(), len(ids))
-            logits = final_logits(
-                last_hidden,
-                weights["model.norm.weight"],
-                weights.get("lm_head.weight", weights["model.embed_tokens.weight"]),
-                c["rms_norm_eps"],
-            )
+            k, v, logits = engine.prefill(ids)
             elapsed = time.perf_counter() - start
             assert k.shape == v.shape == (26, 1, len(ids), 256)
             assert all(bool(torch.isfinite(t).all()) for t in (k, v, logits))

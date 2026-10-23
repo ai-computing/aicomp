@@ -44,6 +44,19 @@ def store_result(slab, req, keys, values):
     return n
 
 
+def engine_class(factory):
+    """Load an explicit trusted local CLI factory; never select this from request JSON."""
+    from importlib import import_module
+
+    module, separator, name = factory.partition(":")
+    if not separator or not module or not name:
+        raise ValueError("engine factory must be module:callable")
+    cls = getattr(import_module(module), name)
+    if not callable(cls):
+        raise TypeError("engine factory must be callable")
+    return cls
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model", required=True)
@@ -52,15 +65,17 @@ def main():
         ap.add_argument("--" + name, type=int, required=True)
     ap.add_argument("--width", type=int, default=32)
     ap.add_argument("--chip", type=int, default=0)
+    ap.add_argument(
+        "--engine-factory",
+        help="trusted local module:callable accepting config, weights, width, chip",
+    )
     a = ap.parse_args()
     from multiprocessing import resource_tracker, shared_memory
 
     from huggingface_hub import snapshot_download
     from opt_prime.accel.pd import SamplingParams
     from opt_prime.accel.pd.sampling import select_token
-    from prefill import Prefill
     from safetensors import safe_open
-    from spec import validate
 
     out = sys.stdout
     with contextlib.redirect_stdout(sys.stderr):
@@ -69,7 +84,14 @@ def main():
             if Path(a.model).is_dir()
             else Path(snapshot_download(a.model, local_files_only=True))
         )
-        config = validate(json.loads((path / "config.json").read_text()))
+        config = json.loads((path / "config.json").read_text())
+        if a.engine_factory:
+            Prefill = engine_class(a.engine_factory)
+        else:
+            from prefill import Prefill
+            from spec import validate
+
+            config = validate(config)
         shape = (a.slots, 2, a.layers, a.kv_heads, a.max_context, a.head_dim)
         if min(shape) <= 0 or (a.layers, a.kv_heads, a.head_dim) != (
             config["num_hidden_layers"],

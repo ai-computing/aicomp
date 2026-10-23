@@ -1,0 +1,30 @@
+[
+  {
+    "case": "capital-0",
+    "ids_equal": true,
+    "keys_equal": true,
+    "values_equal": true,
+    "logits_equal": true
+  },
+  {
+    "case": "arithmetic-0",
+    "ids_equal": true,
+    "keys_equal": true,
+    "values_equal": true,
+    "logits_equal": true
+  },
+  {
+    "case": "korean-0",
+    "ids_equal": true,
+    "keys_equal": true,
+    "values_equal": true,
+    "logits_equal": true
+  },
+  {
+    "case": "retrieval-0",
+    "ids_equal": true,
+    "keys_equal": true,
+    "values_equal": true,
+    "logits_equal": true
+  }
+]

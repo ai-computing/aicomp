@@ -3,6 +3,7 @@
 import unittest
 
 import numpy as np
+import pytest
 import torch
 import worker
 
@@ -46,3 +47,25 @@ class WorkerContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_explicit_engine_factory_is_local_callable():
+    import sys
+    import types
+    from unittest.mock import patch
+
+    from worker import engine_class
+
+    module = types.ModuleType("test_local_prefill")
+
+    class Engine:
+        def __init__(self, config, weights, width, chip):
+            self.args = config, weights, width, chip
+
+    module.Prefill = Engine
+    with patch.dict(sys.modules, {"test_local_prefill": module}):
+        cls = engine_class("test_local_prefill:Prefill")
+        assert cls({}, {}, width=128, chip=0).args == ({}, {}, 128, 0)
+        for invalid in ["test_local_prefill", ":Prefill", "test_local_prefill:"]:
+            with pytest.raises(ValueError):
+                engine_class(invalid)

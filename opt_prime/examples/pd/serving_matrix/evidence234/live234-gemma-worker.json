@@ -1,0 +1,41 @@
+{
+  "worker": "live_rngd_subprocess",
+  "rows": [
+    {
+      "case": "capital-0",
+      "keys_exact": true,
+      "values_exact": true,
+      "first_token_exact": true,
+      "prefill_s": 0.04225390707142651
+    },
+    {
+      "case": "arithmetic-0",
+      "keys_exact": true,
+      "values_exact": true,
+      "first_token_exact": true,
+      "prefill_s": 0.040302990935742855
+    },
+    {
+      "case": "korean-0",
+      "keys_exact": true,
+      "values_exact": true,
+      "first_token_exact": true,
+      "prefill_s": 0.040417241980321705
+    },
+    {
+      "case": "retrieval-0",
+      "keys_exact": true,
+      "values_exact": true,
+      "first_token_exact": true,
+      "prefill_s": 0.04033046099357307
+    },
+    {
+      "case": "capital-0",
+      "keys_exact": true,
+      "values_exact": true,
+      "first_token_exact": true,
+      "prefill_s": 0.04012918099761009
+    }
+  ],
+  "oversize_recovery": true
+}

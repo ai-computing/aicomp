@@ -166,3 +166,11 @@ python check_rngd_gpu.py --model "$MODEL_SNAPSHOT" \
 ```
 
 For Qwen use `rngd_qwen_sweep --model MODEL --experimental-long-width`; for KONI use `rngd_koni_sweep --partitioned --group 1 --rms-tile 512`. Pass the same fixture/case/width/output options. Each selected case saves a numbered export containing its exact IDs and EOS set. Both `check_rngd_atom.py` and `check_gemma_atom_handoff.py` accept `--eos-aware --max-output 64`; legacy fixed-length checks remain the default. Raw full-prefix host exports are not streaming overlap. Shared wrong native answers remain wrong after a successful handoff; inspect the semantic records separately from transport parity.
+
+## Callable Gemma and real worker (#234)
+
+`gemma_prefill.Prefill` is shared by `rngd_gemma_sweep.py` and the experimental worker's explicit `--engine-factory gemma_prefill:Prefill` choice. Add this directory and `../qwen3_rngd` to the isolated worker PYTHONPATH, with the existing optimus-rm runtime and validated SDK launcher. Factories are trusted local CLI code, not request parameters. The default Qwen worker remains unchanged. The shared-memory layout and JSON request/reply fields remain compatible with SubprocessPrefillWorker.
+
+`check_live_worker.py --python "$WORKER_PYTHON" --model unsloth/gemma-3-1b-it --engine-factory gemma_prefill:Prefill --width 128 --exports "$EXPORT0" "$EXPORT1" "$EXPORT2" "$EXPORT3" --output live-worker.json` runs real prefill per request, verifies returned KV and first tokens against trusted exports, and checks rejection/recovery for an oversized prompt. Run under the decoder-side environment with its existing core package; the worker interpreter owns the RNGD SDK.
+
+Short-input producer/full-logit parity and real shared-memory requests are verified. This is not yet full HTTP PD or long live integration. Numerical mismatch #233 remains, and no compute-transfer overlap or serving speedup is claimed. See the live-model-pd234 experiment and evidence234.
