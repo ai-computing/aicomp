@@ -47,3 +47,4 @@ Qwen3-0.6B input8192 paired prefill: median997.98 ->955.64 ms (-4.24%), six runs
 GPU HTTP blockA96batches all parity;long/c8 chunk-copy throughput changes: Qwen0.6-3.1%,Qwen4+2.5%,KONI+2.4%,Gemma-1.5%. Reverse-order blockB pending. Export-only0.1–4GB curve: chunked slower, but incremental source staging bounded at~67.1MB rather than4GB. Keep opt-in; no general serving speedup claim.
 
 Reverse-order blockB completed: 192 total timed batches passed parity. Long/c8 A/B changes: Qwen0.6 -3.12%/+5.80%, Qwen4 +2.49%/+17.39%, KONI +2.38%/-1.53%, Gemma -1.54%/-0.28%. Qwen4 B baseline prefill slowed while transfer stayed constant, confounding the larger gain. Keep opt-in; no repeatable general throughput improvement. See evidence47/chunk47-four-model-serving-ab-summary.json.
+#258 dense hybrid KV: actual Gemma failure reproduced; mapping/group validation corrected.31focused and505full CPU tests pass; live rerun pending.
