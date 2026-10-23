@@ -114,6 +114,20 @@ def test_process_worker():
         worker.close()
 
 
+def test_process_worker_child_death_fails_outstanding_prefills():
+    """#168: a killed prefill process fails its pending futures (and later submits) instead of leaving them pending"""
+    import time
+    worker = ProcessPrefillWorker(functools.partial(time.sleep, 600), out_device="cpu")    # never serves
+    try:
+        f = worker.submit(PDRequest("dead", (1, 2, 3), 2))
+        worker._proc.kill()
+        assert isinstance(f.exception(timeout=5), RuntimeError)
+        with pytest.raises(RuntimeError):
+            worker.submit(PDRequest("late", (1, 2, 3), 2))
+    finally:
+        worker.close()
+
+
 def test_served_by_batched_service():
     from opt_prime.accel.serve.batched import BatchedService
     b = _pd(_llama(), slots=2)

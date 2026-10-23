@@ -197,6 +197,8 @@ class ProcessPrefillWorker:
     def submit(self, request, send_from=0, slot=None) -> Future:
         f = Future()
         with self._lock:
+            if self._futures is None:
+                raise RuntimeError("prefill process exited")
             key, self._next = self._next, self._next + 1
             self._futures[key] = f
         self._req.put((key, request, send_from))
@@ -205,7 +207,16 @@ class ProcessPrefillWorker:
     def _receive(self):
         stream = torch.cuda.Stream(self.out_device) if self.out_device.type == "cuda" else None
         while True:
-            item = self._rep.get()
+            try:
+                item = self._rep.get(timeout=0.5)
+            except queue.Empty:
+                if self._proc.is_alive():
+                    continue
+                with self._lock:                                     # the child died: fail what it will never answer
+                    for f in self._futures.values():
+                        f.set_exception(RuntimeError(f"prefill process exited ({self._proc.exitcode})"))
+                    self._futures = None
+                return
             if item is None:
                 return
             key, out, error = item
