@@ -378,5 +378,5 @@ Conda environment: `fasop` (`~/miniforge3/envs/fasop`)
 
 ## Notes
 
-- `make_profiledb_legacy/` contains files that were previously located in `aicomp/fasop/`. These files implement layer-based profiling for generating profile databases. However, since Optimus-Prime uses FX graph models for pipeline partitioning at the operator level rather than the layer level, this approach is incompatible. Therefore, these files have been moved to the legacy directory and are no longer actively used.
+- `make_profiledb_legacy/` contains files that were previously located in `aicomp/fasop/`. Its Docker image clones aicomp at tag `v4.0.0`, which still contains `compiler_fx` (removed from the tree afterwards), whose profiling scripts it runs. These files implement layer-based profiling for generating profile databases. However, since Optimus-Prime uses FX graph models for pipeline partitioning at the operator level rather than the layer level, this approach is incompatible. Therefore, these files have been moved to the legacy directory and are no longer actively used.
 - Use `make_profiledb/` for generating new profile data compatible with FX node-based partitioning.

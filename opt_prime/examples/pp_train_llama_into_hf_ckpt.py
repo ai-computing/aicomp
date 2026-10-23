@@ -108,7 +108,7 @@ else:
 # Format squad data as Q&A pairs for instruction-style fine-tuning.
 # Using only raw context for causal LM causes catastrophic forgetting because
 # the model overfits to short, homogeneous Wikipedia-style text.
-squad = load_dataset("squad")
+squad = load_dataset("rajpurkar/squad")
 train_data = squad["train"]
 
 def format_squad_qa(examples):

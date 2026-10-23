@@ -105,6 +105,7 @@ class Optimus_Inference:
         dynamo_capture: bool = False,
         use_mps: bool = False,
         partitioner: str = "auto",
+        moe_offload=None,
     ):
         if use_gpu is False:
             logging.critical(
@@ -257,6 +258,15 @@ class Optimus_Inference:
                 split_method = partitioner
         print(f">> [Inference] model class: {module.__class__.__name__}")
         print(f">> [Inference] split method: {split_method}")
+
+        # MoE expert offloading: swap fused experts modules for host/device split custom ops before the IR is built
+        # (opaque nodes to export; their weights are not graph parameters, so stage placement leaves them alone)
+        self.moe_offload_report = None
+        if moe_offload is not None:
+            from opt_prime.accel.moe import apply_moe_offload
+            self.moe_offload_report = apply_moe_offload(module, moe_offload)
+            if rank == 0:
+                print(f">> [Inference] MoE offload: {self.moe_offload_report}")
 
         # Initialize IR and split model
         self.ir = IR(module, self)
