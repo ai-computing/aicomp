@@ -117,3 +117,28 @@ The owned queue returned exit0 and advanced to Qwen3-4B. All48timed batches pass
 Lifecycle: cancelled prefetched request499, recovery request exact; producer termination fails the prefetched request500, new admission503 and readiness503. In both cases the already-imported current request retains its full128-token output; batcher drains, has no poisoned decoder, no remaining request IDs and no reserved prefetch.
 
 Measured host-call timeline: off0/60 completed producer calls overlap another request decode; on36/60 overlap, union96.42009s. This is prefill+export host interval overlap, not device-kernel overlap proof. Raw2.23MB atom253-koni-a.json, producer trace and atom253-koni-summary.json. Analyzer rechecked all48token arrays against warm-off references. Other three models remain pending; do not generalize KONI's gain to them. B1/cache-off/width8192 research engine only; not native vendor engine.
+
+Qwen3-4B advanced from loading to running with load_s801.25765 on the same owned Pod. Warmup/output checks started; no completed performance batches yet at observation. This is excluded cold initialization, not measured request latency. Prior controlled Qwen3-4B initialization810.53s provides context but is not a paired startup optimization result.
+
+Qwen3-4B off-mode prechecks completed:4fixed-output groups (16responses) match warm off-mode references;2normal-EOS groups (8responses) match nativeATOM references truncated through configured EOS. Independently rechecked snapshot token arrays. Enabled-mode prechecks and48timed batches remain pending. Producer trace advanced beyond wire_id24, confirming actual execution after initialization. Snapshot atom253-qwen4b-snapshot.json.
+
+Qwen3-4B both modes passed8fixed-output groups and4normal-EOS groups, then entered timing. Five batches captured. First input128/output32/c4 pair: off7.56043/on9.44537tok_s (+24.93%); first-token owner-emission9.43834/7.75430s and E2E10.59287/8.90573s. c1 off7.61078/on7.52057 (-1.19%). Enabled host-call overlap3/5 completed measured producer calls, off0/6. Single-repeat partial result only; long-input performance and lifecycle pending. Snapshot fixed/timed token arrays rechecked against warm-off references. Raw atom253-qwen4b-snapshot.json and producer trace; summary atom253-qwen4b-partial-summary.json.
+
+Qwen3-4B14/48batch snapshot: first c4 pairs input128/output128 off16.458/on23.196tok_s (+40.94%); input8192/output32 off5.483/on6.489 (+18.35%). These remain single-repeat observations, with long128/c4 and subsequent repetitions/lifecycle pending. Updated partial summary and raw snapshot retained.
+
+## Qwen3-4B complete: paired performance and live faults
+
+Exit0; queue advanced to Qwen3-0.6B.48timed batches exact versus warm-off reference,8fixed-output and4normal-EOS groups pass. Three alternating off/on repetitions in the same loaded engines, cold801.258s excluded.
+
+| input | output | c | off tok/s | on tok/s | change |
+|---:|---:|---:|---:|---:|---:|
+|128|32|1|7.611|7.540|-0.92%|
+|128|32|4|7.566|9.511|+25.70%|
+|128|128|1|16.472|16.503|+0.19%|
+|128|128|4|16.458|23.207|+41.00%|
+|8192|32|1|5.478|5.472|-0.10%|
+|8192|32|4|5.442|6.595|+21.20%|
+|8192|128|1|12.802|12.786|-0.13%|
+|8192|128|4|12.886|17.253|+33.89%|
+
+Cancellation: victim499, exact recovery, current128-token decode preserved. Producer termination: victim500, subsequent request503/readiness503, current decode preserved, batcher drained with no reservation or poisoned state. Measured host-call overlap off0/60 and on36/60, union78.42756s; not device-kernel proof. Raw atom253-qwen4b-a.json and trace, final atom253-qwen4b-summary.json. This validates the ATOM prefetch change; the separate RNGD-to-GPU Qwen4 pre-EOS discrepancy tracked in#256 remains unresolved.
