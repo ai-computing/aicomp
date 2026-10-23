@@ -7,7 +7,7 @@ Measured on a GPU+RNGD host, using one dedicated RNGD. No native binary patch.
 
 ## Subsequent integration experiment
 
-The earlier source/API audit below is historical. Submission and completion boundaries were subsequently located in the measured binary, and a build-pinned in-process adapter was tested without a debugger. See [serving results](queue_adapter/SERVING_RESULTS.md): isolated KV handoff improved, but mixed HTTP serving did not. The adapter remains experimental and opt-in; a supported vendor interface is still unavailable in the inspected installation.
+The earlier source/API audit below is historical. Submission and completion boundaries were subsequently located in the measured binary, and a build-pinned in-process adapter was tested without a debugger. The [reverse-only serving experiment](queue_adapter/SERVING_RESULTS.md) improved isolated handoff but not HTTP. Subsequent [partial physical-run coalescing](queue_adapter/PARTIAL_RESULTS.md) reduced mixed HTTP TTFT p95 by 13–14% in the measured ABBA comparison. The adapter remains experimental and opt-in; a supported vendor interface is still unavailable in the inspected installation.
 
 ## Evidence
 
