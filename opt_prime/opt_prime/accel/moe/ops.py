@@ -29,6 +29,10 @@ def register_layer(layer: OffloadedLayer) -> int:
     return lid
 
 
+def unregister_layer(layer_id: int):
+    _LAYERS.pop(layer_id, None)
+
+
 def get_layer(layer_id: int) -> OffloadedLayer:
     return _LAYERS[layer_id]
 

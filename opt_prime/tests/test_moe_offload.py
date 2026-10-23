@@ -368,3 +368,14 @@ def test_backward_through_offloaded_experts(family, frac):
     assert grads[1].keys() == {n for n in grads[0] if "experts." not in n} and grads[1]
     for n, g in grads[1].items():
         torch.testing.assert_close(g, grads[0][n], atol=1e-5, rtol=1e-3, msg=n)
+
+
+def test_release_unregisters_layers():
+    """release() drops the model's layers (and their tier handles) from the op registry (#173)"""
+    from opt_prime.accel.moe import ops
+    m = build_tiny("qwen3_moe")
+    rep = apply_moe_offload(m, MoEOffloadConfig(hot=[[0, 1]] * len(find_moe_experts(m))))
+    lids = [mod.layer_id for mod in m.modules() if hasattr(mod, "layer_id")]
+    assert lids and all(lid in ops._LAYERS for lid in lids)
+    rep.release()
+    assert not any(lid in ops._LAYERS for lid in lids)
