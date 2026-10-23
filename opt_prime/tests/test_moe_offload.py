@@ -127,9 +127,10 @@ def test_native_host_kernel_matches_torch(rows, wdtype):
     assert (a != b).float().mean().item() < 0.05
 
 
-@pytest.mark.parametrize("pad", [-1, NUM_EXPERTS])
+@pytest.mark.parametrize("pad", [-1, NUM_EXPERTS, -5])
 def test_native_dispatch_drops_padding_ids(pad):
-    """#89: the C dispatcher must skip padding ids (-1 and num_experts) instead of indexing the owner table"""
+    """#89: the C dispatcher must skip padding ids (-1 and num_experts) instead of indexing the owner table, and
+    skip other negative ids rather than read the table out of bounds"""
     import opt_prime.accel.platforms.cpu.native as native
     from opt_prime.accel.moe.backends import get_backend
     from opt_prime.accel.moe.config import MoEOffloadConfig
