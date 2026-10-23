@@ -50,6 +50,13 @@ external connector implementation hook. Local workspace inspection found no nati
 connector Rust source to patch. This is a limitation of the inspected installation,
 not a claim that reverse engineering is prohibited or that no vendor interface exists.
 
+A follow-up owned native run checked loaded mappings both before and after four real
+KV exports (4/4 full hashes equal). The Furiosa extension mappings included llm_native
+and native_torch; neither librenegade.so nor libmooncake_store.so, whose names occur in
+the binary, was loaded in this TcpConnector path. ELF NEEDED inspection alone would
+not have excluded dynamic loading; the live check narrows that gap. No replaceable
+DMA library or coalescing configuration was established by this audit.
+
 The proposed producer change belongs before DMA submission, in the code generating
 read payloads (traces name DMAConnector::dma_read_payload and scatter-fragment planning):
 
