@@ -1,0 +1,66 @@
+{
+  "passed": true,
+  "lifecycle_passed": true,
+  "stage": "complete",
+  "model": "/tmp/serving-matrix-models/Gemma3-1B",
+  "faults": {
+    "cancel": {
+      "entry": {
+        "sequence": 2,
+        "phase": "start",
+        "tokens": 8192,
+        "time": 296913.945863423
+      },
+      "status": 499,
+      "reuse_exact": true
+    },
+    "worker_exit": {
+      "entry": {
+        "sequence": 4,
+        "phase": "start",
+        "tokens": 8192,
+        "time": 296917.991428454
+      },
+      "pending_status": 500,
+      "later_status": 503,
+      "readiness": 503,
+      "slab_unlinked": true,
+      "replacement_exact": true
+    }
+  },
+  "control_tokens": [
+    9079,
+    107,
+    106,
+    107,
+    106,
+    130614,
+    107,
+    106,
+    107,
+    106,
+    107,
+    2094,
+    563,
+    1695,
+    4403,
+    236761,
+    669,
+    2604,
+    3673,
+    6097,
+    36157,
+    236761,
+    669,
+    3730,
+    3673,
+    6097,
+    6249,
+    236761,
+    107,
+    2094,
+    563,
+    1695
+  ],
+  "native_tokens_equal": true
+}

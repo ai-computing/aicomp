@@ -19,10 +19,10 @@ This sequentially runs check_gpu201_faults.py; exact per-model argv retained in 
 
 ## Results
 Qwen3-0.6B and Qwen3-4B completed: lifecycle_passed=true,passed=true,native_tokens_equal=true. Cancel during actual prefill returns499 and then identical recovery tokens. Producer termination yields pending500, later admission503,/ready503; old shared-memory slab is unlinked. Replacement makes readiness200 and returns identical32tokens. Both raw local201-{qwen06b,qwen4b}-faults.json retained.
-KONI now loading; Gemma pending. No total-four-model claim yet.
+KONI and Gemma also completed with passed=true/lifecycle_passed=true/native_tokens_equal=true. Allfour raw results included.
 
 ## Conclusion
-Two models pass cancellation/drain/death/readiness/replacement checks. Qwen4 long-output numerical failure remains independently failed. This suite does not test another already-decoding GPU request surviving producer death (covered only by separate ATOM-prefetch suite). Performance is not measured by these fault tests.
+Allfour models pass cancellation/drain/death/readiness/replacement checks. Qwen4 long-output numerical failure remains independently failed. This suite does not test another already-decoding GPU request surviving producer death (covered only by separate ATOM-prefetch suite). Performance is not measured by these fault tests.
 
 ## Portable invocation
 ```bash
@@ -30,4 +30,4 @@ export PYTHONPATH=opt_prime:opt_prime/examples/pd/serving_matrix:/path/to/resear
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 python opt_prime/examples/pd/http_matrix/live_gpu_faults.py --model /path/to/model --factory long_width_variant:make_prefill --worker-python /path/to/furiosa-worker-python --reference opt_prime/examples/pd/http_matrix/evidence201/local201-qwen06b-matrix-a-reference.json --http-module opt_prime/examples/pd/http_matrix/evidence201/llmd_readiness.py --markers /tmp/fault-markers --output /tmp/fault-result.json
 ```
-Worker interpreter must expose Furiosa Torch2026.4, research producer modules/factories from the live PD work (#235/#245), and the bundled observer_factory. Its model/factory must match the supplied native reference. The proprietary SDK and model weights are not bundled. Evidence contains completed first two models only at this stage. Long-output numerical failures remain separate. Markers neither modify KV nor impose an artificial execution gate.
+Worker interpreter must expose Furiosa Torch2026.4, research producer modules/factories from the live PD work (#235/#245), and the bundled observer_factory. Its model/factory must match the supplied native reference. The proprietary SDK and model weights are not bundled. Evidence contains allfour completed models. Long-output numerical failures remain separate. Markers neither modify KV nor impose an artificial execution gate.
