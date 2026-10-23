@@ -1,2 +1,5 @@
 __pycache__/
 *.bf16
+# measurement outputs stay outside git (see RESULTS.md); inputs are listed explicitly
+*.json
+!qwen3_8b_layout.json
