@@ -53,3 +53,5 @@ Inputs1526–1643tokens in width2048 buckets now pass all32 model/case/decoder E
 KONI (6137–6143 tokens) and Qwen3-0.6B (6026–6031 tokens) pass16/16 GPU/ATOM EOS comparisons across eight questions, with24producer repeats. Readbacks64/56slots exact; both ATOM importers agree. Gemma remains live in the owned queue, Qwen3-4B follows. No live PD or overlap claim. See semantic-long227 record and selected evidence227.
 
 Gemma long-context update:6423–6428tokens,12producer runs, GPU3/4 and ATOM4/4 EOS matches; cumulative23/24. Arithmetic nativeGPU30 vs RNGD/ATOM25, both wrong; nativeGPU FP32 also30.52slot readbacks and native ATOM roundtrip exact. Same layer equations on GPU choose3 at BF16/FP32; accumulating RNGD numerical differences tracked in #233. Qwen3-4B queue remains live.
+
+Final6K matrix:48producer runs,31/32 EOS comparisons across four models/four questions/two decoders. Qwen3-4B4/4 on each decoder,72slots exact; the original queue exited0. Gemma arithmetic mismatch remains#233. Real live PD integration starts under#234; no overall-goal completion claim.
