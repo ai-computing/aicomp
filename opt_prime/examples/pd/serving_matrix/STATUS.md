@@ -22,4 +22,4 @@ Qwen3-0.6B2K finite/repeat-exact; GPU BF16/FP32 continuation32 tokens exact. ATO
 
 ## KONI long-prefix follow-up (#219)
 
-Untiled2K graph fails RMS lowering before inference;512/256-row isolated RMS probes compile/run finite. Candidate tiles onlyRMS rows, retaining2K attention;5 CPU tests pass. Full-model64GiB candidate OOMKilled/137; 128GiB group2 then fails compiler memory explosion; group1 keeps all32layers and2K attention, retry running. Decoder verification pending.
+Untiled2K graph fails RMS lowering before inference;512/256-row isolated RMS probes compile/run finite. Candidate tiles onlyRMS rows, retaining2K attention;5 CPU tests pass. Full-model64GiB candidate OOMKilled/137; 128GiB group2 then fails compiler memory explosion; group1 also fails compiler memory explosion before inference. Owned allocation released. Next: separately compiled stages or actual cache-aware chunking; decoder verification remains missing.

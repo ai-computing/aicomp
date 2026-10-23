@@ -31,7 +31,7 @@
   "candidate": {
     "rms_tile": 512,
     "width": 2048,
-    "status": "128GiB group2 exits1 with compiler memory explosion; group1 retry running",
+    "status": "group1 andgroup2 both fail compiler memory explosion; no working full-model fix",
     "failed_resources": {
       "memory_limit_gib": 64,
       "exit_code": 137,
@@ -44,6 +44,10 @@
       "error": "compiler memory explosion",
       "inference_runs": 0
     },
-    "group1": "running"
+    "group1": {
+      "exit_code": 1,
+      "error": "compiler memory explosion",
+      "inference_runs": 0
+    }
   }
 }
