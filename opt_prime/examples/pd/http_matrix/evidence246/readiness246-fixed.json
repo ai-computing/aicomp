@@ -1,0 +1,1 @@
+{"before": {"status": 200, "body": {"ready": true, "stage": "decode"}}, "after_worker_exit": {"status": 503, "body": {"ready": false, "stage": "decode"}}, "new_request": {"status": 503, "body": {"error": "prefill producer unavailable", "retryable": true}}, "terminal_failure": true, "service_state": "idle"}
