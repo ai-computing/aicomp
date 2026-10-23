@@ -1,4 +1,5 @@
 """Audit complete runs against frozen fixtures; preserve pending/failed routes explicitly."""
+from itertools import combinations
 import hashlib
 import importlib.util
 import json
@@ -42,8 +43,7 @@ for model in ['qwen06b','qwen4b','koni','gemma']:
             'format_correct':sum(r['format_correct'] for r in rows),
             'length_limited':sum(r['finish_reason']=='length' for r in rows),
             'wrong_cases':[dict(case=r['case'],expected=r['expected'],text=r['text']) for r in rows if not r['answer_correct']]}
-    for baseline,candidate in [('native-gpu','rngd-gpu'),('native-gpu','native-atom'),
-                               ('native-gpu','rngd-atom'),('native-atom','rngd-atom')]:
+    for baseline,candidate in combinations(['native-gpu','rngd-gpu','native-atom','rngd-atom'],2):
         if baseline not in completed or candidate not in completed: continue
         a,b=completed[baseline],completed[candidate]
         other={r['case']:r for r in b}

@@ -57,3 +57,5 @@ Allfour live GPU isolation runs pass: active512-token decode survives other-requ
 #263 all288 GPU responses complete; structured scores native/RNGD:Q06 32/34,Q4 36/36,KONI31/31,Gemma0/0 (code fences, not zero content accuracy). Exacttoken pairs34/36,36/36,35/36,32/36. Q06 ATOM pair33/33 scores and36/36 tokens equal; Q4nativeATOM36/36. All source weight shards/config/tokenizer SHA256 match between hosts. Remaining fiveATOM routes active.
 
 #263 Qwen4allfour routes complete:each36/36 structured answers and all36 token sequences equal acrossGPU/RNGD/ATOM. KONI/GemmaATOM pending; historical#256 remains open.
+
+#263 six-pair audit: Q06 passkey-3-2048 correct on RNGD→GPU but wrong on bothATOM routes; no universal quality-equivalence claim. KONI allfour complete31/36 scores; nativeGPU/nativeATOM andRNGD-GPU/RNGD-ATOM each36/36 exacttokens. OnlyGemma RNGD-ATOM pending.

@@ -78,3 +78,9 @@ Both hosts' complete source weight shards, config.json, generation_config.json a
 Auditor summarize_quality263.py verifies fixture-file hashes, case/input-hash correspondence, response fields, scores recomputed from raw text, and paired transitions. Pending routes remain explicitly not_collected/starting; they are not treated as passes.
 
 Qwen3-4B allfour routes completed: each36/36 structured answers and36/36 format, every paired token sequence identical acrossGPU/RNGD/ATOM. Remaining ATOM routes: KONI and Gemma. This does not erase the prior different long-free-generation fixture failure#256.
+
+## Full pairwise audit (primary prompts/scorer unchanged)
+
+Compare all six unordered route pairs, not only pairs anchored on nativeGPU. This exposes a Qwen0.6 counterexample: passkey-3-2048 is correct`SBYZEGE7` on RNGD→GPU, but nativeATOM and RNGD→ATOM emit`SYBZEGE7`. Thus each ATOM route has one correct→wrong transition relative to RNGD→GPU, despite no such transition relative to nativeGPU (which also answered this case incorrectly). Do not claim universal cross-route quality equivalence or infer the failing operator without matched-KV controls.
+
+KONI allfour routes completed:31/36 structured answers each; nativeGPU/nativeATOM36/36 exacttokens; RNGD→GPU/RNGD→ATOM36/36 exacttokens. Native vsRNGD pair35/36; the differing text only changes JSON whitespace. Gemma nativeATOM completed with code-fenced responses (strictscore0); RNGD→ATOM remains running.
