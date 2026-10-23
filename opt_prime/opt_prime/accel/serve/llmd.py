@@ -473,6 +473,8 @@ class OwnerExecutor:
                         if not pending:
                             del self._pending[args[1]]
             if error is not None:
+                if stopping:
+                    self.accepting = True       # the stop was refused: reset and a retried stop must still get in
                 future.set_exception(error)
             else:
                 future.set_result(result)
