@@ -272,6 +272,19 @@ def test_prefix_cache_needs_extra_blocks(fake_rebel):
         AtomBatcher(FakeRbln(_llama(), 2), prefix_cache=True)
 
 
+def test_prefix_cache_needs_an_evictable_block(fake_rebel):
+    """#172: with kv_blocks == lanes + 1 the only cache entry is also the copy source, so a prefix hit with every
+    other lane busy found no block and poisoned the batcher; the configuration is rejected at construction"""
+    model = _llama()
+    with pytest.raises(ValueError, match="kv_blocks"):
+        AtomBatcher(_blocks_model(fake_rebel, model, batch=1, blocks=2), prefix_cache=True)
+    b = AtomBatcher(_blocks_model(fake_rebel, model, batch=1, blocks=2))      # no prefix cache: one block is enough
+    p = _prompts(1, 40, 41, seed=7)[0]
+    for rid in ("p", "p2"):
+        f = b.submit(PDRequest(rid, p, 4)); b.run_until_idle()
+        assert f.result() == _greedy(model, p, 4)
+
+
 def test_pd_mode_imports_prefilled_kv(fake_rebel):
     """ATOM decodes only: prompts are prefilled by a torch worker and their KV imported into the lanes' blocks"""
     import copy
