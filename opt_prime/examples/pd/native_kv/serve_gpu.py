@@ -52,6 +52,15 @@ class Job:
             try:self.events.put((kind,value),timeout=0.1);return True
             except queue.Full:pass
         return False
+    def try_send(self,kind,value=None):
+        # Multi-lane owners must never wait on one HTTP consumer.
+        if self.cancel.is_set():return False
+        try:self.events.put_nowait((kind,value));return True
+        except queue.Full:return False
+    def fail(self,status,message):
+        # Terminal error that cannot block: best-effort enqueue, then cancel so a
+        # consumer that misses it still ends with 'request cancelled'.
+        self.try_send('error',(status,message));self.cancel.set()
 
 
 class Worker:

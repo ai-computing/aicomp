@@ -63,6 +63,6 @@ Concurrent throughput reaches82% of native in this experiment, but native parity
 achieved. Serial native prefill/import increases TTFT. Next: overlap prefill with decode
 and allow continuous admission, preserve fast single-request execution, investigate the
 synthetic numerical divergence, and repeat full HTTP/quality/cancellation comparisons.
-Slow-client backpressure can still stall a wave; this experimental worker is not production serving.
+A consumer whose 32-event queue is full pauses only its own lane; if it stays full for 1 s (STALL_SECONDS) the request is cancelled so the wave can retire. Error delivery never blocks the GPU thread. This experimental worker is not production serving.
 
 Research-workspace evidence: analysis/native_kv_batch/{first.log,second.json,extended.json,http_c4.json,http_c4_v2.json,quality.json,tests.log,source_manifest.json}.

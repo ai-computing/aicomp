@@ -2,8 +2,13 @@
 import json
 import queue
 import time
+from collections import deque
 from pathlib import Path
 from serve_gpu import Worker, TextDecoder, validate
+
+# The single GPU thread owns every lane, so it never blocks on one HTTP consumer:
+# a lane whose event queue is full is paused, and cancelled if it stays full this long.
+STALL_SECONDS = 1.0
 
 
 class ActiveWave:
@@ -69,40 +74,51 @@ class BatchWorker(Worker):
                             views, _ = client.prefill(a.model, tokens, 'views')
                             if job.cancel.is_set(): continue
                             graph.load_lane(lane, views.torch_layers(), tokens[-1], count)
-                            states[lane] = [job, TextDecoder(tokenizer), len(tokens), 0]
+                            states[lane] = [job, TextDecoder(tokenizer), len(tokens), 0, deque(), None]
                             # HTTP handler arrivals can exceed the short admission window.
                             # Fill free lanes from arrivals during the first native prefill.
                             while len(wave) < a.batch_size:
                                 try: wave.append(self.jobs.get_nowait())
                                 except queue.Empty: break
                         except ValueError as exc:
-                            job.send('error', (500, 'generation failed') if started else (400, str(exc)))
+                            job.fail(*((500, 'generation failed') if started else (400, str(exc))))
                             if client.poisoned: raise
                     while states and not self.stopping.is_set():
-                        for lane, (job, _, _, _) in list(states.items()):
+                        now = time.monotonic()
+                        for lane, state in list(states.items()):
+                            job, pending = state[0], state[4]
+                            while pending and job.try_send(*pending[0]): pending.popleft()
+                            if not pending: state[5] = None
+                            elif state[5] is None: state[5] = now
+                            elif now-state[5] > STALL_SECONDS: job.cancel.set()
                             if job.cancel.is_set():
                                 graph.cancel_lane(lane)
                                 del states[lane]
+                            elif not pending and not graph.remaining[lane]:
+                                del states[lane]
+                        paused = [lane for lane, state in states.items() if state[4]]
                         # EOS is per request; the graph handles count retirement.
-                        for lane, token in graph.step(ignore_eos=True).items():
+                        emitted = graph.step(ignore_eos=True, paused=paused)
+                        for lane, token in emitted.items():
                             state = states[lane]
-                            job, decoder, prompt_count, generated = state
+                            job, decoder, prompt_count, generated, pending, _ = state
                             state[3] = generated = generated+1
                             delta = decoder.append(token)
-                            if delta: job.send('text', delta)
+                            if delta: pending.append(('text', delta))
                             stopped = token in eos and not job.body.get('ignore_eos', False)
                             if stopped: graph.cancel_lane(lane)
                             if not graph.remaining[lane]:
                                 delta = decoder.append(final=True)
-                                if delta: job.send('text', delta)
-                                job.send('done', {'finish_reason': 'stop' if stopped else 'length',
+                                if delta: pending.append(('text', delta))
+                                pending.append(('done', {'finish_reason': 'stop' if stopped else 'length',
                                     'usage': {'prompt_tokens': prompt_count, 'completion_tokens': generated,
-                                              'total_tokens': prompt_count+generated}})
-                                del states[lane]
+                                              'total_tokens': prompt_count+generated}}))
+                        if not emitted: self.stopping.wait(0.001)
                 except Exception:
                     import traceback
                     traceback.print_exc()
-                    for job in wave: job.send('error', (500, 'batch generation failed'))
+                    # Never block here: a stalled consumer must not keep the worker alive.
+                    for job in wave: job.fail(500, 'batch generation failed')
                     # Unknown CUDA/native failures require a fresh worker, not reuse.
                     self.stopping.set()
                 finally:
@@ -116,5 +132,5 @@ class BatchWorker(Worker):
         finally:
             if client is not None: client.close()
             while True:
-                try: self.jobs.get_nowait().send('error', (503, 'worker stopped'))
+                try: self.jobs.get_nowait().fail(503, 'worker stopped')
                 except queue.Empty: break
