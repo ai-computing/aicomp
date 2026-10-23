@@ -1,0 +1,4 @@
+{"device_shapes": [[32, 4096], [32, 8, 128], [32, 8, 128]], "host_shapes": [[32, 4096], [32, 8, 128], [32, 8, 128]], "expected": [[32, 4096], [32, 8, 128], [32, 8, 128]]}
+{"tensor": "hidden", "relative_rms": 0.00013354160182643682, "finite": true}
+{"tensor": "keys", "relative_rms": 4.362743493402377e-05, "finite": true}
+{"tensor": "values", "relative_rms": 4.714860915555619e-05, "finite": true}

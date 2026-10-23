@@ -96,3 +96,31 @@ compute-overlap claim is made here.
 `rngd_koni_sweep.py --width 2048 --output PREFIX` reuses the validated-environment Llama3.1 FullPrefillEngine and pins the KONI checkpoint. The untiled graph fails RMS lowering at[2048,4096]. `--rms-tile 512` selects a process-local graph with row-tiled normalization; full2K attention is unchanged. The group2 candidate hits64GiB OOM, then a compiler memory-explosion error at128GiB. `--group 1` is the next controlled candidate, still executing all32layers. Group1 also fails compiler memory explosion: this is a reproducible failed experiment, not an adopted fix. Further work must partition compiled stages or implement real cache-aware chunking. `probe_rms219.py` records isolated kernel feasibility; `test_koni_export.py` and `test_rowwise_rms.py` check host layout/normalization and rejection paths.
 
 After a successful export, use the GPU checker or `check_rngd_atom.py --kv-blocks 1` with the existing B1/context9216/k1 KONI artifact. The checkpoint's three-block artifact is not available. No installed SDK modification, real transfer overlap, or numerical parity is implied by compiling. See experiments/2026-10-23-koni-rngd-long219.md and evidence219/.
+
+## Partitioned KONI prefill (#221)
+
+`--partitioned --group 1 --rms-tile 512` compiles normalization, full-context
+attention and FFN separately. It executes every layer and every token; the RMS
+row tiles are not attention chunks. The compiled attention returns token-major
+KV explicitly, then the device runtime converts to the existing export layout.
+This avoids incorrect permutation metadata observed at the compiled output.
+The stage-only engine uses `begin_device_prefill` and `export_groups`; it does not
+implement the inherited device output-head path.
+
+```bash
+./furiosa_prefill_python.sh -m probe_koni_attention
+./furiosa_prefill_python.sh -m rngd_koni_sweep --width 2048 --rms-tile 512 \
+  --group 1 --partitioned --output rngd-koni-8b-2048-parts221-layout
+python3 check_rngd_gpu.py --model "$KONI_SNAPSHOT" \
+  --exports rngd-koni-8b-2048-parts221-layout.pt --output koni-gpu.json
+"$ATOM_PYTHON" container_bootstrap.py check_rngd_atom.py \
+  --model KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024 --kv-blocks 1 \
+  --cache-dir "$OWN_ARTIFACT_CACHE" \
+  --exports rngd-koni-8b-2048-parts221-layout.pt --output koni-atom.json
+```
+
+The ATOM checker now accepts an exclusively owned static B1/full-attention
+single-block artifact. `SingleBlockTarget` reuses the existing staging/import
+arithmetic for block zero; it does not enable the production PD scheduler,
+prefix caching, hybrid caches or concurrent requests on that artifact.
+See the experiment record and `evidence221/` for measured results and failures.

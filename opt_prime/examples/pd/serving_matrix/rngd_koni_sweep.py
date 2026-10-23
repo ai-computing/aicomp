@@ -23,8 +23,11 @@ p.add_argument("--width", type=int, choices=[128, 512, 2048, 8192], required=Tru
 p.add_argument("--output", required=True)
 p.add_argument("--rms-tile", type=int, choices=[0, 256, 512], default=0)
 p.add_argument("--group", type=int, choices=[1, 2], default=2)
+p.add_argument("--partitioned", action="store_true")
 a = p.parse_args()
-if a.rms_tile:
+if a.partitioned and (a.group != 1 or not a.rms_tile or a.width % a.rms_tile):
+    p.error("partitioned requires group1 and divisible RMS tiles")
+if a.rms_tile and not a.partitioned:
     if a.width % a.rms_tile:
         p.error("width must be divisible by rms tile")
     from rngd_pd.engines.fsdk import TacticKernelModule
@@ -72,8 +75,15 @@ class KVOnly(FullPrefillEngine):
         pass
 
 
+engine_type = KVOnly
+extra = {}
+if a.partitioned:
+    from koni_partitioned import PartitionedPrefill
+
+    engine_type = PartitionedPrefill
+    extra["rms_tile"] = a.rms_tile
 t = time.perf_counter()
-engine = KVOnly(
+engine = engine_type(
     ModelConfig(SimpleNamespace(**config)),
     weights,
     C=a.width,
@@ -81,6 +91,7 @@ engine = KVOnly(
     chip=0,
     cache_dir=None,
     S=a.width,
+    **extra,
 )
 sync(0)
 print(
@@ -101,7 +112,10 @@ with open(a.output + ".jsonl", "w", buffering=1) as f, torch.inference_mode():
         sync(0)
         k, v, logits = export_groups(stage, norm, head, config["rms_norm_eps"])
         elapsed = time.perf_counter() - t
-        assert k.shape == v.shape == (32, 8, a.width, 128)
+        assert k.shape == v.shape == (32, 8, a.width, 128), (
+            f"keys={tuple(k.shape)}, values={tuple(v.shape)}, groups={stage.g}, "
+            f"first_device_k={tuple(stage.Ks[0].shape)}, first_host_k={tuple(stage.Ks[0].cpu().shape)}"
+        )
         assert all(bool(torch.isfinite(x).all()) for x in (k, v, logits))
         exact = previous is None or all(
             torch.equal(x, y) for x, y in zip(previous, (k, v, logits))
@@ -115,6 +129,7 @@ with open(a.output + ".jsonl", "w", buffering=1) as f, torch.inference_mode():
             "repeat": repeat,
             "rms_tile": a.rms_tile,
             "group": a.group,
+            "partitioned": a.partitioned,
             "prefill_s": elapsed,
             "repeat_exact": exact,
             "first_token": int(logits.argmax()),
