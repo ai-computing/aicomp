@@ -36,6 +36,7 @@ OptimusPrime supports major HuggingFace models, and the following models have be
   * **Inference engine** (`Optimus_Inference`): autoregressive generation with PP/TP, three KV cache modes (no-cache, CachedSDPA internal, KVCacheManager external), and explicit prefill/decode API
   * **HuggingFace-compatible Checkpoint**: `save_hf_ckpt()` writes per-stage distributed parameters during PP/TP training; `merge_hf_ckpt.py` reassembles them on CPU into a single standard HuggingFace model that can be reloaded via `from_pretrained()` and reused with any PP/TP configuration for inference or continued training
   * **LoRA Fine-tuning**: memory-efficient fine-tuning that trains only ~0.5% of parameters via `LoRAConfig` + `apply_lora()`; compatible with PP, DP, TP, and `--dynamo-capture`; supports merge-mode / adapter-mode inference and export to a HuggingFace model
+  * **MoE expert offloading** (inference, experimental, transformers 5.x): keep the most-routed experts of every MoE layer on the GPU and run the rest on the host CPU concurrently, so MoE models larger than GPU memory run through `Optimus_Inference` (see [MoE Expert Offloading](#moe-expert-offloading-experimental))
   * **MPS oversubscription** (inference only): `--use-mps` lets multiple inference processes share a GPU via NVIDIA Multi-Process Service. opt_prime manages the daemon lifecycle and provides a gloo-backed `engine.barrier()` for MPS-safe cross-rank synchronization
 
 ## Installation
@@ -191,6 +192,64 @@ When the 'swap_model_in_optstep' option is set to True, the optimizer's step() p
     # Example of an 4-GPU setup with pipeline parallel size=4 and swap_opt_in_fwdbwd option is set to True
     optimus_p = Optimus_p(model, num_mb, use_gpu=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True)
 
+Both swap options only act when `force_free_mem=True`, and they are threshold driven: the optimizer
+state is offloaded when less than 5 GB of the GPU is left unreserved during forward/backward, and the
+model is moved to the host for `step()` when less than 25 GB is left after backward. On a GPU with
+plenty of free memory they may therefore never trigger. With `swap_model_in_optstep`, the optimizer
+state stays in host memory and `step()` runs on the CPU, which needs host RAM for the stage's
+weights, gradients and optimizer state (about 16 bytes per parameter in fp32) and makes each
+optimizer step much slower.
+
+#### Memory needed for Llama-2-13B (`examples/pp_train_llama2.py`)
+
+The example trains with Adam and keeps weights, gradients and optimizer state on the GPU by default.
+With fp32 weights that is 16 bytes per parameter; Llama-2-13B (13.0B parameters) needs about 208 GB
+for these alone, more than four 48 GB A40s (193 GB) provide. Running out of memory on 4 GPUs is
+therefore expected with the current defaults, on one host or two (issue #21); it is a capacity limit,
+not a multi-node problem. Note that transformers 4.x loads the checkpoint in fp32, while
+transformers 5.x keeps its fp16 dtype, which the example casts to bf16 (8 bytes per parameter).
+
+The memory options are available as flags of the example:
+
+| Flag | Optimus_p option | Effect |
+|---|---|---|
+| `--dtype {auto,fp32,bf16}` | (model dtype) | `auto` (default) keeps the loading behavior above |
+| `--activation-ckpt` | `activation_ckpt=True` | drop stage activations after forward and recompute them in backward (not on the last stage) |
+| `--swap-opt` | `swap_opt_in_fwdbwd=True` | offload optimizer state to the host during forward/backward |
+| `--cpu-opt-step` | `swap_model_in_optstep=True` | run `optimizer.step()` on the CPU (implies `--swap-opt`) |
+| `--low-mem` | all three above | |
+| `--batch-size`, `--num-mb`, `--max-length` | | defaults 64, 16, 1024 |
+
+Estimated peak GPU memory per GPU for PP=4 (largest stage: 10 decoder layers plus the embedding or
+the LM head, 3.34B parameters), batch 64 in 16 micro-batches of 4 sequences. The SQuAD contexts the
+example uses are under 500 characters, so a padded batch is at most about 220 tokens (171 with the
+Llama-3 tokenizer, scaled for Llama-2's smaller vocabulary); the
+`max_length=1024` truncation is never reached. These are **estimates**: the static part is
+bytes-per-parameter arithmetic, the activation part is scaled from a single-GPU measurement of a
+Llama-2-13B-shaped 10-layer stage (random weights, A100 80GB capped to A40 capacity), about
+0.37 MB per token per layer under bf16 autocast and 0.45 MB in fp32; the first stage keeps up to
+4 micro-batches in flight under 1F1B.
+
+| Configuration (PP=4) | Weights + grads + optimizer on GPU | Est. peak per GPU | Fits 48 GB A40? |
+|---|---|---|---|
+| default, transformers 4.x (fp32) | 53.4 GB | ~67 GB (in `optimizer.step()`) | no, OOM at the first step |
+| `--dtype bf16` (= default with transformers 5.x) | 26.7 GB | ~40 GB | yes |
+| `--cpu-opt-step` (fp32) | 26.7 GB (optimizer state on host) | ~40 GB | yes |
+| `--low-mem` (fp32) | 26.7 GB (optimizer state on host) | ~31 GB | yes |
+| `--low-mem --dtype bf16` | 26.7 GB (swap thresholds not reached, optimizer stays on GPU) | ~33 GB | yes |
+
+With the fp32 defaults, PP=5 (~2.7B parameters per stage, ~54 GB peak) still does not fit a 48 GB
+GPU; PP=8 (~1.75B, ~41 GB) does. Measured on the single-GPU 10-layer proxy (3.5B parameters, one
+micro-batch of 4 x 256 tokens, memory capped at 46068 MiB): the fp32 default ran out of memory in the
+first `optimizer.step()`, `--cpu-opt-step` peaked at 35.0 GB, and `--dtype bf16` at 35.2 GB.
+On 4 A40s with the default 1F1B schedule, the first stage also keeps up to 4 micro-batches of
+activations, so expect more than the proxy peak there unless `--activation-ckpt` is set.
+
+For example, on 4 A40s in one host:
+
+    torchrun --nproc_per_node=4 --nnodes=1 --node_rank=0 --master_addr=127.0.0.1 --master_port=29500 \
+        examples/pp_train_llama2.py --low-mem
+
 ### Graph capture mode: `--dynamo-capture`
 
 By default, OptimusPrime uses HuggingFace's HFTracer (built on torch.fx.symbolic_trace) to extract the model's FX graph. For enhanced model compatibility, the --dynamo-capture option enables the use of torch.export.export(). This leverages TorchDynamo to capture a comprehensive ATen-level IR, which is then reconstructed into a module-level FX graph, ensuring a more robust extraction for complex architectures.
@@ -225,6 +284,13 @@ optimus_p = Optimus_p(model, num_mb, use_gpu=True, dynamo_capture=True)
 
 #### Notes
 
+* With **transformers 5.x** (validated: transformers 5.1.0, torch 2.10.0+cu128) the export path (a) passes
+  `prefer_deferred_runtime_asserts_over_guards=True` to `torch.export` and strips the resulting runtime shape asserts
+  before graph reconstruction, because every GQA model produces always-true stride guards on the dynamic `seq_len`
+  (e.g. `Min(16*s, 32*s) == 16*s`) that torch cannot prove; (b) disables the HF `use_cache` output during export also
+  for KV-cache inference, since transformers 5 returns a `DynamicCache` object torch.export cannot output (OptimusPrime
+  injects its own CachedSDPA modules); (c) treats symbolic size arithmetic as non-tensor when re-deriving devices.
+  transformers 4.x behaviour is unchanged.
 * When using `--dynamo-capture` with `torch.amp.autocast` (mixed-precision training), a lower learning rate (e.g., 1e-5 instead of 3e-5) may be needed for stable convergence.
 
 ---
@@ -344,6 +410,115 @@ output_ids = engine.generate(input_ids, max_new_tokens=50)
 ```
 
 ---
+
+## MoE Expert Offloading (experimental)
+
+Runs mixture-of-experts models whose experts do not fit in GPU memory. Every MoE layer keeps its most frequently
+routed ("hot") experts on the GPU; the remaining ("cold") experts stay in host memory and are computed on the CPU in
+parallel with the GPU part. Routers, shared experts and attention are untouched.
+
+Each experts module is replaced by one opaque custom op (`opt_prime::offloaded_experts`), so `torch.export` never
+traces the data-dependent routing and the expert weights are not graph parameters: pipeline stages keep only their own
+layers' hot experts (uploaded on first use). Nothing is model specific: experts modules are found by structure
+(`num_experts` plus stacked `gate_up_proj` / `down_proj`), and both halves reuse the model's own experts class, so
+biases, transposed weights, activations and custom gating come from the model code.
+
+**Requirements**: transformers >= 5.0 (experts interface `experts(hidden, top_k_index, top_k_weights)`; transformers
+4.x keeps experts in an `nn.ModuleList` and is not supported), torch >= 2.4, `dynamo_capture=True`.
+Validated with **transformers 5.1.0, torch 2.10.0+cu128, NVIDIA A100 80GB, CUDA 12.8**. The other examples in this
+document target transformers 4.46.2.
+
+```python
+from opt_prime.inference import Optimus_Inference
+from opt_prime.accel.moe import MoEOffloadConfig, ExpertProfiler
+
+with ExpertProfiler(model) as prof, torch.no_grad():   # routing counts from calibration text (on the host)
+    model(calib_ids)
+cfg = MoEOffloadConfig(gpu_budget_gb=20, profile=prof.as_lists())   # hottest experts model-wide within 20 GB
+
+engine = Optimus_Inference(model, use_gpu=True, dtype=torch.bfloat16, dynamo_capture=True,
+                           use_kv_cache=True, moe_offload=cfg)
+out = engine.generate(input_ids, max_new_tokens=64, do_sample=False)
+print(engine.moe_offload_report, cfg.stats.device_fraction)   # what is where; share of routed pairs on the GPU
+```
+
+Heterogeneous tiers: pass a list of `TierSpec` (fastest first, host last) to mix devices; the planner balances
+each layer across them by cost, and `adapt_every` re-places experts from the served routing:
+
+```python
+from opt_prime.accel.moe import MoEOffloadConfig, TierSpec
+cfg = MoEOffloadConfig(
+    tiers=[TierSpec("gpu", budget_gb=20),              # CUDA / ROCm / XPU through PyTorch
+           TierSpec("rngd", device=0, budget_gb=40),   # FuriosaAI RNGD through furiosa-torch
+           # or TierSpec("rngd-opt", budget_gb=40): generated per-shape furiosa-opt kernel, ~1 TB/s, decode
+           TierSpec("cpu", options={"threads": 12})],  # host: native AVX-512 BF16 kernel
+    profile=prof.as_lists(), adapt_every=8)
+```
+
+Code layout (under `opt_prime/accel/`; design, validation status and extension guide in
+[`accel/moe/DESIGN.md`](opt_prime/accel/moe/DESIGN.md)):
+
+| path | role |
+|---|---|
+| `spec/experts.py`, `spec/adapters.py`, `spec/discover.py` | `ExpertSpec` (shape, gate, bias, layout, dtype), the model-side adapters (`GenericAdapter`, `register_adapter`) and experts-module discovery |
+| `moe/planner.py`, `moe/placement.py`, `moe/profiler.py` | per-layer LPT over all tiers by cost, budget fill, routing profile |
+| `moe/layer.py`, `moe/ops.py`, `moe/api.py` | N-tier execution (one host sync per layer, device tiers async, blocking tiers in workers, adaptive re-placement), the `opt_prime::offloaded_experts` custom op, `apply_moe_offload` |
+| `moe/backends.py`, `moe/batched.py`, `moe/config.py` | backend registry (`get_backend`, `register_backend`), batched / grouped expert math, options and stats |
+| `moe/train.py` | MoE training through `Optimus_p` with experts offloaded |
+| `platforms/<vendor>/experts.py` | expert tiers per device: `cuda` (aliases `gpu`, `xpu`), `cpu` (native AVX-512 BF16 kernel in `cpu/csrc`, or torch), `rngd` (furiosa-torch graphs), `rngd-opt` (per-shape furiosa-opt kernels from the npu-kernels package), `atom` (RBLN SDK) |
+| `platforms/npu_graph.py` | `GraphNPUBackend`, the base for graph-compiled NPUs |
+| `testing.py` | tiny random models of every family (tests, examples) |
+
+Checks:
+
+    pytest opt_prime/tests/test_moe_offload.py                     # placement, pair selection, every family, export
+    python3 examples/moe_offload_check.py                          # same per family, with a summary table
+    torchrun --nproc_per_node=1 examples/moe_offload_generate.py --tiny solar_open --hot-fraction 0.5 --experts-impl eager --check --kv-cache
+    torchrun --nproc_per_node=2 examples/moe_offload_generate.py --tiny solar_open --hot-fraction 0.5 --experts-impl eager --check --pp-size 2
+    torchrun --nproc_per_node=1 examples/moe_offload_generate.py --model Qwen/Qwen3-30B-A3B-Instruct-2507 --gpu-budget-gb 20 --kv-cache
+
+Validation (transformers 5.1.0, torch 2.10.0, A100; tiny random models):
+
+| families | offloaded logits vs original (0/50/100 % hot) | `torch.export` | `Optimus_Inference.generate` vs HF (16 tokens, 50 % hot) |
+|---|---|---|---|
+| Qwen2-MoE, Qwen3-MoE, Mixtral, GLM-4-MoE, Solar-Open, OLMoE, PhiMoE, Ernie-4.5-MoE, HunYuan-MoE, MiniMax, dots1, EXAONE-MoE, FlexOlmo, MiniMax-M2 | match (<= 1e-4 rel., fp32) | OK | Qwen3-MoE, Mixtral, Solar-Open checked: identical, also with KV cache and PP=2 |
+| GPT-OSS (transposed weights, biases, custom gate) | match | OK | identical without KV cache (OptimusPrime's CachedSDPA lacks GPT-OSS attention sinks); without offload the IR cannot rebuild its experts |
+| DeepSeek-V2/V3, GLM-4-MoE-Lite (MLA), Qwen3-Next, Jamba | match | original model not exportable | n/a |
+| LFM2-MoE | not built by the tiny-model helper yet | | |
+
+Performance (Qwen3-30B-A3B bf16 = 57 GB of experts, one A100 80GB, 2x Xeon 4410Y, KV cache, greedy, 64 tokens,
+adaptive re-placement on; `examples/moe_offload_generate.py --kv-cache`):
+
+| expert budget on the GPU | routed pairs on the GPU | tok/s |
+|---|---:|---:|
+| HF `generate` (whole model on the GPU, reference) | 1.00 | 30.2 |
+| OptimusPrime without offload | 1.00 | 15.8 |
+| offload, all experts fit (60 GB) | 1.00 | 20.2 |
+| offload, 30 GB | 0.98 | 13.2 |
+| offload, 15 GB | 0.83 | 11.5 |
+
+Per MoE layer, one decode token (Qwen3-30B-A3B shapes): 0.33 ms with all 8 routed experts on the GPU
+(transformers' grouped_mm: ~0.7 ms on A100), 0.88 ms with half on the host, 1.32 ms with all on the host.
+
+Without offload, Qwen2/3-MoE, Mixtral, GLM-4-MoE, Solar-Open and Llama-3.2-1B also generate identically through the
+IR (they failed to export before the transformers 5.x fixes above).
+
+Numerics: the GPU half runs the model's configured experts implementation on the hot experts and the CPU half runs
+the eager implementation on the cold pairs; the two partial sums are added in the hidden dtype. Results match the
+unmodified model to fp32 precision; in bf16 they can differ by rounding (greedy tokens of near-tied tiny random models
+may then differ). Compare with `config._experts_implementation = "eager"` for the closest reference.
+
+Validation on NPUs (details in `accel/moe/DESIGN.md`):
+- **`rngd-opt`** passes on silicon. Qwen3-30B-A3B with rngd-opt ×2 (64 slots) + CPU runs at 15.4 tok/s (18.4 with
+  `torch.compile`); Solar-Open-100B with rngd-opt ×2 + CPU runs at 8.6 tok/s, exact.
+- **`atom`** is verified on one RBLN-CA22 (rebel-compiler 0.11). The Qwen3-30B-A3B expert shape matches the CPU
+  backend, and a tiny qwen3_moe runs end to end with experts on ATOM + CPU.
+- **`rngd`** (the furiosa-torch graph backend) is verified in emulation; its silicon run is pending.
+
+Limits:
+- Adaptive re-placement copies swapped experts synchronously and waits for an in-flight forward of the same layer.
+- The regression set matches `optimus-rm` bit for bit, with one exception: `qwen_moe` with MoE training (#74) has
+  fewer stage nodes and a step-2 loss that differs in the 7th digit.
 
 ## HuggingFace-compatible Checkpoint
 
@@ -731,3 +906,58 @@ The example entry points (`pp_inference_llama.py`, `pp_generation_llama.py`, `se
 ## License
 
 The results of the AIcomp project are distributed under the 3-clause BSD license.
+
+## Experimental heterogeneous prefill/decode integration
+
+An optional `opt_prime.accel.pd` layer separates prefill and decode engines from KV
+transport, with explicit model/layout compatibility and buffer lifetime contracts.
+It includes a bridge to the separately installed `hetero-npu-p2p` transport.
+Torch causal-model and KONI RNGD/ATOM endpoint adapters are included. llm-d
+service integration is a separate feature; hardware support is limited to explicitly
+validated routes and SDK versions. See [architecture, contracts and validation](docs/HETEROGENEOUS_PD.md).
+
+### llm-d sidecar
+
+`opt_prime.accel.serve.llmd` adds an optional local shared-storage-sidecar adapter on top of
+the tested engine. It serializes device work through the owning process and keeps
+KV off the HTTP path. See [service contracts and validation](docs/LLMD_FEATURE.md).
+
+### Extending models and backends
+
+The PD package separates SDK-free contracts, execution state, model-family
+capabilities, cache transport and device adapters. Dense GPT-2/Llama/Qwen2/Qwen3/
+Mistral Torch models are covered by the model matrix; NPU support remains scoped
+to the validated KONI and experimental Qwen2.5 RNGD→ATOM paths. See the [contributor guide](docs/CONTRIBUTING_PD.md)
+and [model/performance validation](docs/validation/model-expansion/RESULTS.md).
+
+Actual NPU tests additionally cover native ATOM execution of Qwen2.5-0.5B and
+1.5B, prefill chunk64/128 comparisons, and stage profiling of KONI RNGD→ATOM PD.
+Qwen2.5-0.5B, 1.5B and 3B now also pass actual RNGD→ATOM P2P validation at B1,
+context512. These new adapters are experimental and use a pinned external-KV
+ABI; they do not establish arbitrary NPU/GPU support. See the
+[backend extension guide](docs/NPU_BACKEND_EXTENSIONS.md),
+[Qwen P2P validation](docs/QWEN_PD_VALIDATION.md), and the earlier
+[native NPU validation record](docs/NPU_MODEL_VALIDATION.md).
+
+The [3B extension record](docs/QWEN_3B_VALIDATION.md) covers additional model
+geometry, explicit device selection and actual local llm-d verification. The3B transfer
+path passes, but FP32 teacher-forced agreement is147/160; broader model quality
+is not cleared.
+
+For the [vendor-engine reuse strategy](docs/NATIVE_ENGINE_INTEGRATION.md) and
+[measured ATOM input-buffer optimization](docs/ATOM_INPUT_REUSE.md), see the
+linked assessments. The Qwen runner accepts opt-in `atom_reuse_inputs: true`;
+the original path remains available for full-logit reference checks.
+
+[Native baseline and KV resume](docs/NATIVE_BASELINE_AND_KV_RESUME.md) records
+the vendor ATOM comparison, public KV API feasibility probe, numerical limits
+and the compact-prefix ablation (not promoted to default).
+
+### Heterogeneous P2P factory
+
+The external-cache RNGD → ATOM worker is available through
+`opt_prime.accel.pd.npu.factory.create_qwen_p2p`. It uses the separate
+`hetero-npu-p2p` package and requires the validated SDK/driver/export setup.
+Native-cache P2P and automatic host fallback are not enabled.
+See [factory and validation](docs/P2P_FACTORY_KO.md) and
+[integration plan](docs/PD_INTEGRATION_PLAN_KO.md).

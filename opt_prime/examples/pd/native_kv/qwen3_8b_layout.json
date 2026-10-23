@@ -1,0 +1,53 @@
+{
+  "attention_type": "Global",
+  "unit_block_size": 2048,
+  "block_size": 2048,
+  "num_chips": 1,
+  "dram_shape": {
+    "inter_chip_axes": {
+      "inner": []
+    },
+    "intra_chip_axes": {
+      "axes": [
+        {
+          "tag": {
+            "LabelStride": {
+              "label": {
+                "inner": "0"
+              },
+              "stride": 1
+            }
+          },
+          "size": 272321,
+          "stride": 1024
+        },
+        {
+          "tag": {
+            "LabelStride": {
+              "label": {
+                "inner": "2"
+              },
+              "stride": 1
+            }
+          },
+          "size": 8,
+          "stride": 128
+        },
+        {
+          "tag": {
+            "LabelStride": {
+              "label": {
+                "inner": "3"
+              },
+              "stride": 1
+            }
+          },
+          "size": 128,
+          "stride": 1
+        }
+      ],
+      "offset": 0
+    }
+  },
+  "element_type": "Bfloat16"
+}
