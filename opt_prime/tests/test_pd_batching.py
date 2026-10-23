@@ -133,7 +133,7 @@ def test_moe_family_and_rejections(kv):
 def test_paged_admission_follows_pages_not_slots():
     """with paged KV a request takes only the pages it needs; admission waits for pages, not for max_context"""
     model = _llama()
-    b = ContinuousBatcher(model, kv="paged", slots=8, max_context=128, prefill_chunk=64, page_size=16, pages=6)
+    b = ContinuousBatcher(model, kv="paged", slots=8, max_context=96, prefill_chunk=64, page_size=16, pages=6)
     prompts = _prompts(5, 10, 30, seed=2)
     fs = [b.submit(PDRequest(f"p{i}", p, 8)) for i, p in enumerate(prompts)]     # each needs 2-3 pages
     b.step()
@@ -142,3 +142,9 @@ def test_paged_admission_follows_pages_not_slots():
     for p, f in zip(prompts, fs):
         assert f.result() == _greedy(model, p, 8)
     assert len(b.kv.free_pages) == 6 and all(not o for o in b.kv.owned)
+
+
+def test_paged_pool_smaller_than_one_request_is_rejected():
+    """#169: a request admitted by max_context must fit the pool, or it blocks the FIFO queue forever"""
+    with pytest.raises(ValueError):
+        ContinuousBatcher(_llama(), kv="paged", slots=2, max_context=64, page_size=16, pages=2)

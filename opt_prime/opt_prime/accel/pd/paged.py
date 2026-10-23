@@ -166,6 +166,8 @@ class PagedKV:
         """groups: `torch_models.KVGroup`s of a hybrid model; default one full-attention group of all layers"""
         if max_context % page_size:
             raise ValueError("max_context must be a multiple of page_size")
+        if pages < max_context // page_size:                     # else a max_context request is never admitted
+            raise ValueError("pages must hold one max_context request")
         self.page_size, self.pages, self.slots = page_size, pages, slots
         if groups is None:
             from opt_prime.accel.pd.torch_models import KVGroup
