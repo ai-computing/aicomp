@@ -224,6 +224,8 @@ class GPUHTTPServer(ThreadingHTTPServer):
 
 
 def main(a):
+    if getattr(a, 'rolling_native', False) and (not a.pipeline or a.native_pack != 'direct' or a.async_pack):
+        raise ValueError('--rolling-native requires --pipeline --native-pack direct without --async-pack')
     if getattr(a,'native_pack','torch')!='torch' and not getattr(a,'pipeline',False):
         raise ValueError('--native-pack requires --pipeline')
     if getattr(a,'local_continuous',False) and (getattr(a,'prefill_backend','native')!='gpu' or getattr(a,'local_single_width',False)):
@@ -266,6 +268,7 @@ if __name__=='__main__':
     p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
     p.add_argument('--native-pack',choices=['torch','numpy','direct'],default='torch')
     p.add_argument('--pipeline',action='store_true')
+    p.add_argument('--rolling-native',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)
     p.add_argument('--async-text',action='store_true')

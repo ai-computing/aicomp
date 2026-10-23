@@ -65,6 +65,11 @@ class PipelineWorker(Worker):
                     client = MultiplexKVClient(a.native, 19201, 19202,
                         json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text()))
                     producer_ready.set()
+                    if getattr(a, 'rolling_native', False):
+                        from rolling_prefill import run_rolling
+                        run_rolling(self, client, tokenizer, model.config.vocab_size,
+                                    credits, registry, prepared, retire)
+                        return
                     credit_wait_ms = 0.0
                     wave_id = 0
                     while not self.stopping.is_set():

@@ -1,0 +1,173 @@
+[
+  {
+    "records": 40,
+    "target": 0,
+    "expected": "Z01240",
+    "input_tokens": 592,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 40,
+    "target": 20,
+    "expected": "Z59620",
+    "input_tokens": 592,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 40,
+    "target": 39,
+    "expected": "Z10081",
+    "input_tokens": 592,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 80,
+    "target": 0,
+    "expected": "Z02480",
+    "input_tokens": 1152,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 80,
+    "target": 40,
+    "expected": "Z19240",
+    "input_tokens": 1152,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 80,
+    "target": 79,
+    "expected": "Z28081",
+    "input_tokens": 1152,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 120,
+    "target": 0,
+    "expected": "Z03720",
+    "input_tokens": 1712,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 120,
+    "target": 60,
+    "expected": "Z78860",
+    "input_tokens": 1712,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  },
+  {
+    "records": 120,
+    "target": 119,
+    "expected": "Z46081",
+    "input_tokens": 1712,
+    "texts_equal": true,
+    "native": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "solo": {
+      "exact": true,
+      "finish_reason": "stop"
+    },
+    "concurrent": {
+      "exact": true,
+      "finish_reason": "stop"
+    }
+  }
+]

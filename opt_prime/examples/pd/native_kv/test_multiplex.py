@@ -56,6 +56,70 @@ class MultiplexTest(unittest.TestCase):
             self.assertEqual(stats['batches'],18)
         self.assertFalse(c.poisoned)
 
+    def test_stream_replenishes_before_old_tail_and_bounds_pending(self):
+        c=self.client(); messages=deque(); submitted=[]; futures={}; completed=[]
+        pool=Mock(); remaining=deque(range(3)); live=set(); peak=[]
+        def acquire():
+            if not remaining:return None
+            index=remaining.popleft()
+            return [1,2],index
+        def enqueue(rid,index):
+            messages.append([control(rid,1)])
+            for first in range(0,72,4):
+                messages.append(batch(rid,range(first,first+4),1,index+1,first==68))
+        def submit(fn,url,json,timeout):
+            rid=json['kv_transfer_params']['id'];index=len(submitted)
+            submitted.append(rid);live.add(rid);peak.append(len(live))
+            future=concurrent.futures.Future();futures[rid]=future
+            if index==0:enqueue(rid,index)
+            if index==2:
+                # Third request must enter while second still waits for KV.
+                self.assertEqual(completed,[0])
+                self.assertIn(submitted[1],live)
+                enqueue(rid,index);enqueue(submitted[1],1)
+            return future
+        def send(header):
+            root=len(header)-36
+            if u32(header,root+4)==3:
+                rid=read_string(header,root+8)
+                response=Mock();response.json.return_value={}
+                futures[rid].set_result(response)
+        def complete(index,data,stats):
+            live.remove(submitted[index]);completed.append(index)
+            self.assertTrue(np.all(np.frombuffer(data.tobytes(),dtype=np.uint16)==index+1))
+        pool.submit.side_effect=submit;c.tx.send.side_effect=send
+        c.rx.poll.side_effect=lambda timeout:bool(messages)
+        c.rx.recv_multipart.side_effect=lambda copy:messages.popleft()
+        with patch('multiplex_receiver.concurrent.futures.ThreadPoolExecutor',return_value=pool):
+            c.prefill_stream('model',acquire,complete,lambda:not remaining,max_pending=2)
+        self.assertEqual(completed,[0,2,1]);self.assertEqual(max(peak),2)
+        self.assertFalse(live);self.assertFalse(c.poisoned)
+
+    def test_stream_deadline_is_per_request_not_stream_lifetime(self):
+        c=self.client();c.timeout=1;clock=[0.0];messages=deque();remaining=deque(range(3))
+        futures={};completed=[];pool=Mock()
+        def acquire():
+            if not remaining:return None
+            return [1,2],remaining.popleft()
+        def submit(fn,url,json,timeout):
+            rid=json['kv_transfer_params']['id'];future=concurrent.futures.Future();futures[rid]=future
+            messages.append([control(rid,1)])
+            for first in range(0,72,4):messages.append(batch(rid,range(first,first+4),1,1,first==68))
+            return future
+        def send(header):
+            root=len(header)-36
+            if u32(header,root+4)==3:
+                clock[0]+=0.8
+                rid=read_string(header,root+8);response=Mock();response.json.return_value={}
+                futures[rid].set_result(response)
+        pool.submit.side_effect=submit;c.tx.send.side_effect=send
+        c.rx.poll.side_effect=lambda timeout:bool(messages)
+        c.rx.recv_multipart.side_effect=lambda copy:messages.popleft()
+        with patch('multiplex_receiver.concurrent.futures.ThreadPoolExecutor',return_value=pool),patch('multiplex_receiver.time.perf_counter',side_effect=lambda:clock[0]):
+            c.prefill_stream('model',acquire,lambda index,*_:completed.append(index),lambda:not remaining,max_pending=1)
+        self.assertEqual(completed,[0,1,2]);self.assertGreater(clock[0],c.timeout)
+        self.assertFalse(c.poisoned)
+
     def test_unknown_id_poisoned(self):
         c=self.client();pool=Mock();pool.submit.return_value=concurrent.futures.Future()
         c.rx.poll.return_value=True;c.rx.recv_multipart.return_value=[control('unregistered-id',1)]
