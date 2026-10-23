@@ -43,3 +43,5 @@ BlockB reverse-model/mode repetition completed144additional batches with parity 
 External-backend benchmark candidate:trusted argv config and explicit startup deadline. Real ATOM nativeQwen0.6B12batches pass parity; firstPDattempt timed out at180seconds before readiness, raw failure retained. Retry with1800seconds is live. No heterogeneous speedup claim.3harness tests pass; no core serving changes.
 
 Qwen0.6B actual RNGD-to-ATOM completed12PD batches with parity against nativeATOM;42remote/0localprefills. Readiness369.73s excluded from timing.8192input/c4 throughputnative22.25vsPD10.58tok/s. Current width8192producer is slower; shorter prompts also pad to8192. Other three model comparisons running. Failed180s startup record retained.
+
+Qwen3-4B and KONI8B RNGD-to-ATOM matched runs complete: each12native+12PD batches pass parity. Input8192/output32/c4: Qwen4B5.0853→5.4903tok/s;KONI3.3576→4.6973tok/s. Input128/c4:Qwen4B26.3399→7.4952;KONI14.6259→5.9530. Cold startup excluded (PD810.53s/432.86s). Both longer-model PD paths help on long input but regress on short input. Gemma native done,PD pending.

@@ -61,3 +61,15 @@ Retry exited0:12measured PD batches pass token/text parity against nativeATOM. P
 Current fixed-width8192research producer is slower than nativeATOM for both tested lengths. Short prompts are padded to8192; do not infer performance of a width-dispatched or native Furiosa engine. Preserve this actual result; correctness does not imply PD speedup. RawPD and summary copied locally as atom248-qwen06b-pd-b.json and atom248-qwen06b-summary.json.
 
 Started /tmp/run_atom248_remaining.py (copy in local analysis directory) for Qwen4B,KONI,Gemma native/PD sequentially on the same owned Pod, output32,input128/8192,c1/4,repeat3,startup1800. Exact commands and terminal codes in atom248-remaining.log; stops on any failed run or parity failure. Uses Gemma corrected artifactroot and KONIk1, existing verified factories. No new allocation or changes to other workloads.
+
+Qwen3-4B nativeATOM completed12batches with parity, startup11.5288seconds. Atoutput32/c4,input128 throughput26.3399tok/s,input8192=5.0853tok/s. Live RNGD-to-ATOM Qwen4producer initialization now running; native does not establish cross-device parity.
+
+Source-level B1 admission audit:AtomBatcher._step_pd submits remote prefill only while self.free and self.waiting. A single occupied decode lane prevents next-request producer submission until decode finishes. This rules out cross-request producer/decode overlap in this measured B1 configuration; it does not by itself quantify the speedup available. Issue253 records bounded independent prefill ownership and cancellation/failure tests required before changing this behavior. Distinct from within-request chunk-copy issue47; fixedwidth compute cost remains.
+
+Qwen3-4B native/PD each12batches completed with parity. PD startup810.530seconds excluded from measurement. Output32/c4,input128 native26.3399vsPD7.4952tok/s; input8192 native5.0853vsPD5.4903tok/s. Fixed-width8192PD is slower for short inputs and modestly faster in this long-input sample; no repetition/overlap claim yet. Summary atom248-qwen4b-summary.json; queue advanced toKONI native.
+
+## KONI-8B matched result
+
+Native and actual RNGD→ATOM each completed 12 batches with token/text parity; PD reports 42 remote and 0 local prefills. Native startup 17.332 s, PD startup 432.865 s, both excluded from timed requests. Same fixed width8192, B1, output32, three repeats as above. Commands in `analysis/serving-matrix-201/atom248-remaining.log`; raw `atom248-koni-{native,pd}-a.json` and summary `atom248-koni-summary.json`.
+
+At input8192/c4: native 3.3576 tok/s, PD 4.6973 tok/s (+39.9%); median request e2e 23.832 -> 17.034 s. At input128/c4: native 14.6259 tok/s, PD 5.9530 tok/s. Long-prompt benefit and short-prompt regression are from one workload block, not a universal result. Gemma native completed and PD is running.
