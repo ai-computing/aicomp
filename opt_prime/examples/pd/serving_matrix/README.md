@@ -84,8 +84,8 @@ required before adopting that candidate.
 
 ## Remaining scope
 
-Fresh four-model ATOM coverage; long-context RNGD graphs and Gemma support;
-RNGD→GPU/ATOM checks beyond isolated inputs; HTTP concurrency1/4/16, cache reuse,
+Broader EOS-aware long semantic RNGD coverage and production integration of the
+validated Qwen/KONI/Gemma producers; heterogeneous HTTP concurrency, cache reuse,
 EOS/cancellation/recovery and sustained performance; model-size/length comparisons
 under matched resource budgets. Numerical mismatches require diagnosis or quality
 checks, not silent acceptance. No native-engine performance parity or source-copy
@@ -149,3 +149,20 @@ The GPU checker validates absolute cache positions and compares only the retaine
 window for sliding layers; it still requires the full prefix for global layers.
 It also checks the cache contents after import, not just the upload tensor.
 See the experiment record for failed runs, tolerances and remaining scope.
+
+## EOS-aware shared semantic inputs (#227)
+
+`semantic_sweep.py --backend gpu` saves chat-template input IDs and both generation-config/tokenizer EOS IDs. The ATOM direct runner and RNGD producers reuse that file verbatim. `--cases` must name existing cases and all selected cases must fit the compiled width; the producer never silently truncates or skips inputs. Gemma exports only the true prompt prefix and uses its last real hidden state, excluding right padding. Qwen/KONI retain their existing true-length exports.
+
+```bash
+python semantic_sweep.py --backend gpu --model "$MODEL_SNAPSHOT" \
+  --fixtures fixtures.json --output native-gpu.jsonl
+./furiosa_prefill_python.sh -m rngd_gemma_sweep --width 2048 \
+  --fixtures fixtures.json --cases capital-100 arithmetic-100 korean-100 retrieval-100 \
+  --output gemma-chat-mid
+python check_rngd_gpu.py --model "$MODEL_SNAPSHOT" \
+  --exports gemma-chat-mid-0.pt gemma-chat-mid-1.pt gemma-chat-mid-2.pt gemma-chat-mid-3.pt \
+  --eos-aware --max-output 64 --output gpu-handoff.json
+```
+
+For Qwen use `rngd_qwen_sweep --model MODEL --experimental-long-width`; for KONI use `rngd_koni_sweep --partitioned --group 1 --rms-tile 512`. Pass the same fixture/case/width/output options. Each selected case saves a numbered export containing its exact IDs and EOS set. Both `check_rngd_atom.py` and `check_gemma_atom_handoff.py` accept `--eos-aware --max-output 64`; legacy fixed-length checks remain the default. Raw full-prefix host exports are not streaming overlap. Shared wrong native answers remain wrong after a successful handoff; inspect the semantic records separately from transport parity.

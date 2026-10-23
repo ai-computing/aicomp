@@ -1,0 +1,509 @@
+[
+  {
+    "export": "semantic227-qwen06b-rngd2048-0.pt",
+    "case": "capital-100",
+    "eos_ids": [
+      151643,
+      151645
+    ],
+    "input_tokens": 1526,
+    "native_tokens": [
+      59604,
+      151645
+    ],
+    "native_first_decode_top5": [
+      {
+        "token": 151645,
+        "logit": 27.125
+      },
+      {
+        "token": 13,
+        "logit": 23.0
+      },
+      {
+        "token": 11162,
+        "logit": 16.875
+      },
+      {
+        "token": 67643,
+        "logit": 16.125
+      },
+      {
+        "token": 151643,
+        "logit": 16.125
+      }
+    ],
+    "variants": {
+      "original": {
+        "first_divergence": null,
+        "tokens": [
+          59604,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 151645,
+            "logit": 26.875
+          },
+          {
+            "token": 13,
+            "logit": 22.875
+          },
+          {
+            "token": 11162,
+            "logit": 17.0
+          },
+          {
+            "token": 67643,
+            "logit": 16.125
+          },
+          {
+            "token": 151643,
+            "logit": 16.0
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.36134202603716403
+      },
+      "portable": {
+        "first_divergence": null,
+        "tokens": [
+          59604,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 151645,
+            "logit": 26.875
+          },
+          {
+            "token": 13,
+            "logit": 22.875
+          },
+          {
+            "token": 11162,
+            "logit": 17.0
+          },
+          {
+            "token": 67643,
+            "logit": 16.125
+          },
+          {
+            "token": 151643,
+            "logit": 16.0
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.18173174397088587
+      }
+    },
+    "importer_logits_exact": true
+  },
+  {
+    "export": "semantic227-qwen06b-rngd2048-1.pt",
+    "case": "arithmetic-100",
+    "eos_ids": [
+      151643,
+      151645
+    ],
+    "input_tokens": 1527,
+    "native_tokens": [
+      16,
+      22,
+      488,
+      220,
+      17,
+      20,
+      284,
+      220,
+      19,
+      17,
+      271,
+      20841,
+      448,
+      1172,
+      279,
+      7546,
+      25,
+      220,
+      19,
+      17,
+      13,
+      151645
+    ],
+    "native_first_decode_top5": [
+      {
+        "token": 22,
+        "logit": 31.25
+      },
+      {
+        "token": 488,
+        "logit": 23.125
+      },
+      {
+        "token": 20,
+        "logit": 18.25
+      },
+      {
+        "token": 17,
+        "logit": 18.25
+      },
+      {
+        "token": 23,
+        "logit": 18.125
+      }
+    ],
+    "variants": {
+      "original": {
+        "first_divergence": null,
+        "tokens": [
+          16,
+          22,
+          488,
+          220,
+          17,
+          20,
+          284,
+          220,
+          19,
+          17,
+          271,
+          20841,
+          448,
+          1172,
+          279,
+          7546,
+          25,
+          220,
+          19,
+          17,
+          13,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 22,
+            "logit": 31.375
+          },
+          {
+            "token": 488,
+            "logit": 23.125
+          },
+          {
+            "token": 20,
+            "logit": 18.125
+          },
+          {
+            "token": 23,
+            "logit": 18.0
+          },
+          {
+            "token": 17,
+            "logit": 18.0
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.2239699789788574
+      },
+      "portable": {
+        "first_divergence": null,
+        "tokens": [
+          16,
+          22,
+          488,
+          220,
+          17,
+          20,
+          284,
+          220,
+          19,
+          17,
+          271,
+          20841,
+          448,
+          1172,
+          279,
+          7546,
+          25,
+          220,
+          19,
+          17,
+          13,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 22,
+            "logit": 31.375
+          },
+          {
+            "token": 488,
+            "logit": 23.125
+          },
+          {
+            "token": 20,
+            "logit": 18.125
+          },
+          {
+            "token": 23,
+            "logit": 18.0
+          },
+          {
+            "token": 17,
+            "logit": 18.0
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.20122207410167903
+      }
+    },
+    "importer_logits_exact": true
+  },
+  {
+    "export": "semantic227-qwen06b-rngd2048-2.pt",
+    "case": "korean-100",
+    "eos_ids": [
+      151643,
+      151645
+    ],
+    "input_tokens": 1531,
+    "native_tokens": [
+      66845,
+      23573,
+      125496,
+      124785,
+      20401,
+      134013,
+      16560,
+      3070,
+      31328,
+      129034,
+      334,
+      78952,
+      13,
+      151645
+    ],
+    "native_first_decode_top5": [
+      {
+        "token": 23573,
+        "logit": 25.375
+      },
+      {
+        "token": 126414,
+        "logit": 16.5
+      },
+      {
+        "token": 33883,
+        "logit": 16.5
+      },
+      {
+        "token": 65865,
+        "logit": 16.375
+      },
+      {
+        "token": 126346,
+        "logit": 15.875
+      }
+    ],
+    "variants": {
+      "original": {
+        "first_divergence": null,
+        "tokens": [
+          66845,
+          23573,
+          125496,
+          124785,
+          20401,
+          134013,
+          16560,
+          3070,
+          31328,
+          129034,
+          334,
+          78952,
+          13,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 23573,
+            "logit": 25.75
+          },
+          {
+            "token": 126414,
+            "logit": 16.625
+          },
+          {
+            "token": 33883,
+            "logit": 16.625
+          },
+          {
+            "token": 65865,
+            "logit": 16.5
+          },
+          {
+            "token": 126346,
+            "logit": 15.9375
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.22523859702050686
+      },
+      "portable": {
+        "first_divergence": null,
+        "tokens": [
+          66845,
+          23573,
+          125496,
+          124785,
+          20401,
+          134013,
+          16560,
+          3070,
+          31328,
+          129034,
+          334,
+          78952,
+          13,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 23573,
+            "logit": 25.75
+          },
+          {
+            "token": 126414,
+            "logit": 16.625
+          },
+          {
+            "token": 33883,
+            "logit": 16.625
+          },
+          {
+            "token": 65865,
+            "logit": 16.5
+          },
+          {
+            "token": 126346,
+            "logit": 15.9375
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.15927262196782976
+      }
+    },
+    "importer_logits_exact": true
+  },
+  {
+    "export": "semantic227-qwen06b-rngd2048-3.pt",
+    "case": "retrieval-100",
+    "eos_ids": [
+      151643,
+      151645
+    ],
+    "input_tokens": 1531,
+    "native_tokens": [
+      17617,
+      867,
+      151645
+    ],
+    "native_first_decode_top5": [
+      {
+        "token": 867,
+        "logit": 33.25
+      },
+      {
+        "token": 20756,
+        "logit": 23.875
+      },
+      {
+        "token": 33497,
+        "logit": 20.625
+      },
+      {
+        "token": 9515,
+        "logit": 20.125
+      },
+      {
+        "token": 273,
+        "logit": 19.75
+      }
+    ],
+    "variants": {
+      "original": {
+        "first_divergence": null,
+        "tokens": [
+          17617,
+          867,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 867,
+            "logit": 33.0
+          },
+          {
+            "token": 20756,
+            "logit": 23.875
+          },
+          {
+            "token": 33497,
+            "logit": 20.5
+          },
+          {
+            "token": 9515,
+            "logit": 20.125
+          },
+          {
+            "token": 273,
+            "logit": 19.5
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.2282063909806311
+      },
+      "portable": {
+        "first_divergence": null,
+        "tokens": [
+          17617,
+          867,
+          151645
+        ],
+        "first_decode_top5": [
+          {
+            "token": 867,
+            "logit": 33.0
+          },
+          {
+            "token": 20756,
+            "logit": 23.875
+          },
+          {
+            "token": 33497,
+            "logit": 20.5
+          },
+          {
+            "token": 9515,
+            "logit": 20.125
+          },
+          {
+            "token": 273,
+            "logit": 19.5
+          }
+        ],
+        "native_equal": true,
+        "readback_exact_slots": 56,
+        "import_s": 0.15058266604319215
+      }
+    },
+    "importer_logits_exact": true
+  }
+]
