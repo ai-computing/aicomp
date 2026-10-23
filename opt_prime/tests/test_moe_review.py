@@ -67,6 +67,29 @@ def test_baked_cache_distinguishes_bias_values():
     torch.testing.assert_close(b, a + 3)
 
 
+@pytest.mark.parametrize('residency', ['inputs', 'baked'])
+def test_npu_graph_chunks_rows_above_the_largest_bucket(residency):
+    class Counting(GraphNPUBackend):
+        def __init__(self):
+            super().__init__(emulate=True, token_buckets=(1, 4))
+            self.residency, self.keys = residency, set()
+        def _cached_compile(self, key, module, samples, place=True):
+            self.keys.add(key)
+            return module
+    backend, whole = Counting(), GraphNPUBackend(emulate=True, token_buckets=(64,))   # whole: one unchunked graph
+    whole.residency = residency
+    spec = ExpertSpec(2, 2, 2, dtype=torch.float32)
+    w = ExpertWeights(spec, [0, 1], torch.randn(2, 4, 2), torch.randn(2, 2, 2))
+    h, ref = backend.load(w), whole.load(w)
+    loaded = len(backend.keys)
+    torch.manual_seed(0)
+    for T in (5, 6, 7, 9):                    # prefill lengths above the largest bucket (4)
+        args = (torch.randn(T, 2), torch.randint(0, 2, (T, 2)), torch.rand(T, 2))
+        torch.testing.assert_close(backend.run(h, *args), whole.run(ref, *args))
+    assert {k[3 if residency == 'baked' else 1] for k in backend.keys} <= {1, 4}
+    assert len(backend.keys) - loaded <= (2 if residency == 'baked' else 4)   # bucket graphs only, not one per T
+
+
 def test_adaptation_waits_for_a_forward_using_old_mapping():
     m = Experts()
     adapter = GenericAdapter()
