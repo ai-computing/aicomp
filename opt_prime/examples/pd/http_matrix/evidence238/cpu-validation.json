@@ -1,0 +1,17 @@
+{
+  "baseline": "df02223",
+  "baseline_fault_failures": 9,
+  "baseline_cleanup_errors": 1,
+  "focused": {
+    "passed": 64,
+    "warnings": 1
+  },
+  "full": {
+    "passed": 460,
+    "skipped": 15,
+    "subtests_passed": 135,
+    "warnings": 1,
+    "seconds": 134.34
+  },
+  "hardware_fault_injection": false
+}
