@@ -74,6 +74,10 @@ def remote_tier(a, model):
 
 
 def build(a):
+    prefetch = getattr(a, "pd_prefetch_next", False)
+    if prefetch and (a.backend != "atom" or a.slots != 1 or not a.pd_remote_only or
+                     not (a.pd_prefill_device or a.pd_prefill_python)):
+        raise ValueError("next prefill requires single-lane ATOM remote-only PD")
     tok = AutoTokenizer.from_pretrained(a.model)
     events = None
     if a.kv_events:
@@ -95,7 +99,7 @@ def build(a):
         engine.start(a.model)
         b, model = engine.batcher(prefix_cache=a.prefix_cache, host_kv_gib=a.kv_host_memory_gb, kv_events=events,
                                   prefill_worker=prefill_worker(a, a.slots, engine.model.config),
-                                  local_prefill=not a.pd_remote_only), engine.model
+                                  local_prefill=not a.pd_remote_only, remote_prefetch=prefetch), engine.model
     else:
         model = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.device).eval()
         kw = dict(slots=a.slots, max_context=a.max_context, kv=a.kv, page_size=a.page_size,
@@ -144,6 +148,8 @@ if __name__ == "__main__":
                     help="experimental: import layer KV during capable subprocess prefill (Torch decoder only)")
     ap.add_argument("--pd-remote-only", action="store_true",
                     help="PD on ATOM: every prompt is prefilled by the PD prefill side (no cost routing to ATOM)")
+    ap.add_argument("--pd-prefetch-next", action="store_true",
+                    help="B1 ATOM remote-only PD: prefill one queued prompt while the current request decodes")
     ap.add_argument("--remote-kv", default=None, help="JSON with Mooncake store setup arguments (shared KV, #128)")
     ap.add_argument("--remote-kv-keys", default="lmcache", choices=["lmcache", "optimus"])
     ap.add_argument("--remote-kv-model", default=None, help="model name in the keys (the vLLM/LMCache side's name)")
