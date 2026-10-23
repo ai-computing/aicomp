@@ -1047,9 +1047,7 @@ class Optimus_Inference:
 
             # Forward single token via decode_step
             if self.tpl.is_first_stage():
-                token_input = next_token.unsqueeze(0) if next_token.dim() == 1 else next_token
-                if token_input.dim() == 1:
-                    token_input = token_input.unsqueeze(0)  # [1, 1]
+                token_input = next_token.reshape(-1, 1)  # [B] -> [B, 1]
                 logits = self._schedule_gen.decode_step(token_input, cur_pos)
             else:
                 logits = self._schedule_gen.decode_step(None, cur_pos)

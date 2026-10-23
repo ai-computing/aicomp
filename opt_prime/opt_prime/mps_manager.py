@@ -502,34 +502,12 @@ def cleanup_barrier_files(pipe_dir: str) -> None:
 # ---------------------------------------------------------------------------
 
 def _mps_daemon_running(pipe_dir: str) -> bool:
-    """Best-effort check whether an MPS daemon is already running.
+    """Whether an MPS daemon serves this pipe directory (its control socket exists).
 
-    Looks for the pipe directory's control socket and probes pgrep.
-    Returns True if either signal is present.
+    A host-wide process check would mistake another job's daemon (other pipe
+    directory) for ours, and the stale cleanup would then hit it.
     """
-    # 1) control socket presence (most reliable when MPS daemon started cleanly)
-    if os.path.exists(os.path.join(pipe_dir, "control")):
-        return True
-    # 2) Process check
-    try:
-        out = subprocess.run(
-            ["pgrep", "-x", "nvidia-cuda-mps-server"],
-            capture_output=True, text=True, timeout=2,
-        )
-        if out.returncode == 0 and out.stdout.strip():
-            return True
-    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-        pass
-    try:
-        out = subprocess.run(
-            ["pgrep", "-x", "nvidia-cuda-mps-control"],
-            capture_output=True, text=True, timeout=2,
-        )
-        if out.returncode == 0 and out.stdout.strip():
-            return True
-    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-        pass
-    return False
+    return os.path.exists(os.path.join(pipe_dir, "control"))
 
 
 # ---------------------------------------------------------------------------
@@ -786,7 +764,7 @@ class MPSManager:
             return False
 
     def _force_cleanup_stale_daemon(self) -> None:
-        """Best-effort cleanup of a stale daemon: try quit, then pkill (own user)."""
+        """Best-effort cleanup of a stale daemon on our pipe dir: quit, drop socket."""
         try:
             subprocess.run(
                 ["nvidia-cuda-mps-control"],
@@ -798,16 +776,8 @@ class MPSManager:
             )
         except (subprocess.TimeoutExpired, OSError):
             pass
-        # Force kill stragglers (only this user's processes)
-        for proc_name in ("nvidia-cuda-mps-server", "nvidia-cuda-mps-control"):
-            try:
-                subprocess.run(
-                    ["pkill", "-u", str(os.geteuid()), "-x", proc_name],
-                    capture_output=True, timeout=5,
-                )
-            except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-                pass
-        # Remove control socket if present
+        # No pkill: other jobs' daemons (other pipe directories) share the
+        # process names. Remove our control socket so a new daemon can bind.
         ctrl = os.path.join(self.pipe_dir, "control")
         try:
             os.unlink(ctrl)

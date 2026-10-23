@@ -39,3 +39,5 @@ Limits: 4 MiB per plan, 1024 retained plans, 256 MiB retained staging. Submitter
 The stats symbol exposes ten atomic counters: rewritten, restored, failed, in-flight plans, capacity/duplicate fallback, input segments, output segments, in-flight staging bytes, insufficient reduction and unsupported geometry. No KV bytes are logged.
 
 Tests cover partial runs, variable lengths, byte permutation, immutable original metadata, duplicate-source fallback, completion before submit returns, failed completion cleanup and two out-of-order completions after original descriptor storage is overwritten. Hardware cancellation observations are documented in PARTIAL_RESULTS.md; they do not prove all shutdown/cancellation races safe.
+
+The host-only planner is now isolated in `coalesced_plan.h`; RNGD ABI/completion hooks remain in `adapter.c`. See [backend boundaries](../BACKENDS.md).

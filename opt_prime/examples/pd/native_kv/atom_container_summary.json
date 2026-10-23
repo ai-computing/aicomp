@@ -1,0 +1,77 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "requests": 12,
+  "output_tokens_per_request": 16,
+  "rngd_fusion": 4,
+  "rngd_mesh": 2,
+  "rngd_width": 256,
+  "atom_batch": 8,
+  "original_readback_slots": 48,
+  "portable_readback_slots": 48,
+  "pd_outputs_equal": 12,
+  "aggregated_outputs_equal": 12,
+  "runs": {
+    "original": {
+      "imports": 12,
+      "import_mean_ms": 15.047711417234192,
+      "import_after_first_mean_ms": 11.269633457149295,
+      "benchmark": {
+        "aggregated": {
+          "seconds": 0.57,
+          "tok_s": 337.4,
+          "ttft_mean_s": 0.192,
+          "tpot_mean_ms": 16.7,
+          "decode_steps": 33,
+          "hit_tokens": 0,
+          "prompt_tokens": 707
+        },
+        "pd": {
+          "seconds": 3.21,
+          "tok_s": 59.9,
+          "ttft_mean_s": 1.669,
+          "tpot_mean_ms": 9.9,
+          "decode_steps": 173,
+          "hit_tokens": 0,
+          "prompt_tokens": 707,
+          "prefilled": {
+            "remote": 12,
+            "local": 0
+          },
+          "identical_to_aggregated": 9,
+          "first_token_agree": 11
+        }
+      }
+    },
+    "portable": {
+      "imports": 12,
+      "import_mean_ms": 16.224281610144924,
+      "import_after_first_mean_ms": 13.398119841109622,
+      "benchmark": {
+        "aggregated": {
+          "seconds": 0.67,
+          "tok_s": 285.2,
+          "ttft_mean_s": 0.323,
+          "tpot_mean_ms": 16.3,
+          "decode_steps": 33,
+          "hit_tokens": 0,
+          "prompt_tokens": 707
+        },
+        "pd": {
+          "seconds": 3.18,
+          "tok_s": 60.3,
+          "ttft_mean_s": 1.637,
+          "tpot_mean_ms": 8.2,
+          "decode_steps": 180,
+          "hit_tokens": 0,
+          "prompt_tokens": 707,
+          "prefilled": {
+            "remote": 12,
+            "local": 0
+          },
+          "identical_to_aggregated": 9,
+          "first_token_agree": 11
+        }
+      }
+    }
+  }
+}

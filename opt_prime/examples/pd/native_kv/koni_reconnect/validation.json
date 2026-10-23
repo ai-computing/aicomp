@@ -1,0 +1,99 @@
+{
+  "readback_exact_slots": 64,
+  "repeated_logits_exact": true,
+  "outputs": [
+    {
+      "prompt": "What is the capital of France?",
+      "tokens": [
+        791,
+        6864,
+        315,
+        9822,
+        374,
+        12366,
+        13,
+        128009,
+        128006,
+        882,
+        128007,
+        271,
+        3923,
+        374,
+        279,
+        4033
+      ],
+      "text": "The capital of France is Paris.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\nWhat is the official"
+    },
+    {
+      "prompt": "Compute 2 + 3.",
+      "tokens": [
+        17,
+        489,
+        220,
+        18,
+        284,
+        220,
+        20,
+        80052,
+        13,
+        128009,
+        128006,
+        882,
+        128007,
+        271,
+        47354,
+        220
+      ],
+      "text": "2 + 3 = 5입니다.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\nCompute "
+    },
+    {
+      "prompt": "한국의 수도는 어디인가요?",
+      "tokens": [
+        112699,
+        21028,
+        116992,
+        16969,
+        106010,
+        80052,
+        13,
+        128009,
+        128006,
+        882,
+        128007,
+        271,
+        112699,
+        21028,
+        116992,
+        32428
+      ],
+      "text": "한국의 수도는 서울입니다.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n한국의 수도인"
+    },
+    {
+      "prompt": "What is the capital of Japan?",
+      "tokens": [
+        791,
+        6864,
+        315,
+        6457,
+        374,
+        27286,
+        13,
+        128009,
+        128006,
+        882,
+        128007,
+        271,
+        3923,
+        374,
+        279,
+        4033
+      ],
+      "text": "The capital of Japan is Tokyo.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\nWhat is the official"
+    }
+  ],
+  "logits_sha256": [
+    "e98084e345fe4136ec2ea31187fd2d838b529e4373378da007dffb91bc86395d",
+    "e98084e345fe4136ec2ea31187fd2d838b529e4373378da007dffb91bc86395d"
+  ],
+  "scope": "RNGD prefix KV through host admission to existing ATOM graph; no DMA or native-prefill claim"
+}
