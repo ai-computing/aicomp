@@ -37,3 +37,13 @@ A real terminated subprocess producer previously left /ready200 and new requests
 ## Batched producer timing (#249)
 
 Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} from existing accumulated batcher durations. Repeated scrapes do not add observations; missing timing keys are omitted. Tiny real-model admission test covers fixed worker-reported durations and legacy omissions. These counters are worker-reported admitted-handoff sums, not request latency or proof of zero cost for workers that do not measure stages. Full CPU suite:467passed,17skipped,135subtests,1existing warning. See pd-stage-metrics249 experiment.
+
+## Chunk-copy overlap (#47), 2026-10-24
+
+Opt-in Torch GPU token-chunk copies implemented with two pending spans, pinned-host staging, source readiness events and completion before handoff. Focused CUDA correctness/failure checks pass; CPU suite 504 passed, 43 skipped, 253 subtests. Actual CUDA timeline, four-model serving speedup, large-KV curve and RNGD/ATOM layer-wise export remain open. Default remains whole-span transfer. See experiments/2026-10-24-chunk-copy47.md.
+
+Qwen3-0.6B input8192 paired prefill: median997.98 ->955.64 ms (-4.24%), six runs KV/token exact. Separate CUDA traces show 27.91ms DtoH/source-kernel intersection (mostly27.47ms KV index gather), zero GEMM intersection. Both modes transfer939,524,096 bytes. Four-model HTTP A/B remains live; no serving speedup claim.
+
+GPU HTTP blockA96batches all parity;long/c8 chunk-copy throughput changes: Qwen0.6-3.1%,Qwen4+2.5%,KONI+2.4%,Gemma-1.5%. Reverse-order blockB pending. Export-only0.1–4GB curve: chunked slower, but incremental source staging bounded at~67.1MB rather than4GB. Keep opt-in; no general serving speedup claim.
+
+Reverse-order blockB completed: 192 total timed batches passed parity. Long/c8 A/B changes: Qwen0.6 -3.12%/+5.80%, Qwen4 +2.49%/+17.39%, KONI +2.38%/-1.53%, Gemma -1.54%/-0.28%. Qwen4 B baseline prefill slowed while transfer stayed constant, confounding the larger gain. Keep opt-in; no repeatable general throughput improvement. See evidence47/chunk47-four-model-serving-ab-summary.json.

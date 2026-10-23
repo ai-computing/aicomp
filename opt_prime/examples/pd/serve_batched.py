@@ -29,6 +29,10 @@ from opt_prime.accel.serve.llmd import serve_stage
 
 def prefill_worker(a, slots, config):
     """the PD prefill side from the flags, or None (aggregated serving)"""
+    overlap = getattr(a, "pd_prefill_copy_overlap", False)
+    if overlap and (not a.pd_prefill_device or a.backend != "torch" or
+                    torch.device(a.pd_prefill_device).type != "cuda" or torch.device(a.device).type != "cuda"):
+        raise ValueError("PD copy overlap requires a Torch CUDA producer and CUDA decoder")
     if a.pd_prefill_device:
         chunk = getattr(a, "pd_prefill_chunk", 2048)
         if chunk <= 0:
@@ -37,6 +41,7 @@ def prefill_worker(a, slots, config):
         m = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.pd_prefill_device).eval()
         return PrefillWorker(TorchPrefillEngine(m, max_context=a.max_context, chunk=chunk,
                                                 prefix_cache=not getattr(a, "pd_prefill_no_prefix_cache", False),
+                                                copy_overlap=overlap,
                                                 out_device=a.device
                                                 if a.backend == "torch" else "cpu"))
     if a.pd_prefill_python:
@@ -127,6 +132,8 @@ if __name__ == "__main__":
                     help="Torch --pd-prefill-device producer chunk size (default: 2048)")
     ap.add_argument("--pd-prefill-no-prefix-cache", action="store_true",
                     help="disable prefix reuse in the Torch --pd-prefill-device producer (decoder policy unchanged)")
+    ap.add_argument("--pd-prefill-copy-overlap", action="store_true",
+                    help="overlap Torch GPU prefill chunks with bounded host-staged KV copies to another GPU")
     ap.add_argument("--pd-prefill-python", default=None, help="PD: prefill_server under this interpreter")
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")
     ap.add_argument("--pd-prefill-pythonpath", default=None)

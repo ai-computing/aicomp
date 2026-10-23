@@ -1,0 +1,37 @@
+[
+  {
+    "requested_gb": 0.1,
+    "False_ms": 6.563587987329811,
+    "False_source_peak_mb": 100.66944,
+    "True_ms": 9.276948985643685,
+    "True_source_peak_mb": 67.110912
+  },
+  {
+    "requested_gb": 0.5,
+    "False_ms": 32.122994016390294,
+    "False_source_peak_mb": 503.3472,
+    "True_ms": 43.66219195071608,
+    "True_source_peak_mb": 67.110912
+  },
+  {
+    "requested_gb": 1,
+    "False_ms": 64.02920797700062,
+    "False_source_peak_mb": 1006.6944,
+    "True_ms": 86.41383604845032,
+    "True_source_peak_mb": 67.11296
+  },
+  {
+    "requested_gb": 2,
+    "False_ms": 127.21471698023379,
+    "False_source_peak_mb": 2004.99968,
+    "True_ms": 171.61333898548037,
+    "True_source_peak_mb": 67.11296
+  },
+  {
+    "requested_gb": 4,
+    "False_ms": 253.60435101902112,
+    "False_source_peak_mb": 4001.61024,
+    "True_ms": 341.4797349832952,
+    "True_source_peak_mb": 67.11296
+  }
+]

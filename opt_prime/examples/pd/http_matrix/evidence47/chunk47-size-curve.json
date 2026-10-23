@@ -1,0 +1,399 @@
+{
+  "passed": true,
+  "torch": "2.13.0+cu130",
+  "runtime_commit": "0870dd3",
+  "chunk": 256,
+  "method": "Export wall time includes source KV gather and both host-staged DMA legs; excludes validation and warmup. No concurrent model compute. Decimal GB, rounded up to a full 64-token page.",
+  "rows": [
+    {
+      "requested_gb": 0.1,
+      "kv_bytes": 100663296,
+      "tokens": 768,
+      "repeat": 0,
+      "copy_overlap": false,
+      "elapsed_s": 0.0065838120062835515,
+      "incremental_peak_device_bytes": {
+        "0": 100669440,
+        "1": 100663296
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.1,
+      "kv_bytes": 100663296,
+      "tokens": 768,
+      "repeat": 0,
+      "copy_overlap": true,
+      "elapsed_s": 0.009597369993571192,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 117440512
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.1,
+      "kv_bytes": 100663296,
+      "tokens": 768,
+      "repeat": 1,
+      "copy_overlap": true,
+      "elapsed_s": 0.00923771201632917,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 117440512
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.1,
+      "kv_bytes": 100663296,
+      "tokens": 768,
+      "repeat": 1,
+      "copy_overlap": false,
+      "elapsed_s": 0.006563587987329811,
+      "incremental_peak_device_bytes": {
+        "0": 100669440,
+        "1": 100663296
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.1,
+      "kv_bytes": 100663296,
+      "tokens": 768,
+      "repeat": 2,
+      "copy_overlap": false,
+      "elapsed_s": 0.006545621028635651,
+      "incremental_peak_device_bytes": {
+        "0": 100669440,
+        "1": 100663296
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.1,
+      "kv_bytes": 100663296,
+      "tokens": 768,
+      "repeat": 2,
+      "copy_overlap": true,
+      "elapsed_s": 0.009276948985643685,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 117440512
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.5,
+      "kv_bytes": 503316480,
+      "tokens": 3840,
+      "repeat": 0,
+      "copy_overlap": false,
+      "elapsed_s": 0.03210686898091808,
+      "incremental_peak_device_bytes": {
+        "0": 503347200,
+        "1": 503316480
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.5,
+      "kv_bytes": 503316480,
+      "tokens": 3840,
+      "repeat": 0,
+      "copy_overlap": true,
+      "elapsed_s": 0.04366056201979518,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 520093696
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.5,
+      "kv_bytes": 503316480,
+      "tokens": 3840,
+      "repeat": 1,
+      "copy_overlap": true,
+      "elapsed_s": 0.04366219195071608,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 520093696
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.5,
+      "kv_bytes": 503316480,
+      "tokens": 3840,
+      "repeat": 1,
+      "copy_overlap": false,
+      "elapsed_s": 0.032122994016390294,
+      "incremental_peak_device_bytes": {
+        "0": 503347200,
+        "1": 503316480
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.5,
+      "kv_bytes": 503316480,
+      "tokens": 3840,
+      "repeat": 2,
+      "copy_overlap": false,
+      "elapsed_s": 0.03229161602212116,
+      "incremental_peak_device_bytes": {
+        "0": 503347200,
+        "1": 503316480
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 0.5,
+      "kv_bytes": 503316480,
+      "tokens": 3840,
+      "repeat": 2,
+      "copy_overlap": true,
+      "elapsed_s": 0.04486027703387663,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 520093696
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 1,
+      "kv_bytes": 1006632960,
+      "tokens": 7680,
+      "repeat": 0,
+      "copy_overlap": false,
+      "elapsed_s": 0.06402920797700062,
+      "incremental_peak_device_bytes": {
+        "0": 1006694400,
+        "1": 1006632960
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 1,
+      "kv_bytes": 1006632960,
+      "tokens": 7680,
+      "repeat": 0,
+      "copy_overlap": true,
+      "elapsed_s": 0.08641383604845032,
+      "incremental_peak_device_bytes": {
+        "0": 67112960,
+        "1": 1023410176
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 1,
+      "kv_bytes": 1006632960,
+      "tokens": 7680,
+      "repeat": 1,
+      "copy_overlap": true,
+      "elapsed_s": 0.0865272160153836,
+      "incremental_peak_device_bytes": {
+        "0": 67112960,
+        "1": 1023410176
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 1,
+      "kv_bytes": 1006632960,
+      "tokens": 7680,
+      "repeat": 1,
+      "copy_overlap": false,
+      "elapsed_s": 0.06393883901182562,
+      "incremental_peak_device_bytes": {
+        "0": 1006694400,
+        "1": 1006632960
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 1,
+      "kv_bytes": 1006632960,
+      "tokens": 7680,
+      "repeat": 2,
+      "copy_overlap": false,
+      "elapsed_s": 0.06403932702960446,
+      "incremental_peak_device_bytes": {
+        "0": 1006694400,
+        "1": 1006632960
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 1,
+      "kv_bytes": 1006632960,
+      "tokens": 7680,
+      "repeat": 2,
+      "copy_overlap": true,
+      "elapsed_s": 0.08621758600929752,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 1023410176
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 2,
+      "kv_bytes": 2004877312,
+      "tokens": 15296,
+      "repeat": 0,
+      "copy_overlap": false,
+      "elapsed_s": 0.12719678098801523,
+      "incremental_peak_device_bytes": {
+        "0": 2004999680,
+        "1": 2004877312
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 2,
+      "kv_bytes": 2004877312,
+      "tokens": 15296,
+      "repeat": 0,
+      "copy_overlap": true,
+      "elapsed_s": 0.17161333898548037,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 2021654528
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 2,
+      "kv_bytes": 2004877312,
+      "tokens": 15296,
+      "repeat": 1,
+      "copy_overlap": true,
+      "elapsed_s": 0.17177250201348215,
+      "incremental_peak_device_bytes": {
+        "0": 67110912,
+        "1": 2021654528
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 2,
+      "kv_bytes": 2004877312,
+      "tokens": 15296,
+      "repeat": 1,
+      "copy_overlap": false,
+      "elapsed_s": 0.12738582503516227,
+      "incremental_peak_device_bytes": {
+        "0": 2004999680,
+        "1": 2004877312
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 2,
+      "kv_bytes": 2004877312,
+      "tokens": 15296,
+      "repeat": 2,
+      "copy_overlap": false,
+      "elapsed_s": 0.1272147169802338,
+      "incremental_peak_device_bytes": {
+        "0": 2004999680,
+        "1": 2004877312
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 2,
+      "kv_bytes": 2004877312,
+      "tokens": 15296,
+      "repeat": 2,
+      "copy_overlap": true,
+      "elapsed_s": 0.17158402100903913,
+      "incremental_peak_device_bytes": {
+        "0": 67112960,
+        "1": 2021654528
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 4,
+      "kv_bytes": 4001366016,
+      "tokens": 30528,
+      "repeat": 0,
+      "copy_overlap": false,
+      "elapsed_s": 0.2537750880001113,
+      "incremental_peak_device_bytes": {
+        "0": 4001610240,
+        "1": 4001366016
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 4,
+      "kv_bytes": 4001366016,
+      "tokens": 30528,
+      "repeat": 0,
+      "copy_overlap": true,
+      "elapsed_s": 0.3414797349832952,
+      "incremental_peak_device_bytes": {
+        "0": 67112960,
+        "1": 4018143232
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 4,
+      "kv_bytes": 4001366016,
+      "tokens": 30528,
+      "repeat": 1,
+      "copy_overlap": true,
+      "elapsed_s": 0.3408148970338516,
+      "incremental_peak_device_bytes": {
+        "0": 67112960,
+        "1": 4018143232
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 4,
+      "kv_bytes": 4001366016,
+      "tokens": 30528,
+      "repeat": 1,
+      "copy_overlap": false,
+      "elapsed_s": 0.2535678920103237,
+      "incremental_peak_device_bytes": {
+        "0": 4001610240,
+        "1": 4001366016
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 4,
+      "kv_bytes": 4001366016,
+      "tokens": 30528,
+      "repeat": 2,
+      "copy_overlap": false,
+      "elapsed_s": 0.2536043510190211,
+      "incremental_peak_device_bytes": {
+        "0": 4001610240,
+        "1": 4001366016
+      },
+      "parity": true
+    },
+    {
+      "requested_gb": 4,
+      "kv_bytes": 4001366016,
+      "tokens": 30528,
+      "repeat": 2,
+      "copy_overlap": true,
+      "elapsed_s": 0.3416481590247713,
+      "incremental_peak_device_bytes": {
+        "0": 67112960,
+        "1": 4018143232
+      },
+      "parity": true
+    }
+  ]
+}
