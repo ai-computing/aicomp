@@ -16,6 +16,8 @@ p.add_argument("--model", required=True)
 p.add_argument("--cache-dir", required=True)
 p.add_argument("--exports", nargs="+", required=True)
 p.add_argument("--output", required=True)
+p.add_argument("--eos-aware", action="store_true")
+p.add_argument("--max-output", type=int, default=32)
 p.add_argument("--kv-blocks", type=int, default=3)
 a = p.parse_args()
 devices = list(Path("/dev").glob("rbln[0-9]*"))
@@ -36,7 +38,9 @@ try:
     def decode(first, n):
         tokens = [first]
         vectors = []
-        for j in range(31):
+        for j in range(a.max_output - 1):
+            if tokens[-1] in eos:
+                break
             z = (
                 b.decoder(
                     input_ids=torch.tensor([[tokens[-1]]]),
@@ -53,11 +57,14 @@ try:
             assert bool(torch.isfinite(z).all())
             tokens.append(int(z.argmax()))
             vectors.append(z.clone())
-        return tokens, torch.stack(vectors)
+        return tokens, torch.stack(vectors) if vectors else torch.empty((0,))
 
     with torch.inference_mode():
         for path in a.exports:
             r = torch.load(path, weights_only=True)
+            eos = set(r["eos_ids"]) if a.eos_aware else set()
+            assert not a.eos_aware or eos
+            assert a.max_output > 0
             ids = r["ids"]
             n = len(ids)
             if b.blocks is not None:
@@ -108,7 +115,7 @@ try:
                     "tokens": tokens,
                     "first_decode_top5": [
                         {"token": int(i), "logit": float(logits[0, i])}
-                        for i in logits[0].topk(5).indices
+                        for i in (logits[0].topk(5).indices if len(logits) else [])
                     ],
                     "native_equal": tokens == native,
                     "readback_exact_slots": exact,
@@ -116,11 +123,15 @@ try:
                 }
             row = {
                 "export": Path(path).name,
+                "case": r.get("metadata", {}).get("case"),
+                "eos_ids": sorted(eos),
                 "input_tokens": n,
                 "native_tokens": native,
                 "native_first_decode_top5": [
                     {"token": int(i), "logit": float(native_logits[0, i])}
-                    for i in native_logits[0].topk(5).indices
+                    for i in (
+                        native_logits[0].topk(5).indices if len(native_logits) else []
+                    )
                 ],
                 "variants": variants,
                 "importer_logits_exact": torch.equal(*vectors),

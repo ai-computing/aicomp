@@ -24,3 +24,7 @@ Evidence: PR203 matrix results, PR206 staging optimization, PR209 Gemma probe, e
 ## EOS-aware native fixtures (#227)
 
 192 GPU/ATOM runs, all EOS-ended;96 repeat pairs exact. Cross-backend exact cases: Qwen0.6B12/12,Qwen4B12/12,KONI12/12,Gemma11/12. Four short questions with0/100/400 repeated context notes give23–6428 input tokens. Shared wrong factual answers are retained, so this is not a general quality pass. Research EOS policy includes both generation-config and tokenizer turn-end tokens; original KONI policy failure preserved. RNGD and heterogeneous HTTP coverage of these exact semantic inputs remains missing.
+
+## RNGD semantic handoff follow-up (#227)
+
+All four models now execute the same four short chat cases through RNGD prefill and GPU/ATOM continuation.32/32 decoder comparisons match native tokens through EOS,48prefill runs finite/repeat-exact. Exact saved IDs and true KV lengths verified, excluding right padding; per-model52/56/72/64slots read back exactly. Qwen/KONI original/portable importer logits agree; Gemma raw native-state roundtrip also passes. Inputs23–143 tokens (compiled width128 or512), so long semantic fixtures remain pending. This is host-staged full-prefix handoff, not actual compute/transfer overlap or production PD serving. See semantic-rngd227 record and evidence227.

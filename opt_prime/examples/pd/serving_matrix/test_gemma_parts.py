@@ -97,7 +97,8 @@ def test_rejects_semantics_not_implemented(change):
         GemmaLayer(cfg)
 
 
-def test_full_model_embedding_norm_head_and_layer_packing():
+@pytest.mark.parametrize("padding", [0, 4])
+def test_full_model_embedding_norm_head_and_layer_packing(padding):
     from gemma_parts import final_logits, initial_hidden, layer_parameters
     from transformers import Gemma3ForCausalLM
 
@@ -120,14 +121,14 @@ def test_full_model_embedding_norm_head_and_layer_packing():
     ids = list(range(2, 14))
     with torch.no_grad():
         expected = model(input_ids=torch.tensor([ids]), logits_to_keep=1).logits[0, -1]
-        x = initial_hidden(weights["model.embed_tokens.weight"], ids)
+        x = initial_hidden(weights["model.embed_tokens.weight"], ids + [0] * padding)
         layer = GemmaLayer(cfg.to_dict())
         for i in range(6):
             norms, mats = layer_parameters(weights, i)
-            rot, mask = attention_inputs(cfg.to_dict(), len(ids), i)
+            rot, mask = attention_inputs(cfg.to_dict(), len(ids) + padding, i)
             x, _, _ = layer(x, norms, mats, rot, mask)
         actual = final_logits(
-            x[-1],
+            x[len(ids) - 1],
             weights["model.norm.weight"],
             weights["lm_head.weight"],
             cfg.rms_norm_eps,

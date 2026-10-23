@@ -21,6 +21,8 @@ REVISION = "0172bf7e73977ae213613529f3d2d5400a33f678"
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("--width", type=int, choices=[128, 512, 2048, 8192], required=True)
 p.add_argument("--output", required=True)
+p.add_argument("--fixtures")
+p.add_argument("--cases", nargs="+")
 p.add_argument("--rms-tile", type=int, choices=[0, 256, 512], default=0)
 p.add_argument("--group", type=int, choices=[1, 2], default=2)
 p.add_argument("--partitioned", action="store_true")
@@ -82,6 +84,16 @@ if a.partitioned:
 
     engine_type = PartitionedPrefill
     extra["rms_tile"] = a.rms_tile
+eos_ids = []
+cases = [{"case": "fixed", "ids": ids}]
+if a.fixtures:
+    data = json.loads(Path(a.fixtures).read_text())
+    eos_ids = data["eos_ids"]
+    cases = data["cases"]
+    if a.cases:
+        cases = [r for r in cases if r["case"] in a.cases]
+        assert {r["case"] for r in cases} == set(a.cases), "unknown case"
+    assert cases and all(0 < len(r["ids"]) <= a.width for r in cases)
 t = time.perf_counter()
 engine = engine_type(
     ModelConfig(SimpleNamespace(**config)),
@@ -102,43 +114,54 @@ print(
 )
 norm = torch.from_numpy(weights["model.norm.weight"])
 head = torch.from_numpy(weights["lm_head.weight"])
-previous = None
 with open(a.output + ".jsonl", "w", buffering=1) as f, torch.inference_mode():
-    for repeat in range(3):
-        t = time.perf_counter()
-        stage = engine.begin_device_prefill(ids)
-        while not stage.advance():
-            pass
-        sync(0)
-        k, v, logits = export_groups(stage, norm, head, config["rms_norm_eps"])
-        elapsed = time.perf_counter() - t
-        assert k.shape == v.shape == (32, 8, a.width, 128), (
-            f"keys={tuple(k.shape)}, values={tuple(v.shape)}, groups={stage.g}, "
-            f"first_device_k={tuple(stage.Ks[0].shape)}, first_host_k={tuple(stage.Ks[0].cpu().shape)}"
+    for case_index, case in enumerate(cases):
+        ids = case["ids"]
+        previous = None
+        for repeat in range(3):
+            t = time.perf_counter()
+            stage = engine.begin_device_prefill(ids)
+            while not stage.advance():
+                pass
+            sync(0)
+            k, v, logits = export_groups(stage, norm, head, config["rms_norm_eps"])
+            elapsed = time.perf_counter() - t
+            assert k.shape == v.shape == (32, 8, len(ids), 128), (
+                f"keys={tuple(k.shape)}, values={tuple(v.shape)}, groups={stage.g}, "
+                f"first_device_k={tuple(stage.Ks[0].shape)}, first_host_k={tuple(stage.Ks[0].cpu().shape)}"
+            )
+            assert all(bool(torch.isfinite(x).all()) for x in (k, v, logits))
+            exact = previous is None or all(
+                torch.equal(x, y) for x, y in zip(previous, (k, v, logits))
+            )
+            assert exact, "repeat mismatch"
+            previous = (k, v, logits)
+            row = {
+                "model": MODEL,
+                "revision": REVISION,
+                "width": a.width,
+                "input_tokens": len(ids),
+                "case": case["case"],
+                "repeat": repeat,
+                "rms_tile": a.rms_tile,
+                "group": a.group,
+                "partitioned": a.partitioned,
+                "prefill_s": elapsed,
+                "repeat_exact": exact,
+                "first_token": int(logits.argmax()),
+                "kv_shape": list(k.shape),
+                "dtype": str(k.dtype),
+            }
+            f.write(json.dumps(row) + "\n")
+            print(json.dumps(row), flush=True)
+        torch.save(
+            {
+                "ids": ids,
+                "keys": k,
+                "values": v,
+                "logits": logits,
+                "metadata": row,
+                "eos_ids": eos_ids,
+            },
+            a.output + (f"-{case_index}" if a.fixtures else "") + ".pt",
         )
-        assert all(bool(torch.isfinite(x).all()) for x in (k, v, logits))
-        exact = previous is None or all(
-            torch.equal(x, y) for x, y in zip(previous, (k, v, logits))
-        )
-        assert exact, "repeat mismatch"
-        previous = (k, v, logits)
-        row = {
-            "model": MODEL,
-            "revision": REVISION,
-            "width": a.width,
-            "repeat": repeat,
-            "rms_tile": a.rms_tile,
-            "group": a.group,
-            "partitioned": a.partitioned,
-            "prefill_s": elapsed,
-            "repeat_exact": exact,
-            "first_token": int(logits.argmax()),
-            "kv_shape": list(k.shape),
-            "dtype": str(k.dtype),
-        }
-        f.write(json.dumps(row) + "\n")
-        print(json.dumps(row), flush=True)
-torch.save(
-    {"ids": ids, "keys": k, "values": v, "logits": logits, "metadata": row},
-    a.output + ".pt",
-)

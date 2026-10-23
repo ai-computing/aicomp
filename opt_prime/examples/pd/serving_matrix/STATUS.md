@@ -39,3 +39,7 @@ Remaining four-model requirements: diverse prompts and meaningful EOS-aware outp
 ## EOS-aware direct semantics (#227)
 
 192 GPU/ATOM runs across four models,12 cases each,2 repeats, all EOS-ended. Cross-backend tokens match12/12 cases for both Qwens and KONI,11/12 for Gemma;96 within-backend repeat pairs exact. Inputs range23–6428 tokens. Token identity coexists with shared wrong answers (Qwen4B arithmetic52; Qwen0.6B Korean capital Incheon; Gemma arithmetic40). Gemma longest arithmetic differs30 GPU vs25 ATOM. Research runner now unions generation-config EOS with tokenizer EOS, preventing KONI continuation past turn-end. See evidence227 and its experiment record. RNGD semantic/production PD integration remains pending.
+
+## RNGD semantic handoff follow-up (#227)
+
+All four models now execute the same four short chat cases through RNGD prefill and GPU/ATOM continuation.32/32 decoder comparisons match native tokens through EOS,48prefill runs finite/repeat-exact. Exact saved IDs and true KV lengths verified, excluding right padding; per-model52/56/72/64slots read back exactly. Qwen/KONI original/portable importer logits agree; Gemma raw native-state roundtrip also passes. Inputs23–143 tokens (compiled width128 or512), so long semantic fixtures remain pending. This is host-staged full-prefix handoff, not actual compute/transfer overlap or production PD serving. See semantic-rngd227 record and evidence227.

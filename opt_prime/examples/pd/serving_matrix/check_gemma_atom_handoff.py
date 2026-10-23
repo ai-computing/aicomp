@@ -15,6 +15,8 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("--cache-dir", required=True)
 p.add_argument("--exports", nargs="+", required=True)
 p.add_argument("--output", required=True)
+p.add_argument("--eos-aware", action="store_true")
+p.add_argument("--max-output", type=int, default=32)
 a = p.parse_args()
 devices = list(Path("/dev").glob("rbln[0-9]*"))
 assert len(devices) == 1
@@ -55,7 +57,9 @@ try:
         decoder.dec_attn_mask[0, :n] = 1
         tokens = [first]
         vectors = []
-        for j in range(31):
+        for j in range(a.max_output - 1):
+            if tokens[-1] in eos:
+                break
             pos = torch.tensor([[n + j]], dtype=torch.int32)
             out = decoder(
                 input_ids=torch.tensor([[tokens[-1]]]),
@@ -68,7 +72,7 @@ try:
             assert bool(torch.isfinite(z).all())
             vectors.append(z)
             tokens.append(int(z.argmax()))
-        return tokens, torch.stack(vectors)
+        return tokens, torch.stack(vectors) if vectors else torch.empty((0,))
 
     def restore(arrays, n):
         exact = 0
@@ -87,9 +91,12 @@ try:
     with torch.inference_mode():
         for path in a.exports:
             r = torch.load(path, weights_only=True)
+            eos = set(r["eos_ids"]) if a.eos_aware else set()
+            assert not a.eos_aware or eos
+            assert a.max_output > 0
             n = len(r["ids"])
             assert r["keys"].shape == r["values"].shape == (26, 1, n, 256)
-            assert 0 < n <= 9216 - 32
+            assert 0 < n <= 9216 - a.max_output
             out = model.prefill_decoder(
                 input_ids=torch.tensor([r["ids"]]),
                 cache_position=torch.arange(n, dtype=torch.int32)[None],
@@ -147,6 +154,8 @@ try:
                 "divergence": divergence,
                 "input_tokens": n,
                 "export": Path(path).name,
+                "case": r.get("metadata", {}).get("case"),
+                "eos_ids": sorted(eos),
                 "native_roundtrip_exact": True,
                 "roundtrip_slots": roundtrip_slots,
                 "imported_slots": imported_slots,
