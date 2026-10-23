@@ -42,6 +42,7 @@ class PipelineWorker(Worker):
             from gpu_decoder import load_model
             from gpu_batch_decoder import BatchGraphDecoder, pack_prefix
             from gpu_norms import install_fused_norms
+            from gpu_native_pack import pack_native_views
             from multiplex_receiver import MultiplexKVClient
             torch.set_num_threads(1)
             torch.set_num_interop_threads(1)
@@ -109,7 +110,9 @@ class PipelineWorker(Worker):
                                 if self.stopping.is_set(): job.cancel.set()
                                 if job.cancel.is_set(): return
                                 started = time.perf_counter()
-                                packed = pack_prefix(views.torch_layers())
+                                mode = getattr(a, 'native_pack', 'torch')
+                                packed = (views.host if mode == 'direct' else pack_native_views(views)
+                                          if mode == 'numpy' else pack_prefix(views.torch_layers()))
                                 job.stage_metrics = {'native_batch':len(valid), 'input_tokens':len(tokens),
                                     'native_ready_ms':stats.get('ready_ms'), 'native_kv_ms':stats.get('kv_ready_ms'),
                                     'native_complete_ms':stats.get('complete_ms'),
@@ -126,12 +129,13 @@ class PipelineWorker(Worker):
                             if pack_pool is None: pack_one(index,views,stats,queued_at)
                             else: packing.append(pack_pool.submit(pack_one,index,views,stats,queued_at))
                         try:
-                            if len(valid) == 1:
+                            if len(valid) == 1 and getattr(a, 'native_pack', 'torch') != 'direct':
                                 views,stats = client.prefill(a.model,valid[0][1],'views')
                                 received(0,views,stats)
                                 del views
                             else:
-                                client.prefill_many(a.model,[tokens for _,tokens,_ in valid],received)
+                                client.prefill_many(a.model,[tokens for _,tokens,_ in valid],received,
+                                    direct=getattr(a, 'native_pack', 'torch') == 'direct')
                             for future in packing: future.result()
                         finally:
                             for index,(job,_,_) in enumerate(valid):

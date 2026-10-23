@@ -24,7 +24,7 @@ class CanonicalAssembler:
         self.expected_positions = np.arange(positions, dtype=np.uint32)
         self.final = False
 
-    def accept(self, header, payload):
+    def validate_header(self, header, payload_size=None):
         if self.final:
             raise ValueError('batch after final')
         if not 36 <= len(header) <= MAX_HEADER or len(header) % 4:
@@ -37,7 +37,7 @@ class CanonicalAssembler:
         n = self.positions
         if (start < 0 or start + count*16 != root or not 0 < count <= 4*n or
             count % n or final not in (0,1) or header[root+24:] != b'\0'*12 or
-            len(payload) != count*2048):
+            (payload_size is not None and payload_size != count*2048)):
             raise ValueError('invalid metadata or payload size')
         meta = np.frombuffer(header, dtype='<u4', count=count*4, offset=start).reshape(-1,n,4)
         slots = meta[:,0,1]
@@ -48,6 +48,11 @@ class CanonicalAssembler:
             raise ValueError('noncontiguous, duplicate or unsupported blocks')
         if final and np.count_nonzero(self.seen) + len(slots) != 72:
             raise ValueError('incomplete final batch')
+        return slots, bool(final)
+
+    def accept(self, header, payload):
+        slots, final = self.validate_header(header, len(payload))
+        n = self.positions
         values = np.frombuffer(payload, dtype='<u2').reshape(len(slots),n,8,128).transpose(0,2,1,3)
         self._store(slots, values)
         self.seen[slots] = True
