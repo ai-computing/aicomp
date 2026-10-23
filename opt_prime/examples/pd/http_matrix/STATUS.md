@@ -91,3 +91,7 @@ Allfour GPU control48batches/96sequences exact. Early-vs-deferred completion red
 ## Complete long ATOM timing (#265)
 
 Allfour64batches/128sequences same-route exact; full auditor passes. Whole-vs-stream completion reductions35.66/21.26/9.79/19.19% without prefetch and39.25/22.90/11.21/16.84% with prefetch, Q06/Q4/Gemma/KONI. Three measured batches/mode, synthetic2K/8K fixed32output, B1/two queued requests. Timing Pod absence independently verified after termination; queue exited0. Separate owned ATOM hardware fault matrix now running; no fault result yet.
+
+## Higher-load GPU streaming (#265)
+
+C4/fixed128output, mixed2K/8K/2K/8K: allfour32batches/128sequences exact, exits0 and local devices idle. Whole-vs-stream median completion reductions20.72/16.44/2.26/19.34% (Q06/Q4/Gemma/KONI),3measured batches/mode. Auditor verifies outputs, ordering, arrivals/spans and reproduces summaries. STREAMING.md now maps source/transport/destination/CLI code and explicitly scopes same-host research-factory support. ATOM Q06 faults passed; other models still running.

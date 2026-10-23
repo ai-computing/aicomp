@@ -9,6 +9,30 @@ idle lanes may still write their local cache. SDK write failures poison the owne
 invalid source geometry fails only the request. Incomplete prompts never enter
 the reusable prefix index.
 
+## Code review map
+
+This path uses same-host shared memory for KV payloads and subprocess pipe messages
+for progress descriptors. The measured producer is the research factory engine
+listed below. It uses the existing vendor SDK; this change does not expose the
+closed native furiosa-llm engine's KV protocol or establish cross-host streaming.
+
+| Responsibility | Code | Review invariant |
+|---|---|---|
+| Source export | [prefill_server.py](../../opt_prime/accel/pd/prefill_server.py), [factories](streaming_factories.py) | Copy each layer/group to SHM before notification; preserve layer arithmetic and head. |
+| Transport and coverage | [pd_batching.py](../../opt_prime/accel/pd/pd_batching.py), [layer_progress.py](../../opt_prime/accel/pd/layer_progress.py) | Validate request IDs, nonoverlapping spans and complete coverage; serial writers keep published storage stable. |
+| Torch destination | [paged.py](../../opt_prime/accel/pd/paged.py), [PDBatcher](../../opt_prime/accel/pd/pd_batching.py) | Map dense layers to cache groups, fence destination copies before page reuse, admit only complete KV. |
+| ATOM destination | [batching.py](../../opt_prime/accel/platforms/atom/batching.py) | Reserve the lane before import; protect active B1/hybrid caches; never publish an incomplete prefix. |
+| Serving switch | [serve_batched.py](serve_batched.py) | Explicit opt-in and a compatible subprocess producer; whole transfer remains the default. |
+
+Per-layer source export is separate from destination notification timing. The
+three-mode GPU control retains per-layer source/SHM work while delaying progress
+notifications until source logits return. Much of the measured Qwen/KONI gain
+persists under that control; early notification adds a smaller benefit in the
+recorded workload. The control also retains per-layer destination import and
+allows cross-request overlap, so it cannot assign the remaining gain to source
+assembly alone. See the [control summary](http_matrix/evidence265/stream265-control-summary.json)
+and experiment record for samples and limits.
+
 The three factories in `streaming_factories.py` cover the four measured models:
 
 | Factory | Model | Existing producer |
@@ -48,7 +72,7 @@ This is blocking per-group CPU export followed by incremental decoder import.
 It can allow decoder import during later source computation, but does not imply
 asynchronous RNGD download, device DMA overlap, or a serving speedup. Hardware
 source parity has been checked at widths128/512 and8192. Recorded GPU timing
-improvements apply only to the measured c2 workload. Four-model ATOM timing
+improvements apply only to the measured c2/fixed32 and c4/fixed128 workloads. Four-model ATOM timing
 and same-route parity are also verified for B1/two queued2K/8K prompts, fixed32
 outputs, and prefetch off/on. Actual ATOM streaming fault isolation remains pending.
 Notification-timing controls show that total improvement is not solely the effect

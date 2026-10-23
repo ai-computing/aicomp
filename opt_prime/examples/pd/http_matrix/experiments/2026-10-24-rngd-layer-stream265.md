@@ -218,3 +218,28 @@ Conclusion limited to this c2 synthetic2K/8K/fixed32 workload: most Qwen/KONI wh
 Allfour child/copy exits0;64batches/128sequences including warmups exact and drained. Auditor verifies full mode order, per-stratum warmups, three measured batches/mode, arrivals, source spans and zero active B1 decode during import. Final KONI medians: prefetch-off whole12.908097s→stream10.430965s (19.19%), prefetch-on10.638944s→8.847242s (16.84%). Exact medians and TTFT reductions are in stream265-long-atom-summary.json. Across allfour models reductions are35.66/21.26/9.79/19.19% without prefetch and39.25/22.90/11.21/16.84% with prefetch (Qwen0.6/Qwen4/Gemma/KONI). These are paired whole-vs-stream comparisons within each prefetch stratum, not the independent prefetch benefit.
 
 Cleanup: delete initially printed while Pod was still Terminating; did not treat that as absence. Subsequent wait-for-delete exited0 and namespace listing returned no resources; queue session64332 exited0. Only then allocated owned stream265fault (same resource limits), waited Ready and started `python3 /tmp/stream265-fault-atom-queue.py > /tmp/stream265-fault-atom-queue.log 2>&1`, session53032. Three-case fault driver described above is now running; no hardware fault result yet. Isolated production package unchanged at33d6cb0 hashes.
+
+Actual ATOM fault first result: Qwen0.6 child/copy exits0, all three cases complete and owners drain. Cancel/reuse intercepted after1 imported span, before admission; replacement16-token output equals retained same-route reference and incomplete prefix index stayed empty. Independent source-death case also intercepted after1span with no admission or owner poisoning. Prefetch-source-death occurred while survivor had13tokens and victim slot=-1; all512 retained survivor tokens exactly equal reference, owner unpoisoned. Qwen4 now running. Local and remote driver SHA256 match7ec939b50a94ddce9aee21a6489d2e91a88f11d298e97659bf94df7bf8423c5b; manifest retained. Raw output_tokens16 describes the initial case, while the prefetch case explicitly retains512-token arrays. No full four-model fault completion claim yet.
+
+## Higher-concurrency/longer-output GPU extension
+
+Local GPU/RNGD compute/device users empty before launch. Same production runtime and same source factory, compiledwidth8192, four queued prompts2048/8192/2048/8192, fixed128output,4decoder/source slots, context8320/page64/cacheoff. Whole/stream alternating sequence unchanged:two warmups then three measured batches/mode. Same source process/model per model; compare every output against initial whole reference. Test driver stream265-c4-gpu.py derives from the prior longGPU driver; command `python3 /tmp/stream265-c4-queue.py > /tmp/stream265-c4-queue.log 2>&1`. This extends the previous c2/fixed32 workload; independent host from the active remote ATOM fault queue. No result yet.
+
+First c4/fixed128 GPU result: Qwen0.6 completes8batches/32sequences exact, child exit0. Three measured batches/mode median whole7.982224s→stream6.327924s (20.72% lower); median output throughput64.143→80.911tok/s, defined as512 generated tokens per batch divided by completion time. Four TTFT reductions[29.67277789085594, 32.494779240547636, 28.901218598702016, 29.00023215188736]. Auditor verifies four128-token arrays, mode order, warmups, token arrivals and spans; remaining models pending. This is a distinct workload from c2/fixed32 and not a directly paired concurrency-scaling comparison.
+
+Qwen4 c4/fixed128 GPU completed8batches/32sequences exact, child exit0; auditor passes. Median whole15.477492s→stream12.933404s (16.44% lower); median output throughput33.080→39.587tok/s. Gemma/KONI pending. This is same-route whole-vs-stream parity; previous nativeGPU-vs-RNGD numerical differences are not waived.
+
+Gemma c4/fixed128 GPU completed8batches/32sequences exact, child exit0 and auditor passes: whole median9.206593s→stream8.998546s (2.26% lower). KONI remains queued/running. Added a review map to STREAMING.md identifying source export, SHM/pipe protocol, Torch/ATOM ownership and CLI files; all relative links verified. Documentation explicitly distinguishes this same-host research-factory path from native furiosa-llm KV or cross-host streaming and states notification-control attribution limits. Production unchanged.
+
+## Completed c4/fixed128 GPU matrix
+
+Allfour child exits0;32batches/128sequences including warmups exact and drained. Independent auditor recomputes summaries and verifies mode ordering, warmups, four128-token arrays, arrivals and span traces. Local GPU compute-process and RNGD device-user listings empty after queue exit.
+
+|Model|Whole median(s)|Stream median(s)|Completion reduction|
+|---|---:|---:|---:|
+|qwen06b|7.982224|6.327924|20.72%|
+|qwen4b|15.477492|12.933404|16.44%|
+|gemma|9.206593|8.998546|2.26%|
+|koni|16.025822|12.925748|19.34%|
+
+Scope: one host, fixed compiledwidth8192, mixed2K/8K/2K/8K prompts, c4, fixed128 output without EOS stopping, caches off, three measured batches/mode after two warmups. This extends c2/fixed32 parity and timing, not native numerical equivalence or semantic answer quality. Gemma improvement remains small. Whole remains the default. Raw files stream265-*-c4-gpu.{json,log}, queue and summary, drivers and audit_stream265_c4.py retained.
