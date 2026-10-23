@@ -78,6 +78,8 @@ class AtomKVBlocks:
         self.blocks = rc.kvcache_num_blocks
         if self.blocks < lanes + 1:
             raise ValueError("own block tables need kv_blocks >= lanes + 1 (a scratch block for idle lanes)")
+        if prefix_cache and self.blocks < lanes + 2:     # else a prefix hit may find only its own source to evict
+            raise ValueError("prefix caching needs kv_blocks >= lanes + 2 (a scratch block and an evictable entry)")
         self.scratch = self.blocks - 1
         self.free = list(range(self.blocks - 1))
         self.lane_block = [None] * lanes
@@ -249,7 +251,8 @@ class AtomBatcher(ContinuousBatcher):
 
     def __init__(self, model, *, pad_token_id=None, prefix_cache=False, host_kv_gib=0.0, kv_events=None,
                  prefill_worker=None, remote_inflight=None, local_prefill=True):
-        """prefix_cache / host_kv_gib need a model compiled with kv_blocks > batch_size (own block tables).
+        """prefix_cache / host_kv_gib need a model compiled with kv_blocks > batch_size (own block tables;
+        prefix_cache needs kv_blocks >= batch_size + 2).
         prefill_worker (PD, #120): prompts are prefilled elsewhere (`pd.pd_batching.PrefillWorker` and engines) and their
         KV imported into the lane's block; ATOM only decodes, so the batch never stalls on a prefill.
         remote_inflight (PD): at most this many prompts wait on the prefill worker(s) (default: 2 per worker).
