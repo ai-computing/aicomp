@@ -22,6 +22,7 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument("--width", type=int, choices=[128, 512, 2048, 8192], required=True)
 p.add_argument("--output", required=True)
 p.add_argument("--rms-tile", type=int, choices=[0, 256, 512], default=0)
+p.add_argument("--group", type=int, choices=[1, 2], default=2)
 a = p.parse_args()
 if a.rms_tile:
     if a.width % a.rms_tile:
@@ -76,7 +77,7 @@ engine = KVOnly(
     ModelConfig(SimpleNamespace(**config)),
     weights,
     C=a.width,
-    group=2,
+    group=a.group,
     chip=0,
     cache_dir=None,
     S=a.width,
@@ -113,6 +114,7 @@ with open(a.output + ".jsonl", "w", buffering=1) as f, torch.inference_mode():
             "width": a.width,
             "repeat": repeat,
             "rms_tile": a.rms_tile,
+            "group": a.group,
             "prefill_s": elapsed,
             "repeat_exact": exact,
             "first_token": int(logits.argmax()),

@@ -31,13 +31,19 @@
   "candidate": {
     "rms_tile": 512,
     "width": 2048,
-    "status": "64GiB allocation OOMKilled before inference; same-code128GiB retry running",
+    "status": "128GiB group2 exits1 with compiler memory explosion; group1 retry running",
     "failed_resources": {
       "memory_limit_gib": 64,
       "exit_code": 137,
       "kubernetes_reason": "OOMKilled",
       "inference_runs": 0
     },
-    "retry_memory_limit_gib": 128
+    "retry_memory_limit_gib": 128,
+    "group2_128gib": {
+      "exit_code": 1,
+      "error": "compiler memory explosion",
+      "inference_runs": 0
+    },
+    "group1": "running"
   }
 }
