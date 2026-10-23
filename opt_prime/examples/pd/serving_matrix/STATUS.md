@@ -18,7 +18,7 @@ KONI8B context9216/B1/three blocks fails graph conversion;one block completes16 
 
 ## RNGD long-prefix follow-up (#217)
 
-Qwen3-0.6B2K finite/repeat-exact; GPU BF16/FP32 continuation32 tokens exact. ATOM importer logits match but native continuation differs at second token due to measured18.25 tie versus18.375 imported winner. Experimental8192 guard enabled only in this research variant;0.6B8K hardware compilation/run and GPU/ATOM handoff pass the fixed fixture.4B8K job running; no full-matrix or performance completion claim. Full scope remains open.
+Qwen3-0.6B2K finite/repeat-exact; GPU BF16/FP32 continuation32 tokens exact. ATOM importer logits match but native continuation differs at second token due to measured18.25 tie versus18.375 imported winner. Experimental8192 guard enabled only in this research variant;0.6B8K hardware compilation/run and GPU/ATOM handoff pass the fixed fixture.4B8K also compiles/runs and matches GPU BF16/FP32 and ATOM32-token native continuation;72 slots read back exactly per importer. Full-matrix, numerical quality and performance completion remain unproven. Full scope remains open.
 
 ## KONI long-prefix follow-up (#219)
 
