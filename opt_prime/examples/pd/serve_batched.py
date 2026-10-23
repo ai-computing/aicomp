@@ -95,10 +95,14 @@ def build(a):
         else:
             b = ContinuousBatcher(model, prefill_chunk=a.chunk, **kw)
     eos = model.generation_config.eos_token_id
+    eos = tuple(eos) if isinstance(eos, (list, tuple)) else ((eos,) if eos is not None else ())
+    # Some chat checkpoints retain a base-model EOS in generation_config.
+    if tok.eos_token_id is not None:
+        eos = tuple(dict.fromkeys((*eos, tok.eos_token_id)))
     svc = BatchedService(b, model=a.model, vocab_size=model.config.get_text_config().vocab_size,
                          max_output=a.max_output, render=lambda t: tok.decode(t, skip_special_tokens=True),
                          tokenizer=tok,
-                         eos_token_ids=tuple(eos) if isinstance(eos, (list, tuple)) else ((eos,) if eos is not None else ()))
+                         eos_token_ids=eos)
     return BatchedOwner(svc)
 
 

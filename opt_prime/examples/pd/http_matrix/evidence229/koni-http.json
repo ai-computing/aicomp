@@ -1,0 +1,154 @@
+[
+  {
+    "case": "baseline",
+    "eos_ids": [
+      128001
+    ],
+    "response": {
+      "id": "baseline",
+      "object": "text_completion",
+      "created": 1792758338,
+      "model": "/tmp/serving-matrix-models/KONI-8B",
+      "choices": [
+        {
+          "index": 0,
+          "text": "Parisuser\n\nWhat is",
+          "token_ids": [
+            60704,
+            128009,
+            128006,
+            882,
+            128007,
+            271,
+            3923,
+            374
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 138,
+        "completion_tokens": 8,
+        "total_tokens": 146
+      }
+    },
+    "raw": "{\"id\": \"baseline\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [{\"index\": 0, \"text\": \"Parisuser\\n\\nWhat is\", \"token_ids\": [60704, 128009, 128006, 882, 128007, 271, 3923, 374], \"finish_reason\": \"length\"}], \"usage\": {\"prompt_tokens\": 138, \"completion_tokens\": 8, \"total_tokens\": 146}}"
+  },
+  {
+    "case": "fixed",
+    "eos_ids": [
+      128001,
+      128009
+    ],
+    "response": {
+      "id": "fixed",
+      "object": "text_completion",
+      "created": 1792758338,
+      "model": "/tmp/serving-matrix-models/KONI-8B",
+      "choices": [
+        {
+          "index": 0,
+          "text": "Paris",
+          "token_ids": [
+            60704,
+            128009
+          ],
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 138,
+        "completion_tokens": 2,
+        "total_tokens": 140
+      }
+    },
+    "raw": "{\"id\": \"fixed\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [{\"index\": 0, \"text\": \"Paris\", \"token_ids\": [60704, 128009], \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 138, \"completion_tokens\": 2, \"total_tokens\": 140}}"
+  },
+  {
+    "case": "ignore",
+    "eos_ids": [
+      128001,
+      128009
+    ],
+    "response": {
+      "id": "ignore",
+      "object": "text_completion",
+      "created": 1792758338,
+      "model": "/tmp/serving-matrix-models/KONI-8B",
+      "choices": [
+        {
+          "index": 0,
+          "text": "Parisuser\n\nWhat is",
+          "token_ids": [
+            60704,
+            128009,
+            128006,
+            882,
+            128007,
+            271,
+            3923,
+            374
+          ],
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 138,
+        "completion_tokens": 8,
+        "total_tokens": 146
+      }
+    },
+    "raw": "{\"id\": \"ignore\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [{\"index\": 0, \"text\": \"Parisuser\\n\\nWhat is\", \"token_ids\": [60704, 128009, 128006, 882, 128007, 271, 3923, 374], \"finish_reason\": \"length\"}], \"usage\": {\"prompt_tokens\": 138, \"completion_tokens\": 8, \"total_tokens\": 146}}"
+  },
+  {
+    "case": "stream",
+    "eos_ids": [
+      128001,
+      128009
+    ],
+    "response": {
+      "id": "stream",
+      "object": "text_completion",
+      "created": 1792758338,
+      "model": "/tmp/serving-matrix-models/KONI-8B",
+      "choices": [
+        {
+          "index": 0,
+          "text": "",
+          "finish_reason": "stop"
+        }
+      ]
+    },
+    "raw": "data: {\"id\": \"stream\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [{\"index\": 0, \"text\": \"Paris\", \"finish_reason\": null}]}\n\ndata: {\"id\": \"stream\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [{\"index\": 0, \"text\": \"\", \"finish_reason\": \"stop\"}]}\n\ndata: {\"id\": \"stream\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [], \"usage\": {\"prompt_tokens\": 138, \"completion_tokens\": 2, \"total_tokens\": 140}}\n\ndata: [DONE]\n\n"
+  },
+  {
+    "case": "reuse",
+    "eos_ids": [
+      128001,
+      128009
+    ],
+    "response": {
+      "id": "reuse",
+      "object": "text_completion",
+      "created": 1792758338,
+      "model": "/tmp/serving-matrix-models/KONI-8B",
+      "choices": [
+        {
+          "index": 0,
+          "text": "Paris",
+          "token_ids": [
+            60704,
+            128009
+          ],
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 138,
+        "completion_tokens": 2,
+        "total_tokens": 140
+      }
+    },
+    "raw": "{\"id\": \"reuse\", \"object\": \"text_completion\", \"created\": 1792758338, \"model\": \"/tmp/serving-matrix-models/KONI-8B\", \"choices\": [{\"index\": 0, \"text\": \"Paris\", \"token_ids\": [60704, 128009], \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 138, \"completion_tokens\": 2, \"total_tokens\": 140}}"
+  }
+]
