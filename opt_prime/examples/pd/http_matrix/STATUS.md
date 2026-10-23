@@ -41,3 +41,5 @@ Four models times native/PD/DP2 completed144measured batches with parity. Inputs
 BlockB reverse-model/mode repetition completed144additional batches with parity (288A/B total). Same-two-GPU DP2 leads all four at8192/c4. PD relative to native is variable: Gemma23.11->17.79tok/s,Qwen0.6B22.37->18.41,Qwen4B13.25->15.12,KONI14.47->14.02. No stable native-to-PD speedup claim. Runtime273952a adds stage counters; scheduling/compute unchanged. Longer-output and actual heterogeneous benchmarking ongoing.
 
 External-backend benchmark candidate:trusted argv config and explicit startup deadline. Real ATOM nativeQwen0.6B12batches pass parity; firstPDattempt timed out at180seconds before readiness, raw failure retained. Retry with1800seconds is live. No heterogeneous speedup claim.3harness tests pass; no core serving changes.
+
+Qwen0.6B actual RNGD-to-ATOM completed12PD batches with parity against nativeATOM;42remote/0localprefills. Readiness369.73s excluded from timing.8192input/c4 throughputnative22.25vsPD10.58tok/s. Current width8192producer is slower; shorter prompts also pad to8192. Other three model comparisons running. Failed180s startup record retained.

@@ -40,3 +40,24 @@ Initial PD run exited1 with TimeoutError("server startup") at the benchmark's180
 Added --startup-timeout (default180 unchanged forGPU), positive-value validation, and recorded configured deadline inJSON. Red test1failed/2passed; fixed3passed in0.08s; Ruff clean after explicitcheck=False in the CLI negative test. RetriedPD with --startup-timeout1800 and output atom248-qwen06b-pd-b.json, retaining the original failure. Loading remains excluded from measured throughput. The owned Pod remains allocated with its original deadline; retry is live and no successful PD claim is made yet.
 
 Live retry observation: producer process still active after3m05s, averageCPU770% andRSS~12.7GiB, server waiting for producer readiness. This demonstrates a live CPU-active initialization, not successful completion or proof of the exact slow stage. Worker source loads weights toFP32 then constructs the compiled width8192engine before sendingready. Source also pads shorter prompts to compiledwidth; benchmark must not generalize fixed8192short-prompt costs to a width-dispatched implementation. No restart performed.
+
+Published candidatebb3ce4d as DraftPR252, stacked onPR251. Scoped sensitive scan clean. During live retry, /dev/shm contains only current896MiBslab; failed previous slab absent. Producer remains CPU-active, readiness pending. Full heterogeneous completion not claimed.
+
+## Qwen3-0.6B live PD completed
+
+Retry exited0:12measured PD batches pass token/text parity against nativeATOM. Producer readiness took369.727seconds (native5.762seconds), excluded from measurement. Metrics prove42remote/0local prefills including warmup/checks: no local fallback. Native+PD24measured batches total.
+
+|Mode|Input|Concurrency|tok/s|First SSE s|E2E s|
+|---|---:|---:|---:|---:|---:|
+|native|128|1|141.9301|0.0135|0.2253|
+|native|128|4|144.2299|0.3467|0.5559|
+|native|8192|1|22.2376|1.0866|1.4388|
+|native|8192|4|22.2505|3.2447|3.5973|
+|pd|128|1|19.4948|1.4415|1.6413|
+|pd|128|4|19.0230|4.0668|4.2698|
+|pd|8192|1|10.7202|2.6406|2.9849|
+|pd|8192|4|10.5813|7.2813|7.6217|
+
+Current fixed-width8192research producer is slower than nativeATOM for both tested lengths. Short prompts are padded to8192; do not infer performance of a width-dispatched or native Furiosa engine. Preserve this actual result; correctness does not imply PD speedup. RawPD and summary copied locally as atom248-qwen06b-pd-b.json and atom248-qwen06b-summary.json.
+
+Started /tmp/run_atom248_remaining.py (copy in local analysis directory) for Qwen4B,KONI,Gemma native/PD sequentially on the same owned Pod, output32,input128/8192,c1/4,repeat3,startup1800. Exact commands and terminal codes in atom248-remaining.log; stops on any failed run or parity failure. Uses Gemma corrected artifactroot and KONIk1, existing verified factories. No new allocation or changes to other workloads.
