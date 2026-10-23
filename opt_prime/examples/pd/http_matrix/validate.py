@@ -1,6 +1,7 @@
 """Actual HTTP validation through serve_batched.build; one model/configuration per process."""
 
 import argparse
+import importlib.util
 import itertools
 import json
 import sys
@@ -16,20 +17,31 @@ import torch
 from transformers import AutoTokenizer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from opt_prime.accel.serve.llmd import serve_stage
-from serve_batched import build
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--model", required=True)
     p.add_argument("--output", required=True)
+    p.add_argument("--http-module", help="trusted local HTTP module candidate for isolated validation")
+    p.add_argument("--device", default="cuda:0")
+    p.add_argument("--pd-prefill-device", default=None)
+    p.add_argument("--pd-prefill-no-prefix-cache", action="store_true")
+    p.add_argument("--pd-prefill-chunk", type=int, default=2048)
     p.add_argument("--prefix-cache", action="store_true")
     p.add_argument("--backend", choices=["torch", "atom"], default="torch")
     p.add_argument("--atom-kv-blocks", type=int, default=3)
     p.add_argument("--host-kv-gib", type=float, default=0)
     p.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     a = p.parse_args()
+    if a.http_module:
+        spec = importlib.util.spec_from_file_location("opt_prime.accel.serve.llmd", a.http_module)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+    # Load consumers after the candidate so StageError identity is shared across the server and owner.
+    from opt_prime.accel.serve.llmd import serve_stage
+    from serve_batched import build
     if a.backend == "atom" and a.dtype != "bfloat16":
         p.error("ATOM precision is determined by the compiled artifact")
     if a.host_kv_gib < 0 or (a.host_kv_gib and not a.prefix_cache):
@@ -43,7 +55,7 @@ def main():
     args = SimpleNamespace(
         model=a.model,
         backend=a.backend,
-        device="cuda:0",
+        device=a.device,
         dtype=a.dtype,
         slots=4 if a.backend == "torch" else 1,
         devices=devices,
@@ -60,7 +72,9 @@ def main():
         reload_bandwidth=None,
         prefill_rate=None,
         remote_kv=None,
-        pd_prefill_device=None,
+        pd_prefill_device=a.pd_prefill_device,
+        pd_prefill_no_prefix_cache=a.pd_prefill_no_prefix_cache,
+        pd_prefill_chunk=a.pd_prefill_chunk,
         pd_prefill_python=None,
     )
     result = {
@@ -72,9 +86,12 @@ def main():
         "torch": torch.__version__,
         "dtype": a.dtype if a.backend == "torch" else "compiled artifact",
         "backend": a.backend,
+        "decode_device": a.device,
+        "pd_prefill_device": a.pd_prefill_device,
+        "producer_prefix_cache": None,
         "slots": args.slots,
         "atom_kv_blocks": a.atom_kv_blocks if a.backend == "atom" else None,
-        "device": torch.cuda.get_device_name(0)
+        "device": torch.cuda.get_device_name(torch.device(a.device))
         if a.backend == "torch"
         else "allocated ATOM",
         "cases": [],
@@ -83,6 +100,10 @@ def main():
     output.parent.mkdir(parents=True, exist_ok=True)
     try:
         owner = build(args)
+        if a.pd_prefill_device:
+            producer = owner.service.batcher.worker.engine
+            result["producer_prefix_cache"] = producer.kv.prefix_cache
+            result["producer_chunk"] = producer.chunk
     except Exception as exc:
         result["startup_error"] = repr(exc)
         output.write_text(json.dumps(result, indent=2) + "\n")
@@ -241,6 +262,11 @@ def main():
                 assert host_hits and result["host_hit_tokens"] > 0, (
                     "host tier not exercised"
                 )
+            result["batcher_stats"] = dict(owner.service.batcher.stats)
+            if a.pd_prefill_device:
+                # Nineteen completed normal requests; cancellations can add two more prefills.
+                assert result["batcher_stats"]["prefills"] >= 19
+                assert result["batcher_stats"]["transferred_tokens"] > 0
             result["passed"] = True
         except Exception as exc:  # noqa: BLE001 - preserve failed hardware evidence
             result["error"] = repr(exc)
@@ -260,6 +286,9 @@ def main():
         server.shutdown()
         server.server_close()
         server_thread.join(5)
+        worker = getattr(owner.service.batcher, "worker", None)
+        if worker is not None:
+            worker.close()
         output.write_text(json.dumps(result, indent=2) + "\n")
     if not result["passed"]:
         raise RuntimeError(
