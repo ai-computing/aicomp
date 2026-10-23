@@ -31,3 +31,17 @@ python examples/pd/serve_batched.py --model "$MODEL" --device cuda:1 --slots 4 \
 ```
 
 The new flags affect the in-process Torch producer only. Nonpositive producer chunks are rejected. Disabling reuse or using smaller chunks can increase prefill work/overhead; these options do not promise a speedup or universal bitwise equality. CPU factory and four-model GPU controls are recorded under issue #241.
+
+### Live GPU PD matrix
+
+The validator accepts `--device`, `--pd-prefill-device` and the producer controls above, records actual producer policy and asserts remote prefill/transfer counters. It also accepts `--http-module` for a trusted local HTTP implementation candidate; the candidate is loaded before its consumers so exception classes retain their identity.
+
+```bash
+git show 9e442cd:opt_prime/opt_prime/accel/serve/llmd.py > /tmp/pd-http-safe.py
+PYTHONPATH=opt_prime python opt_prime/examples/pd/http_matrix/validate.py \
+  --http-module /tmp/pd-http-safe.py --model "$MODEL" --output "$OUTPUT" \
+  --device cuda:1 --pd-prefill-device cuda:0 \
+  --pd-prefill-no-prefix-cache --pd-prefill-chunk 256
+```
+
+Run from the repository root. Omit the producer arguments for native control. `passed` means lifecycle/count assertions passed; concurrent/serial token equality is reported separately, including failed numerical comparisons. See gpu-live-pd240 for the complete default-policy, FP32 and matching-policy results.

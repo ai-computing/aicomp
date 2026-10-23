@@ -1,0 +1,82 @@
+[
+  {
+    "model": "qwen06b",
+    "native": {
+      "passed": true,
+      "concurrent_exact": 12,
+      "concurrent_total": 12,
+      "remote_prefills": 0
+    },
+    "pd": {
+      "passed": true,
+      "concurrent_exact": 8,
+      "concurrent_total": 12,
+      "remote_prefills": 21
+    },
+    "native_pd_serial_equal": {
+      "128": true,
+      "2048": true,
+      "8192": true
+    }
+  },
+  {
+    "model": "qwen4b",
+    "native": {
+      "passed": true,
+      "concurrent_exact": 12,
+      "concurrent_total": 12,
+      "remote_prefills": 0
+    },
+    "pd": {
+      "passed": true,
+      "concurrent_exact": 12,
+      "concurrent_total": 12,
+      "remote_prefills": 21
+    },
+    "native_pd_serial_equal": {
+      "128": true,
+      "2048": true,
+      "8192": true
+    }
+  },
+  {
+    "model": "koni",
+    "native": {
+      "passed": true,
+      "concurrent_exact": 12,
+      "concurrent_total": 12,
+      "remote_prefills": 0
+    },
+    "pd": {
+      "passed": true,
+      "concurrent_exact": 7,
+      "concurrent_total": 12,
+      "remote_prefills": 21
+    },
+    "native_pd_serial_equal": {
+      "128": true,
+      "2048": true,
+      "8192": true
+    }
+  },
+  {
+    "model": "gemma",
+    "native": {
+      "passed": true,
+      "concurrent_exact": 12,
+      "concurrent_total": 12,
+      "remote_prefills": 0
+    },
+    "pd": {
+      "passed": true,
+      "concurrent_exact": 8,
+      "concurrent_total": 12,
+      "remote_prefills": 21
+    },
+    "native_pd_serial_equal": {
+      "128": true,
+      "2048": false,
+      "8192": true
+    }
+  }
+]
