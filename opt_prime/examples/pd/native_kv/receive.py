@@ -61,8 +61,13 @@ def receive(args):
                                      json=body, timeout=args.timeout)
                 while True:
                     remaining = deadline - time.monotonic()
-                    if remaining <= 0 or not rx.poll(max(1, int(remaining * 1000))):
+                    if remaining <= 0:
                         raise TimeoutError('native KV request timed out')
+                    if not rx.poll(max(1, int(min(remaining, 0.1) * 1000))):
+                        # surface an early HTTP failure instead of waiting out the timeout
+                        if future.done() and (future.exception() or future.result().status_code != 200):
+                            future.result().raise_for_status()
+                        continue
                     parts = rx.recv_multipart()
                     message = parse_message(parts)
                     if message['id'] != request_id:

@@ -68,13 +68,13 @@ The four-token input has a larger logit deviation than the other cases. Addition
 real prompts and a matching arithmetic reference are necessary before serving.
 
 Initial native-PD vs native-standalone text comparison matched only 3/4 cases
-(lengths 1,2,4,16; the length-2 case differed). That is a separate comparison from
+(an earlier run with prompt lengths 1, 2, 4 and 16, not the receiver's 2/4/16/33; the length-2 case differed). That is a separate comparison from
 the successful torch-resume tests and remains unexplained.
 
 ## Verification and failures
 
 - Ten CPU protocol tests pass, including malformed/truncated frame rejection.
-- Generated Handshake/Pull/Ack matched independent captured headers exactly.
+- The generated Pull header matches a captured header byte for byte (`test_protocol.py`); Handshake and Ack were compared against captures by hand and have no fixture test.
 - Initial handwritten fixture hex accidentally included extra bytes; corrected by
   copying the actual capture headers, then all ten tests passed.
 - First full-model reference attempt failed because transformers 5.19.0's
