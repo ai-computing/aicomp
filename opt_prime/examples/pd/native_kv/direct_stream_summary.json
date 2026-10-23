@@ -1,0 +1,83 @@
+{
+  "direct_stream6": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.8865581359999999,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.385797199996887,
+      "completed_tok_s": 441.73988179278746,
+      "ttft_p50_ms": 103.87773733236827,
+      "ttft_p95_ms": 164.53019264736213,
+      "total_p95_ms": 2848.507830320159,
+      "max_text_gap_ms": 167.02350601553917
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.7434533879999998,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 80,
+      "errors": 16,
+      "duration_s": 23.355741626990493,
+      "completed_tok_s": 290.4639085474484,
+      "ttft_p50_ms": 5052.5481263466645,
+      "ttft_p95_ms": 6453.261115326313,
+      "total_p95_ms": 7805.565777322045,
+      "max_text_gap_ms": 102.70250000758097
+    }
+  ],
+  "direct_stream_profile6": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.223312926,
+      "requests": 24,
+      "client_workers": 24,
+      "successes": 24,
+      "errors": 0,
+      "duration_s": 5.354856942984043,
+      "completed_tok_s": 358.55299598910716,
+      "ttft_p50_ms": 95.47508132527582,
+      "ttft_p95_ms": 148.68310067686252,
+      "total_p95_ms": 2628.5432190052234,
+      "max_text_gap_ms": 141.9231879990548
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.17569393799999994,
+      "requests": 24,
+      "client_workers": 24,
+      "successes": 24,
+      "errors": 0,
+      "duration_s": 8.477972147986293,
+      "completed_tok_s": 226.46925072241984,
+      "ttft_p50_ms": 2320.9596569649875,
+      "ttft_p95_ms": 3244.2397226113826,
+      "total_p95_ms": 4332.971771655139,
+      "max_text_gap_ms": 92.4512890051119
+    }
+  ],
+  "quality": {
+    "cases": 9,
+    "equal": 9,
+    "exact": {
+      "native": 9,
+      "solo": 9,
+      "concurrent": 9
+    }
+  }
+}

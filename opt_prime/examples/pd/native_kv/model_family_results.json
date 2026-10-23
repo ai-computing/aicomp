@@ -1,0 +1,1084 @@
+{
+  "model_families.json": {
+    "Qwen/Qwen2.5-0.5B-Instruct": {
+      "model_type": "qwen2",
+      "rngd_research_gate": {
+        "supported": true,
+        "slots": 48
+      },
+      "atom_standalone": {
+        "status": "passed",
+        "outputs": [
+          {
+            "prompt": "What is the capital of France?",
+            "tokens": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              12095,
+              13,
+              151645
+            ],
+            "text": "The capital of France is Paris.<|im_end|>",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.10649514198303223,
+              "ttft_s": 0.028330326080322266,
+              "decode_tok_s": 89.7643634584811
+            }
+          },
+          {
+            "prompt": "Compute 2 + 3.",
+            "tokens": [
+              785,
+              1102,
+              315,
+              7842,
+              220,
+              17,
+              323,
+              220,
+              18,
+              374,
+              1447,
+              78045,
+              220,
+              17,
+              488,
+              220
+            ],
+            "text": "The result of adding 2 and 3 is:\n\n\\[ 2 + ",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.26589035987854004,
+              "ttft_s": 0.0316007137298584,
+              "decode_tok_s": 64.09375694018553
+            }
+          },
+          {
+            "prompt": "한국의 수도는 어디인가요?",
+            "tokens": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              136905,
+              78952,
+              382,
+              26698,
+              126893,
+              33704,
+              133196,
+              56475,
+              130887,
+              132182,
+              129392
+            ],
+            "text": "한국의 수도는 서울입니다.\n\n서울은 세계에서 가장 큰 도",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.17545628547668457,
+              "ttft_s": 0.03934597969055176,
+              "decode_tok_s": 110.35125322294915
+            }
+          }
+        ]
+      }
+    },
+    "Qwen/Qwen3-0.6B": {
+      "model_type": "qwen3",
+      "rngd_research_gate": {
+        "supported": false,
+        "error": "only dense full-attention Qwen2 checkpoints are enabled"
+      },
+      "atom_standalone": {
+        "status": "passed",
+        "outputs": [
+          {
+            "prompt": "What is the capital of France?",
+            "tokens": [
+              151667,
+              198,
+              32313,
+              11,
+              279,
+              1196,
+              374,
+              10161,
+              911,
+              279,
+              6722,
+              315,
+              9625,
+              13,
+              358,
+              1414
+            ],
+            "text": "<think>\nOkay, the user is asking about the capital of France. I know",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.24150776863098145,
+              "ttft_s": 0.04319167137145996,
+              "decode_tok_s": 75.73652677310663
+            }
+          },
+          {
+            "prompt": "Compute 2 + 3.",
+            "tokens": [
+              151667,
+              198,
+              32313,
+              11,
+              773,
+              358,
+              1184,
+              311,
+              12564,
+              220,
+              17,
+              5519,
+              220,
+              18,
+              13,
+              6771
+            ],
+            "text": "<think>\nOkay, so I need to compute 2 plus 3. Let",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.2054431438446045,
+              "ttft_s": 0.011302709579467773,
+              "decode_tok_s": 77.36198876358901
+            }
+          },
+          {
+            "prompt": "한국의 수도는 어디인가요?",
+            "tokens": [
+              151667,
+              198,
+              32313,
+              11,
+              279,
+              1196,
+              374,
+              10161,
+              1380,
+              279,
+              6722,
+              315,
+              4882,
+              11862,
+              374,
+              13
+            ],
+            "text": "<think>\nOkay, the user is asking where the capital of South Korea is.",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.252260684967041,
+              "ttft_s": 0.04500079154968262,
+              "decode_tok_s": 72.45950577699155
+            }
+          }
+        ]
+      }
+    },
+    "Qwen/Qwen3-8B-FP8": {
+      "model_type": "qwen3",
+      "rngd_research_gate": {
+        "supported": false,
+        "error": "only dense full-attention Qwen2 checkpoints are enabled"
+      },
+      "atom_standalone": {
+        "status": "not_run",
+        "reason": "No compiled B1 artifact; no implicit compile"
+      }
+    },
+    "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024": {
+      "model_type": "llama",
+      "rngd_research_gate": {
+        "supported": false,
+        "error": "only dense full-attention Qwen2 checkpoints are enabled"
+      },
+      "atom_standalone": {
+        "status": "not_run",
+        "reason": "No compiled B1 artifact; no implicit compile"
+      }
+    },
+    "unsloth/gemma-3-1b-it": {
+      "model_type": "gemma3_text",
+      "rngd_research_gate": {
+        "supported": false,
+        "error": "only dense full-attention Qwen2 checkpoints are enabled"
+      },
+      "atom_standalone": {
+        "status": "passed",
+        "outputs": [
+          {
+            "prompt": "What is the capital of France?",
+            "tokens": [
+              7592,
+              236764,
+              1531,
+              236789,
+              236751,
+              1879,
+              611,
+              236789,
+              500,
+              2844,
+              607,
+              496,
+              1458,
+              600,
+              6178,
+              496
+            ],
+            "text": "SO, let's say you're working with a system that uses a",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.2149817943572998,
+              "ttft_s": 0.03849291801452637,
+              "decode_tok_s": 85.11744571467226
+            }
+          },
+          {
+            "prompt": "Compute 2 + 3.",
+            "tokens": [
+              236940,
+              236754,
+              5288,
+              40892,
+              107,
+              236940,
+              236754,
+              5288,
+              40892,
+              107,
+              236940,
+              236754,
+              5288,
+              40892,
+              107,
+              236940
+            ],
+            "text": "@homenews\n@homenews\n@homenews\n@",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.20960736274719238,
+              "ttft_s": 0.03169870376586914,
+              "decode_tok_s": 84.45372161420964
+            }
+          },
+          {
+            "prompt": "한국의 수도는 어디인가요?",
+            "tokens": [
+              245660,
+              18668,
+              237099,
+              42903,
+              96694,
+              237051,
+              25352,
+              4042,
+              236924,
+              107,
+              8978,
+              18053,
+              237048,
+              236951,
+              96694,
+              236945
+            ],
+            "text": "钾プロトンのエネルギーを生成する。\nこの問題は、エネルギーの",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.19803357124328613,
+              "ttft_s": 0.029403209686279297,
+              "decode_tok_s": 89.09454723113197
+            }
+          }
+        ]
+      }
+    }
+  },
+  "qwen3_no_thinking.json": {
+    "Qwen/Qwen3-0.6B": {
+      "model_type": "qwen3",
+      "rngd_research_gate": {
+        "supported": false,
+        "error": "only dense full-attention Qwen2 checkpoints are enabled"
+      },
+      "atom_standalone": {
+        "status": "passed",
+        "outputs": [
+          {
+            "prompt": "What is the capital of France?",
+            "tokens": [
+              785,
+              6722,
+              315,
+              9625,
+              374,
+              3070,
+              59604,
+              334,
+              13,
+              151645
+            ],
+            "text": "The capital of France is **Paris**.<|im_end|>",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.08767914772033691,
+              "ttft_s": 0.02375626564025879,
+              "decode_tok_s": 141.06930752270264
+            }
+          },
+          {
+            "prompt": "Compute 2 + 3.",
+            "tokens": [
+              17,
+              488,
+              220,
+              18,
+              284,
+              220,
+              20,
+              13,
+              151645
+            ],
+            "text": "2 + 3 = 5.<|im_end|>",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.06466555595397949,
+              "ttft_s": 0.010099649429321289,
+              "decode_tok_s": 146.89024304825944
+            }
+          },
+          {
+            "prompt": "한국의 수도는 어디인가요?",
+            "tokens": [
+              23573,
+              124785,
+              20401,
+              134013,
+              16560,
+              3070,
+              31328,
+              129034,
+              334,
+              78952,
+              13,
+              151645
+            ],
+            "text": "한국의 수도는 **인천**입니다.<|im_end|>",
+            "repeat_equal": true,
+            "info": {
+              "seconds": 0.09273529052734375,
+              "ttft_s": 0.011617660522460938,
+              "decode_tok_s": 135.796323222096
+            }
+          }
+        ]
+      }
+    }
+  },
+  "gemma_cpu_oracle.json": [
+    {
+      "prompt": "What is the capital of France?",
+      "tokens": [
+        818,
+        5279,
+        529,
+        7001,
+        563,
+        5213,
+        50429,
+        84750,
+        236743,
+        108,
+        1509,
+        236858,
+        236751,
+        496,
+        3364,
+        121756
+      ],
+      "text": "The capital of France is **Paris**. \n\nIt’s a common misconception",
+      "atom_tokens": [
+        7592,
+        236764,
+        1531,
+        236789,
+        236751,
+        1879,
+        611,
+        236789,
+        500,
+        2844,
+        607,
+        496,
+        1458,
+        600,
+        6178,
+        496
+      ],
+      "first_token_equal": false,
+      "all_equal": false
+    },
+    {
+      "prompt": "Compute 2 + 3.",
+      "tokens": [
+        236778,
+        900,
+        236743,
+        236800,
+        578,
+        236743,
+        236810,
+        107,
+        106
+      ],
+      "text": "2 + 3 = 5\n<end_of_turn>",
+      "atom_tokens": [
+        236940,
+        236754,
+        5288,
+        40892,
+        107,
+        236940,
+        236754,
+        5288,
+        40892,
+        107,
+        236940,
+        236754,
+        5288,
+        40892,
+        107,
+        236940
+      ],
+      "first_token_equal": false,
+      "all_equal": false
+    },
+    {
+      "prompt": "한국의 수도는 어디인가요?",
+      "tokens": [
+        114216,
+        237281,
+        79301,
+        237170,
+        82358,
+        15245,
+        236761,
+        106
+      ],
+      "text": "한국의 수도는 서울입니다.<end_of_turn>",
+      "atom_tokens": [
+        245660,
+        18668,
+        237099,
+        42903,
+        96694,
+        237051,
+        25352,
+        4042,
+        236924,
+        107,
+        8978,
+        18053,
+        237048,
+        236951,
+        96694,
+        236945
+      ],
+      "first_token_equal": false,
+      "all_equal": false
+    }
+  ],
+  "qwen3_cpu_oracle.json": [
+    {
+      "prompt": "What is the capital of France?",
+      "tokens": [
+        785,
+        6722,
+        315,
+        9625,
+        374,
+        3070,
+        59604,
+        334,
+        13,
+        151645
+      ],
+      "text": "The capital of France is **Paris**.<|im_end|>",
+      "atom_tokens": [
+        785,
+        6722,
+        315,
+        9625,
+        374,
+        3070,
+        59604,
+        334,
+        13,
+        151645
+      ],
+      "first_token_equal": true,
+      "all_equal": true
+    },
+    {
+      "prompt": "Compute 2 + 3.",
+      "tokens": [
+        17,
+        488,
+        220,
+        18,
+        284,
+        220,
+        20,
+        13,
+        151645
+      ],
+      "text": "2 + 3 = 5.<|im_end|>",
+      "atom_tokens": [
+        17,
+        488,
+        220,
+        18,
+        284,
+        220,
+        20,
+        13,
+        151645
+      ],
+      "first_token_equal": true,
+      "all_equal": true
+    },
+    {
+      "prompt": "한국의 수도는 어디인가요?",
+      "tokens": [
+        23573,
+        124785,
+        20401,
+        134013,
+        16560,
+        3070,
+        31328,
+        129034,
+        334,
+        78952,
+        13,
+        151645
+      ],
+      "text": "한국의 수도는 **인천**입니다.<|im_end|>",
+      "atom_tokens": [
+        23573,
+        124785,
+        20401,
+        134013,
+        16560,
+        3070,
+        31328,
+        129034,
+        334,
+        78952,
+        13,
+        151645
+      ],
+      "first_token_equal": true,
+      "all_equal": true
+    }
+  ],
+  "family_qwen_pd.json": {
+    "backend": "portable",
+    "imports": 12,
+    "readback_slots": 48,
+    "import_ms": [
+      33.996114041656256,
+      11.188542935997248,
+      10.153414099477232,
+      11.418009991757572,
+      7.4016619473695755,
+      6.897586979903281,
+      6.920607993379235,
+      6.8141689989715815,
+      7.660060073249042,
+      7.506540976464748,
+      7.859778008423746,
+      7.624270976521075
+    ],
+    "outputs": {
+      "aggregated": [
+        [
+          13,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          8,
+          220,
+          17,
+          15,
+          16,
+          24,
+          12,
+          15,
+          16,
+          12,
+          15,
+          16,
+          220,
+          15,
+          15,
+          25
+        ],
+        [
+          11,
+          323,
+          279,
+          220,
+          16,
+          24,
+          24,
+          15,
+          82,
+          13,
+          576,
+          220,
+          16,
+          24,
+          24,
+          15
+        ],
+        [
+          23,
+          13,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          14704,
+          4,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          1,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330
+        ],
+        [
+          262,
+          584,
+          536,
+          5586,
+          1111,
+          549,
+          15714,
+          319,
+          262,
+          972,
+          286,
+          584,
+          737,
+          1913,
+          27958,
+          3568
+        ],
+        [
+          13,
+          220,
+          17,
+          15,
+          16,
+          24,
+          13,
+          2009,
+          3188,
+          4591,
+          13,
+          220,
+          17,
+          15,
+          16,
+          24
+        ],
+        [
+          2105,
+          26,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          13,
+          330,
+          40,
+          2776,
+          537,
+          2704,
+          1128,
+          498,
+          2299,
+          4460,
+          311,
+          1977,
+          13,
+          358,
+          2776,
+          537
+        ],
+        [
+          198,
+          1,
+          331,
+          7346,
+          198,
+          1,
+          331,
+          7346,
+          198,
+          1,
+          331,
+          7346,
+          198,
+          1,
+          331,
+          7346
+        ],
+        [
+          290,
+          480,
+          198,
+          27,
+          17413,
+          6483,
+          29,
+          5743,
+          25,
+          5046,
+          85105,
+          304,
+          1034,
+          829,
+          27,
+          17413
+        ]
+      ],
+      "pd": [
+        [
+          13,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          8,
+          220,
+          16,
+          24,
+          24,
+          15,
+          82,
+          220,
+          16,
+          24,
+          24,
+          15,
+          82,
+          220,
+          16,
+          24
+        ],
+        [
+          11,
+          323,
+          279,
+          220,
+          16,
+          24,
+          24,
+          15,
+          82,
+          13,
+          576,
+          220,
+          16,
+          24,
+          24,
+          15
+        ],
+        [
+          23,
+          13,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          14704,
+          4,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          1,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330,
+          330
+        ],
+        [
+          286,
+          584,
+          737,
+          1913,
+          27958,
+          3568,
+          286,
+          972,
+          310,
+          421,
+          320,
+          574,
+          1436,
+          15937,
+          1567,
+          961
+        ],
+        [
+          13,
+          220,
+          17,
+          15,
+          16,
+          24,
+          13,
+          2009,
+          3188,
+          4591,
+          13,
+          220,
+          17,
+          15,
+          16,
+          24
+        ],
+        [
+          2105,
+          26,
+          220,
+          16,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15
+        ],
+        [
+          13,
+          330,
+          40,
+          2776,
+          537,
+          2704,
+          1128,
+          498,
+          2299,
+          4460,
+          311,
+          1977,
+          13,
+          358,
+          2776,
+          537
+        ],
+        [
+          198,
+          1,
+          331,
+          7346,
+          198,
+          1,
+          331,
+          7346,
+          198,
+          1,
+          331,
+          7346,
+          198,
+          1,
+          331,
+          7346
+        ],
+        [
+          290,
+          198,
+          82,
+          38618,
+          198,
+          82,
+          38618,
+          198,
+          82,
+          38618,
+          198,
+          82,
+          38618,
+          198,
+          82,
+          38618
+        ]
+      ]
+    },
+    "benchmark": {
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "batch": 8,
+      "requests": 12,
+      "prefill": "--engine rngd-qwen --chip 0 --width 256",
+      "runs": {
+        "aggregated": {
+          "seconds": 0.55,
+          "tok_s": 347.2,
+          "ttft_mean_s": 0.183,
+          "tpot_mean_ms": 16.7,
+          "decode_steps": 33,
+          "hit_tokens": 0,
+          "prompt_tokens": 707
+        },
+        "pd": {
+          "seconds": 2.88,
+          "tok_s": 66.6,
+          "ttft_mean_s": 1.683,
+          "tpot_mean_ms": 7.3,
+          "decode_steps": 180,
+          "hit_tokens": 0,
+          "prompt_tokens": 707,
+          "prefilled": {
+            "remote": 12,
+            "local": 0
+          },
+          "identical_to_aggregated": 9,
+          "first_token_agree": 11
+        }
+      },
+      "prefill_start_s": 41.2
+    }
+  }
+}

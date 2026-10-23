@@ -1,0 +1,306 @@
+[
+  {
+    "positions": 1,
+    "native_tokens": [
+      4195,
+      20408,
+      11,
+      220
+    ],
+    "torch_tokens": [
+      4195,
+      20408,
+      11,
+      220
+    ],
+    "generated_tokens_equal": true,
+    "reference": "same FP8 weights dequantized to BF16, SDPA CPU; native arithmetic parity not established",
+    "native_resume_vs_torch_cache": {
+      "argmax_a": 4195,
+      "argmax_b": 4195,
+      "argmax_equal": true,
+      "rmse": 0.02807093970477581,
+      "max_abs": 0.1328125,
+      "cosine": 0.9999521970748901,
+      "top5_a": [
+        4195,
+        261,
+        18067,
+        1222,
+        88
+      ],
+      "top5_b": [
+        4195,
+        261,
+        18067,
+        1222,
+        88
+      ]
+    },
+    "torch_cache_vs_full_prompt": {
+      "argmax_a": 4195,
+      "argmax_b": 4195,
+      "argmax_equal": true,
+      "rmse": 0.03323672339320183,
+      "max_abs": 0.125,
+      "cosine": 0.9999507665634155,
+      "top5_a": [
+        4195,
+        261,
+        18067,
+        1222,
+        88
+      ],
+      "top5_b": [
+        4195,
+        261,
+        18067,
+        1222,
+        88
+      ]
+    },
+    "wall_seconds_diagnostic_not_benchmark": 40.09169606398791,
+    "layer_summary": {
+      "key": {
+        "layers_compared": 36,
+        "min_cosine": 0.9997886419296265,
+        "max_relative_rmse": 0.021418532356619835,
+        "worst_cosine_layer": 5
+      },
+      "value": {
+        "layers_compared": 36,
+        "min_cosine": 0.9989399313926697,
+        "max_relative_rmse": 0.04695670306682587,
+        "worst_cosine_layer": 4
+      }
+    }
+  },
+  {
+    "positions": 3,
+    "native_tokens": [
+      1211,
+      11,
+      279,
+      1156
+    ],
+    "torch_tokens": [
+      1211,
+      11,
+      279,
+      1156
+    ],
+    "generated_tokens_equal": true,
+    "reference": "same FP8 weights dequantized to BF16, SDPA CPU; native arithmetic parity not established",
+    "native_resume_vs_torch_cache": {
+      "argmax_a": 1211,
+      "argmax_b": 1211,
+      "argmax_equal": true,
+      "rmse": 0.14051400125026703,
+      "max_abs": 0.5,
+      "cosine": 0.9997400641441345,
+      "top5_a": [
+        1211,
+        355,
+        276,
+        76,
+        82
+      ],
+      "top5_b": [
+        1211,
+        355,
+        276,
+        76,
+        285
+      ]
+    },
+    "torch_cache_vs_full_prompt": {
+      "argmax_a": 1211,
+      "argmax_b": 1211,
+      "argmax_equal": true,
+      "rmse": 0.03510116785764694,
+      "max_abs": 0.21875,
+      "cosine": 0.9999629855155945,
+      "top5_a": [
+        1211,
+        355,
+        276,
+        76,
+        285
+      ],
+      "top5_b": [
+        1211,
+        355,
+        276,
+        76,
+        285
+      ]
+    },
+    "wall_seconds_diagnostic_not_benchmark": 48.28450726903975,
+    "layer_summary": {
+      "key": {
+        "layers_compared": 36,
+        "min_cosine": 0.9994951486587524,
+        "max_relative_rmse": 0.031794168055057526,
+        "worst_cosine_layer": 13
+      },
+      "value": {
+        "layers_compared": 36,
+        "min_cosine": 0.9974375367164612,
+        "max_relative_rmse": 0.07169725000858307,
+        "worst_cosine_layer": 10
+      }
+    }
+  },
+  {
+    "positions": 15,
+    "native_tokens": [
+      198,
+      220,
+      16,
+      13
+    ],
+    "torch_tokens": [
+      198,
+      220,
+      16,
+      13
+    ],
+    "generated_tokens_equal": true,
+    "reference": "same FP8 weights dequantized to BF16, SDPA CPU; native arithmetic parity not established",
+    "native_resume_vs_torch_cache": {
+      "argmax_a": 198,
+      "argmax_b": 198,
+      "argmax_equal": true,
+      "rmse": 0.03437279909849167,
+      "max_abs": 0.1875,
+      "cosine": 0.9999692440032959,
+      "top5_a": [
+        198,
+        11,
+        13,
+        69,
+        280
+      ],
+      "top5_b": [
+        198,
+        11,
+        13,
+        69,
+        280
+      ]
+    },
+    "torch_cache_vs_full_prompt": {
+      "argmax_a": 198,
+      "argmax_b": 198,
+      "argmax_equal": true,
+      "rmse": 0.020298661664128304,
+      "max_abs": 0.125,
+      "cosine": 0.9999799728393555,
+      "top5_a": [
+        198,
+        11,
+        13,
+        69,
+        280
+      ],
+      "top5_b": [
+        198,
+        11,
+        13,
+        69,
+        280
+      ]
+    },
+    "wall_seconds_diagnostic_not_benchmark": 55.61279134906363,
+    "layer_summary": {
+      "key": {
+        "layers_compared": 36,
+        "min_cosine": 0.9993062615394592,
+        "max_relative_rmse": 0.03730424493551254,
+        "worst_cosine_layer": 13
+      },
+      "value": {
+        "layers_compared": 36,
+        "min_cosine": 0.9947805404663086,
+        "max_relative_rmse": 0.10440496355295181,
+        "worst_cosine_layer": 13
+      }
+    }
+  },
+  {
+    "positions": 32,
+    "native_tokens": [
+      198,
+      82,
+      198,
+      82
+    ],
+    "torch_tokens": [
+      198,
+      82,
+      198,
+      82
+    ],
+    "generated_tokens_equal": true,
+    "reference": "same FP8 weights dequantized to BF16, SDPA CPU; native arithmetic parity not established",
+    "native_resume_vs_torch_cache": {
+      "argmax_a": 198,
+      "argmax_b": 198,
+      "argmax_equal": true,
+      "rmse": 0.055004704743623734,
+      "max_abs": 0.1875,
+      "cosine": 0.9999530911445618,
+      "top5_a": [
+        198,
+        25,
+        271,
+        64,
+        36369
+      ],
+      "top5_b": [
+        198,
+        25,
+        271,
+        64,
+        36369
+      ]
+    },
+    "torch_cache_vs_full_prompt": {
+      "argmax_a": 198,
+      "argmax_b": 198,
+      "argmax_equal": true,
+      "rmse": 0.02156129665672779,
+      "max_abs": 0.125,
+      "cosine": 0.9999664425849915,
+      "top5_a": [
+        198,
+        25,
+        271,
+        64,
+        36369
+      ],
+      "top5_b": [
+        198,
+        25,
+        271,
+        64,
+        36369
+      ]
+    },
+    "wall_seconds_diagnostic_not_benchmark": 63.993598219007254,
+    "layer_summary": {
+      "key": {
+        "layers_compared": 36,
+        "min_cosine": 0.9990371465682983,
+        "max_relative_rmse": 0.043935034424066544,
+        "worst_cosine_layer": 13
+      },
+      "value": {
+        "layers_compared": 36,
+        "min_cosine": 0.9962064027786255,
+        "max_relative_rmse": 0.08771012723445892,
+        "worst_cosine_layer": 13
+      }
+    }
+  }
+]

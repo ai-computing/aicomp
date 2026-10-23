@@ -1,0 +1,9 @@
+{
+  "parent": "d3d54af",
+  "sha256": {
+    "protocol.py": "7596bf95ebd90085fe781cf5f785536943d0804e98ec95eb8babfdbc575ef0e7",
+    "memory_receiver.py": "7b38bdfad80e64bd6e82ec1ecd340f58c2e9e6aa26962f4b78a0e7183faef7ce",
+    "test_suffix_transfer.py": "ee3c24aca96481ce0cbf4a0bd46a8fb520057c7e25cfda369185aed93f13f2aa",
+    "probe_suffix_transfer.py": "49f9323fac9053d94e15e8da9893d9b4938360eaee1da95dfdefe2335d7741fb"
+  }
+}

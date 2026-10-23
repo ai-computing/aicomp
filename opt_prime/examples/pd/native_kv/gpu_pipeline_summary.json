@@ -1,0 +1,84 @@
+{
+  "fixed_width": {
+    "1": {
+      "native": {
+        "aggregate_tok_s": 99.96326662241094,
+        "mean_ttft_ms": 49.067938001826406,
+        "mean_tpot_ms": 9.701048165392937
+      },
+      "gpu": {
+        "aggregate_tok_s": 89.69547463574577,
+        "mean_ttft_ms": 146.7898190021515,
+        "mean_tpot_ms": 10.083289771601118
+      }
+    },
+    "4": {
+      "native": {
+        "aggregate_tok_s": 333.9131755179531,
+        "mean_ttft_ms": 156.32416174776154,
+        "mean_tpot_ms": 10.774566346456803
+      },
+      "gpu": {
+        "aggregate_tok_s": 283.51359183014057,
+        "mean_ttft_ms": 320.06966625340283,
+        "mean_tpot_ms": 10.489930767659006
+      }
+    },
+    "8": {
+      "native": {
+        "aggregate_tok_s": 582.5295758725381,
+        "mean_ttft_ms": 259.3026139984431,
+        "mean_tpot_ms": 11.644347030553723
+      },
+      "gpu": {
+        "aggregate_tok_s": 311.29788741165095,
+        "mean_ttft_ms": 1073.990534994664,
+        "mean_tpot_ms": 10.543210021672518
+      }
+    }
+  },
+  "experimental_adaptive": {
+    "1": {
+      "native": {
+        "aggregate_tok_s": 95.90649169927981,
+        "mean_ttft_ms": 56.87085201498121,
+        "mean_tpot_ms": 10.060104865976793
+      },
+      "gpu": {
+        "aggregate_tok_s": 103.21722044515124,
+        "mean_ttft_ms": 153.87954699690454,
+        "mean_tpot_ms": 8.527223070749764
+      }
+    },
+    "4": {
+      "native": {
+        "aggregate_tok_s": 329.9291078327443,
+        "mean_ttft_ms": 168.99761625973042,
+        "mean_tpot_ms": 10.814194932960865
+      },
+      "gpu": {
+        "aggregate_tok_s": 282.8502932775246,
+        "mean_ttft_ms": 319.75239949679235,
+        "mean_tpot_ms": 10.46090684056568
+      }
+    },
+    "8": {
+      "native": {
+        "aggregate_tok_s": 566.7343406149937,
+        "mean_ttft_ms": 276.78941412159475,
+        "mean_tpot_ms": 11.900360362183058
+      },
+      "gpu": {
+        "aggregate_tok_s": 304.66791262311074,
+        "mean_ttft_ms": 1098.3306686175638,
+        "mean_tpot_ms": 10.595836453766545
+      }
+    }
+  },
+  "quality": {
+    "cases_per_mode": 15,
+    "fixed_width_texts_equal": 15,
+    "adaptive_texts_equal": 15
+  },
+  "adaptive_backpressure": "FAILED text equality; source not identified; adaptive mode disabled by default"
+}

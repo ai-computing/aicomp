@@ -1,0 +1,44 @@
+{
+  "4": {
+    "native": {
+      "aggregate_tok_s": 330.5711289713931,
+      "mean_ttft_ms": 162.0163867555675,
+      "mean_tpot_ms": 10.845628183075652
+    },
+    "gpu": {
+      "aggregate_tok_s": 276.644404439104,
+      "mean_ttft_ms": 342.44751324877143,
+      "mean_tpot_ms": 10.49936529335806
+    }
+  },
+  "8": {
+    "native": {
+      "aggregate_tok_s": 580.1794320500123,
+      "mean_ttft_ms": 260.37876862392295,
+      "mean_tpot_ms": 11.69509501477743
+    },
+    "gpu": {
+      "aggregate_tok_s": 416.5441861367195,
+      "mean_ttft_ms": 607.5929450053081,
+      "mean_tpot_ms": 10.912166703768545
+    }
+  },
+  "width_check": {
+    "prefix_intact": true,
+    "one_argmax_matches": 126,
+    "switch_argmax_matches": 125,
+    "one_mismatch_reference_margins": [
+      0.0,
+      0.0
+    ],
+    "switch_mismatch_reference_margins": [
+      0.0,
+      0.0,
+      0.125
+    ]
+  },
+  "quality": {
+    "cases": 15,
+    "texts_equal": 15
+  }
+}

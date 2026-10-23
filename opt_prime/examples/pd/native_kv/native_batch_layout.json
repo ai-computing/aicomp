@@ -1,0 +1,204 @@
+{
+  "batches": [
+    {
+      "slots": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        16,
+        17,
+        18,
+        19
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        20,
+        21,
+        22,
+        23
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        24,
+        25,
+        26,
+        27
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        28,
+        29,
+        30,
+        31
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        32,
+        33,
+        34,
+        35
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        36,
+        37,
+        38,
+        39
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        40,
+        41,
+        42,
+        43
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        44,
+        45,
+        46,
+        47
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        48,
+        49,
+        50,
+        51
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        52,
+        53,
+        54,
+        55
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        56,
+        57,
+        58,
+        59
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        60,
+        61,
+        62,
+        63
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        64,
+        65,
+        66,
+        67
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    },
+    {
+      "slots": [
+        68,
+        69,
+        70,
+        71
+      ],
+      "contiguous_slots": true,
+      "positions": 511,
+      "wire_contiguous": true
+    }
+  ],
+  "count": 18,
+  "bytes": 75350016
+}

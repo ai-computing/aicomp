@@ -1,0 +1,11 @@
+{
+  "base_commit": "7f4f4a9d7b0b2e43d1f31c516dfab8117ed84a01",
+  "native_sdk": "2026.4.0",
+  "native_binary_sha256": "ed459cf42ee5359da01093846d3d8bd260e487f2b602f5cdc71dc87743a29761",
+  "adapter_binary_sha256": "6fc74e1707d7da76be1ad2605e4d6879e67921aac09900f2a846792f3ef05453",
+  "files": {
+    "adapter.c": "5b81177c4d455c9171e952673fdddd5e6a7af95226740f150118b3db182a049d",
+    "bootstrap.py": "f96084667fd286bf189e40a1a097a19f9fd7167edb50a5de151bb168a19a532e",
+    "test_adapter.c": "2ab5310fe347d62c32ed2320489df4d6f348955b30afa888c31192727d2769d7"
+  }
+}

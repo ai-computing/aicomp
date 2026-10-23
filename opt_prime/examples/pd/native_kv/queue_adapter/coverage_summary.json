@@ -1,0 +1,26 @@
+{
+  "http_phase_delta": {
+    "rewritten": 72,
+    "restored": 72,
+    "failed": 0,
+    "inflight": 0,
+    "fallback": 0,
+    "pageable_reads": 2197,
+    "single_segment_reads": 469,
+    "multi_segment_reads": 1728,
+    "pinned_reads": 0
+  },
+  "quality_cases": 15,
+  "identical_text_cases": 15,
+  "strict_format_passes": {
+    "native": 12,
+    "gpu": 12,
+    "gpu_stream": 12
+  },
+  "recovery": {
+    "closed_streams": 16,
+    "recovery_successes": 16,
+    "recovery_texts_identical": true
+  },
+  "active_transformed_dma_cancellation_tested": false
+}

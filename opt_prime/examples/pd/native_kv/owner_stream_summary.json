@@ -1,0 +1,278 @@
+{
+  "owner_stream6": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.901555851,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.37450646198704,
+      "completed_tok_s": 442.02694429351146,
+      "ttft_p50_ms": 99.01301231002435,
+      "ttft_p95_ms": 161.6148466418963,
+      "total_p95_ms": 2757.8315056452993,
+      "max_text_gap_ms": 159.2839959776029
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.7734894270000001,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.454045558988582,
+      "completed_tok_s": 440.01260189474584,
+      "ttft_p50_ms": 128.8791693514213,
+      "ttft_p95_ms": 229.09780565532856,
+      "total_p95_ms": 1665.069198643323,
+      "max_text_gap_ms": 95.46158599550836
+    }
+  ],
+  "owner_stream12": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 12.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 3.683847739,
+      "requests": 384,
+      "client_workers": 128,
+      "successes": 384,
+      "errors": 0,
+      "duration_s": 34.8620213449758,
+      "completed_tok_s": 881.1881472967793,
+      "ttft_p50_ms": 136.45696060848422,
+      "ttft_p95_ms": 241.97088033542968,
+      "total_p95_ms": 11419.280224625254,
+      "max_text_gap_ms": 294.9090550246183
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 12.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 3.279442875,
+      "requests": 384,
+      "client_workers": 128,
+      "successes": 384,
+      "errors": 0,
+      "duration_s": 33.6331020820071,
+      "completed_tok_s": 913.3858638758885,
+      "ttft_p50_ms": 136.1324166355189,
+      "ttft_p95_ms": 255.0798543379642,
+      "total_p95_ms": 1815.2869263431057,
+      "max_text_gap_ms": 98.35097499308176
+    }
+  ],
+  "owner_baseline6": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.899740966,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.372505529987393,
+      "completed_tok_s": 442.07785611253587,
+      "ttft_p50_ms": 102.26127531495877,
+      "ttft_p95_ms": 161.3794416480232,
+      "total_p95_ms": 2767.1075703110546,
+      "max_text_gap_ms": 261.3530099915806
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.771187606,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.474724940984743,
+      "completed_tok_s": 439.4918962064769,
+      "ttft_p50_ms": 149.3382383196149,
+      "ttft_p95_ms": 258.7781956535764,
+      "total_p95_ms": 1703.2406376383733,
+      "max_text_gap_ms": 96.62734300945885
+    }
+  ],
+  "owner_baseline12": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 12.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 3.67098622,
+      "requests": 384,
+      "client_workers": 128,
+      "successes": 384,
+      "errors": 0,
+      "duration_s": 34.77847500698408,
+      "completed_tok_s": 883.3049750982734,
+      "ttft_p50_ms": 129.8558150010649,
+      "ttft_p95_ms": 209.23608832526952,
+      "total_p95_ms": 10727.565995650366,
+      "max_text_gap_ms": 251.26685400027782
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 12.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 3.2595042979999995,
+      "requests": 384,
+      "client_workers": 128,
+      "successes": 384,
+      "errors": 0,
+      "duration_s": 33.63185512198834,
+      "completed_tok_s": 913.4197292588663,
+      "ttft_p50_ms": 147.18699365039356,
+      "ttft_p95_ms": 262.32807434280403,
+      "total_p95_ms": 1842.2415393288247,
+      "max_text_gap_ms": 103.3864570199512
+    }
+  ],
+  "owner_repeat6": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.8999448779999999,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.375259448977886,
+      "completed_tok_s": 442.0077882895603,
+      "ttft_p50_ms": 98.54117533541285,
+      "ttft_p95_ms": 159.00527362828143,
+      "total_p95_ms": 2763.2527833338827,
+      "max_text_gap_ms": 87.53712600446306
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.7730447089999999,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.495315838983515,
+      "completed_tok_s": 438.974641594479,
+      "ttft_p50_ms": 140.7892243587412,
+      "ttft_p95_ms": 251.76280864980072,
+      "total_p95_ms": 1684.2905876401346,
+      "max_text_gap_ms": 93.49129899055697
+    }
+  ],
+  "quality": {
+    "cases": 9,
+    "equal": 9,
+    "exact": {
+      "native": 9,
+      "solo": 9,
+      "concurrent": 9
+    }
+  },
+  "cancellation": {
+    "cancel_after_headers": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "recovery": [
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      }
+    ],
+    "health": 200
+  }
+}

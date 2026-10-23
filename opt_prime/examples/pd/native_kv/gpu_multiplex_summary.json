@@ -1,0 +1,96 @@
+{
+  "http_c4": {
+    "native": {
+      "aggregate_tok_s": 320.6946102953873,
+      "mean_ttft_ms": 159.23011449194746,
+      "mean_tpot_ms": 11.2465886043029
+    },
+    "gpu": {
+      "aggregate_tok_s": 306.61608394871797,
+      "mean_ttft_ms": 273.82264875632245,
+      "mean_tpot_ms": 10.579288505864747
+    }
+  },
+  "http_c8": {
+    "native": {
+      "aggregate_tok_s": 579.8610424050091,
+      "mean_ttft_ms": 259.85613162629306,
+      "mean_tpot_ms": 11.7146181820983
+    },
+    "gpu": {
+      "aggregate_tok_s": 526.384370678257,
+      "mean_ttft_ms": 371.7166720016394,
+      "mean_tpot_ms": 10.896117084599595
+    }
+  },
+  "wait8_c8": {
+    "native": {
+      "aggregate_tok_s": 567.4639355552298,
+      "mean_ttft_ms": 267.48402311932296,
+      "mean_tpot_ms": 11.996308414353283
+    },
+    "gpu": {
+      "aggregate_tok_s": 541.0656858527865,
+      "mean_ttft_ms": 375.8630780102976,
+      "mean_tpot_ms": 10.92493098415824
+    }
+  },
+  "async_c8": {
+    "native": {
+      "aggregate_tok_s": 576.9049270895948,
+      "mean_ttft_ms": 262.34716799808666,
+      "mean_tpot_ms": 11.757174044301848
+    },
+    "gpu": {
+      "aggregate_tok_s": 535.3527116445119,
+      "mean_ttft_ms": 383.2116058765678,
+      "mean_tpot_ms": 10.890341991155113
+    }
+  },
+  "kv_comparison": {
+    "serial_ms": 593.5854339913931,
+    "multiplex_ms": [
+      195.414020010503,
+      180.92118899221532,
+      168.15513098845258
+    ],
+    "serial_repeat_equal": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "byte_equal": [
+      [
+        true,
+        false,
+        false,
+        false
+      ],
+      [
+        true,
+        false,
+        false,
+        false
+      ],
+      [
+        true,
+        false,
+        false,
+        false
+      ]
+    ],
+    "minimum_slot_cosine": 0.9992426633834839
+  },
+  "quality": {
+    "cases_per_configuration": 15,
+    "all_configurations_text_equal": true
+  },
+  "stage_medians_including_warmup": {
+    "native_ready_ms": 232.46127949096262,
+    "native_kv_ms": 323.3306304900907,
+    "native_complete_ms": 334.8582709877519,
+    "cpu_pack_ms": 17.306722511420958,
+    "gpu_import_ms": 3.5024959943257272
+  }
+}
