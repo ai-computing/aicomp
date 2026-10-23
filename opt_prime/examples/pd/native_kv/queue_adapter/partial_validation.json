@@ -1,0 +1,60 @@
+{
+  "after_quality": {
+    "rewritten": 1872,
+    "restored": 1872,
+    "failed": 0,
+    "inflight": 0,
+    "fallback": 0,
+    "input_segments": 225216,
+    "output_segments": 4032,
+    "staging_bytes": 0,
+    "not_profitable": 144,
+    "unsupported": 0
+  },
+  "cancel_waves": [
+    {
+      "wave": 0,
+      "sockets": 4,
+      "transformed_dma_observed": true,
+      "inflight_at_close": 2
+    },
+    {
+      "wave": 1,
+      "sockets": 4,
+      "transformed_dma_observed": true,
+      "inflight_at_close": 2
+    },
+    {
+      "wave": 2,
+      "sockets": 4,
+      "transformed_dma_observed": true,
+      "inflight_at_close": 2
+    }
+  ],
+  "after_recovery": {
+    "rewritten": 3744,
+    "restored": 3744,
+    "failed": 0,
+    "inflight": 0,
+    "fallback": 0,
+    "input_segments": 1919880,
+    "output_segments": 6984,
+    "staging_bytes": 0,
+    "not_profitable": 216,
+    "unsupported": 0
+  },
+  "quality": {
+    "cases": 15,
+    "equal_texts": 15,
+    "strict_format_passes": {
+      "native": 12,
+      "gpu": 12,
+      "gpu_stream": 12
+    }
+  },
+  "recovery": {
+    "closed_streams": 16,
+    "recovery_successes": 16,
+    "recovery_texts_identical": true
+  }
+}
