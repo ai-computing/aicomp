@@ -1,8 +1,13 @@
 # Experimental RNGD layer streaming
 
 `serve_batched.py --pd-prefill-stream-layers` enables validated partial KV reception
-with a Torch decoder. The subprocess must advertise progress support. ATOM decoder
-ownership integration is still pending; its CLI route rejects this flag.
+with a Torch or ATOM decoder. The subprocess must advertise progress support.
+ATOM imports only into a reserved lane. B1 next-request prefetch may compute ahead,
+but its partial data waits until the current decode releases the destination.
+Multi-lane hybrid caches defer layer imports until final decode admission because
+idle lanes may still write their local cache. SDK write failures poison the owner;
+invalid source geometry fails only the request. Incomplete prompts never enter
+the reusable prefix index.
 
 The three factories in `streaming_factories.py` cover the four measured models:
 
@@ -42,6 +47,8 @@ all requested suffix spans arrive and destination copies complete.
 This is blocking per-group CPU export followed by incremental decoder import.
 It can allow decoder import during later source computation, but does not imply
 asynchronous RNGD download, device DMA overlap, or a serving speedup. Hardware
-source parity at width128/512 does not establish long-context performance or
-cross-backend numerical equivalence. See the experiment record for exact cases,
+source parity has been checked at widths128/512 and8192. Recorded GPU timing
+improvements apply only to the measured c2 workload; ATOM timing and hardware
+fault isolation still require verification. None establishes cross-backend
+numerical equivalence. See the experiment record for exact cases,
 failed attempts and the current verification scope.

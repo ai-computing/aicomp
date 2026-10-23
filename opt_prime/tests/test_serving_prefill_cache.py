@@ -90,7 +90,7 @@ def test_copy_overlap_rejects_unsupported_route_before_model_load(backend, sourc
         factory.prefill_worker(args, 1, None)
 
 
-@pytest.mark.parametrize('backend,python,source', [('atom','python',None),('rngd','python',None),('torch',None,None),('torch','python','cpu')])
+@pytest.mark.parametrize('backend,python,source', [('rngd','python',None),('torch',None,None),('torch','python','cpu')])
 def test_layer_stream_rejects_unsupported_owner(backend,python,source):
     spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
     factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
@@ -99,14 +99,15 @@ def test_layer_stream_rejects_unsupported_owner(backend,python,source):
         factory.prefill_worker(args,1,None)
 
 
-def test_layer_stream_reaches_subprocess_receiver(monkeypatch):
+@pytest.mark.parametrize('backend',['torch','atom'])
+def test_layer_stream_reaches_subprocess_receiver(monkeypatch,backend):
     import opt_prime.accel.pd.pd_batching as pd
     spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
     factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
     received={}
     def worker(*args,**kw):received.update(kw);return object()
     monkeypatch.setattr(pd,'SubprocessPrefillWorker',worker)
-    args=SimpleNamespace(pd_prefill_stream_layers=True,backend='torch',pd_prefill_python='python',pd_prefill_device=None,
+    args=SimpleNamespace(pd_prefill_stream_layers=True,backend=backend,pd_prefill_python='python',pd_prefill_device=None,
                          pd_prefill_pythonpath=None,pd_prefill_args='--engine rngd-full',model='local',max_context=16)
     config=LlamaConfig(hidden_size=32,num_attention_heads=4,num_key_value_heads=2,num_hidden_layers=2)
     factory.prefill_worker(args,1,config)

@@ -73,3 +73,7 @@ Runtime171e8c4: c2 mixed2K/8K input, fixed32output,3batches/mode after warmups. 
 ## B1 next-request prefill (#253), 2026-10-24
 
 Opt-in remote_prefetch / --pd-prefetch-next implemented for single-lane ATOM remote-only PD. Keep one source result reserved through owner import; cancelled writers drain before reuse. Prefix/host cache admission remains late, so early prefill transfers the full prompt.35focused tests and full511passed34skipped253subtests; real four-model hardware pipeline/performance validation pending. No speedup claim. See experiments/2026-10-24-atom-prefetch253.md.
+
+## ATOM streaming and long source parity (#265)
+
+Long source24/24 conditions at2K/8K have exact KV/logits. ATOM partial import and B1 prefetch ownership implemented; failed/partial prompts no longer publish prefixes. Four models × four modes:16batches/32sequences same-route exact, all drain; owned Pod deleted and absence verified. Full626passed/15skipped/253subtests. Prerequisite #255 included. Long ATOM timing and streaming hardware faults remain pending; no ATOM speedup claim.

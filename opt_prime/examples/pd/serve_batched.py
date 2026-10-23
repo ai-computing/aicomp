@@ -30,8 +30,8 @@ from opt_prime.accel.serve.llmd import serve_stage
 def prefill_worker(a, slots, config):
     """the PD prefill side from the flags, or None (aggregated serving)"""
     stream_layers = getattr(a, "pd_prefill_stream_layers", False)
-    if stream_layers and (a.backend != "torch" or not a.pd_prefill_python or a.pd_prefill_device):
-        raise ValueError("PD layer streaming requires a subprocess producer and Torch decoder")
+    if stream_layers and (a.backend not in ("torch", "atom") or not a.pd_prefill_python or a.pd_prefill_device):
+        raise ValueError("PD layer streaming requires a subprocess producer and Torch or ATOM decoder")
     overlap = getattr(a, "pd_prefill_copy_overlap", False)
     if overlap and (not a.pd_prefill_device or a.backend != "torch" or
                     torch.device(a.pd_prefill_device).type != "cuda" or torch.device(a.device).type != "cuda"):
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")
     ap.add_argument("--pd-prefill-pythonpath", default=None)
     ap.add_argument("--pd-prefill-stream-layers", action="store_true",
-                    help="experimental: import layer KV during capable subprocess prefill (Torch decoder only)")
+                    help="experimental: import layer KV during capable subprocess prefill (Torch or ATOM decoder)")
     ap.add_argument("--pd-remote-only", action="store_true",
                     help="PD on ATOM: every prompt is prefilled by the PD prefill side (no cost routing to ATOM)")
     ap.add_argument("--pd-prefetch-next", action="store_true",
