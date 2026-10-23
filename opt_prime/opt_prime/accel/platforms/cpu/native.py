@@ -47,7 +47,7 @@ def load_dispatch():
             lib = ctypes.CDLL(_build(os.path.join(_CSRC, "dispatch.c"), "moe_dispatch", ("-lpthread",)))
             P, I = ctypes.c_void_p, ctypes.c_int
             lib.moe_disp_new.restype = P
-            lib.moe_disp_start.argtypes = [P, I, I, I, P, P, P, P, P, I, P, P, P, P]
+            lib.moe_disp_start.argtypes = [P, I, I, I, P, P, P, P, P, I, I, P, P, P, P]
             lib.moe_disp_wait.argtypes = [P, I, I, P]
             lib.moe_cpu_ctx_new.restype = P
             lib.moe_cpu_ctx_new.argtypes = [P, P, P, I, I, I]

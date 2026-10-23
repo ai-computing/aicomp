@@ -63,7 +63,9 @@ class OffloadedLayer:
 
     def _padded_tables(self):
         """owner/local tables with one extra entry for padding ids (-1 and num_experts, as in transformers' expert
-        parallelism): its owner is len(tiers), which is no tier, so padded pairs reach no tier and add nothing."""
+        parallelism): its owner is len(tiers), which is no tier, so padded pairs reach no tier and add nothing.
+        Routing ids must lie in [-1, num_experts]: other negative ids would wrap to a real expert, larger ones raise
+        (the native dispatcher skips anything outside [0, num_experts))."""
         return (torch.cat([self.owner_c, torch.tensor([len(self.tiers)])]),
                 torch.cat([self.local_c, torch.zeros(1, dtype=torch.long)]))
 
@@ -79,11 +81,12 @@ class OffloadedLayer:
             if self._has is None:
                 self._has = [bool((self.owner_c == t).any()) for t in range(len(self.tiers))]
                 self._blocking_any = any(self._has[t] and self.tiers[t].blocking for t in range(len(self.tiers)))
-                owner, local = self._padded_tables()
+                # new tensors, never written in place: _adapt edits owner_c/local_c and then resets _has
+                self._host_tables = owner, local = self._padded_tables()
                 self._lists = (owner.tolist(), local.tolist(),                    # for the decode fast path
                                owner.to(torch.int32).contiguous(), local.to(torch.int32).contiguous())
                 self._native = None
-            owner, local = self._padded_tables()
+            owner, local = self._host_tables
             return owner, local, self._tables(device), self._has, self._blocking_any, self._lists
 
     def _pinned(self, name, like):
@@ -270,7 +273,7 @@ class OffloadedLayer:
         counts = torch.zeros(T, dtype=torch.int64)
         R, k = idx.shape
         _NATIVE["lib"].moe_disp_start(_NATIVE["disp"], R, k, h_p.shape[1], idx.data_ptr(), w.data_ptr(), h_p.data_ptr(),
-                                      lists[2].data_ptr(), lists[3].data_ptr(), T, blocking, fns, ctxs,
+                                      lists[2].data_ptr(), lists[3].data_ptr(), self.E, T, blocking, fns, ctxs,
                                       counts.data_ptr())
         self._count(counts.tolist())
         return True
