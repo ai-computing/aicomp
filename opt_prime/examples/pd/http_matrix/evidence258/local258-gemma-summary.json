@@ -1,0 +1,59 @@
+{
+  "passed": true,
+  "code": "32ce5d5",
+  "batches": 24,
+  "token_checks": 20,
+  "timed_responses": 60,
+  "rows": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 1,
+      "median_tok_s": 13.971020199225814
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "median_tok_s": 18.966985343509037
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "concurrency": 1,
+      "median_tok_s": 28.588971491592243
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "concurrency": 4,
+      "median_tok_s": 55.71818402699373
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 1,
+      "median_tok_s": 13.523089157073382
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "median_tok_s": 18.65420842647919
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "concurrency": 1,
+      "median_tok_s": 28.058540072561687
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "concurrency": 4,
+      "median_tok_s": 55.019085242561296
+    }
+  ],
+  "load_s": 13.739347908005584,
+  "scope": "Single live path, no equivalent-output speedup comparison"
+}
