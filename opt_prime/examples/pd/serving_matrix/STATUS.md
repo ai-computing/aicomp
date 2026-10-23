@@ -1,0 +1,11 @@
+# Four-model serving matrix — active
+
+Objective: test and improve Qwen3-0.6B, Qwen3-4B, KONI-8B and Gemma3-1B across GPU/RNGD/ATOM and varied serving conditions.
+
+Completed evidence:192 GPU stability runs;16 Qwen3-4B ATOM B1 runs through8K;128/512-token Qwen3-4B RNGD→GPU/ATOM import checks; investigated BF16 batch differences; rejected a partially beneficial RMS precision hypothesis as a general fix.
+
+Not complete: fresh four-model NPU/PD coverage, long-context RNGD, Gemma RNGD support, broader numerical/quality checks, HTTP concurrency/cache/cancellation/recovery and sustained performance. Full-token cross-device parity is not established.
+
+Next: extend RNGD beyond512tokens and profile ATOM import; use compiled Qwen3-4B context9216 artifact; continue remaining model/backend cells and exact numerical diagnosis. Dedicated validation allocation has ended; no task servers remain.
+
+These are exported research records for review. The local research-hub retains the authoritative tracking log and synchronizes it; no direct Plane calls are made.
