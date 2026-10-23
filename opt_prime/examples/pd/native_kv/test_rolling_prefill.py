@@ -63,4 +63,33 @@ class RollingOwnershipTest(unittest.TestCase):
         self.assertEqual(retired,[job]);self.assertTrue(prepared.empty())
         self.assertTrue(credits.acquire(False))
 
+    def test_recompute_cancel_and_native_failure_keep_credit_until_gpu_finishes(self):
+        from recompute_join import RecomputeJoin
+        for failed in (False,True):
+            worker,job,credits,registry,retired,retire=self.setup_worker()
+            job.body['prompt']=[1,2,3,4]
+            session=Mock();session.step.return_value=None
+            prefiller=Mock();prefiller.start.return_value=session
+            join=RecomputeJoin(1,.5,64,prefiller,Mock())
+            client=Mock()
+            def stream(model,acquire,complete,stopped,**kwargs):
+                tokens,context=acquire()
+                self.assertEqual(kwargs['get_start_pos'](tokens,context),2)
+                join.advance()
+                job.cancel.set()
+                if failed: raise TimeoutError('native')
+                complete(context,None,{})
+            client.prefill_stream.side_effect=stream
+            with patch('rolling_prefill.validate',return_value=2):
+                if failed:
+                    with self.assertRaises(TimeoutError):
+                        run_rolling(worker,client,Mock(),100,credits,registry,queue.Queue(1),retire,join)
+                else:
+                    run_rolling(worker,client,Mock(),100,credits,registry,queue.Queue(1),retire,join)
+            self.assertFalse(retired);self.assertFalse(credits.acquire(False))
+            self.assertIsNone(join.pop_ready())
+            join.advance()
+            retire(join.pop_ready()['job'])
+            self.assertEqual(retired,[job]);self.assertTrue(credits.acquire(False))
+
 if __name__=='__main__':unittest.main()

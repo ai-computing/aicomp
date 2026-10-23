@@ -147,6 +147,67 @@ class MultiplexTest(unittest.TestCase):
         self.assertTrue(c.poisoned)
         with self.assertRaises(RuntimeError):c.prefill_many('model',[[1,2]])
 
+    def test_stream_snapshots_distinct_offsets_with_replenishment(self):
+        c=self.client(); pool=Mock(); messages=deque(); futures={}; submitted=[]
+        contexts=[{'offset':0}, {'offset':2}, {'offset':4}]
+        lengths=[3,6,8]; remaining=deque(range(3)); completed=[]; selected=[]
+        def acquire():
+            if not remaining:return None
+            i=remaining.popleft()
+            return list(range(lengths[i])),contexts[i]
+        def offset(tokens,context):
+            selected.append(context['offset'])
+            return context['offset']
+        def enqueue(i):
+            rid=submitted[i]; n=lengths[i]-1-selected[i]
+            messages.append([control(rid,1)])
+            for first in range(0,72,4):
+                messages.append(batch(rid,range(first,first+4),n,i+1,first==68))
+        def submit(fn,url,json,timeout):
+            i=len(submitted);rid=json['kv_transfer_params']['id'];submitted.append(rid)
+            future=concurrent.futures.Future();futures[rid]=future
+            # A later context change must not change an in-flight wire request.
+            contexts[i]['offset']=1000
+            if i==0:enqueue(i)
+            if i==2:
+                self.assertEqual(completed,[0])
+                enqueue(2);enqueue(1)
+            return future
+        def send(header):
+            root=len(header)-36;kind=u32(header,root+4);rid=read_string(header,root+8)
+            i=submitted.index(rid)
+            if kind==2:self.assertEqual(u32(header,root+16),selected[i])
+            if kind==3:
+                response=Mock();response.json.return_value={};futures[rid].set_result(response)
+        def complete(context,data,stats):
+            i=next(i for i,x in enumerate(contexts) if x is context)
+            completed.append(i)
+            self.assertEqual(stats['start_pos'],selected[i])
+            self.assertEqual(stats['exported_positions'],lengths[i]-1-selected[i])
+            self.assertEqual(data.nbytes,72*(lengths[i]-1-selected[i])*2048)
+            self.assertTrue(np.all(np.frombuffer(data.tobytes(),dtype=np.uint16)==i+1))
+        pool.submit.side_effect=submit;c.tx.send.side_effect=send
+        c.rx.poll.side_effect=lambda timeout:bool(messages)
+        c.rx.recv_multipart.side_effect=lambda copy:messages.popleft()
+        with patch('multiplex_receiver.concurrent.futures.ThreadPoolExecutor',return_value=pool):
+            c.prefill_stream('model',acquire,complete,lambda:not remaining,
+                             max_pending=2,get_start_pos=offset)
+        self.assertEqual(completed,[0,2,1]);self.assertEqual(selected,[0,2,4])
+
+    def test_stream_invalid_offset_precedes_http(self):
+        for value in (-1,True,1.5,3,None):
+            c=self.client();pool=Mock()
+            with patch('multiplex_receiver.concurrent.futures.ThreadPoolExecutor',return_value=pool):
+                with self.assertRaises(ValueError):
+                    c.prefill_stream('model',lambda:([1,2,3,4],object()),Mock(),lambda:False,
+                                     get_start_pos=lambda *args:value)
+            pool.submit.assert_not_called();c.tx.send.assert_not_called()
+            self.assertTrue(c.poisoned)
+        c=self.client()
+        with self.assertRaises(ValueError):
+            c.prefill_stream('model',Mock(),Mock(),lambda:False,start_pos=1,get_start_pos=lambda *_:0)
+        self.assertFalse(c.poisoned)
+
     def test_http_failure_preempts_receive(self):
         c=self.client();pool=Mock();future=concurrent.futures.Future()
         response=requests.Response();response.status_code=503;future.set_result(response)

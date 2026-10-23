@@ -28,6 +28,7 @@ class Registry:
 class PipelineWorker(Worker):
     def run(self):
         producer = None
+        recompute = None
         registry = Registry()
         self.active = registry
         a = self.args
@@ -54,6 +55,14 @@ class PipelineWorker(Worker):
                 from gpu_activation import install_fused_swiglu, install_fused_post_attention
                 install_fused_swiglu(model); install_fused_post_attention(model)
             graph = BatchGraphDecoder(model, a.batch_size, adaptive_single=getattr(a, 'adaptive_single', False))
+            if getattr(a, 'recompute_prefix', 0):
+                from gpu_local_prefill import LocalPrefiller
+                from gpu_chunked_prefill import ChunkedPrefiller
+                from gpu_split_prefix import load_split_prefix
+                from recompute_join import RecomputeJoin
+                local = LocalPrefiller(a.model_dir, a.device)
+                recompute = RecomputeJoin(a.batch_size, a.recompute_prefix, a.recompute_chunk_tokens,
+                    ChunkedPrefiller(local), lambda:torch.cuda.synchronize(a.device))
             tokenizer = AutoTokenizer.from_pretrained(a.model_dir, local_files_only=True)
             self.tokenizer = tokenizer
             eos = json.loads((Path(a.model_dir)/'generation_config.json').read_text())['eos_token_id']
@@ -68,7 +77,7 @@ class PipelineWorker(Worker):
                     if getattr(a, 'rolling_native', False):
                         from rolling_prefill import run_rolling
                         run_rolling(self, client, tokenizer, model.config.vocab_size,
-                                    credits, registry, prepared, retire)
+                                    credits, registry, prepared, retire, recompute)
                         return
                     credit_wait_ms = 0.0
                     wave_id = 0
@@ -192,10 +201,17 @@ class PipelineWorker(Worker):
             if self.error: raise self.error
             self.ready.set()
             while not self.stopping.is_set():
+                if recompute is not None: recompute.advance()
                 free = [lane for lane in range(a.batch_size) if lane not in states]
                 for lane in free:
-                    try: job, tokens, count, packed = prepared.get(timeout=0.02 if not states else 0)
-                    except queue.Empty: break
+                    split = None
+                    if recompute is not None:
+                        split = recompute.pop_ready()
+                        if split is None: break
+                        job, tokens, count, packed = (split[k] for k in ('job','tokens','count','suffix'))
+                    else:
+                        try: job, tokens, count, packed = prepared.get(timeout=0.02 if not states else 0)
+                        except queue.Empty: break
                     if job.cancel.is_set():
                         del packed
                         retire(job)
@@ -203,11 +219,14 @@ class PipelineWorker(Worker):
                     import_start = time.perf_counter()
                     job.stage_metrics['prepared_wait_ms'] = (import_start-job.prepared_at)*1000
                     job.stage_metrics['decode_active_at_import'] = sum(n>0 for n in graph.remaining)
-                    graph.load_packed_lane(lane, packed, tokens[-1], count)
+                    if split is not None and split['length']:
+                        load_split_prefix(graph, lane, split['prefix'], packed, split['length'], tokens[-1], count)
+                    else:
+                        graph.load_packed_lane(lane, packed, tokens[-1], count)
                     job.stage_metrics['gpu_import_ms'] = (time.perf_counter()-import_start)*1000
                     job.stage_metrics['decode_start_ms'] = (time.perf_counter()-job.submitted_at)*1000
                     states[lane] = [job, TextDecoder(tokenizer), len(tokens), 0, deque()]
-                    del packed
+                    del packed, split
                 for lane, (job, _, _, _, pending) in list(states.items()):
                     if job.cancel.is_set():
                         graph.cancel_lane(lane)
@@ -226,7 +245,7 @@ class PipelineWorker(Worker):
                         retire(job)
                 paused = [lane for lane, state in states.items() if state[4]]
                 output = graph.step(ignore_eos=True, paused=paused)
-                if not output and states: time.sleep(0.001)
+                if not output and (states or recompute is not None): time.sleep(0.001)
                 for lane, token in output.items():
                     state = states[lane]
                     job, decoder, prompt_count, generated, pending = state
@@ -259,6 +278,8 @@ class PipelineWorker(Worker):
             if producer is not None: producer.join(timeout=110)
             if producer is not None and producer.is_alive():
                 self.error = RuntimeError('native prefill owner did not stop')
+            if recompute is not None and (producer is None or not producer.is_alive()):
+                for job in recompute.close(): retire(job)
             while True:
                 try: self.jobs.get_nowait().cancel.set()
                 except queue.Empty: break
