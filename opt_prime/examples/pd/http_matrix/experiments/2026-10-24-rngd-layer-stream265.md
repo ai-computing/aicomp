@@ -120,3 +120,22 @@ Actual RNGD→GPU integration completed: **8/8 output-token pairs exact** (two c
 Final factory integration regression: **606 passed,15 skipped,253 subtests passed**,27 warnings in166.21s, exit0. Raw log stream265-factory-full.log. This includes the final tuple/list correction, real factory pipe tests and all existing source/owner tests.
 
 Next performance matrix uses one capability-negotiated producer per model, changes request mode only after its future map and decoder are drained, and alternates modes after two warmup runs. Inputs2048/8192, compiled width8192, output32, concurrency2, page64, caches off. Three measured batches/mode. Host import trace records whether source completion was observed before/after destination import; it is not a device-kernel overlap trace. Drivers prepared as stream265-long-gpu.py and stream265-long-queue.py; results must be assessed separately from the completed short-width parity results.
+
+## Long-context alternating same-engine results (runtime171e8c4)
+
+Command: `python3 /tmp/stream265-long-queue.py > /tmp/stream265-long-queue.log 2>&1`. Exact queue and driver are retained in evidence265. Each model uses one capability-negotiated source process; changing `stream_layers` requires an empty source future map and drained decoder. Source width8192, decoder context8320/page64, mixed2048/8192-token synthetic repeated-text inputs submitted together, fixed32 output tokens without EOS stopping, no prefix cache. First two runs (whole/stream) are warmups; measured order whole/stream/stream/whole/whole/stream gives3 batches/mode. Engine startup and GPU model loading are excluded. Hardware: local RNGD chip0 and CUDA GPU0 (A10080GB); no concurrent benchmark/test jobs.
+
+| Model | Whole median batch completion(s) | Stream median(s) | Reduction | TTFT reduction, first2048 / second8192 request |
+|---|---:|---:|---:|---:|
+| Qwen3-0.6B |3.637588|2.613433|28.15%|34.02% /33.58%|
+| Qwen3-4B |7.305905|5.689632|22.12%|25.55% /25.98%|
+| Gemma3-1B |3.936250|3.767887|4.28%|4.45% /4.22%|
+| KONI-8B |7.598914|5.855674|22.94%|18.54% /25.32%|
+
+All32 batches including warmups drained; all64 generated sequences (32tokens each) match their model's initial whole-result reference. All four processes exited0. TTFT includes queueing in this two-request workload, not isolated latency for a single input length. The auditor independently recomputes medians from raw records and checks warmup placement, token sequences, token arrival times and trace counts.
+
+Across measured streaming batches, GPU imports completed before the source Future completed for all168/216/156/192 spans respectively (732 total). This verifies early destination import in the actual pipeline. It is a host-observed completion trace, not a device-kernel/DMA overlap trace. It does not isolate the benefit of earlier import from avoiding whole-KV host assembly; a deferred-notification control would separate those effects.
+
+Limits: three samples/mode, one host, fixed compiled width8192 and concurrency2. Gemma improvement is small. This is fixed-output transport/scheduler parity, not semantic accuracy, normal-EOS behavior or native-vendor performance. Long-context byte-for-byte source KV comparison and streaming hardware fault tests remain to be extended; the direct source KV/logit exactness matrix above used widths128/512. ATOM partial owner integration remains pending. Whole transfer remains the default.
+
+Artifacts: stream265-*-long-gpu.{json,log}, stream265-long-queue.json, stream265-long-summary.json, audit_stream265_long.py, stream265-long-gpu.py and stream265-long-queue.py. After completion, GPU compute-process listing and RNGD device-user checks were empty.

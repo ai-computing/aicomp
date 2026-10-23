@@ -66,3 +66,7 @@ Hardware attempt ended before inference: legacy FullPrefillEngine on-card head r
 Validated producers connected:24/24 actual RNGD source cases exact K/V/logits;8/8 real RNGD-GPU fixed8-token pairs exact, all four models. Width128/512 only. Factory tuple/list integration bug reproduced and corrected;27focused tests pass. Long-context repeated timing, hardware fault isolation under streaming and ATOM owner remain pending. Same-route parity does not waive previous cross-backend content counterexamples.
 
 Final factory integration full regression:606passed,15skipped,253subtests in166.21s. Short-width source/GPU hardware checks complete; long-context matrix is the next measurement.
+
+## Long-context streaming measurements (#265)
+
+Runtime171e8c4: c2 mixed2K/8K input, fixed32output,3batches/mode after warmups. Median completion reduction28.2% Q06,22.1% Q4,4.3% Gemma,22.9% KONI. All64sequences incl warmups exact;732 GPU span imports complete before source Future. Published auditor reproduces raw-record summary. Host trace only; no universal speedup or semantic-equivalence claim. Long KV byte parity, hardware fault tests and ATOM partial ownership remain pending.
