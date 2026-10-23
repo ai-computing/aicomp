@@ -119,8 +119,7 @@ for heterogeneous AI infrastructure. OptimusPrime builds on these optional libra
 
 ## 🗄 Earlier PoCs
 
-Earlier proof-of-concept work was removed from the tree after release **v4.0.0**. Each folder below is preserved there
-unchanged:
+Earlier proof-of-concept work was removed from the tree in this layout change. Each folder below is preserved unchanged in tag **v4.0.0** (and in the later v4.1.1):
 
 | Folder | Content |
 | --- | --- |
