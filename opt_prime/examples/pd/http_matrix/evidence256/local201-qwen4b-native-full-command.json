@@ -1,0 +1,23 @@
+[
+  "/home/gspark/venvs/pt213/bin/python",
+  "/home/gspark/workspace/aicomp-heteroperf-248/opt_prime/examples/pd/http_matrix/benchmark.py",
+  "--model",
+  "/tmp/serving-matrix-models/Qwen3-4B",
+  "--mode",
+  "native",
+  "--server-config",
+  "/home/gspark/workspace/npu_offload/analysis/serving-matrix-201/local201-qwen4b-native-full-config.json",
+  "--lengths",
+  "128",
+  "8192",
+  "--outputs",
+  "32",
+  "128",
+  "--concurrency",
+  "1",
+  "4",
+  "--repeats",
+  "3",
+  "--output",
+  "/home/gspark/workspace/npu_offload/analysis/serving-matrix-201/local201-qwen4b-native-full.json"
+]

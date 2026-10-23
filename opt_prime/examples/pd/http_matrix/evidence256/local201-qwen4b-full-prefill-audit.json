@@ -1,0 +1,14 @@
+{
+  "original_chunk256_parity": false,
+  "independent_native_full_control_passed": true,
+  "token_checks_equal": 15,
+  "token_checks_total": 20,
+  "timed_texts_equal": 45,
+  "timed_texts_total": 60,
+  "matched_full_prefill_parity": false,
+  "sources": [
+    "local201-qwen4b-matrix-a.json",
+    "local201-qwen4b-native-full.json"
+  ],
+  "limitation": "Reanalysis against an independent native full-prefill control; original chunk256 failure retained. No speedup or quality claim."
+}
