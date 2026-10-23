@@ -219,6 +219,18 @@ class GraphDecoder:
         # Completion fence makes the import lifetime explicit for callers.
         torch.cuda.synchronize(self.device)
 
+    def iter_tokens(self,count,eos_ids=(),ignore_eos=False,cancel=None):
+        """Deliver each token to the CPU before advancing; consumes the owned prefix."""
+        n=self.loaded_positions
+        if n is None or not 1<=count<=self.capacity-n:raise ValueError('load prefix or reduce output length')
+        self.loaded_positions=None
+        for _ in range(count):
+            if cancel is not None and cancel.is_set():return
+            self.graph.replay()
+            token=int(self.input_id.item())
+            yield token
+            if not ignore_eos and token in eos_ids:return
+
     def generate(self,count):
         import torch,time
         n=self.loaded_positions

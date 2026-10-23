@@ -146,3 +146,12 @@ Both are opt-in. `check_live_quality.py` compares EOS-truncated responses with n
 cases. See [GPU_PROJECTION_FUSION.md](GPU_PROJECTION_FUSION.md):15 native-text matches
 are encouraging but not a broad quality guarantee, and current throughput timings do
 not include equivalent GPU HTTP streaming or concurrency.
+
+
+## HTTP streaming experiment
+
+`serve_gpu.py` exposes loopback `/health` and `/v1/completions` with greedy SSE or
+nonstream responses, bounded FIFO admission and one dedicated worker. It is not a
+batched production backend. `bench_http.py` compares identical requests over HTTP;
+`check_http_quality.py` checks EOS/response text. See [GPU_HTTP.md](GPU_HTTP.md) for
+commands, supported limits, cancellation checks and the large c4 batching gap.
