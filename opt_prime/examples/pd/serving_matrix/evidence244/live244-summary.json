@@ -1,0 +1,52 @@
+{
+  "models": [
+    {
+      "model": "qwen06b",
+      "normal_output_checks": 16,
+      "remote_attempts": 22,
+      "local_fallbacks": 0,
+      "pending_cancel_status": 499,
+      "failed_requests": 3,
+      "failure_cleanup_s": 0.41250347695313394,
+      "slab_unlinked": true,
+      "replacement_reuse": true
+    },
+    {
+      "model": "qwen4b",
+      "normal_output_checks": 16,
+      "remote_attempts": 22,
+      "local_fallbacks": 0,
+      "pending_cancel_status": 499,
+      "failed_requests": 3,
+      "failure_cleanup_s": 1.3533421650063246,
+      "slab_unlinked": true,
+      "replacement_reuse": true
+    },
+    {
+      "model": "gemma",
+      "normal_output_checks": 16,
+      "remote_attempts": 22,
+      "local_fallbacks": 0,
+      "pending_cancel_status": 499,
+      "failed_requests": 3,
+      "failure_cleanup_s": 0.5187927359947935,
+      "slab_unlinked": true,
+      "replacement_reuse": true
+    },
+    {
+      "model": "koni",
+      "normal_output_checks": 16,
+      "remote_attempts": 22,
+      "local_fallbacks": 0,
+      "pending_cancel_status": 499,
+      "failed_requests": 3,
+      "failure_cleanup_s": 2.2283839259762317,
+      "slab_unlinked": true,
+      "replacement_reuse": true
+    }
+  ],
+  "normal_output_checks": 64,
+  "remote_attempts": 88,
+  "local_fallbacks": 0,
+  "scope": "native call pending cancellation and owned worker death; explicit replacement, not automatic restart"
+}

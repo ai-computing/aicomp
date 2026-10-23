@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "phase": "before engine initialization",
+  "cause": "Container-global Torch selected instead of established Torch2.11.0+cpu; ATOM extension ABI undefined symbol",
+  "initial_exit": 1,
+  "fix": "Select existing package base with process-local PYTHONUSERBASE; no installation or HOME modification",
+  "verified_torch": "2.11.0+cpu",
+  "verified_transformers": "5.8.1"
+}

@@ -178,3 +178,10 @@ Short-input producer/full-logit parity and real shared-memory requests are verif
 `check_live_http.py` runs actual RNGD prefill and ATOM HTTP decode from token fixtures (it does not load saved KV). Pass `--batching` with the reviewed ATOM scheduler, `--http-module` with the #214 SIGPIPE-fixed server, the model/artifact cache, `--worker-python`, factory/width and fixture/baseline JSON. It checks two serial passes, four queued clients, cancel/disconnect and reuse. Factories: `prefill:Prefill` for short Qwen3, `long_width_variant:make_prefill` for the explicit experimental long Qwen variant, `gemma_prefill:Prefill`, and `koni_prefill:Prefill` for partitioned KONI widths divisible by512. KONI uses `--kv-blocks 1` with #236; other measured artifacts use3. Explicit head_dim is preserved; Llama's missing field is inferred from hidden size/attention heads.
 
 All four short-input live HTTP paths pass56normal/reuse response checks and64remote prefills including cancellations. Native-output parity does not imply answer quality. Width2048 live validation also passes all four models; width8192 live queue is pending; hardware batch remains1 and no matched performance benefit is established. See live-http234 record.
+
+### Native pending-prefill fault checks
+
+`check_live_http.py --prefill-markers "$MARKERS" --engine-factory observer_factory:make_prefill`
+adds cancellation and owned-worker termination while a native call is pending, followed by explicit replacement at an idle scheduler boundary. Set `PREFILL_OBSERVER_FACTORY` to the validated underlying adapter. `--pd-module` selects a trusted local parent worker implementation (the hardware run used #239); `--http-module` and `--batching` retain their existing roles.
+
+The observer writes atomic start/done records without delaying native execution or replaying KV. Successful normal outputs, cancelled requests and failed remote admissions are counted separately. The mode is a destructive test of **its own child process**, not a production auto-restart mechanism. Exact four-model commands and retained failure evidence are in `experiments/2026-10-24-live-pd-fault244.md` and `evidence244/`.
