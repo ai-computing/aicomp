@@ -1,0 +1,110 @@
+[
+  {
+    "mode": "native",
+    "input_tokens": 128,
+    "concurrency": 1,
+    "tok_s": 50.76937340296182
+  },
+  {
+    "mode": "native",
+    "input_tokens": 128,
+    "concurrency": 4,
+    "tok_s": 184.3169333647257
+  },
+  {
+    "mode": "native",
+    "input_tokens": 128,
+    "concurrency": 8,
+    "tok_s": 183.36884130253202
+  },
+  {
+    "mode": "native",
+    "input_tokens": 8192,
+    "concurrency": 1,
+    "tok_s": 36.510834418958275
+  },
+  {
+    "mode": "native",
+    "input_tokens": 8192,
+    "concurrency": 4,
+    "tok_s": 60.80163246846634
+  },
+  {
+    "mode": "native",
+    "input_tokens": 8192,
+    "concurrency": 8,
+    "tok_s": 65.74485162163413
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 128,
+    "concurrency": 1,
+    "tok_s": 50.55492010923788
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 128,
+    "concurrency": 4,
+    "tok_s": 183.40805079174547
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 128,
+    "concurrency": 8,
+    "tok_s": 186.62629075015184
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 8192,
+    "concurrency": 1,
+    "tok_s": 36.08165323118177
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 8192,
+    "concurrency": 4,
+    "tok_s": 62.26043142848077
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 8192,
+    "concurrency": 8,
+    "tok_s": 74.65546394955516
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 128,
+    "concurrency": 1,
+    "tok_s": 49.1986451460532
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 128,
+    "concurrency": 4,
+    "tok_s": 183.24415005193117
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 128,
+    "concurrency": 8,
+    "tok_s": 354.25791839535003
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 8192,
+    "concurrency": 1,
+    "tok_s": 35.740559712818914
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 8192,
+    "concurrency": 4,
+    "tok_s": 98.97650625710158
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 8192,
+    "concurrency": 8,
+    "tok_s": 120.64772202903364
+  }
+]

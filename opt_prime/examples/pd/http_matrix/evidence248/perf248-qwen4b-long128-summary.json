@@ -1,0 +1,110 @@
+[
+  {
+    "mode": "native",
+    "input_tokens": 128,
+    "concurrency": 1,
+    "tok_s": 40.98442919903675
+  },
+  {
+    "mode": "native",
+    "input_tokens": 128,
+    "concurrency": 4,
+    "tok_s": 155.5457607754774
+  },
+  {
+    "mode": "native",
+    "input_tokens": 128,
+    "concurrency": 8,
+    "tok_s": 152.52076074033337
+  },
+  {
+    "mode": "native",
+    "input_tokens": 8192,
+    "concurrency": 1,
+    "tok_s": 27.20318205356863
+  },
+  {
+    "mode": "native",
+    "input_tokens": 8192,
+    "concurrency": 4,
+    "tok_s": 41.592390020040995
+  },
+  {
+    "mode": "native",
+    "input_tokens": 8192,
+    "concurrency": 8,
+    "tok_s": 44.31980451229433
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 128,
+    "concurrency": 1,
+    "tok_s": 34.92378989069982
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 128,
+    "concurrency": 4,
+    "tok_s": 131.2684814882174
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 128,
+    "concurrency": 8,
+    "tok_s": 134.32696916376207
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 8192,
+    "concurrency": 1,
+    "tok_s": 24.02625677930399
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 8192,
+    "concurrency": 4,
+    "tok_s": 43.208839383677166
+  },
+  {
+    "mode": "pd",
+    "input_tokens": 8192,
+    "concurrency": 8,
+    "tok_s": 46.77587577104113
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 128,
+    "concurrency": 1,
+    "tok_s": 38.764227428966436
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 128,
+    "concurrency": 4,
+    "tok_s": 147.7553749422737
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 128,
+    "concurrency": 8,
+    "tok_s": 276.5668589250392
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 8192,
+    "concurrency": 1,
+    "tok_s": 25.824544893221912
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 8192,
+    "concurrency": 4,
+    "tok_s": 66.78634191241707
+  },
+  {
+    "mode": "dp2",
+    "input_tokens": 8192,
+    "concurrency": 8,
+    "tok_s": 80.41556708211371
+  }
+]
