@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from atom_single_block import SingleBlockTarget
 from atom_stream_upload import import_atom_span
 from opt_prime.accel.platforms.atom.engine import AtomRblnEngine
 
@@ -30,6 +31,7 @@ rows = []
 try:
     e.start(a.model)
     b = e.batcher(prefix_cache=False)
+    blocks = b.blocks if b.blocks is not None else SingleBlockTarget(b.model)
 
     def decode(first, n):
         tokens = [first]
@@ -39,7 +41,11 @@ try:
                 b.decoder(
                     input_ids=torch.tensor([[tokens[-1]]]),
                     cache_position=torch.tensor([[n + j]], dtype=torch.int32),
-                    block_tables=b.blocks.table([0]),
+                    **(
+                        {"block_tables": b.blocks.table([0])}
+                        if b.blocks is not None
+                        else {}
+                    ),
                 )
                 .logits[0, -1]
                 .float()
@@ -54,8 +60,9 @@ try:
             r = torch.load(path, weights_only=True)
             ids = r["ids"]
             n = len(ids)
-            b.blocks.admit(0, ids)
-            block = b.blocks.lane_block[0]
+            if b.blocks is not None:
+                b.blocks.admit(0, ids)
+            block = blocks.lane_block[0]
             z = b._prefill(0, ids).logits[0, -1].float()
             native, native_logits = decode(int(z.argmax()), n)
             variants = {}
@@ -63,22 +70,41 @@ try:
             for name in ["original", "portable"]:
                 t = time.perf_counter()
                 if name == "original":
-                    b.blocks.import_span(0, 0, r["keys"], r["values"])
+                    blocks.import_span(0, 0, r["keys"], r["values"])
                 else:
-                    import_atom_span(b.blocks, 0, 0, r["keys"], r["values"])
+                    import_atom_span(blocks, 0, 0, r["keys"], r["values"])
                 elapsed = time.perf_counter() - t
                 exact = 0
-                for meta, buf in zip(b.blocks.metas, b.blocks._staging()):
+                for meta, buf in zip(blocks.metas, blocks._staging()):
                     expected = buf[block, :, :n].copy()
                     buf.fill(0)
-                    b.blocks.io_rt.get_kv_cache_for_layer(
-                        meta["name"], block, 0, n, buf
-                    )
+                    blocks.io_rt.get_kv_cache_for_layer(meta["name"], block, 0, n, buf)
                     assert np.array_equal(expected, buf[block, :, :n])
                     exact += 1
                 tokens, logits = decode(int(r["logits"].argmax()), n)
                 vectors.append(logits)
+                different = next(
+                    (i for i, (x, y) in enumerate(zip(native, tokens)) if x != y), None
+                )
+                divergence = None
+                if different is not None:
+                    native_row = z if different == 0 else native_logits[different - 1]
+                    imported_row = (
+                        r["logits"] if different == 0 else logits[different - 1]
+                    )
+                    divergence = {
+                        "index": different,
+                        "native_top5": [
+                            {"token": int(i), "logit": float(native_row[i])}
+                            for i in native_row.topk(5).indices
+                        ],
+                        "imported_top5": [
+                            {"token": int(i), "logit": float(imported_row[i])}
+                            for i in imported_row.topk(5).indices
+                        ],
+                    }
                 variants[name] = {
+                    "first_divergence": divergence,
                     "tokens": tokens,
                     "first_decode_top5": [
                         {"token": int(i), "logit": float(logits[0, i])}
@@ -101,7 +127,8 @@ try:
             }
             rows.append(row)
             print(json.dumps(row), flush=True)
-            b.blocks.release(0, None)
+            if b.blocks is not None:
+                b.blocks.release(0, None)
 finally:
     e.close()
 Path(a.output).write_text(json.dumps(rows, indent=2) + "\n")

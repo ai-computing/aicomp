@@ -1,0 +1,42 @@
+{
+  "baseline_commit": "6787628",
+  "cpu_tests": {
+    "passed": 27,
+    "failed": 2,
+    "failures": [
+      "test_kv_cache_generation_matches_hf[1]",
+      "test_kv_cache_generation_matches_hf[2]"
+    ],
+    "parent_reproduced": true,
+    "reason": "DynamicCache output not registered as pytree in AOTAutograd"
+  },
+  "failed_full_runs": [
+    {
+      "input_tokens": 2048,
+      "reason": "output KV permutation metadata lost",
+      "expected_k": [
+        1,
+        8,
+        128,
+        2048
+      ],
+      "actual_k": [
+        1,
+        2048,
+        8,
+        128
+      ]
+    },
+    {
+      "backend": "ATOM",
+      "reason": "checker assumed block allocator exists for static k1"
+    }
+  ],
+  "source_sha256": {
+    "koni_parts.py": "4dcad08b595a600dd54531129def8ff69b73ffdce6422109d1a0365be4936cad",
+    "koni_partitioned.py": "4853d5db3f2b1292feca41aa83bf3b415a258129a6e127840617d5ce70dfe6d3",
+    "rngd_koni_sweep.py": "4755128a9f266befdc065e4331307ec8431b6df883fe766c1ed4293d84520b64",
+    "atom_single_block.py": "c474ce51c00fcfc3ed5f6b19ae0222698d3f7a85885661ab8d2c8e58104d051d",
+    "check_rngd_atom.py": "22362f4c03e375442cd77e0de5a0b4ef67f0cb2019a536a158158221df83d219"
+  }
+}
