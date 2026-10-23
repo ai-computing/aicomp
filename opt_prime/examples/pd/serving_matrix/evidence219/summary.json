@@ -1,0 +1,53 @@
+{
+  "baseline": {
+    "width": 2048,
+    "exit_code": 1,
+    "inference_runs": 0,
+    "operator": "rms_output",
+    "shape": [
+      2048,
+      4096
+    ],
+    "failure": "ReduceByVe: no populated tactics"
+  },
+  "rms_probes": [
+    {
+      "rows": 512,
+      "passed": true,
+      "finite": true,
+      "seconds": 1.9025183109333739
+    },
+    {
+      "rows": 256,
+      "passed": true,
+      "finite": true,
+      "seconds": 1.3481759300921112
+    }
+  ],
+  "cpu_tests": {
+    "passed": 5,
+    "initial_stub_failures": 5
+  },
+  "candidate": {
+    "rms_tile": 512,
+    "width": 2048,
+    "status": "group1 andgroup2 both fail compiler memory explosion; no working full-model fix",
+    "failed_resources": {
+      "memory_limit_gib": 64,
+      "exit_code": 137,
+      "kubernetes_reason": "OOMKilled",
+      "inference_runs": 0
+    },
+    "retry_memory_limit_gib": 128,
+    "group2_128gib": {
+      "exit_code": 1,
+      "error": "compiler memory explosion",
+      "inference_runs": 0
+    },
+    "group1": {
+      "exit_code": 1,
+      "error": "compiler memory explosion",
+      "inference_runs": 0
+    }
+  }
+}

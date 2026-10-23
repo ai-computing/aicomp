@@ -15,6 +15,7 @@ p.add_argument("--model", required=True)
 p.add_argument("--cache-dir", required=True)
 p.add_argument("--exports", nargs="+", required=True)
 p.add_argument("--output", required=True)
+p.add_argument("--kv-blocks", type=int, default=3)
 a = p.parse_args()
 devices = list(Path("/dev").glob("rbln[0-9]*"))
 assert len(devices) == 1
@@ -22,7 +23,7 @@ e = AtomRblnEngine(
     devices=[int(devices[0].name[4:])],
     max_seq_len=9216,
     batch_size=1,
-    kv_blocks=3,
+    kv_blocks=a.kv_blocks,
     cache_dir=a.cache_dir,
 )
 rows = []
