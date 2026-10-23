@@ -27,3 +27,25 @@ class AtomUploadTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):u.stage(0,1)
         target.start=7
         with self.assertRaises(ValueError):AtomUpload(SimpleNamespace(host=host),target)
+
+    def test_adapter_strided_keys_writes_owned_suffix_only(self):
+        from atom_stream_upload import import_atom_span, bf16_to_dlfloat
+        class Runtime:
+            def __init__(self): self.names=[]
+            def set_kv_cache_for_layer(self,name,block,start,n,buf):
+                self.names.append((name,block,start,n))
+        keys=torch.arange(24).reshape(2,2,2,3).transpose(-1,-2).to(torch.bfloat16)
+        values=-keys
+        stages=[np.full((2,2,7,2),65535,dtype=np.uint16) for _ in range(4)]
+        rt=Runtime()
+        blocks=SimpleNamespace(io_rt=rt,metas=[dict(name=f'kv{i}',shape=b.shape) for i,b in enumerate(stages)],
+            _staging=lambda:stages,lane_block={0:1})
+        self.assertEqual(import_atom_span(blocks,0,2,keys,values),1)
+        for i,buf in enumerate(stages):
+            source=(keys if i%2==0 else values)[i//2]
+            bits=source.contiguous().view(torch.int16).numpy().view(np.uint16)
+            np.testing.assert_array_equal(buf[1,:,2:5],bf16_to_dlfloat(bits))
+            self.assertTrue((buf[0]==65535).all())
+            self.assertTrue((buf[1,:,:2]==65535).all())
+            self.assertTrue((buf[1,:,5:]==65535).all())
+        self.assertEqual(len(rt.names),4)

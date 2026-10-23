@@ -7,6 +7,18 @@ import numpy as np
 import torch
 
 
+def bf16_to_dlfloat(bits):
+    """Rebel0.11 1/6/9 cache encoding, preserving saturation and signed zero."""
+    bits = np.asarray(bits, dtype=np.uint16)
+    out = bits & np.uint16(0x7fff)
+    np.clip(out, 12288, 20480, out=out)  # BF16 exponent boundaries96 and160.
+    out -= np.uint16(12288)
+    out <<= np.uint16(2)
+    np.minimum(out, 32767, out=out)
+    out |= bits & np.uint16(0x8000)
+    return out
+
+
 class AtomUpload:
     def __init__(self, packet, target):
         host=packet.host
@@ -60,10 +72,10 @@ class AtomUpload:
 def import_atom_span(blocks, lane, start, keys, values):
     """Adapter for optimus-rm AtomKVBlocks; same owner/thread as its scheduler."""
     from types import SimpleNamespace
-    from opt_prime.accel.platforms.atom.batching import bf16_to_dlfloat
     if keys.shape!=values.shape or keys.ndim!=4:
         raise ValueError('expected equal [layers, heads, positions, dim] KV')
-    host=torch.stack((keys,values),dim=1).flatten(0,1).permute(0,2,1,3).detach().to('cpu',torch.bfloat16).contiguous()
+    # Keep this view: stage() reverses the permutation before encoding.
+    host=torch.stack((keys,values),dim=1).flatten(0,1).permute(0,2,1,3).detach().to('cpu',torch.bfloat16)
     target=SimpleNamespace(runtime=blocks.io_rt,metas=blocks.metas,staging=blocks._staging(),
         block=blocks.lane_block[lane],start=start,encode=bf16_to_dlfloat)
     upload=AtomUpload(SimpleNamespace(host=host),target)
