@@ -27,6 +27,8 @@ python3 -m pytest -q opt_prime/examples/pd/serving_matrix/test_koni_export.py
 # PR203 isolated SDK launcher; run-koni219.sh selects rngd_koni_sweep:
 bash run-koni219.sh --width 2048 --output rngd-koni-8b-2048
 bash run-koni219.sh --width 2048 --rms-tile 512 --output rngd-koni-8b-2048-rms512
+# Same code,128GiB allocation after confirmed OOMKilled:
+bash run-koni219.sh --width 2048 --rms-tile 512 --output rngd-koni-8b-2048-rms512-mem128
 bash run-probe-rms219.sh
 python3 -m pytest -q opt_prime/examples/pd/serving_matrix/test_rowwise_rms.py opt_prime/examples/pd/serving_matrix/test_koni_export.py
 # After successful export, planned:
@@ -39,7 +41,7 @@ CPU export regression tests:3 fail with unimplemented stubs, then3 pass after im
 
 Baseline2048 exits1 before any inference: rms_output [2048,4096] fails lowering (ReduceByVe, no populated tactics). An isolated same-SDK probe compiles and runs RMS shapes[512,4096] and[256,4096], producing finite zero-input outputs (1.903/1.348s including compile/setup); it does not establish general numerical parity.
 
-Candidate retains2048-token full attention but tiles only independent RMS rows into512. CPU dense-versus-tiled normalization and incomplete-tile rejection tests fail with stubs then pass; combined exporter/tiler suite5 passed. Candidate actual-device compile/run in progress; no fix claim yet. Raw workspace log: analysis/serving-matrix-201/rngd-koni-8b-2048.log.
+Candidate retains2048-token full attention but tiles only independent RMS rows into512. CPU dense-versus-tiled normalization and incomplete-tile rejection tests fail with stubs then pass; combined exporter/tiler suite5 passed. Candidate with64GiB limit exits137; Kubernetes container termination reason OOMKilled confirms resource exhaustion before any inference. Failed Pod status retained privately. Host available memory was1374GiB; recreate only the terminal owned allocation with128GiB request/limit and retry the same code. The128GiB retry is pending; no fix claim yet. Raw workspace log: analysis/serving-matrix-201/rngd-koni-8b-2048.log.
 
 ## Conclusion
 

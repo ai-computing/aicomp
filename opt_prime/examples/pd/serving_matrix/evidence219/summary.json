@@ -31,6 +31,13 @@
   "candidate": {
     "rms_tile": 512,
     "width": 2048,
-    "status": "running; not verified"
+    "status": "64GiB allocation OOMKilled before inference; same-code128GiB retry running",
+    "failed_resources": {
+      "memory_limit_gib": 64,
+      "exit_code": 137,
+      "kubernetes_reason": "OOMKilled",
+      "inference_runs": 0
+    },
+    "retry_memory_limit_gib": 128
   }
 }
