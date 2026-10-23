@@ -48,3 +48,5 @@ GPU HTTP blockA96batches all parity;long/c8 chunk-copy throughput changes: Qwen0
 
 Reverse-order blockB completed: 192 total timed batches passed parity. Long/c8 A/B changes: Qwen0.6 -3.12%/+5.80%, Qwen4 +2.49%/+17.39%, KONI +2.38%/-1.53%, Gemma -1.54%/-0.28%. Qwen4 B baseline prefill slowed while transfer stayed constant, confounding the larger gain. Keep opt-in; no repeatable general throughput improvement. See evidence47/chunk47-four-model-serving-ab-summary.json.
 #258 dense hybrid KV: actual Gemma failure reproduced; mapping/group validation corrected.31focused and505full CPU tests pass; live rerun pending.
+
+#265 groundwork: coverage validation and reserved partial hybrid-cache import implemented;22focused and556full tests pass (15skip,253subtests). Admitted-prefix overwrite regression fixed. Not connected to worker/owner/source paths yet; no hardware overlap claim.
