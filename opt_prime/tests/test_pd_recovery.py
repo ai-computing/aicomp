@@ -4,9 +4,11 @@ import threading
 import urllib.error
 import urllib.request
 
+import pytest
+
 from test_pd_llmd import service, body
 from opt_prime.accel.pd import RetryableError
-from opt_prime.accel.serve.llmd import OwnerExecutor, serve_stage
+from opt_prime.accel.serve.llmd import OwnerExecutor, StageError, serve_stage
 
 
 def _http(port, path, rid=None, payload=None, method="POST"):
@@ -106,6 +108,31 @@ def test_fatal_failure_quarantines_until_reset():
         assert _http(port, "/v1/completions", "h", body())[1]["choices"][0]["token_ids"] == [7] + [8] * 5
     finally:
         _close(owner, worker, server, http)
+
+
+def test_refused_stop_still_allows_reset_and_stop():
+    """#174: a stop refused on a poisoned stage leaves the owner accepting, so reset and a second stop work"""
+    engine, owner, worker, server, http = _stage()
+    engine.transport.transfer = lambda *a: (_ for _ in ()).throw(RuntimeError("DMA completion unknown"))
+    port = server.server_port
+    try:
+        owner.submit("execute", "prefill", "p", body(1))
+        assert _http(port, "/v1/completions", "p", body())[0] == 500 and engine.state == "poisoned"
+        with pytest.raises(StageError) as refused:
+            owner.submit("stop")
+        assert refused.value.status == 409
+        status, payload, _ = _http(port, "/v1/admin/reset")
+        assert status == 200 and payload == {"state": "idle"}
+        assert owner.submit("stop") is None
+        worker.join(5)
+        assert not worker.is_alive()
+    finally:
+        if worker.is_alive():
+            _close(owner, worker, server, http)
+        else:
+            server.shutdown()
+            server.server_close()
+            http.join(5)
 
 
 def test_reset_refused_without_backend_recovery():
