@@ -51,7 +51,7 @@ class LocalWorker(Worker):
                         if any(t < 0 or t >= model.config.vocab_size for t in tokens):
                             raise ValueError('token out of range')
                         valid.append((job, tokens, count))
-                    except ValueError as exc: job.send('error', (400, str(exc)))
+                    except ValueError as exc: job.fail(400, str(exc))
                 return valid
             self.ready.set()
             while not self.stopping.is_set():
@@ -156,7 +156,8 @@ class LocalWorker(Worker):
                 except Exception:
                     import traceback
                     traceback.print_exc()
-                    for job in self.active.jobs: job.send('error', (500, 'local generation failed'))
+                    # Never block here: a stalled consumer must not keep the worker alive.
+                    for job in self.active.jobs: job.fail(500, 'local generation failed')
                     self.stopping.set()
                 finally:
                     for lane in range(graph.batch_size): graph.cancel_lane(lane)
@@ -166,5 +167,5 @@ class LocalWorker(Worker):
             self.error = exc; self.stopping.set(); self.ready.set()
         finally:
             while True:
-                try: self.jobs.get_nowait().send('error', (503, 'worker stopped'))
+                try: self.jobs.get_nowait().fail(503, 'worker stopped')
                 except queue.Empty: break
