@@ -1,0 +1,373 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "dtype": "torch.bfloat16",
+      "mode": "native8192",
+      "forced_prefix_tokens": 107,
+      "selected_token108": 13,
+      "probes": [
+        {
+          "output_index": 12,
+          "finite": true,
+          "top_tokens": [
+            4588,
+            374,
+            1101,
+            3897,
+            702,
+            594,
+            3855,
+            10449
+          ],
+          "top_logits": [
+            24.75,
+            24.75,
+            21.625,
+            21.125,
+            19.5,
+            18.125,
+            17.375,
+            16.875
+          ],
+          "native_branch_token": 374,
+          "live_branch_token": 374,
+          "native_branch_logit": 24.75,
+          "live_branch_logit": 24.75
+        },
+        {
+          "output_index": 106,
+          "finite": true,
+          "top_tokens": [
+            6722,
+            65063,
+            4396,
+            18374,
+            106114,
+            1887,
+            3283,
+            97131
+          ],
+          "top_logits": [
+            39.5,
+            26.5,
+            25.25,
+            25.125,
+            24.0,
+            23.625,
+            23.375,
+            23.125
+          ],
+          "native_branch_token": 6722,
+          "live_branch_token": 6722,
+          "native_branch_logit": 39.5,
+          "live_branch_logit": 39.5
+        },
+        {
+          "output_index": 107,
+          "finite": true,
+          "top_tokens": [
+            13,
+            315,
+            3283,
+            624,
+            382,
+            11,
+            4311,
+            8926
+          ],
+          "top_logits": [
+            35.75,
+            35.75,
+            34.5,
+            32.25,
+            26.75,
+            23.25,
+            22.25,
+            21.75
+          ],
+          "native_branch_token": 13,
+          "live_branch_token": 315,
+          "native_branch_logit": 35.75,
+          "live_branch_logit": 35.75
+        }
+      ]
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "mode": "retained_rngd_kv",
+      "forced_prefix_tokens": 107,
+      "selected_token108": 315,
+      "probes": [
+        {
+          "output_index": 12,
+          "finite": true,
+          "top_tokens": [
+            4588,
+            374,
+            1101,
+            3897,
+            702,
+            594,
+            3855,
+            10449
+          ],
+          "top_logits": [
+            24.75,
+            24.75,
+            21.75,
+            21.25,
+            19.625,
+            18.0,
+            17.5,
+            17.0
+          ],
+          "native_branch_token": 374,
+          "live_branch_token": 374,
+          "native_branch_logit": 24.75,
+          "live_branch_logit": 24.75
+        },
+        {
+          "output_index": 106,
+          "finite": true,
+          "top_tokens": [
+            6722,
+            65063,
+            18374,
+            4396,
+            106114,
+            1887,
+            3283,
+            97131
+          ],
+          "top_logits": [
+            39.75,
+            26.5,
+            25.125,
+            25.0,
+            24.0,
+            23.625,
+            23.375,
+            23.125
+          ],
+          "native_branch_token": 6722,
+          "live_branch_token": 6722,
+          "native_branch_logit": 39.75,
+          "live_branch_logit": 39.75
+        },
+        {
+          "output_index": 107,
+          "finite": true,
+          "top_tokens": [
+            315,
+            13,
+            3283,
+            624,
+            382,
+            11,
+            4311,
+            8926
+          ],
+          "top_logits": [
+            36.0,
+            35.5,
+            34.5,
+            32.25,
+            26.625,
+            23.125,
+            22.125,
+            21.625
+          ],
+          "native_branch_token": 13,
+          "live_branch_token": 315,
+          "native_branch_logit": 35.5,
+          "live_branch_logit": 36.0
+        }
+      ]
+    },
+    {
+      "dtype": "torch.float32",
+      "mode": "native8192",
+      "forced_prefix_tokens": 107,
+      "selected_token108": 315,
+      "probes": [
+        {
+          "output_index": 12,
+          "finite": true,
+          "top_tokens": [
+            4588,
+            374,
+            1101,
+            3897,
+            702,
+            594,
+            3855,
+            10449
+          ],
+          "top_logits": [
+            24.76771354675293,
+            24.760873794555664,
+            21.650554656982422,
+            20.966552734375,
+            19.61637306213379,
+            18.088462829589844,
+            17.33614158630371,
+            16.790651321411133
+          ],
+          "native_branch_token": 374,
+          "live_branch_token": 374,
+          "native_branch_logit": 24.760873794555664,
+          "live_branch_logit": 24.760873794555664
+        },
+        {
+          "output_index": 106,
+          "finite": true,
+          "top_tokens": [
+            6722,
+            65063,
+            18374,
+            4396,
+            106114,
+            1887,
+            3283,
+            97131
+          ],
+          "top_logits": [
+            39.717525482177734,
+            26.600770950317383,
+            25.187183380126953,
+            25.054140090942383,
+            24.090177536010742,
+            23.627700805664062,
+            23.413528442382812,
+            23.210962295532227
+          ],
+          "native_branch_token": 6722,
+          "live_branch_token": 6722,
+          "native_branch_logit": 39.717525482177734,
+          "live_branch_logit": 39.717525482177734
+        },
+        {
+          "output_index": 107,
+          "finite": true,
+          "top_tokens": [
+            315,
+            13,
+            3283,
+            624,
+            382,
+            11,
+            4311,
+            8926
+          ],
+          "top_logits": [
+            35.92478942871094,
+            35.4985466003418,
+            34.45083999633789,
+            32.14856719970703,
+            26.520530700683594,
+            23.070085525512695,
+            22.148988723754883,
+            21.654687881469727
+          ],
+          "native_branch_token": 13,
+          "live_branch_token": 315,
+          "native_branch_logit": 35.4985466003418,
+          "live_branch_logit": 35.92478942871094
+        }
+      ]
+    },
+    {
+      "dtype": "torch.float32",
+      "mode": "retained_rngd_kv",
+      "forced_prefix_tokens": 107,
+      "selected_token108": 315,
+      "probes": [
+        {
+          "output_index": 12,
+          "finite": true,
+          "top_tokens": [
+            4588,
+            374,
+            1101,
+            3897,
+            702,
+            594,
+            3855,
+            10449
+          ],
+          "top_logits": [
+            24.785797119140625,
+            24.72130584716797,
+            21.72136688232422,
+            21.0172061920166,
+            19.54835319519043,
+            18.06496810913086,
+            17.353654861450195,
+            16.774751663208008
+          ],
+          "native_branch_token": 374,
+          "live_branch_token": 374,
+          "native_branch_logit": 24.72130584716797,
+          "live_branch_logit": 24.72130584716797
+        },
+        {
+          "output_index": 106,
+          "finite": true,
+          "top_tokens": [
+            6722,
+            65063,
+            18374,
+            4396,
+            106114,
+            1887,
+            3283,
+            97131
+          ],
+          "top_logits": [
+            39.772674560546875,
+            26.62579345703125,
+            25.229000091552734,
+            25.041540145874023,
+            24.105690002441406,
+            23.65972900390625,
+            23.447261810302734,
+            23.22781753540039
+          ],
+          "native_branch_token": 6722,
+          "live_branch_token": 6722,
+          "native_branch_logit": 39.772674560546875,
+          "live_branch_logit": 39.772674560546875
+        },
+        {
+          "output_index": 107,
+          "finite": true,
+          "top_tokens": [
+            315,
+            13,
+            3283,
+            624,
+            382,
+            11,
+            4311,
+            8926
+          ],
+          "top_logits": [
+            35.9306640625,
+            35.439598083496094,
+            34.443485260009766,
+            32.12046813964844,
+            26.473947525024414,
+            23.0750675201416,
+            22.14829444885254,
+            21.64236831665039
+          ],
+          "native_branch_token": 13,
+          "live_branch_token": 315,
+          "native_branch_logit": 35.439598083496094,
+          "live_branch_logit": 35.9306640625
+        }
+      ]
+    }
+  ]
+}

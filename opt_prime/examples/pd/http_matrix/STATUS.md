@@ -37,3 +37,9 @@ A real terminated subprocess producer previously left /ready200 and new requests
 ## Batched producer timing (#249)
 
 Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} from existing accumulated batcher durations. Repeated scrapes do not add observations; missing timing keys are omitted. Tiny real-model admission test covers fixed worker-reported durations and legacy omissions. These counters are worker-reported admitted-handoff sums, not request latency or proof of zero cost for workers that do not measure stages. Full CPU suite:467passed,17skipped,135subtests,1existing warning. See pd-stage-metrics249 experiment.
+
+## Qwen3-4B numerical controls (#256)
+
+Original RNGD/GPU8K parity fails before EOS. Matching nativeGPU full-prefill fixes the32-token comparison but output128still diverges at token108;15/20token checks and45/60texts match the independent full-prefill control. No production fix or speedup claim. See experiments/2026-10-24-qwen4-numerics256.md and evidence256.
+
+Qwen4 forced-prefix diagnostic complete: nativeBF16 tied13/315 at35.75, retainedRNGDKV favors315 by0.5. FP32 native/import both select315. Diagnostic only; no all-token parity or quality claim.

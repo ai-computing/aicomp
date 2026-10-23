@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/gspark/workspace/aicomp-heteroperf-248/opt_prime/examples/pd/http_matrix/benchmark.py", line 264, in <module>
+    main()
+  File "/home/gspark/workspace/aicomp-heteroperf-248/opt_prime/examples/pd/http_matrix/benchmark.py", line 258, in main
+    raise AssertionError("output parity failed; raw data retained, no equivalent-output speedup claim")
+AssertionError: output parity failed; raw data retained, no equivalent-output speedup claim

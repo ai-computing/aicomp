@@ -1,0 +1,44 @@
+{
+  "servers": [
+    [
+      "/home/gspark/venvs/pt213/bin/python",
+      "-c",
+      "import sys,importlib.util,runpy\ns=importlib.util.spec_from_file_location('opt_prime.accel.serve.llmd','/tmp/llmd240.py')\nm=importlib.util.module_from_spec(s);sys.modules[s.name]=m;s.loader.exec_module(m)\nrunpy.run_path('/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/examples/pd/serve_batched.py',run_name='__main__')\n",
+      "--model",
+      "/tmp/serving-matrix-models/Qwen3-4B",
+      "--device",
+      "cuda:0",
+      "--dtype",
+      "bfloat16",
+      "--slots",
+      "4",
+      "--max-context",
+      "9216",
+      "--max-output",
+      "128",
+      "--kv",
+      "paged",
+      "--page-size",
+      "64",
+      "--chunk",
+      "256",
+      "--port",
+      "{port}",
+      "--pd-prefill-python",
+      "/tmp/rngd-gpu201-src/python-worker.sh",
+      "--pd-prefill-args",
+      "--width 8192 --engine-factory long_width_variant:make_prefill"
+    ]
+  ],
+  "metadata": {
+    "physical_gpus": 1,
+    "physical_rngd": 1,
+    "physical_atom": 0,
+    "slots_per_decoder": 4,
+    "producer_cache": false,
+    "decoder_cache": false,
+    "producer_chunk": 8192,
+    "local_chunk": 256,
+    "context": 9216
+  }
+}
