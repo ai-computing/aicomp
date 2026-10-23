@@ -59,3 +59,7 @@ Final6K matrix:48producer runs,31/32 EOS comparisons across four models/four que
 ## Live worker integration (#234)
 
 Reusable Gemma producer matches original RNGD K/V/full logits4/4 at width128. Real SubprocessPrefillWorker5requests match K/V/token and recover after an oversized request;15CPU tests plus5subtests pass. No communication-protocol change. Full live HTTP, other adapters and long/lifecycle conditions remain open; #233 numerical limits retained.
+
+## Four-model actual HTTP PD (#234/#236)
+
+All four models:56/56 normal/concurrent/reuse responses equal native ATOM,64RNGD prefills and0local fallbacks. Cancellation/disconnect reuse passes. B1, cache-off, short prompts; KONI uses existingk1 artifact with#236. HTTP uses#214 SIGPIPE fix. No live-transfer-overlap or throughput gain claim. Width2048 live queue pending; long/cache/hardware-batch/performance scope remains.

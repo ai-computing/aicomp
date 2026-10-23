@@ -69,3 +69,41 @@ def test_explicit_engine_factory_is_local_callable():
         for invalid in ["test_local_prefill", ":Prefill", "test_local_prefill:"]:
             with pytest.raises(ValueError):
                 engine_class(invalid)
+
+
+@pytest.mark.parametrize(
+    "config,expected",
+    [
+        (
+            {
+                "num_hidden_layers": 32,
+                "num_key_value_heads": 8,
+                "hidden_size": 4096,
+                "num_attention_heads": 32,
+            },
+            (32, 8, 128),
+        ),
+        (
+            {
+                "num_hidden_layers": 36,
+                "num_key_value_heads": 8,
+                "hidden_size": 2560,
+                "num_attention_heads": 32,
+                "head_dim": 128,
+            },
+            (36, 8, 128),
+        ),
+        (
+            {
+                "num_hidden_layers": 26,
+                "num_key_value_heads": 1,
+                "hidden_size": 1152,
+                "num_attention_heads": 4,
+                "head_dim": 256,
+            },
+            (26, 1, 256),
+        ),
+    ],
+)
+def test_cache_geometry_preserves_explicit_head_dim(config, expected):
+    assert worker.cache_geometry(config) == expected

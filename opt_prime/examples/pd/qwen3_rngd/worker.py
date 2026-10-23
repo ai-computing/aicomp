@@ -44,6 +44,19 @@ def store_result(slab, req, keys, values):
     return n
 
 
+def cache_geometry(config):
+    head_dim = config.get("head_dim")
+    if head_dim is None:
+        heads, hidden = config["num_attention_heads"], config["hidden_size"]
+        if type(heads) is not int or heads <= 0 or hidden % heads:
+            raise ValueError("invalid implicit head dimension")
+        head_dim = hidden // heads
+    shape = (config["num_hidden_layers"], config["num_key_value_heads"], head_dim)
+    if any(type(n) is not int or n <= 0 for n in shape):
+        raise ValueError("invalid cache geometry")
+    return shape
+
+
 def engine_class(factory):
     """Load an explicit trusted local CLI factory; never select this from request JSON."""
     from importlib import import_module
@@ -93,10 +106,8 @@ def main():
 
             config = validate(config)
         shape = (a.slots, 2, a.layers, a.kv_heads, a.max_context, a.head_dim)
-        if min(shape) <= 0 or (a.layers, a.kv_heads, a.head_dim) != (
-            config["num_hidden_layers"],
-            config["num_key_value_heads"],
-            config["head_dim"],
+        if min(shape) <= 0 or (a.layers, a.kv_heads, a.head_dim) != cache_geometry(
+            config
         ):
             raise ValueError("shared-memory geometry does not match checkpoint")
         weights = {}

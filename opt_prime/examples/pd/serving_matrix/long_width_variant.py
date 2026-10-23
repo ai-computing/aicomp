@@ -14,3 +14,8 @@ def load_variant():
     namespace = {"__name__": "prefill_width8192"}
     exec(compile(source, "prefill_width8192", "exec"), namespace)  # noqa: S102 - trusted local experimental source
     return namespace["Prefill"]
+
+
+def make_prefill(config, weights, width, chip=0):
+    """Explicit experimental worker factory using the already validated long-width variant."""
+    return load_variant()(config, weights, width=width, chip=chip)
