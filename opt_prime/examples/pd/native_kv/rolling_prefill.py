@@ -7,6 +7,22 @@ from serve_gpu import validate
 def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepared, retire, recompute=None):
     a = worker.args
     owned = {}
+    uploads = {}
+    streaming = getattr(a, 'stream_native_kv', False)
+    def chunk(context, first, last, packet):
+        from gpu_stream_upload import StreamingUpload
+        job = context[0]
+        started = time.perf_counter()
+        if id(job) not in uploads:
+            uploads[id(job)] = StreamingUpload(packet, a.device)
+            job.stage_metrics['upload_alloc_ms'] = (time.perf_counter()-started)*1000
+        started = time.perf_counter()
+        uploads[id(job)].stage(first, last)
+        elapsed = (time.perf_counter()-started)*1000
+        metrics = job.stage_metrics
+        metrics['upload_submit_ms'] = metrics.get('upload_submit_ms', 0)+elapsed
+        metrics['upload_submit_max_ms'] = max(metrics.get('upload_submit_max_ms', 0),elapsed)
+
 
     def acquire():
         if worker.stopping.is_set() or not credits.acquire(blocking=False): return None
@@ -63,17 +79,23 @@ def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepar
             if recompute is not None:
                 recompute.native_complete(job, None if packet is None else packet.host)
             else:
-                prepared.put_nowait((job, tokens, count, packet.host))
+                prepared.put_nowait((job, tokens, count, uploads[id(job)] if streaming else packet.host))
+                if streaming: uploads.pop(id(job))
             delivered = True
         finally:
-            if not delivered: retire(job)
+            if not delivered:
+                upload = uploads.pop(id(job), None)
+                if upload is not None: upload.close()
+                retire(job)
 
     try:
         client.prefill_stream(a.model, acquire, complete, worker.stopping.is_set,
                              max_pending=min(a.batch_size, a.native_batch_size), direct=True,
+                             **({'on_batch':chunk} if streaming else {}),
                              **({'get_start_pos':lambda tokens, ctx:ctx[0].prefix_length}
                                 if recompute is not None else {}))
     finally:
+        for upload in uploads.values(): upload.close()
         for job in owned.values():
             if recompute is None: retire(job)
             else:

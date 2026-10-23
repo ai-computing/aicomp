@@ -16,7 +16,7 @@ class PinnedPacket:
 
 
 class PinnedAssembler(CanonicalAssembler):
-    def __init__(self, request_id, positions):
+    def __init__(self, request_id, positions, on_batch=None):
         if not 1 <= positions <= MAX_POSITIONS: raise ValueError('unsupported position count')
         self.request_id,self.positions = request_id,positions
         self.data = PinnedPacket(positions)
@@ -25,6 +25,7 @@ class PinnedAssembler(CanonicalAssembler):
         self.expected_positions = np.arange(positions,dtype=np.uint32)
         self.final = False
         self.failed = False
+        self.on_batch = on_batch
 
     def receive(self, header, socket):
         if self.failed: raise RuntimeError('failed assembler cannot be reused')
@@ -39,6 +40,7 @@ class PinnedAssembler(CanonicalAssembler):
                 raise ValueError('invalid payload size or extra multipart frame')
             self.seen[slots] = True
             self.final = final
+            if self.on_batch is not None: self.on_batch(first, last, self.data)
             return final
         except BaseException:
             self.failed = True

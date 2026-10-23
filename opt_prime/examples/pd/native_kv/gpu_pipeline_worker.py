@@ -213,13 +213,20 @@ class PipelineWorker(Worker):
                         try: job, tokens, count, packed = prepared.get(timeout=0.02 if not states else 0)
                         except queue.Empty: break
                     if job.cancel.is_set():
+                        if getattr(a, 'stream_native_kv', False): packed.close()
                         del packed
                         retire(job)
                         continue
                     import_start = time.perf_counter()
                     job.stage_metrics['prepared_wait_ms'] = (import_start-job.prepared_at)*1000
                     job.stage_metrics['decode_active_at_import'] = sum(n>0 for n in graph.remaining)
-                    if split is not None and split['length']:
+                    if getattr(a, 'stream_native_kv', False):
+                        try:
+                            data = packed.finish()
+                            graph.load_device_lane(lane, [(data[2*i],data[2*i+1]) for i in range(36)], tokens[-1], count)
+                        finally: packed.close()
+                        del data
+                    elif split is not None and split['length']:
                         load_split_prefix(graph, lane, split['prefix'], packed, split['length'], tokens[-1], count)
                     else:
                         graph.load_packed_lane(lane, packed, tokens[-1], count)
@@ -278,6 +285,12 @@ class PipelineWorker(Worker):
             if producer is not None: producer.join(timeout=110)
             if producer is not None and producer.is_alive():
                 self.error = RuntimeError('native prefill owner did not stop')
+            if getattr(a, 'stream_native_kv', False) and (producer is None or not producer.is_alive()):
+                while True:
+                    try: job, _, _, upload = prepared.get_nowait()
+                    except queue.Empty: break
+                    upload.close()
+                    retire(job)
             if recompute is not None and (producer is None or not producer.is_alive()):
                 for job in recompute.close(): retire(job)
             while True:

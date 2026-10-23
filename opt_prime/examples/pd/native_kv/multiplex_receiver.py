@@ -32,7 +32,7 @@ class MultiplexKVClient(NativeKVClient):
         return results
 
     def prefill_stream(self, model, acquire, on_complete, stopped, *, max_pending=8, direct=False, start_pos=0,
-                       get_start_pos=None):
+                       get_start_pos=None, on_batch=None):
         """Continuously replenish bounded requests from nonblocking acquire().
 
         acquire() returns (tokens, context) or None. Stop admission when stopped()
@@ -47,6 +47,8 @@ class MultiplexKVClient(NativeKVClient):
         if get_start_pos is not None and (not callable(get_start_pos) or start_pos != 0):
             raise ValueError('per-request offset requires a callable and shared start_pos=0')
         if not 1 <= max_pending <= 16: raise ValueError('expected 1..16 pending requests')
+        if on_batch is not None and (not direct or not callable(on_batch)):
+            raise ValueError('streaming callback requires direct receive')
         if direct:
             from pinned_receiver import PinnedAssembler
             if not hasattr(self.rx, 'recv_into'): raise RuntimeError('direct receive requires pyzmq recv_into')
@@ -70,7 +72,9 @@ class MultiplexKVClient(NativeKVClient):
                         'kv_transfer_params':{'remote_decoder':f'127.0.0.1:{self.receiver_port}', 'id':rid}}
                     future = pool.submit(requests.post, self.http_url+'/v1/completions', json=body, timeout=self.timeout)
                     pending[rid] = {'index':context, 'start':start, 'n':positions, 'start_pos':offset, 'future':future,
-                        'assembler':(PinnedAssembler(rid,positions) if direct else ViewAssembler(rid,positions)),
+                        'assembler':(PinnedAssembler(rid,positions,
+                            None if on_batch is None else lambda first,last,packet,ctx=context:
+                                on_batch(ctx,first,last,packet)) if direct else ViewAssembler(rid,positions)),
                         'ready':False, 'done':False, 'ready_ms':None, 'kv_ready_ms':None, 'batches':0}
                 for rid, state in list(pending.items()):
                     if time.perf_counter()-state['start'] >= self.timeout:
