@@ -1,0 +1,64 @@
+{
+  "model": "Qwen3-0.6B",
+  "commit": "0870dd3",
+  "torch": "2.13.0+cu130",
+  "input_tokens": 8192,
+  "chunk": 256,
+  "prefix_cache": false,
+  "rows": [
+    {
+      "repeat": 0,
+      "copy_overlap": false,
+      "elapsed_s": 1.029156239994336,
+      "prefill_s": 0.9730306520359591,
+      "transfer_tail_s": 0.05596015998162329,
+      "parity": true,
+      "kv_bytes": 939524096
+    },
+    {
+      "repeat": 0,
+      "copy_overlap": true,
+      "elapsed_s": 0.9536377220065333,
+      "prefill_s": 0.9507234569755383,
+      "transfer_tail_s": 0.002669376030098647,
+      "parity": true,
+      "kv_bytes": 939524096
+    },
+    {
+      "repeat": 1,
+      "copy_overlap": true,
+      "elapsed_s": 0.9600622200523503,
+      "prefill_s": 0.9573403209797107,
+      "transfer_tail_s": 0.0025419839657843113,
+      "parity": true,
+      "kv_bytes": 939524096
+    },
+    {
+      "repeat": 1,
+      "copy_overlap": false,
+      "elapsed_s": 0.9938739400240593,
+      "prefill_s": 0.9381637760088779,
+      "transfer_tail_s": 0.05556040199007839,
+      "parity": true,
+      "kv_bytes": 939524096
+    },
+    {
+      "repeat": 2,
+      "copy_overlap": false,
+      "elapsed_s": 0.9979818880092353,
+      "prefill_s": 0.942231434979476,
+      "transfer_tail_s": 0.0556076230132021,
+      "parity": true,
+      "kv_bytes": 939524096
+    },
+    {
+      "repeat": 2,
+      "copy_overlap": true,
+      "elapsed_s": 0.955639801977668,
+      "prefill_s": 0.9527517670067027,
+      "transfer_tail_s": 0.0026174550293944776,
+      "parity": true,
+      "kv_bytes": 939524096
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "method": "Intersection of unioned device0 CUDA kernel/GEMM intervals and >1MiB device0 DtoH intervals. Profiler runs separate from unprofiled latency runs; not critical-path attribution.",
+  "rows": [
+    {
+      "copy_overlap": false,
+      "dtoh_count": 2,
+      "dtoh_bytes": 939524096,
+      "dtoh_union_ms": 35.732492919921874,
+      "kernel_intersection_ms": 0.0,
+      "gemm_intersection_ms": 0.0,
+      "gemm_count": 6304,
+      "copy_streams": [
+        7
+      ],
+      "kernel_streams": [
+        7
+      ]
+    },
+    {
+      "copy_overlap": true,
+      "dtoh_count": 64,
+      "dtoh_bytes": 939524096,
+      "dtoh_union_ms": 35.86063061523438,
+      "kernel_intersection_ms": 27.907109130859375,
+      "gemm_intersection_ms": 0.0,
+      "gemm_count": 6304,
+      "copy_streams": [
+        166
+      ],
+      "kernel_streams": [
+        7
+      ]
+    }
+  ]
+}
