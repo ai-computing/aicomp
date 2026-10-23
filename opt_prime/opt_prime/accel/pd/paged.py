@@ -445,12 +445,30 @@ class PagedKV:
         return self.physical([slot] * (end - start), torch.arange(start, end, device=self.device))
 
     def write_span(self, slot, start, keys, values):
-        """keys/values [layers, kv_heads, n, head_dim] for positions start .. start+n of `slot` (a list of those, one
-        per KV group, for hybrid models), each group in one indexed copy (the PD admission of KV that another engine
-        prefilled)"""
-        keys = keys if isinstance(keys, (list, tuple)) else [keys]
-        values = values if isinstance(values, (list, tuple)) else [values]
-        idx = self.span_index(slot, start, start + keys[0].shape[2])
+        """Import [layers, kv_heads, n, head_dim] KV at `start`: either model-layer order for uniform geometry,
+        or one tensor per receiver group. Hybrid dense inputs are split by model-layer indices; grouped inputs
+        also support differing head geometries. Validate all shapes before copying any group."""
+        if isinstance(keys, torch.Tensor) and isinstance(values, torch.Tensor) and len(self.groups) == 1:
+            keys, values = [keys], [values]
+        if isinstance(keys, torch.Tensor) and isinstance(values, torch.Tensor):
+            layers = max(self.layer_group) + 1
+            if keys.ndim != 4 or values.shape != keys.shape or keys.shape[0] != layers:
+                raise ValueError("dense KV span must contain every model layer with matching K/V shapes")
+            # Subprocess producers export model-layer order; pools group attention geometries.
+            keys = [keys if g.layers == tuple(range(layers)) else keys[list(g.layers)] for g in self.groups]
+            values = [values if g.layers == tuple(range(layers)) else values[list(g.layers)] for g in self.groups]
+        if not isinstance(keys, (list, tuple)) or not isinstance(values, (list, tuple)):
+            raise ValueError("KV spans must both be dense tensors or grouped sequences")
+        if len(keys) != len(self.groups) or len(values) != len(self.groups):
+            raise ValueError("KV span group count must match the receiver")
+        n = None
+        for g, k, v in zip(self.groups, keys, values):
+            if not isinstance(k, torch.Tensor) or not isinstance(v, torch.Tensor) or k.ndim != 4:
+                raise ValueError("each KV group must contain four-dimensional tensors")
+            n = k.shape[2] if n is None else n
+            if k.shape != (len(g.layers), g.kv_heads, n, g.head_dim) or v.shape != k.shape:
+                raise ValueError("KV span shapes must match receiver groups and share a token count")
+        idx = self.span_index(slot, start, start + n)
         for pk, pv, k, v in zip(self.gk, self.gv, keys, values):
             pk[:, :, idx] = k.to(self.device, pk.dtype, non_blocking=True)
             pv[:, :, idx] = v.to(self.device, pv.dtype, non_blocking=True)
