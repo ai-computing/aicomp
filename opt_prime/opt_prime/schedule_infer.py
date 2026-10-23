@@ -370,7 +370,7 @@ class ScheduleGeneration(ScheduleInference):
 
         Args:
             input_ids: Input token IDs tensor of shape [batch_size, seq_len]
-            position_ids: Position IDs tensor of shape [1, seq_len] for RoPE.
+            position_ids: Position IDs tensor of shape [batch_size, seq_len] for RoPE.
                           If None, auto-generated as arange(seq_len).
 
         Returns:
@@ -383,9 +383,10 @@ class ScheduleGeneration(ScheduleInference):
             # Set position_ids for RoPE (critical for LLaMA)
             if position_ids is None and input_ids is not None:
                 seq_len = input_ids.size(1) if input_ids.dim() > 1 else input_ids.size(0)
+                # The export ties position_ids' batch dim to input_ids'
                 position_ids = torch.arange(
                     seq_len, device=input_ids.device
-                ).unsqueeze(0)
+                ).expand(input_ids.size(0) if input_ids.dim() > 1 else 1, -1)
             if position_ids is not None:
                 self.optimus.run_info.env[0]["position_ids"] = \
                     position_ids.to(self.optimus.run_info.device)
@@ -427,8 +428,8 @@ class ScheduleGeneration(ScheduleInference):
         if self.optimus.tpl.is_first_stage():
             self.get_input(input_token)
             # Set position_ids for RoPE — must be the absolute position
-            position_ids = torch.tensor(
-                [[position]], device=input_token.device
+            position_ids = torch.full(
+                (input_token.size(0), 1), position, device=input_token.device
             )
             self.optimus.run_info.env[0]["position_ids"] = \
                 position_ids.to(self.optimus.run_info.device)
