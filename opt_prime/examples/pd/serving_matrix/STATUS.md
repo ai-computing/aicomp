@@ -67,3 +67,5 @@ All four models:56/56 normal/concurrent/reuse responses equal native ATOM,64RNGD
 Medium live HTTP:1526–1643tokens,56/56 exact outputs and64remote/0local; short+medium112responses/128remote. Same cancellation/disconnect reuse checks pass. Long live queue active; full goal remains open. See live-http-mid234.
 
 Long live HTTP follow-up: all four width8192 routes pass56/56responses and64remote/0local prefills, cancellation/disconnect reuse included. Short+medium+long168/168responses/192remote. All queue stages exited0. HardwareB1, nativeATOM equality only; no quality, performance or overlap claim. See live-http-long234 record/evidence234.
+
+Four-model pending-prefill fault checks#244 pass:64normal output checks/88remote attempts, cancellation499, three worker-death500responses per model, slab unlink and explicit replacement reuse.50adapter tests+5subtests pass. Initial environment ABI failure preserved. Readiness, automatic restart, matched serving performance and true overlap remain distinct work.
