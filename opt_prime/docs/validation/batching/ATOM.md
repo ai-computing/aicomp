@@ -100,3 +100,7 @@ shared (load average 75–135 from other users' jobs), so absolute values differ
 With one cache block the host tier quadruples the reused prefix (2048 → 11264 tokens). Under that run's host load the
 reloads did not turn into throughput: host staging is CPU-side work. PD mode (KV prefilled elsewhere, ATOM decodes
 only) is measured in `PD.md`.
+
+## Hybrid attention (#207)
+
+Gemma3 standalone external-cache serving uses global block ownership and lane-local sliding cache ownership. Fresh prefill resets the owning lane’s decode attention mask. Validation: [runtime integration](runtime207/experiments/2026-10-23-atom-hybrid-runtime.md). Prefix caching, host caching and remote prefill are rejected for hybrid models until sliding-state restoration is implemented. The verified hardware case is Gemma3-1B B1/context9216 with the upstream causal-prefill correction; this does not establish other hybrid model or multi-lane hardware support.

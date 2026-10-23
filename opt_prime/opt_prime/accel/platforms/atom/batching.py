@@ -262,6 +262,9 @@ class AtomBatcher(ContinuousBatcher):
         slow prefill device is therefore used only for overflow, and a fast one takes most prompts.
         local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first)."""
         rc = model.rbln_config
+        self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
+        if self.hybrid_cache and (prefix_cache or host_kv_gib or prefill_worker is not None):
+            raise ValueError("hybrid sliding cache restoration is not implemented for prefix/host cache or PD")
         self.lanes = rc.batch_size
         decoders = getattr(model, "decoders", None) or {}
         if self.lanes not in decoders:
@@ -313,9 +316,18 @@ class AtomBatcher(ContinuousBatcher):
     def _prefill(self, lane, prompt, start=0):
         kw = {} if self.blocks is None else dict(block_tables=torch.tensor([self.blocks.lane_block[lane]],
                                                                            dtype=torch.int16))
-        return self.model.prefill_decoder(input_ids=torch.tensor([list(prompt[start:])], dtype=torch.int64),
-                                          cache_position=torch.arange(start, len(prompt), dtype=torch.int32)[None],
-                                          batch_idx=lane, **kw)
+        if self.hybrid_cache and self.blocks is not None:
+            if start:
+                raise ValueError("hybrid sliding cache requires a fresh prefill")
+            kw["local_block_tables"] = torch.tensor([lane], dtype=torch.int16)
+        out = self.model.prefill_decoder(input_ids=torch.tensor([list(prompt[start:])], dtype=torch.int64),
+                                         cache_position=torch.arange(start, len(prompt), dtype=torch.int32)[None],
+                                         batch_idx=lane, **kw)
+        if self.hybrid_cache and self.blocks is not None:
+            # External tables bypass the SDK's prompt mask reset; decode only sets new bits.
+            self.decoder.dec_attn_mask[lane].zero_()
+            self.decoder.dec_attn_mask[lane, :len(prompt)] = 1
+        return out
 
     @torch.inference_mode()
     def step(self):
@@ -367,6 +379,8 @@ class AtomBatcher(ContinuousBatcher):
             tokens[r.slot], positions[r.slot] = r.tokens[-1], self.kv.length[r.slot]
         kw = {} if self.blocks is None else dict(block_tables=self.blocks.table([r.slot for r in rows]))
         cache_position = torch.tensor(positions, dtype=torch.int32)[:, None].contiguous()
+        if self.hybrid_cache and self.blocks is not None:
+            kw["local_block_tables"] = torch.arange(self.lanes, dtype=torch.int16)[:, None]
         if getattr(self.model.rbln_config, "use_position_ids", False):     # e.g. Gemma 3 (sliding attention)
             kw["position_ids"] = cache_position.clone()
         out = self.decoder(input_ids=torch.tensor(tokens, dtype=torch.int64)[:, None].contiguous(),
