@@ -1,0 +1,122 @@
+[
+  {
+    "model": "qwen3-06b",
+    "mode": "bf16_no_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 4.5096583620179445,
+    "prefix_hit_tokens": 0.0,
+    "file": "qwen3-06b-no-cache.json"
+  },
+  {
+    "model": "qwen3-06b",
+    "mode": "bf16_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 8,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 1.5730774590047076,
+    "prefix_hit_tokens": 34944.0,
+    "file": "qwen3-06b-cache.json"
+  },
+  {
+    "model": "qwen3-06b",
+    "mode": "fp32_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 4.691692629014142,
+    "prefix_hit_tokens": 35072.0,
+    "file": "qwen3-06b-cache-fp32.json"
+  },
+  {
+    "model": "qwen3-4b",
+    "mode": "bf16_no_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 7.584132659016177,
+    "prefix_hit_tokens": 0.0,
+    "file": "qwen3-4b-no-cache.json"
+  },
+  {
+    "model": "qwen3-4b",
+    "mode": "bf16_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 8,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 2.0710989810177125,
+    "prefix_hit_tokens": 34944.0,
+    "file": "qwen3-4b-cache.json"
+  },
+  {
+    "model": "qwen3-4b",
+    "mode": "fp32_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 5.076289049000479,
+    "prefix_hit_tokens": 35072.0,
+    "file": "qwen3-4b-cache-fp32.json"
+  },
+  {
+    "model": "koni-8b",
+    "mode": "bf16_no_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 7.984032834996469,
+    "prefix_hit_tokens": 0.0,
+    "file": "koni-8b-no-cache.json"
+  },
+  {
+    "model": "koni-8b",
+    "mode": "bf16_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 7,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 2.2306854949856643,
+    "prefix_hit_tokens": 35072.0,
+    "file": "koni-8b-cache-warm-cancel.json"
+  },
+  {
+    "model": "koni-8b",
+    "mode": "fp32_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 5.551692591019673,
+    "prefix_hit_tokens": 35072.0,
+    "file": "koni-8b-cache-fp32.json"
+  },
+  {
+    "model": "gemma3-1b",
+    "mode": "bf16_no_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 5.4193066009902395,
+    "prefix_hit_tokens": 0.0,
+    "file": "gemma3-1b-no-cache.json"
+  },
+  {
+    "model": "gemma3-1b",
+    "mode": "bf16_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 8,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 1.8549946299754083,
+    "prefix_hit_tokens": 34944.0,
+    "file": "gemma3-1b-cache.json"
+  },
+  {
+    "model": "gemma3-1b",
+    "mode": "fp32_cache",
+    "protocol_passed": true,
+    "equal_concurrent_outputs": 12,
+    "concurrent_outputs": 12,
+    "concurrency8_wall_s": 4.413927393004997,
+    "prefix_hit_tokens": 35072.0,
+    "file": "gemma3-1b-cache-fp32.json"
+  }
+]
