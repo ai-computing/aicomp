@@ -19,8 +19,11 @@ behavior. Raw results remain preserved, not relabeled as clean measurements.
 
 Use urllib3 HTTPResponse.read1(65536,decode_content=True), splitting complete lines
 while retaining partial bytes. Unlike a fixed-size blocking read, read1 returns available
-data without waiting to fill64KiB. Preserve --sse-reader byte for reproducing the old
-client. Record client CPU time, worker count, start lateness and rejected requests.
+data without waiting to fill 64 KiB. read1 is now the default for `bench_http.py`,
+`bench_arrival_http.py` and `check_local_http.py`; timing commands cited by earlier records need
+`--sse-reader byte` (on the two benchmarks) to reproduce their client. `check_local_http.py`
+compares text only, so the reader does not change its result. read1 splits lines on `\n` only (a bare `\r` is
+not a line break, unlike `iter_lines`); the servers measured here always send `\n`. Record client CPU time, worker count, start lateness and rejected requests.
 Extend requests to512 with at most128 client workers; visible start lateness remains
 necessary to detect client saturation. Engine behavior and SSE contents are unchanged.
 
