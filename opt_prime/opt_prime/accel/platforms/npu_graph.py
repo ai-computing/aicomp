@@ -246,7 +246,10 @@ class GraphNPUBackend(ExpertBackend):
 
     def run(self, h: Handle, hidden, local_index, weights):
         spec = h.spec
-        T = hidden.shape[0]
+        T, cap = hidden.shape[0], self.token_buckets[-1]
+        if T > cap:                                # longer prefills run in chunks of the largest bucket (no graph per T)
+            return torch.cat([self.run(h, hidden[i:i + cap], local_index[i:i + cap], weights[i:i + cap])
+                              for i in range(0, T, cap)])
         T_b = _bucket(T, self.token_buckets)
         x = torch.zeros(T_b, spec.hidden, dtype=spec.dtype)
         x[:T] = hidden.to(spec.dtype)
