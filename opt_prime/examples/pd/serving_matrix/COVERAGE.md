@@ -13,9 +13,9 @@ All direct runs use fixed output lengths ignoring EOS. Repeats match within each
 
 ## Outstanding acceptance work
 
-- Standalone GPU HTTP covered by PR213 and ATOM HTTP by PR216: all four lifecycle checks pass through8K. Cache-off concurrent/serial equality48/48 on each backend. Real RNGD->ATOM short-input HTTP now passes56/56 output checks (#235/#237); medium/long live and broader conditions remain incomplete.
+- Standalone GPU HTTP covered by PR213 and ATOM HTTP by PR216: all four lifecycle checks pass through8K. Cache-off concurrent/serial equality48/48 on each backend. Real RNGD->ATOM short-input HTTP now passes56/56 output checks (#235/#237); short/medium/long live checks pass168/168responses; broader conditions remain incomplete.
 - Qwen ATOM device/host-cache cases pass12/12 concurrent equality each (PR216). GPU BF16 cache has numerical ties; FP32 controls match48/48 (PR213). Gemma sliding-state restoration is unimplemented, KONI k1 has no spare prefix-cache blocks.
-- Short live producer/scheduler integration is verified for all four models. Live long prefixes and genuine cache-aware producer chunking remain open.
+- Short live producer/scheduler integration is verified for all four models. Live long prefixes now pass for all four; genuine cache-aware producer chunking remains open.
 - Layer/logit diagnosis and broader semantic fixtures for cross-backend output differences; matching a repeated capital question is not a quality evaluation.
 - Actual producer/consumer overlap and end-to-end serving benefit, distinct from faster CPU staging.
 
@@ -41,4 +41,4 @@ Four models,48producer runs,31/32 EOS comparisons at6026–6428input tokens. Bot
 
 All four short-input paths pass14normal/concurrent/reuse responses each:56total,64remote prefills including cancellation requests,0local fallbacks. Requests trigger actual RNGD subprocess computation; no KV replay. Each model passes explicit cancellation, socket disconnection and subsequent reuse. Gemma/Qwen usek3; static B1 KONI usesk1 with#236. SIGPIPE-safe HTTP is#214/#215. These are B1 hardware requests with queued client concurrency, not hardware batch4. Native parity includes shared wrong answers.
 
-Width2048 live checks now pass for all four models:56responses and64remote prefills. Short+medium total112responses/128prefills, with no local fallbacks. Width8192 live queue is pending. Full live6K, pending-prefill hardware cancellation/worker-failure recovery, GPU live PD, hybrid prefix/host restore, applicable hardware batch>1, genuine producer/transfer overlap and matched native-vs-PD latency/throughput comparisons remain unverified. Overall goal remains active.
+Width2048 live checks now pass for all four models:56responses and64remote prefills. Short+medium total112responses/128prefills, with no local fallbacks. Width8192 live checks also pass all four models:56responses/64remote prefills at6026–6428input tokens. Combined short+medium+long:168responses/192remote prefills,0fallback. Pending-prefill hardware cancellation/worker-failure recovery, cross-host RNGD-to-GPU live PD, hybrid prefix/host restore, applicable hardware batch>1, genuine producer/transfer overlap and matched native-vs-PD latency/throughput remain unverified. GPU-to-GPU live HTTP is tested separately under#240: default BF16 concurrent35/48; explicit uncached/chunk256 producer controls#241 recover48/48concurrent and12/12native/PD serial outputs. Gemma numerical#233 remains unresolved. Overall goal remains active.

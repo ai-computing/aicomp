@@ -1,0 +1,394 @@
+{
+  "worker": "live_rngd_subprocess_prefill",
+  "rows": [
+    {
+      "case": "capital-400",
+      "request": "normal-0-0",
+      "response": {
+        "id": "normal-0-0",
+        "object": "text_completion",
+        "created": 1792766816,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              60704,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6138,
+          "completion_tokens": 2,
+          "total_tokens": 6140
+        }
+      },
+      "latency_s": 5.335317382006906
+    },
+    {
+      "case": "arithmetic-400",
+      "request": "normal-0-1",
+      "response": {
+        "id": "normal-0-1",
+        "object": "text_completion",
+        "created": 1792766820,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              2983,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6137,
+          "completion_tokens": 2,
+          "total_tokens": 6139
+        }
+      },
+      "latency_s": 4.379292714060284
+    },
+    {
+      "case": "korean-400",
+      "request": "normal-0-2",
+      "response": {
+        "id": "normal-0-2",
+        "object": "text_completion",
+        "created": 1792766824,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "서울",
+            "token_ids": [
+              115978,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6139,
+          "completion_tokens": 2,
+          "total_tokens": 6141
+        }
+      },
+      "latency_s": 4.36221725505311
+    },
+    {
+      "case": "retrieval-400",
+      "request": "normal-0-3",
+      "response": {
+        "id": "normal-0-3",
+        "object": "text_completion",
+        "created": 1792766829,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              18082,
+              877,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6143,
+          "completion_tokens": 3,
+          "total_tokens": 6146
+        }
+      },
+      "latency_s": 4.450131780933589
+    },
+    {
+      "case": "capital-400",
+      "request": "normal-1-0",
+      "response": {
+        "id": "normal-1-0",
+        "object": "text_completion",
+        "created": 1792766833,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              60704,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6138,
+          "completion_tokens": 2,
+          "total_tokens": 6140
+        }
+      },
+      "latency_s": 4.333481329958886
+    },
+    {
+      "case": "arithmetic-400",
+      "request": "normal-1-1",
+      "response": {
+        "id": "normal-1-1",
+        "object": "text_completion",
+        "created": 1792766837,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              2983,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6137,
+          "completion_tokens": 2,
+          "total_tokens": 6139
+        }
+      },
+      "latency_s": 4.402466899016872
+    },
+    {
+      "case": "korean-400",
+      "request": "normal-1-2",
+      "response": {
+        "id": "normal-1-2",
+        "object": "text_completion",
+        "created": 1792766842,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "서울",
+            "token_ids": [
+              115978,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6139,
+          "completion_tokens": 2,
+          "total_tokens": 6141
+        }
+      },
+      "latency_s": 4.322912700008601
+    },
+    {
+      "case": "retrieval-400",
+      "request": "normal-1-3",
+      "response": {
+        "id": "normal-1-3",
+        "object": "text_completion",
+        "created": 1792766846,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              18082,
+              877,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6143,
+          "completion_tokens": 3,
+          "total_tokens": 6146
+        }
+      },
+      "latency_s": 4.414992478094064
+    },
+    {
+      "case": "capital-400",
+      "request": "concurrent-0",
+      "response": {
+        "id": "concurrent-0",
+        "object": "text_completion",
+        "created": 1792766851,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              60704,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6138,
+          "completion_tokens": 2,
+          "total_tokens": 6140
+        }
+      },
+      "latency_s": 4.283409978961572
+    },
+    {
+      "case": "arithmetic-400",
+      "request": "concurrent-1",
+      "response": {
+        "id": "concurrent-1",
+        "object": "text_completion",
+        "created": 1792766855,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              2983,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6137,
+          "completion_tokens": 2,
+          "total_tokens": 6139
+        }
+      },
+      "latency_s": 8.67299879703205
+    },
+    {
+      "case": "korean-400",
+      "request": "concurrent-2",
+      "response": {
+        "id": "concurrent-2",
+        "object": "text_completion",
+        "created": 1792766859,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "서울",
+            "token_ids": [
+              115978,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6139,
+          "completion_tokens": 2,
+          "total_tokens": 6141
+        }
+      },
+      "latency_s": 13.047355814022012
+    },
+    {
+      "case": "retrieval-400",
+      "request": "concurrent-3",
+      "response": {
+        "id": "concurrent-3",
+        "object": "text_completion",
+        "created": 1792766864,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              18082,
+              877,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6143,
+          "completion_tokens": 3,
+          "total_tokens": 6146
+        }
+      },
+      "latency_s": 17.474600348970853
+    },
+    {
+      "case": "capital-400",
+      "request": "after-cancel",
+      "response": {
+        "id": "after-cancel",
+        "object": "text_completion",
+        "created": 1792766873,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              60704,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6138,
+          "completion_tokens": 2,
+          "total_tokens": 6140
+        }
+      },
+      "latency_s": 4.395555546972901
+    },
+    {
+      "case": "capital-400",
+      "request": "after-disconnect",
+      "response": {
+        "id": "after-disconnect",
+        "object": "text_completion",
+        "created": 1792766881,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "Paris",
+            "token_ids": [
+              60704,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6138,
+          "completion_tokens": 2,
+          "total_tokens": 6140
+        }
+      },
+      "latency_s": 4.39396666304674
+    }
+  ],
+  "stats_pd": {
+    "remote": 16,
+    "local": 0
+  },
+  "free": [
+    0
+  ],
+  "cancellation_reuse": true
+}
