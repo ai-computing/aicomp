@@ -93,6 +93,13 @@ class BatchedService(CompletionAPI):
         if "transferred_tokens" in b.stats:
             out.append(("airm_pd_transferred_tokens_total", "counter", "Prompt KV tokens received from the prefill side.",
                         [f"airm_pd_transferred_tokens_total{{{lab}}} {b.stats['transferred_tokens']}"]))
+        # Worker-reported durations of admitted handoffs, not HTTP request latency or overlap.
+        durations = [f'airm_pd_producer_seconds_total{{{lab},stage="{stage}"}} {b.stats[key]}'
+                     for stage, key in (("prefill", "prefill_s"), ("transfer", "transfer_s")) if key in b.stats]
+        if durations:
+            out.append(("airm_pd_producer_seconds_total", "counter",
+                        "Accumulated worker-reported seconds for admitted PD handoffs; excludes failed/cancelled handoffs. "
+                        "Prefill includes KV gathering; transfer excludes destination KV installation.", durations))
         return out
 
     @staticmethod
