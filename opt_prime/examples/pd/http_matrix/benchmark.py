@@ -28,11 +28,35 @@ def timing_summary(rows, wall_s):
     }
 
 
+RESOURCE_FIELDS = {"physical_gpus", "physical_atom", "physical_rngd", "slots_per_decoder",
+                   "producer_cache", "decoder_cache", "producer_chunk", "local_chunk", "context"}
+
+
+def load_server_config(path):
+    """Trusted executable argv arrays; no shell expansion. Resource facts are supplied by the experiment."""
+    config = json.loads(Path(path).read_text())
+    if not isinstance(config, dict):
+        raise TypeError("server config must be an object")
+    servers, metadata = config.get("servers"), config.get("metadata")
+    if not isinstance(servers, list) or not servers or not isinstance(metadata, dict):
+        raise ValueError("server config needs nonempty servers and metadata object")
+    if set(metadata) - RESOURCE_FIELDS:
+        raise ValueError("unsupported resource metadata key")
+    for argv in servers:
+        if not isinstance(argv, list) or not argv or not all(isinstance(x, str) and x for x in argv):
+            raise ValueError("each server must be a nonempty argv array")
+        if argv.count("{port}") != 1:
+            raise ValueError("each server needs exactly one standalone {port} argument")
+    return config
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--model", required=True)
     p.add_argument("--mode", choices=["native", "dp2", "pd"], required=True)
     p.add_argument("--output", required=True)
+    p.add_argument("--startup-timeout", type=int, default=180, help="server readiness deadline in seconds; excluded from timing")
+    p.add_argument("--server-config", help="trusted JSON argv templates and resource metadata for external backends")
     p.add_argument("--reference", help="native benchmark JSON with identical token-ID prompts")
     p.add_argument("--http-module", help="trusted local HTTP candidate")
     p.add_argument("--lengths", nargs="+", type=int, default=[128, 8192])
@@ -42,6 +66,9 @@ def main():
     p.add_argument("--slots", type=int, default=4)
     p.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     a = p.parse_args()
+    if a.startup_timeout <= 0:
+        p.error("startup timeout must be positive")
+    external = load_server_config(a.server_config) if a.server_config else None
     if min(*a.lengths, *a.outputs, *a.concurrency, a.repeats, a.slots) < 1:
         p.error("sizes must be positive")
     if max(a.lengths) + max(a.outputs) > 9216:
@@ -77,10 +104,19 @@ def main():
               "local_chunk": 256, "context": 9216, "prompts": prompts,
               "warmups": [], "correctness_batches": [], "batches": [],
               "harness_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              "startup_timeout_s": a.startup_timeout,
               "timing_scope": "Client first SSE event, full response e2e and estimated TPOT=(e2e-first_event)/(output_tokens-1). SSE can coalesce tokens; this is not per-token kernel timing. Loading/warmup/correctness checks excluded."}
+    devices = ["cuda:0", "cuda:1"] if a.mode == "dp2" else ["cuda:1"]
+    if external:
+        devices = [None] * len(external["servers"])
+        for key in RESOURCE_FIELDS:
+            result.pop(key, None)
+        result.update(external["metadata"])
+        result["replicas"] = len(devices)
+        result["server_config"] = external
     started = time.perf_counter()
     try:
-        for endpoint, device in enumerate(["cuda:0", "cuda:1"] if a.mode == "dp2" else ["cuda:1"]):
+        for endpoint, device in enumerate(devices):
             with socket.socket() as sock:
                 sock.bind(("127.0.0.1", 0))
                 port = sock.getsockname()[1]
@@ -95,11 +131,13 @@ def main():
             if a.mode == "pd":
                 cmd += ["--pd-prefill-device", "cuda:0", "--pd-prefill-no-prefix-cache",
                         "--pd-prefill-chunk", "256"]
+            if external:
+                cmd = [str(port) if arg == "{port}" else arg for arg in external["servers"][endpoint]]
             proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
                                     env=dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4"))
             procs.append(proc)
             ports.append(port)
-            end = time.monotonic() + 180
+            end = time.monotonic() + a.startup_timeout
             while True:
                 if proc.poll() is not None:
                     raise RuntimeError(f"server{endpoint} exited{proc.returncode}; see server log")
