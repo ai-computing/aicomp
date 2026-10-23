@@ -73,3 +73,26 @@ Qwen3-4B native/PD each12batches completed with parity. PD startup810.530seconds
 Native and actual RNGD→ATOM each completed 12 batches with token/text parity; PD reports 42 remote and 0 local prefills. Native startup 17.332 s, PD startup 432.865 s, both excluded from timed requests. Same fixed width8192, B1, output32, three repeats as above. Commands in `analysis/serving-matrix-201/atom248-remaining.log`; raw `atom248-koni-{native,pd}-a.json` and summary `atom248-koni-summary.json`.
 
 At input8192/c4: native 3.3576 tok/s, PD 4.6973 tok/s (+39.9%); median request e2e 23.832 -> 17.034 s. At input128/c4: native 14.6259 tok/s, PD 5.9530 tok/s. Long-prompt benefit and short-prompt regression are from one workload block, not a universal result. Gemma native completed and PD is running.
+
+## Four-model matrix complete; Gemma fixed-output failure retained
+
+All8native/PD configurations completed12timed batches each (96total). Each PD route reported42remote/0local prefills. Gemma PD workflow completed after852.225s startup, but exited1 at the final parity gate. Native startup9.346s. Both excluded from throughput.
+
+Gemma input128: all5nonstream correctness checks first diverged at output index5 (sixth token), after EOS106 at index2 (third token). All15timed responses across6batches differ too. The checkpoint generation_config lists EOS[1,106]. Offline truncation through firstEOS restores equality for all5short checks; this is not a fresh normal-EOS HTTP validation. Input8192: all5correctness checks and6timed batches match. Keep failed raw artifacts and do not claim equivalent fixed-output behavior for input128. This result does not resolve the earlier pre-EOS long-arithmetic divergence in #233.
+
+C4/output32 median throughput:
+
+|model|input|native tok/s|PD tok/s|PD change|fixed-output parity|
+|---|---:|---:|---:|---:|---|
+|qwen06b|128|144.230|19.023|-86.8%|True|
+|qwen06b|8192|22.250|10.581|-52.4%|True|
+|qwen4b|128|26.340|7.495|-71.5%|True|
+|qwen4b|8192|5.085|5.490|+8.0%|True|
+|koni|128|14.626|5.953|-59.3%|True|
+|koni|8192|3.358|4.697|+39.9%|True|
+|gemma|128|87.775|16.652|-81.0%|False|
+|gemma|8192|27.753|14.942|-46.2%|True|
+
+Summary: long input helps Qwen4B andKONI, but Qwen0.6B/Gemma remain slower with the research RNGD producer. Short-input PD is slower for every model; Gemma additionally fails forced-output parity after EOS. Native uses1ATOM; PD uses1ATOM+1RNGD, so these are not equal-chip-count comparisons. KV copy overlap from #254 is GPU-only and was not applied here.
+
+Artifacts: `atom248-four-model-summary.json`, `atom248-gemma-{native,pd}-a.json`, `atom248-gemma-summary.json`, `atom248-gemma-eos-audit.json`, and failure/server logs in analysis/serving-matrix-201. Queue terminated; no live benchmark processes remained inside the owned Pod before deletion.

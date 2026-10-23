@@ -1,0 +1,90 @@
+{
+  "eos_token_ids": [
+    1,
+    106
+  ],
+  "source": "Gemma checkpoint generation_config.json",
+  "method": "Offline prefix comparison of existing fixed-output token traces, not a new normal-EOS HTTP run.",
+  "checks": [
+    {
+      "request": "check-128-32-1-0",
+      "input_tokens": 128,
+      "full_parity": false,
+      "through_eos_parity": true,
+      "first_mismatch": 5,
+      "first_eos": 2
+    },
+    {
+      "request": "check-128-32-4-0",
+      "input_tokens": 128,
+      "full_parity": false,
+      "through_eos_parity": true,
+      "first_mismatch": 5,
+      "first_eos": 2
+    },
+    {
+      "request": "check-128-32-4-1",
+      "input_tokens": 128,
+      "full_parity": false,
+      "through_eos_parity": true,
+      "first_mismatch": 5,
+      "first_eos": 2
+    },
+    {
+      "request": "check-128-32-4-2",
+      "input_tokens": 128,
+      "full_parity": false,
+      "through_eos_parity": true,
+      "first_mismatch": 5,
+      "first_eos": 2
+    },
+    {
+      "request": "check-128-32-4-3",
+      "input_tokens": 128,
+      "full_parity": false,
+      "through_eos_parity": true,
+      "first_mismatch": 5,
+      "first_eos": 2
+    },
+    {
+      "request": "check-8192-32-1-0",
+      "input_tokens": 8192,
+      "full_parity": true,
+      "through_eos_parity": true,
+      "first_mismatch": null,
+      "first_eos": null
+    },
+    {
+      "request": "check-8192-32-4-0",
+      "input_tokens": 8192,
+      "full_parity": true,
+      "through_eos_parity": true,
+      "first_mismatch": null,
+      "first_eos": null
+    },
+    {
+      "request": "check-8192-32-4-1",
+      "input_tokens": 8192,
+      "full_parity": true,
+      "through_eos_parity": true,
+      "first_mismatch": null,
+      "first_eos": null
+    },
+    {
+      "request": "check-8192-32-4-2",
+      "input_tokens": 8192,
+      "full_parity": true,
+      "through_eos_parity": true,
+      "first_mismatch": null,
+      "first_eos": null
+    },
+    {
+      "request": "check-8192-32-4-3",
+      "input_tokens": 8192,
+      "full_parity": true,
+      "through_eos_parity": true,
+      "first_mismatch": null,
+      "first_eos": null
+    }
+  ]
+}

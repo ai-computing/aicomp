@@ -1,0 +1,111 @@
+{
+  "measured_batches": 96,
+  "all_workflows_completed": true,
+  "full_parity": false,
+  "rows": [
+    {
+      "model": "qwen06b",
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 144.2299230912189,
+      "native_text_parity": true,
+      "pd_tok_s": 19.02295644683716,
+      "pd_text_parity": true,
+      "pd_change_pct": -86.81067282078074
+    },
+    {
+      "model": "qwen06b",
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 22.250476614941586,
+      "native_text_parity": true,
+      "pd_tok_s": 10.581251020411687,
+      "pd_text_parity": true,
+      "pd_change_pct": -52.444834312869546
+    },
+    {
+      "model": "qwen4b",
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 26.339873128721063,
+      "native_text_parity": true,
+      "pd_tok_s": 7.495234347472798,
+      "pd_text_parity": true,
+      "pd_change_pct": -71.54415167133065
+    },
+    {
+      "model": "qwen4b",
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 5.085293198358513,
+      "native_text_parity": true,
+      "pd_tok_s": 5.490287304131765,
+      "pd_text_parity": true,
+      "pd_change_pct": 7.9640266544312555
+    },
+    {
+      "model": "koni",
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 14.625890681706176,
+      "native_text_parity": true,
+      "pd_tok_s": 5.953017308730082,
+      "pd_text_parity": true,
+      "pd_change_pct": -59.298086945391844
+    },
+    {
+      "model": "koni",
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 3.3576236831795256,
+      "native_text_parity": true,
+      "pd_tok_s": 4.697274308675983,
+      "pd_text_parity": true,
+      "pd_change_pct": 39.89877222416616
+    },
+    {
+      "model": "gemma",
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 87.77496509009215,
+      "native_text_parity": true,
+      "pd_tok_s": 16.65194677943642,
+      "pd_text_parity": false,
+      "pd_change_pct": -81.02881982083971
+    },
+    {
+      "model": "gemma",
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "remote_prefills": 42,
+      "local_prefills": 0,
+      "native_tok_s": 27.7532590563462,
+      "native_text_parity": true,
+      "pd_tok_s": 14.942383953038485,
+      "pd_text_parity": true,
+      "pd_change_pct": -46.15989450932003
+    }
+  ]
+}
