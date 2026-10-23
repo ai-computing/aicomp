@@ -1,0 +1,68 @@
+{
+  "batches": 216,
+  "input_tokens": 8192,
+  "output_tokens": 128,
+  "concurrency": 8,
+  "rows": [
+    {
+      "model": "qwen06b",
+      "mode": "native",
+      "tok_s": 65.74485162163413
+    },
+    {
+      "model": "qwen06b",
+      "mode": "pd",
+      "tok_s": 74.65546394955516
+    },
+    {
+      "model": "qwen06b",
+      "mode": "dp2",
+      "tok_s": 120.64772202903364
+    },
+    {
+      "model": "qwen4b",
+      "mode": "native",
+      "tok_s": 44.31980451229433
+    },
+    {
+      "model": "qwen4b",
+      "mode": "pd",
+      "tok_s": 46.77587577104113
+    },
+    {
+      "model": "qwen4b",
+      "mode": "dp2",
+      "tok_s": 80.41556708211371
+    },
+    {
+      "model": "koni",
+      "mode": "native",
+      "tok_s": 42.86523463121219
+    },
+    {
+      "model": "koni",
+      "mode": "pd",
+      "tok_s": 50.13108816422866
+    },
+    {
+      "model": "koni",
+      "mode": "dp2",
+      "tok_s": 80.45202602507258
+    },
+    {
+      "model": "gemma",
+      "mode": "native",
+      "tok_s": 64.08493543780057
+    },
+    {
+      "model": "gemma",
+      "mode": "pd",
+      "tok_s": 73.72197163950909
+    },
+    {
+      "model": "gemma",
+      "mode": "dp2",
+      "tok_s": 112.8346970422102
+    }
+  ]
+}

@@ -41,3 +41,5 @@ Four models times native/PD/DP2 completed144measured batches with parity. Inputs
 BlockB reverse-model/mode repetition completed144additional batches with parity (288A/B total). Same-two-GPU DP2 leads all four at8192/c4. PD relative to native is variable: Gemma23.11->17.79tok/s,Qwen0.6B22.37->18.41,Qwen4B13.25->15.12,KONI14.47->14.02. No stable native-to-PD speedup claim. Runtime273952a adds stage counters; scheduling/compute unchanged. Longer-output and actual heterogeneous benchmarking ongoing.
 
 Output128extension:Qwen0.6B andQwen4B each54batches pass parity across128/8192inputs,c1/4/8.8192/c8 native/PD/DP2=65.74/74.66/120.65tok/s and44.32/46.78/80.42respectively. RemainingKONI/Gemma conditions still running.
+
+GPU output128 extension complete for all four models: 216 timed batches, all parity passed. At input8192/c8 native/PD/DP2 tok/s: Qwen0.6 65.74/74.66/120.65, Qwen4 44.32/46.78/80.42, KONI 42.87/50.13/80.45, Gemma 64.08/73.72/112.83. PD uses two GPUs versus native one; DP2 also uses two and remains faster. Evidence in evidence248/perf248-all-long128-summary.json.

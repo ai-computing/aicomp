@@ -141,3 +141,24 @@ Qwen3-4B long128 three-mode comparison complete:54batches pass parity.8192/c8 na
 KONI native-long128 completed18batches with parity; GPU queue advanced toPD. Separate perf/47-chunk-copy worktree at273952a contains a pending two-GPU exact-KV/first-token oracle (dense/hybrid,send_from0/7/29/35,cached repeat). Tests are not executed while performance GPUs are occupied; no copy-overlap implementation or passing-test claim. Need observe RED on idle allocated GPUs before implementation and add failure/lifetime/recurrent/timeline checks.
 
 KONI PD-long128 completed18batches with parity.8192input/c1,c4,c8 throughput27.2150,44.6598,50.1311tok/s; native c8=42.8652. DP2 running. Heterogeneous Qwen4producer confirmed alive at7m32s with CPU activity and~31.8GiBRSS; readiness not yet reached, within1800second bound.
+
+KONI complete-long128 matrix:54batches pass parity; summary perf248-koni-long128-summary.json. GPU queue advanced toGemma native.
+
+Stage audit for completedQwen06/Qwen4/KONIPD long128:106remote handoffs each (warmup2+checks26+measured78). Worker prefill/transfer cumulative seconds respectively78.7096/3.3561,114.3728/4.5195,113.7939/3.7680. These are mixed-condition sums includingwarmup/checks, not critical-path percentages; decoder KV installation is not in transfer_s. Do not assume transfer overlap alone closes the DP2 gap. Audit artifact perf248-pd-long128-stage-audit.json.
+
+Gemma native-long128 completed18batches with parity; PD running. Existing GPU and heterogeneous queue handles remain live. No restart or competing device tests.
+
+## Completed four-model output-128 matrix
+
+All 12 model/mode runs completed successfully: 216 measured batches and all recorded token/text parity checks passed. Models: Qwen3-0.6B, Qwen3-4B, KONI-8B, Gemma3-1B. Inputs 128/8192; output 128; concurrency 1/4/8; three repeats. Exact commands are in `analysis/serving-matrix-201/perf248-long128.log`; raw files use `perf248-*-long128.json`; harness/runtime revisions and setup are recorded above and in raw artifacts.
+
+8192 input / 128 output / concurrency 8, median output tok/s:
+
+| Model | Native (1 GPU) | PD (2 GPUs) | DP2 (2 GPUs) |
+|---|---:|---:|---:|
+| qwen06b | 65.74 | 74.66 | 120.65 |
+| qwen4b | 44.32 | 46.78 | 80.42 |
+| koni | 42.87 | 50.13 | 80.45 |
+| gemma | 64.08 | 73.72 | 112.83 |
+
+PD exceeds one-GPU native in this long-input/high-concurrency block, but remains below two-GPU DP2. This is one workload block, not a general speedup claim. Parity does not establish answer quality. No new chunk-copy overlap implementation was used.
