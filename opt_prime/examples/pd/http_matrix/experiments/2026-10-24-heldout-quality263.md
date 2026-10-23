@@ -76,3 +76,5 @@ ATOM partial completion: Qwen0.6 native33/36 and RNGD33/36 structured answers,36
 Both hosts' complete source weight shards, config.json, generation_config.json and tokenizer.json were hashed: all21 files (~27.67GB per host) SHA256-identical across four models. Source revisions and individual hashes are retained in quality263-{local,remote}-model-hashes.json and quality263-model-identity.json. This checks checkpoint source identity, not compiled-artifact internals.
 
 Auditor summarize_quality263.py verifies fixture-file hashes, case/input-hash correspondence, response fields, scores recomputed from raw text, and paired transitions. Pending routes remain explicitly not_collected/starting; they are not treated as passes.
+
+Qwen3-4B allfour routes completed: each36/36 structured answers and36/36 format, every paired token sequence identical acrossGPU/RNGD/ATOM. Remaining ATOM routes: KONI and Gemma. This does not erase the prior different long-free-generation fixture failure#256.

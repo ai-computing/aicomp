@@ -268,7 +268,12 @@
           "wrong_cases": []
         },
         "rngd-atom": {
-          "stage": "not_collected"
+          "stage": "complete",
+          "cases": 36,
+          "answer_correct": 36,
+          "format_correct": 36,
+          "length_limited": 0,
+          "wrong_cases": []
         }
       },
       "pairs": {
@@ -300,6 +305,60 @@
           }
         },
         "native-gpu→native-atom": {
+          "cases": 36,
+          "correct_to_wrong": 0,
+          "wrong_to_correct": 0,
+          "token_equal": 36,
+          "changes": [],
+          "by_context": {
+            "0": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "2048": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "8192": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            }
+          }
+        },
+        "native-gpu→rngd-atom": {
+          "cases": 36,
+          "correct_to_wrong": 0,
+          "wrong_to_correct": 0,
+          "token_equal": 36,
+          "changes": [],
+          "by_context": {
+            "0": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "2048": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "8192": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            }
+          }
+        },
+        "native-atom→rngd-atom": {
           "cases": 36,
           "correct_to_wrong": 0,
           "wrong_to_correct": 0,
