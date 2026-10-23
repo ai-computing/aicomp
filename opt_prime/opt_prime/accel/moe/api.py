@@ -12,7 +12,7 @@ from opt_prime.accel.moe import backends as B
 from opt_prime.accel.spec.adapters import adapter_for, moe_layers
 from opt_prime.accel.moe.config import MoEOffloadConfig
 from opt_prime.accel.moe.layer import OffloadedLayer
-from opt_prime.accel.moe.ops import OffloadedExperts, register_layer
+from opt_prime.accel.moe.ops import OffloadedExperts, register_layer, unregister_layer
 from opt_prime.accel.moe.planner import device_fraction, plan
 
 GiB = 1 << 30
@@ -27,9 +27,13 @@ class OffloadReport:
     expected_accelerator_fraction: Optional[float] = None
     #: opt_prime.accel.platforms leases of the accelerator tiers (role "experts"); held until release()
     leases: list = field(default_factory=list, repr=False, compare=False)
+    #: ids of the layers registered for the custom op (they hold the tier handles); unregistered by release()
+    layer_ids: list = field(default_factory=list, repr=False, compare=False)
 
     def release(self):
-        """release the device leases (after the offloaded model is no longer used)."""
+        """release the device leases and the registered layers (after the offloaded model is no longer used)."""
+        for lid in self.layer_ids:
+            unregister_layer(lid)
         for lease in self.leases:
             lease.release()
 
@@ -38,7 +42,7 @@ class OffloadReport:
         return sum(t["experts"] for t in self.tiers[:-1])
 
     def as_dict(self):
-        d = asdict(dataclasses.replace(self, leases=[]))
+        d = asdict(dataclasses.replace(self, leases=[], layer_ids=[]))
         d["leases"] = [f"{l.device} gen {l.generation}" for l in self.leases]
         return d
 
@@ -79,7 +83,7 @@ def apply_moe_offload(model: nn.Module, cfg: MoEOffloadConfig) -> OffloadReport:
     adapters = [adapter_for(i.module) for i in infos]
     specs = [a.spec(i.module) for a, i in zip(adapters, infos)]
     E = specs[0].num_experts
-    leases = []
+    leases, lids = [], []
     tiers, names = build_tiers(cfg, leases)
     try:
         if cfg.placement is not None:
@@ -98,6 +102,7 @@ def apply_moe_offload(model: nn.Module, cfg: MoEOffloadConfig) -> OffloadReport:
             handles = [tier.load(a.weights(info.module, ids)) if ids else None for tier, ids in zip(tiers[:-1], pl[:-1])]
             handles.append(tiers[-1].load(a.weights(info.module, list(range(E)))))
             lid = register_layer(OffloadedLayer(E, tiers, handles, pl, names, cfg, adapter=a, source=info.module))
+            lids.append(lid)
             parent, _, child = info.name.rpartition(".")
             parent_mod = model.get_submodule(parent) if parent else model
             setattr(parent_mod, child, OffloadedExperts(lid, E, [e for r in pl[:-1] for e in r]))
@@ -108,7 +113,7 @@ def apply_moe_offload(model: nn.Module, cfg: MoEOffloadConfig) -> OffloadReport:
                              for n, c in zip(names, per_tier)])
         if cfg.profile is not None:
             rep.expected_accelerator_fraction = round(device_fraction(cfg.profile, placement, range(len(tiers) - 1)), 4)
-        rep.leases = leases
+        rep.leases, rep.layer_ids = leases, lids
     except BaseException:
         for lease in leases:
             lease.release()
