@@ -4,11 +4,27 @@ from pathlib import Path
 import requests
 
 
-def request(url,body,barrier):
+def iter_sse_lines(response, reader='read1'):
+    if reader=='byte':
+        yield from response.iter_lines(chunk_size=1)
+        return
+    if reader!='read1':raise ValueError('unknown SSE reader')
+    if not hasattr(response.raw,'read1'):raise RuntimeError('SSE benchmark requires urllib3 read1')
+    pending=b''
+    while True:
+        chunk=response.raw.read1(65536,decode_content=True)
+        if not chunk:break
+        lines=(pending+chunk).split(b'\n')
+        pending=lines.pop()
+        for line in lines:yield line.rstrip(b'\r')
+    if pending:yield pending.rstrip(b'\r')
+
+
+def request(url,body,barrier,reader='read1'):
     barrier.wait();start=time.perf_counter();first=None;text='';arrivals=[];reason=None;usage=None;done=False
     with requests.post(url+'/v1/completions',json=body,stream=True,timeout=180) as response:
         response.raise_for_status()
-        for line in response.iter_lines(chunk_size=1):
+        for line in iter_sse_lines(response,reader):
             if not line.startswith(b'data: '):continue
             if line==b'data: [DONE]':done=True;break
             data=json.loads(line[6:])
@@ -45,7 +61,7 @@ def main(a):
             for mode,url in modes:
                 barrier=threading.Barrier(a.concurrency+1)
                 with concurrent.futures.ThreadPoolExecutor(a.concurrency) as pool:
-                    futures=[pool.submit(request,url,body,barrier) for _ in range(a.concurrency)]
+                    futures=[pool.submit(request,url,body,barrier,a.sse_reader) for _ in range(a.concurrency)]
                     start=time.perf_counter();barrier.wait()
                     results=[future.result() for future in futures];end=time.perf_counter()
                 row={'mode':mode,'input_tokens':n,'output_tokens':a.output_tokens,'concurrency':a.concurrency,'repeat':rep,
@@ -59,6 +75,7 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--native',default='http://127.0.0.1:19101');p.add_argument('--gpu',default='http://127.0.0.1:19111')
+    p.add_argument('--sse-reader',choices=('byte','read1'),default='read1')
     p.add_argument('--model',default='Qwen/Qwen3-8B-FP8');p.add_argument('--lengths',default='128,512,1024')
     p.add_argument('--output-tokens',type=int,default=128);p.add_argument('--concurrency',type=int,default=1)
     p.add_argument('--warmups',type=int,default=1);p.add_argument('--repeats',type=int,default=3)
