@@ -45,3 +45,5 @@ Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} fro
 Live GPU faults#201: Qwen0.6/Qwen4 cancellation, producer-exit503/readiness, SHM unlink and replacement exact-output checks pass. KONI/Gemma pending; long-output numerical failures remain.
 
 KONI/Gemma GPU lifecycle completed; allfour pass cancellation/reuse, producer death/readiness503, slab unlink and producer replacement. Concurrent-decode isolation is being tested separately and not claimed here.
+
+Allfour live GPU isolation runs pass: active512-token decode survives other-request producer death with exact output; all baseline lifecycle gates retained.

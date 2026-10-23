@@ -31,3 +31,7 @@ export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE
 python opt_prime/examples/pd/http_matrix/live_gpu_faults.py --model /path/to/model --factory long_width_variant:make_prefill --worker-python /path/to/furiosa-worker-python --reference opt_prime/examples/pd/http_matrix/evidence201/local201-qwen06b-matrix-a-reference.json --http-module opt_prime/examples/pd/http_matrix/evidence201/llmd_readiness.py --markers /tmp/fault-markers --output /tmp/fault-result.json
 ```
 Worker interpreter must expose Furiosa Torch2026.4, research producer modules/factories from the live PD work (#235/#245), and the bundled observer_factory. Its model/factory must match the supplied native reference. The proprietary SDK and model weights are not bundled. Evidence contains allfour completed models. Long-output numerical failures remain separate. Markers neither modify KV nor impose an artificial execution gate.
+
+## Concurrent GPU decode isolation verified
+
+Extended live_gpu_faults.py first records512token same-route control, then terminates producer during a different request's8192token prefill while currentGPUrequest decodes. Allfour models pass; current tokens at termination2/512, finalHTTP200 and512tokens exact; pending500/later503/readiness503, slabunlink and replacement pass. New *-isolation.json/log preserve baseline *-faults.json/log separately. Reference512tokens are same-route, not nativeGPU quality references. Same portable invocation now includes this stronger test automatically.

@@ -71,7 +71,7 @@ def main():
 
         worker = new_worker()
         batcher = PDBatcher(model, worker, slots=4, max_context=9216, kv='paged', page_size=64, prefix_cache=False)
-        service = BatchedService(batcher, model=args.model, vocab_size=c.vocab_size, max_output=32,
+        service = BatchedService(batcher, model=args.model, vocab_size=c.vocab_size, max_output=512,
             tokenizer=tokenizer, render=lambda ids: tokenizer.decode(ids, skip_special_tokens=True))
         owner = BatchedOwner(service)
         server, http = serve_stage(owner, 'decode', 0)
@@ -87,9 +87,9 @@ def main():
             except urllib.error.HTTPError as error:
                 return error.code, error.read().decode()
 
-        def generate(rid, n=8192):
+        def generate(rid, n=8192, output=32):
             return request('/v1/completions', dict(model=args.model, prompt=reference['prompts'][str(n)],
-                temperature=0, max_tokens=32, ignore_eos=True, stream=False), rid)
+                temperature=0, max_tokens=output, ignore_eos=True, stream=False), rid)
 
         control_tokens = []
 
@@ -120,6 +120,16 @@ def main():
             try:
                 wait_for(lambda: owner.started, 'owner startup')
                 check_output('before-faults')
+                control_status, control_response = generate('decode-control', 128, 512)
+                assert control_status == 200
+                decode_control = control_response['choices'][0]['token_ids']
+                assert len(decode_control) == 512
+                result['decode_control_tokens'] = decode_control
+
+                def active_decode():
+                    with batcher._lock:
+                        current = batcher.by_id.get('current-decode')
+                        return len(current.tokens) if current is not None and current in batcher.decoding else 0
                 with ThreadPoolExecutor(max_workers=2) as clients:
                     future = clients.submit(generate, 'pending-cancel')
                     event = wait_for(lambda: entered('pending-cancel'), 'actual producer entry before cancel')
@@ -130,11 +140,18 @@ def main():
                     check_output('after-cancel')
                     result['faults']['cancel'] = dict(entry=event, status=499, reuse_exact=True)
                     save()
+                    current = clients.submit(generate, 'current-decode', 128, 512)
+                    wait_for(active_decode, 'current request begins decoding')
                     future = clients.submit(generate, 'pending-death')
                     event = wait_for(lambda: entered('pending-death'), 'actual producer entry before death')
+                    current_tokens_at_termination = active_decode()
+                    assert 0 < current_tokens_at_termination < 512, 'current request must still be decoding'
                     worker._proc.terminate()  # Only this harness-owned producer.
                     status, _ = future.result(timeout=240)
                     assert status in [500, 503], status
+                    current_status, current_response = current.result(timeout=240)
+                    assert current_status == 200, (current_status, current_response)
+                    assert current_response['choices'][0]['token_ids'] == decode_control
                     wait_for(lambda: batcher.idle, 'failed producer drain')
                     assert generate('after-death', 128)[0] == 503
                     assert request('/ready', None, 'readiness-dead')[0] == 503
@@ -155,7 +172,9 @@ def main():
                     assert request('/ready', None, 'readiness-replaced')[0] == 200
                     check_output('after-replacement')
                     result['faults']['worker_exit'] = dict(entry=event, pending_status=status,
-                        later_status=503, readiness=503, slab_unlinked=True, replacement_exact=True)
+                        later_status=503, readiness=503, slab_unlinked=True, replacement_exact=True,
+                        current_status=current_status, current_output_tokens=512,
+                        current_tokens_at_termination=current_tokens_at_termination, current_exact=True)
                 result.update(lifecycle_passed=True, passed=result['native_tokens_equal'], stage='complete')
             except BaseException:
                 errors.append(traceback.format_exc())

@@ -1,0 +1,16 @@
+
+Loading weights:   0%|          | 0/291 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 291/291 [00:00<00:00, 8951.80it/s]
+{"compile_start": "rms", "width": 8192}
+{"compile_done": "rms", "seconds": 0.5271690789959393}
+{"compile_start": "attention", "width": 8192}
+{"compile_done": "attention", "seconds": 0.5319993119919673}
+{"compile_start": "ffn", "width": 8192}
+{"compile_done": "ffn", "seconds": 0.2293650559731759}
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+{"compile_start": "rms", "width": 8192}
+{"compile_done": "rms", "seconds": 0.47090290498454124}
+{"compile_start": "attention", "width": 8192}
+{"compile_done": "attention", "seconds": 0.5417164389509708}
+{"compile_start": "ffn", "width": 8192}
+{"compile_done": "ffn", "seconds": 0.2374730840092525}
