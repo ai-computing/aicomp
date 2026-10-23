@@ -61,3 +61,40 @@ OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 TORCH_DEVICE_BACKEND_AUTOLOAD=0 \
 Evidence logs retain the failing controls and successful reruns. No claim of source-compute/transfer overlap, hardware speedup, ATOM integration, or universal numerical parity.
 
 Final post-ID-guard full regression: **574 passed, 15 skipped, 253 subtests passed**,27 warnings in164.46s. Exit0; `/tmp/stream265-final-regression.log`. Source adapters and ATOM streaming remain unimplemented.
+
+## Source protocol and rngd-full adapter
+
+The production prefill server now advertises capability only for engines with `prefill_stream`. `stream_result` validates the reservation, geometry and nonoverlapping coverage, clips source spans to a cached suffix, copies BF16 CPU data to SHM, then sends notifications. Completion requires exact coverage. The existing KONI/Llama rngd-full adapter exports each completed group before advancing the next group. Whole-prefill behavior is retained for the A/B control.
+
+The serving entry point accepts `--pd-prefill-stream-layers` only with a subprocess producer and Torch decoder; ATOM/RNGD decoder owners are rejected until integrated. Producer capability negotiation rejects older workers. This does not yet connect the separate four-model long-context factory adapters.
+
+- Initial source regressions:5 failures (missing implementation); source plus pipe tests15 passed in2.24s.
+- Production server/receiver pipe integration initially failed because the executable fixture lacked the package on sys.path. Corrected fixture;6 source tests passed in2.73s. The engine alone is stubbed: production server request handling, SHM writes, progress notifications and receiver are exercised.
+- CLI regressions:5 failures before wiring; combined source/server/CLI/receiver/CPU-CUDA owner36 passed,15 warnings in10.57s.
+- Added fully cached suffix and invalid-reservation tests. Full suite and RNGD hardware source parity recorded separately below.
+
+Reproduce focused verification from the package directory with the environment above:
+
+```bash
+python -m pytest tests/test_prefill_source_progress.py tests/test_serving_prefill_cache.py tests/test_subprocess_layer_progress.py tests/test_pd_stream_admission.py -q
+```
+
+The source adapter performs blocking CPU export per group; it permits the receiver to import while later groups run. Neither this sequencing nor CPU tests establish actual kernel/copy overlap or end-to-end performance improvement.
+
+Runtime compatibility audit found that the installed rngd-pd snapshot exposes `_next_token`/`lmh` but not the `_logits` method expected by the existing server. Both whole and streaming adapters now use `_last_logits`: prefer `_logits` when available, otherwise invoke the same existing on-card head and retain all vocabulary logits rather than only argmax. A regression first failed for the missing helper, then all13 source tests passed in2.93s. Numerical parity on actual RNGD remains to be checked; the CPU fixture alone cannot establish it.
+
+Hardware source parity setup: local RNGD chip0, KONI-8B, width128, group2, same full model weights as evidence263. Torch2.10.0+cpu, furiosa-torch2026.4.0, transformers5.8.1. Decoder is not run in this check. Loaded rngd-pd prefill_full.py SHA256 `0ac864695d8c2cedc5fb2ddadbc3d3d782bb21909a83f2b4d82944f32940e8ea`.
+
+Exact launch (source paths are local runtime inputs):
+```bash
+env OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 TORCH_DEVICE_BACKEND_AUTOLOAD=0 \
+ PYTHONPATH=/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime:/tmp/rngd-gpu201-src \
+ /tmp/codex-rngd-gpu-201/bin/python /tmp/stream265-source-hardware.py \
+ > /tmp/stream265-source-hardware.log 2>&1
+```
+
+Full regression collected before the final legacy-head helper:591 passed,15 skipped,253 subtests,27 warnings in165.79s. After the helper, all13 source tests passed in2.93s; the full run does not cover that final added test.
+
+### Actual RNGD attempt: failed before parity
+
+The process exited1. The group2 width128 graph compiled in74s, but the legacy FullPrefillEngine constructor failed while building its on-card LM head: rngd_pd.kernels.dsl_b1 imports missing `furiosa.native_llm_common`. Neither whole-prefill nor streaming inference ran; no KV/logit comparison or speedup result exists. The real runtime failure is retained in stream265-source-hardware.log. Next integration must use the already validated four-model long-context factory adapters, including KONI's partitioned graph with host FP32 norm/head, rather than treating this legacy path as hardware-validated. The `_last_logits` fallback is CPU-tested only and does not solve the constructor dependency.

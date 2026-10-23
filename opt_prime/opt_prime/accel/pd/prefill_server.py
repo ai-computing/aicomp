@@ -100,11 +100,84 @@ class _RngdFull:
         stage = self.engine.begin_device_prefill(list(tokens))
         while not stage.advance(self.engine.ngroups):
             pass
-        logits = torch.from_numpy(self.engine._logits(stage.x, n))
+        logits = self._last_logits(stage.x, n)
         # per layer group: keys [NG, kv_heads, head_dim, C], values [NG, kv_heads, C, head_dim]
         keys = torch.cat([k.cpu()[..., :n] for k in stage.Ks]).transpose(-1, -2)
         values = torch.cat([v.cpu()[:, :, :n] for v in stage.Vs])
         return keys, values, logits
+
+    def prefill_stream(self, tokens, emit):
+        """Export each completed group before scheduling the next group."""
+        import torch
+        n = len(tokens)
+        if not 0 < n <= self.widths[-1]:
+            raise ValueError("prompt exceeds compiled capacity or is empty")
+        stage = self.engine.begin_device_prefill(list(tokens))
+        layer = 0
+        while True:
+            done = stage.advance(1)
+            k, v = stage.Ks[-1], stage.Vs[-1]
+            keys = k.cpu()[..., :n].transpose(-1, -2)
+            values = v.cpu()[:, :, :n]
+            emit(layer, 0, keys, values)
+            layer += keys.shape[0]
+            if done:
+                break
+        return self._last_logits(stage.x, n)
+
+    def _last_logits(self, hidden, n):
+        import torch
+        engine = self.engine
+        if callable(getattr(engine, "_logits", None)):
+            return torch.from_numpy(engine._logits(hidden, n))
+        # Older rngd-pd exposes the same on-card head only through _next_token.
+        out = engine.lmh(hidden[n - 1], engine.lm_norm_d, engine.lm_eps_d,
+                         engine.lm_nh_d, engine.wlm_d)
+        logits = out[0] if isinstance(out, (tuple, list)) else out
+        return logits.detach().cpu().float().reshape(-1)[:engine.V]
+
+
+def stream_result(engine, req, slab, publish):
+    """Copy validated source spans into reserved SHM before notifying the receiver.
+
+    Engines call emit(layer_start, token_start, K, V) with dense [L,H,N,D] spans
+    and return final logits. Calls are synchronous; source buffers may be reused
+    after emit returns. Absolute token spans are clipped to the requested suffix.
+    """
+    import numpy as np
+    import torch
+    from opt_prime.accel.pd.layer_progress import LayerProgress
+    slot, start, end = req["slot"], req["send_from"], len(req["tokens"])
+    if (type(req["id"]) is not int or type(slot) is not int
+            or not 0 <= slot < slab.shape[0] or type(start) is not int
+            or not 0 <= start <= end <= slab.shape[-2] or end == 0):
+        raise ValueError("invalid streamed request reservation")
+    coverage = LayerProgress(slab.shape[2], start, end)
+
+    def emit(layer, first, keys, values):
+        if (type(layer) is not int or type(first) is not int
+                or keys.ndim != 4 or values.shape != keys.shape):
+            raise ValueError("invalid source KV span")
+        layers, heads, count, dim = keys.shape
+        if (layers <= 0 or count <= 0 or not 0 <= layer < layer + layers <= slab.shape[2]
+                or heads != slab.shape[3] or dim != slab.shape[-1]
+                or not 0 <= first < first + count <= end):
+            raise ValueError("invalid source KV geometry")
+        lo, hi = max(start, first), first + count
+        if lo >= hi:
+            return
+        # Validate before touching any published memory. Failed copies abort this request.
+        coverage.publish(layer, layer + layers, lo, hi)
+        arrays = [t[:, :, lo - first:hi - first].to("cpu", torch.bfloat16)
+                  .contiguous().view(torch.int16).numpy().view(np.uint16) for t in (keys, values)]
+        dst = slab[slot, :, layer:layer + layers, :, lo - start:hi - start]
+        dst[0], dst[1] = arrays
+        coverage.drain()
+        publish(dict(id=req["id"], kv_span=[layer, layer + layers, lo, hi]))
+
+    logits = engine.prefill_stream(list(req["tokens"]), emit)
+    coverage.finish()
+    return logits
 
 
 def main():
@@ -143,7 +216,8 @@ def main():
         engine = _RngdFull(a)
     else:
         engine = _RngdQwen(a)
-    print(json.dumps({"ready": True}), flush=True)
+    streaming = callable(getattr(engine, "prefill_stream", None))
+    print(json.dumps({"ready": True, **({"kv_progress": 1} if streaming else {})}), flush=True)
     for line in sys.stdin:
         req = json.loads(line)
         try:
@@ -151,6 +225,15 @@ def main():
             from opt_prime.accel.pd import PDRequest
             sampling = _sampling(req.get("sampling"))
             tokens, start = tuple(req["tokens"]), int(req["send_from"])
+            if req.get("stream_layers"):
+                if req["stream_layers"] is not True or not streaming:
+                    raise ValueError("engine does not support requested layer streaming")
+                logits = stream_result(engine, req, slab,
+                                       lambda msg: print(json.dumps(msg), flush=True))
+                token = select_token(logits, sampling, len(tokens))
+                print(json.dumps(dict(id=req["id"], token=int(token), n=len(tokens) - start,
+                                      cached=0, prefill_s=time.perf_counter() - t0)), flush=True)
+                continue
             if a.engine == "torch":
                 out = engine.prefill(PDRequest(f"p{req['id']}", tokens, 1, sampling), start)
                 keys, values, token, cached = out.keys, out.values, out.token, out.prefill_cached

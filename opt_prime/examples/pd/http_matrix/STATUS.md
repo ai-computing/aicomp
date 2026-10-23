@@ -54,3 +54,9 @@ Reverse-order blockB completed: 192 total timed batches passed parity. Long/c8 A
 ## Layer-progress receiver and GPU owner (#265)
 
 Opt-in subprocess progress validation and incremental GPU imports implemented; partial state remains private until complete. CPU/CUDA focused18pass; full574pass,15skip,253subtests. Invalid boolean ID and capacity error regressions fixed. Controlled producers only: real RNGD source adapters, ATOM owner, and hardware overlap/performance remain pending. See layer-stream265 record/evidence265.
+
+## Producer connection (#265)
+
+Production SHM source protocol and rngd-full per-group export connected. Torch CLI opt-in added; unsupported owners rejected. Full591pass before final legacy-head helper; final source13pass. Actual KONI source parity running; no numerical or speedup claim yet. Four-model long-context factories and ATOM ownership integration remain pending.
+
+Hardware attempt ended before inference: legacy FullPrefillEngine on-card head requires missing furiosa.native_llm_common. Group graph compiled74s; no KV/logit parity result. Continue with the already validated four-model factory adapters and KONI partitioned host-head path.

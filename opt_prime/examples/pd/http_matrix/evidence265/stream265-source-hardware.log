@@ -1,0 +1,26 @@
+
+Loading weights:   0%|          | 0/291 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/291 [00:00<01:35,  3.05it/s]
+Loading weights:  20%|██        | 59/291 [00:00<00:01, 177.50it/s]
+Loading weights:  32%|███▏      | 93/291 [00:00<00:00, 209.61it/s]
+Loading weights:  43%|████▎     | 124/291 [00:00<00:00, 196.95it/s]
+Loading weights:  52%|█████▏    | 150/291 [00:00<00:00, 199.52it/s]
+Loading weights:  60%|██████    | 175/291 [00:00<00:00, 206.01it/s]
+Loading weights:  69%|██████▉   | 202/291 [00:01<00:00, 206.67it/s]
+Loading weights:  79%|███████▊  | 229/291 [00:01<00:00, 208.53it/s]
+Loading weights:  88%|████████▊ | 256/291 [00:01<00:00, 208.64it/s]
+Loading weights:  97%|█████████▋| 283/291 [00:01<00:00, 210.54it/s]
+Loading weights: 100%|██████████| 291/291 [00:01<00:00, 196.10it/s]
+[full-engine] C=128 compiled in 74s
+Traceback (most recent call last):
+  File "/tmp/stream265-source-hardware.py", line 13, in <module>
+    engine=_RngdFull(SimpleNamespace(model=model,width='128',max_context=128,chip=0))
+  File "/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/prefill_server.py", line 89, in __init__
+    self.engine = FullPrefillEngine(cfg, sd, C=widths[0], group=2, chip=a.chip, cache_dir=None)
+  File "/tmp/rngd-gpu201-src/rngd_pd/engines/prefill_full.py", line 141, in __init__
+    self._build_lmhead(cache_dir)
+  File "/tmp/rngd-gpu201-src/rngd_pd/engines/prefill_full.py", line 219, in _build_lmhead
+    from rngd_pd.kernels import dsl_b1 as LE
+  File "/tmp/rngd-gpu201-src/rngd_pd/kernels/dsl_b1.py", line 23, in <module>
+    import furiosa.native_llm_common as nlc
+ModuleNotFoundError: No module named 'furiosa.native_llm_common'

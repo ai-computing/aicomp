@@ -1,0 +1,158 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+________ test_layer_stream_rejects_unsupported_owner[atom-python-None] _________
+
+backend = 'atom', python = 'python', source = None
+
+    @pytest.mark.parametrize('backend,python,source', [('atom','python',None),('rngd','python',None),('torch',None,None),('torch','python','cpu')])
+    def test_layer_stream_rejects_unsupported_owner(backend,python,source):
+        spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
+        factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
+        args=SimpleNamespace(pd_prefill_stream_layers=True,backend=backend,pd_prefill_python=python,pd_prefill_device=source)
+        with pytest.raises(ValueError,match='layer streaming'):
+>           factory.prefill_worker(args,1,None)
+
+tests/test_serving_prefill_cache.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = namespace(pd_prefill_stream_layers=True, backend='atom', pd_prefill_python='python', pd_prefill_device=None)
+slots = 1, config = None
+
+    def prefill_worker(a, slots, config):
+        """the PD prefill side from the flags, or None (aggregated serving)"""
+        overlap = getattr(a, "pd_prefill_copy_overlap", False)
+        if overlap and (not a.pd_prefill_device or a.backend != "torch" or
+                        torch.device(a.pd_prefill_device).type != "cuda" or torch.device(a.device).type != "cuda"):
+            raise ValueError("PD copy overlap requires a Torch CUDA producer and CUDA decoder")
+        if a.pd_prefill_device:
+            chunk = getattr(a, "pd_prefill_chunk", 2048)
+            if chunk <= 0:
+                raise ValueError("PD prefill chunk must be positive")
+            from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+            m = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.pd_prefill_device).eval()
+            return PrefillWorker(TorchPrefillEngine(m, max_context=a.max_context, chunk=chunk,
+                                                    prefix_cache=not getattr(a, "pd_prefill_no_prefix_cache", False),
+                                                    copy_overlap=overlap,
+                                                    out_device=a.device
+                                                    if a.backend == "torch" else "cpu"))
+        if a.pd_prefill_python:
+            import os, shlex
+            from opt_prime.accel.pd.pd_batching import SubprocessPrefillWorker
+>           c = config.get_text_config()
+E           AttributeError: 'NoneType' object has no attribute 'get_text_config'
+
+examples/pd/serve_batched.py:50: AttributeError
+________ test_layer_stream_rejects_unsupported_owner[rngd-python-None] _________
+
+backend = 'rngd', python = 'python', source = None
+
+    @pytest.mark.parametrize('backend,python,source', [('atom','python',None),('rngd','python',None),('torch',None,None),('torch','python','cpu')])
+    def test_layer_stream_rejects_unsupported_owner(backend,python,source):
+        spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
+        factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
+        args=SimpleNamespace(pd_prefill_stream_layers=True,backend=backend,pd_prefill_python=python,pd_prefill_device=source)
+        with pytest.raises(ValueError,match='layer streaming'):
+>           factory.prefill_worker(args,1,None)
+
+tests/test_serving_prefill_cache.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = namespace(pd_prefill_stream_layers=True, backend='rngd', pd_prefill_python='python', pd_prefill_device=None)
+slots = 1, config = None
+
+    def prefill_worker(a, slots, config):
+        """the PD prefill side from the flags, or None (aggregated serving)"""
+        overlap = getattr(a, "pd_prefill_copy_overlap", False)
+        if overlap and (not a.pd_prefill_device or a.backend != "torch" or
+                        torch.device(a.pd_prefill_device).type != "cuda" or torch.device(a.device).type != "cuda"):
+            raise ValueError("PD copy overlap requires a Torch CUDA producer and CUDA decoder")
+        if a.pd_prefill_device:
+            chunk = getattr(a, "pd_prefill_chunk", 2048)
+            if chunk <= 0:
+                raise ValueError("PD prefill chunk must be positive")
+            from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+            m = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.pd_prefill_device).eval()
+            return PrefillWorker(TorchPrefillEngine(m, max_context=a.max_context, chunk=chunk,
+                                                    prefix_cache=not getattr(a, "pd_prefill_no_prefix_cache", False),
+                                                    copy_overlap=overlap,
+                                                    out_device=a.device
+                                                    if a.backend == "torch" else "cpu"))
+        if a.pd_prefill_python:
+            import os, shlex
+            from opt_prime.accel.pd.pd_batching import SubprocessPrefillWorker
+>           c = config.get_text_config()
+E           AttributeError: 'NoneType' object has no attribute 'get_text_config'
+
+examples/pd/serve_batched.py:50: AttributeError
+_________ test_layer_stream_rejects_unsupported_owner[torch-None-None] _________
+
+backend = 'torch', python = None, source = None
+
+    @pytest.mark.parametrize('backend,python,source', [('atom','python',None),('rngd','python',None),('torch',None,None),('torch','python','cpu')])
+    def test_layer_stream_rejects_unsupported_owner(backend,python,source):
+        spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
+        factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
+        args=SimpleNamespace(pd_prefill_stream_layers=True,backend=backend,pd_prefill_python=python,pd_prefill_device=source)
+>       with pytest.raises(ValueError,match='layer streaming'):
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_serving_prefill_cache.py:98: Failed
+________ test_layer_stream_rejects_unsupported_owner[torch-python-cpu] _________
+
+backend = 'torch', python = 'python', source = 'cpu'
+
+    @pytest.mark.parametrize('backend,python,source', [('atom','python',None),('rngd','python',None),('torch',None,None),('torch','python','cpu')])
+    def test_layer_stream_rejects_unsupported_owner(backend,python,source):
+        spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
+        factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
+        args=SimpleNamespace(pd_prefill_stream_layers=True,backend=backend,pd_prefill_python=python,pd_prefill_device=source)
+        with pytest.raises(ValueError,match='layer streaming'):
+>           factory.prefill_worker(args,1,None)
+
+tests/test_serving_prefill_cache.py:99:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = namespace(pd_prefill_stream_layers=True, backend='torch', pd_prefill_python='python', pd_prefill_device='cpu')
+slots = 1, config = None
+
+    def prefill_worker(a, slots, config):
+        """the PD prefill side from the flags, or None (aggregated serving)"""
+        overlap = getattr(a, "pd_prefill_copy_overlap", False)
+        if overlap and (not a.pd_prefill_device or a.backend != "torch" or
+                        torch.device(a.pd_prefill_device).type != "cuda" or torch.device(a.device).type != "cuda"):
+            raise ValueError("PD copy overlap requires a Torch CUDA producer and CUDA decoder")
+        if a.pd_prefill_device:
+            chunk = getattr(a, "pd_prefill_chunk", 2048)
+            if chunk <= 0:
+                raise ValueError("PD prefill chunk must be positive")
+            from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+>           m = AutoModelForCausalLM.from_pretrained(a.model, dtype=getattr(torch, a.dtype)).to(a.pd_prefill_device).eval()
+E           AttributeError: 'types.SimpleNamespace' object has no attribute 'model'
+
+examples/pd/serve_batched.py:41: AttributeError
+________________ test_layer_stream_reaches_subprocess_receiver _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7c82bbe14310>
+
+    def test_layer_stream_reaches_subprocess_receiver(monkeypatch):
+        import opt_prime.accel.pd.pd_batching as pd
+        spec=importlib.util.spec_from_file_location('stream_factory',Path(__file__).parents[1]/'examples/pd/serve_batched.py')
+        factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
+        received={}
+        def worker(*args,**kw):received.update(kw);return object()
+        monkeypatch.setattr(pd,'SubprocessPrefillWorker',worker)
+        args=SimpleNamespace(pd_prefill_stream_layers=True,backend='torch',pd_prefill_python='python',pd_prefill_device=None,
+                             pd_prefill_pythonpath=None,pd_prefill_args='--engine rngd-full',model='local',max_context=16)
+        config=LlamaConfig(hidden_size=32,num_attention_heads=4,num_key_value_heads=2,num_hidden_layers=2)
+        factory.prefill_worker(args,1,config)
+>       assert received['stream_layers'] is True
+E       KeyError: 'stream_layers'
+
+tests/test_serving_prefill_cache.py:113: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_serving_prefill_cache.py::test_layer_stream_rejects_unsupported_owner[atom-python-None]
+FAILED tests/test_serving_prefill_cache.py::test_layer_stream_rejects_unsupported_owner[rngd-python-None]
+FAILED tests/test_serving_prefill_cache.py::test_layer_stream_rejects_unsupported_owner[torch-None-None]
+FAILED tests/test_serving_prefill_cache.py::test_layer_stream_rejects_unsupported_owner[torch-python-cpu]
+FAILED tests/test_serving_prefill_cache.py::test_layer_stream_reaches_subprocess_receiver
+5 failed, 7 deselected in 2.49s
