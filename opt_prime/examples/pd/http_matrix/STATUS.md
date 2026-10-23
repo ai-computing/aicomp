@@ -41,3 +41,7 @@ Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} fro
 #258 dense hybrid KV: actual Gemma failure reproduced; mapping/group validation corrected.31focused and505full CPU tests pass; live rerun pending.
 
 #258 corrected live Gemma32ce5d5:24batches,20/20token checks,60/60timed texts exact;84remote/0local/0errors. Shape crash fixed in recorded hardware matrix; overall numerical/quality boundaries remain.
+
+#261 KONI numerical evidence: original live drift beforeEOS, shortKV exact repeat/replay, padded-shape control, forced-prefix BF16/FP32 and head-onlyFP32 probes. No production fix/general equivalence claim.
+
+Free-generation control rejects head-onlyFP32 as generalfix: KONIshort firstdiff14 andQwen4long13; no production option added.
