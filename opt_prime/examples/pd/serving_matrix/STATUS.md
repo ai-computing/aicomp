@@ -14,3 +14,6 @@ These are exported research records for review. The local research-hub retains t
 Original first request fails; lane-local tables alone fail repeat parity; lane tables plus request mask reset complete16 runs through8K with8/8 repeat pairs exact. Same-graph SDK-owned comparison: full32-step logits exact at four lengths. GPU parity remains incomplete. Prefix/host cache and PD restoration unsupported by this probe; engine integration remains open.
 ## Long-input extension
 Qwen3-4B RNGD2048 warm570–575ms;32-token fixture output matches GPU and ATOM native. Qwen3-0.6B ATOM16 runs complete through8K; repeat8/8 but GPU full output4/8 match. Gemma long artifact compiles but external hybrid cache tables fail (#207). See experiments/2026-10-23-long-model-matrix.md.
+
+## KONI capacity and Gemma reference
+KONI8B context9216/B1/three blocks fails graph conversion;one block completes16 runs through8K+128,8/8 repeat pairs exact,3/8 full/EOS GPU output matches (including both8K cases). Raw results and capacity record attached. GPU Gemma FP32 reference added;8K32-token output matches ATOM, shorter cases remain divergent. Full four-model objective remains active.
