@@ -1,0 +1,82 @@
+[
+  {
+    "input_tokens": 128,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 1,
+    "ttft_ms": 25.3921760013327
+  },
+  {
+    "input_tokens": 128,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 1,
+    "ttft_ms": 25.311404024250805
+  },
+  {
+    "input_tokens": 512,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 2,
+    "ttft_ms": 49.429733073338866
+  },
+  {
+    "input_tokens": 512,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 2,
+    "ttft_ms": 49.3650910211727
+  },
+  {
+    "input_tokens": 2048,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 1,
+    "ttft_ms": 202.04846805427223
+  },
+  {
+    "input_tokens": 2048,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 1,
+    "ttft_ms": 199.89913096651435
+  },
+  {
+    "input_tokens": 8192,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 2,
+    "ttft_ms": 816.4156510028988
+  },
+  {
+    "input_tokens": 8192,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "gpu_eos_equal": false,
+    "first_equal": true,
+    "first_difference": 2,
+    "ttft_ms": 822.12178199552
+  }
+]

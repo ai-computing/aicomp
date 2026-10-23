@@ -16,6 +16,7 @@ p.add_argument("--model", required=True)
 p.add_argument("--cache-dir", required=True)
 p.add_argument("--output", required=True)
 p.add_argument("--max-context", type=int, default=9216)
+p.add_argument("--experimental-hybrid-tables", action="store_true")
 p.add_argument("--kv-blocks", type=int, default=3)
 a = p.parse_args()
 devices = list(Path("/dev").glob("rbln[0-9]*"))
@@ -46,6 +47,10 @@ try:
         flush=True,
     )
     b = e.batcher(prefix_cache=False)
+    if a.experimental_hybrid_tables:
+        from hybrid_tables import install
+
+        install(b)
     with open(a.output, "w", buffering=1) as f:
         for n in [128, 512, 2048, 8192]:
             ids = exact_prompt(prefix, filler, suffix, n)
