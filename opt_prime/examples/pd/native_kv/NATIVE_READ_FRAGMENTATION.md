@@ -5,6 +5,10 @@ Qwen3-8B-FP8 revision220b46e3b2180893580a4454f21f22d3ebb187d3, TP8/max2048 FXB
 SHA25636d74b754f580bea893c68cc70147c615d1a9c4273a4580dbebaf87287400713.
 Measured on a GPU+RNGD host, using one dedicated RNGD. No native binary patch.
 
+## Subsequent integration experiment
+
+The earlier source/API audit below is historical. Submission and completion boundaries were subsequently located in the measured binary, and a build-pinned in-process adapter was tested without a debugger. See [serving results](queue_adapter/SERVING_RESULTS.md): isolated KV handoff improved, but mixed HTTP serving did not. The adapter remains experimental and opt-in; a supported vendor interface is still unavailable in the inspected installation.
+
 ## Evidence
 
 At1024 input tokens, full1023-position KV export alternates between roughly40ms and
