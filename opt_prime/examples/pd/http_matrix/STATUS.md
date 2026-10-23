@@ -43,3 +43,5 @@ Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} fro
 Opt-in Torch GPU token-chunk copies implemented with two pending spans, pinned-host staging, source readiness events and completion before handoff. Focused CUDA correctness/failure checks pass; CPU suite 504 passed, 43 skipped, 253 subtests. Actual CUDA timeline, four-model serving speedup, large-KV curve and RNGD/ATOM layer-wise export remain open. Default remains whole-span transfer. See experiments/2026-10-24-chunk-copy47.md.
 
 Qwen3-0.6B input8192 paired prefill: median997.98 ->955.64 ms (-4.24%), six runs KV/token exact. Separate CUDA traces show 27.91ms DtoH/source-kernel intersection (mostly27.47ms KV index gather), zero GEMM intersection. Both modes transfer939,524,096 bytes. Four-model HTTP A/B remains live; no serving speedup claim.
+
+GPU HTTP blockA96batches all parity;long/c8 chunk-copy throughput changes: Qwen0.6-3.1%,Qwen4+2.5%,KONI+2.4%,Gemma-1.5%. Reverse-order blockB pending. Export-only0.1–4GB curve: chunked slower, but incremental source staging bounded at~67.1MB rather than4GB. Keep opt-in; no general serving speedup claim.
