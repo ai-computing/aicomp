@@ -1,9 +1,0 @@
-{
-  "engine_commit": "604ad99",
-  "current_sources": {
-    "bench_http.py": "6519abb5dce25770a9f8ea73b39460167b37d8180f16b40786659ec99bc701ec",
-    "bench_arrival_http.py": "d444e111c8c7fbce2c631052b3c718f3c76c4fe62e449480410fd5854a32a83b",
-    "test_bench_stream.py": "cc27f33c147f6a2524f23f24cbb85a1f8b7f3c352a81aa69f4e9b182a105aa55",
-    "summarize_load.py": "9e94d3bf5c299d153be63efe279ad4fcce1134eadef285dd91683ea3fe53deef"
-  }
-}
