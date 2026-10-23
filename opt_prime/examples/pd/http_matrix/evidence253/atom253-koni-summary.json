@@ -1,0 +1,210 @@
+{
+  "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+  "stage": "complete",
+  "passed": true,
+  "measured_batches": 48,
+  "rows": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 1,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 6.073943841983278,
+      "on_tok_s": 6.070414265717409,
+      "change_pct": -0.05811012346659261,
+      "paired_changes_pct": [
+        0.429253846452915,
+        -0.25616170152397144,
+        -1.637615769146028
+      ],
+      "off_median_first_token_s": 3.188754801056348,
+      "on_median_first_token_s": 3.193927025073208,
+      "off_median_e2e_s": 5.268300389987417,
+      "on_median_e2e_s": 5.2712739570997655
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 6.074931894517198,
+      "on_tok_s": 8.558004548525664,
+      "change_pct": 40.874082164600246,
+      "paired_changes_pct": [
+        41.36565813372377,
+        39.67913603903759,
+        39.791346198360735
+      ],
+      "off_median_first_token_s": 11.092427575553302,
+      "on_median_first_token_s": 8.075473057979252,
+      "off_median_e2e_s": 13.1734207815025,
+      "on_median_e2e_s": 10.152320401452016
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "concurrency": 1,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 10.939156951458127,
+      "on_tok_s": 10.936170404907761,
+      "change_pct": -0.027301432492632394,
+      "paired_changes_pct": [
+        0.15454567330028812,
+        -0.027301432492632394,
+        2.334248788126869
+      ],
+      "off_median_first_token_s": 3.1803960170364007,
+      "on_median_first_token_s": 3.1820806509349495,
+      "off_median_e2e_s": 11.700953993014991,
+      "on_median_e2e_s": 11.704154097940773
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "concurrency": 4,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 10.873236381775351,
+      "on_tok_s": 13.673585935946978,
+      "change_pct": 25.754517384219632,
+      "paired_changes_pct": [
+        26.026414304642852,
+        25.034643206329687,
+        25.754517384219632
+      ],
+      "off_median_first_token_s": 20.898272749502212,
+      "on_median_first_token_s": 16.07395024097059,
+      "off_median_e2e_s": 29.4168122105184,
+      "on_median_e2e_s": 24.59150394698372
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 1,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 4.740746256834072,
+      "on_tok_s": 4.731570991849313,
+      "change_pct": -0.19354052057799498,
+      "paired_changes_pct": [
+        1.297451484258505,
+        -0.6734476711597992,
+        -0.19354052057799498
+      ],
+      "off_median_first_token_s": 4.527249442064203,
+      "on_median_first_token_s": 4.5374126569367945,
+      "off_median_e2e_s": 6.749840553035028,
+      "on_median_e2e_s": 6.762957567931153
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "concurrency": 4,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 4.782615000060235,
+      "on_tok_s": 6.292681690716462,
+      "change_pct": 31.574080092945135,
+      "paired_changes_pct": [
+        31.574080092945135,
+        32.92212545335267,
+        30.807396360678574
+      ],
+      "off_median_first_token_s": 14.495777527976315,
+      "on_median_first_token_s": 11.292777049529832,
+      "off_median_e2e_s": 16.716965802013874,
+      "on_median_e2e_s": 13.512547572492622
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "concurrency": 1,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 9.398753655996774,
+      "on_tok_s": 9.39138588742765,
+      "change_pct": -0.0783909105269931,
+      "paired_changes_pct": [
+        -0.8766156933057379,
+        0.2230294446130321,
+        -0.17416525128901572
+      ],
+      "off_median_first_token_s": 4.504511486040428,
+      "on_median_first_token_s": 4.511214580037631,
+      "off_median_e2e_s": 13.618662261986174,
+      "on_median_e2e_s": 13.62934918096289
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "concurrency": 4,
+      "paired_repeats": [
+        0,
+        1,
+        2
+      ],
+      "off_tok_s": 9.408771040749222,
+      "on_tok_s": 11.617823014785085,
+      "change_pct": 23.47864523930381,
+      "paired_changes_pct": [
+        23.513306575696056,
+        24.53418820134077,
+        22.9262445145064
+      ],
+      "off_median_first_token_s": 24.905245764006395,
+      "on_median_first_token_s": 19.68521516403416,
+      "off_median_e2e_s": 34.02811081049731,
+      "on_median_e2e_s": 28.79301679949276
+    }
+  ],
+  "latency_kind": "median of matched batch medians; first token is owner emission, not client SSE",
+  "overlap_kind": "producer prefill+export host-call versus other-request decode host-call; not device-kernel proof",
+  "overlap": {
+    "False": {
+      "completed_measured_producers": 60,
+      "with_overlap": 0,
+      "total_overlap_s": 0.0
+    },
+    "True": {
+      "completed_measured_producers": 60,
+      "with_overlap": 36,
+      "total_overlap_s": 96.42008972377516
+    }
+  },
+  "lifecycle": {
+    "cancel": {
+      "victim_status": 499,
+      "first_tokens_equal": true,
+      "drained": true
+    },
+    "worker_exit": {
+      "victim_status": 500,
+      "first_tokens_equal": true,
+      "drained": true
+    }
+  }
+}

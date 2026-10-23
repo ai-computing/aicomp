@@ -41,3 +41,5 @@ Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} fro
 ## B1 next-request prefill (#253), 2026-10-24
 
 Opt-in remote_prefetch / --pd-prefetch-next implemented for single-lane ATOM remote-only PD. Keep one source result reserved through owner import; cancelled writers drain before reuse. Prefix/host cache admission remains late, so early prefill transfers the full prompt.35focused tests and full511passed34skipped253subtests; real four-model hardware pipeline/performance validation pending. No speedup claim. See experiments/2026-10-24-atom-prefetch253.md.
+
+KONI hardware prefetch validation complete:48timed batches exact,8fixed-output/4EOS groups pass, cancellation/reuse and producer-exit isolation/readiness503 pass. Same-warm-instance off/on3repeat c4 gains23.48–40.87%; c1 near-neutral. Host producer/decode overlap only in enabled mode. Remaining three models pending; no default promotion. See evidence253/atom253-koni-summary.json and experiment.
