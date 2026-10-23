@@ -13,6 +13,8 @@ import torch
 p = argparse.ArgumentParser()
 p.add_argument("--factory", required=True)
 p.add_argument("--model", required=True)
+p.add_argument("--backend", choices=["torch", "atom"], default="torch")
+p.add_argument("--cache-dir")
 p.add_argument("--fixtures", required=True)
 p.add_argument("--output", required=True)
 a = p.parse_args()
@@ -21,14 +23,27 @@ spec = importlib.util.spec_from_file_location("factory229", a.factory)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 model = a.model
+if a.backend == "atom":
+    if not a.cache_dir:
+        p.error("ATOM validation requires an existing artifact cache")
+    import opt_prime.accel.platforms.atom.engine as atom_engine
+
+    nodes = list(Path("/dev").glob("rbln[0-9]*"))
+    assert len(nodes) == 1, "requires exclusive single-ATOM allocation"
+
+    class ArtifactEngine(atom_engine.AtomRblnEngine):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs, cache_dir=a.cache_dir)
+
+    atom_engine.AtomRblnEngine = ArtifactEngine
 args = SimpleNamespace(
     model=model,
     kv_events=None,
-    backend="torch",
+    backend=a.backend,
     dtype="bfloat16",
     device="cuda:0",
     slots=1,
-    max_context=2048,
+    max_context=9216 if a.backend == "atom" else 2048,
     kv="slot",
     page_size=64,
     prefix_cache=False,
@@ -40,6 +55,9 @@ args = SimpleNamespace(
     pd_prefill_device=None,
     pd_prefill_python=None,
     remote_kv=None,
+    devices=[int(nodes[0].name[4:])] if a.backend == "atom" else [],
+    atom_kv_blocks=1,
+    pd_remote_only=False,
 )
 owner = module.build(args)
 fixed = owner.service.eos_token_ids
