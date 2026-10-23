@@ -1,0 +1,254 @@
+[
+  {
+    "input_tokens": 128,
+    "repeat": 0,
+    "mode": "baseline",
+    "import_s": 0.4396623489446938,
+    "readback_exact_slots": 72
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 0,
+    "mode": "candidate",
+    "import_s": 0.05362377397250384,
+    "readback_exact_slots": 72
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 1,
+    "mode": "candidate",
+    "import_s": 0.04677374102175236,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 1,
+    "mode": "baseline",
+    "import_s": 0.0718330399831757,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 2,
+    "mode": "baseline",
+    "import_s": 0.07126760901883245,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 2,
+    "mode": "candidate",
+    "import_s": 0.05248185305390507,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 3,
+    "mode": "candidate",
+    "import_s": 0.04203070292714983,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 3,
+    "mode": "baseline",
+    "import_s": 0.06644799001514912,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 4,
+    "mode": "baseline",
+    "import_s": 0.07029844797216356,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 4,
+    "mode": "candidate",
+    "import_s": 0.04808893508743495,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 5,
+    "mode": "candidate",
+    "import_s": 0.04044206906110048,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 128,
+    "repeat": 5,
+    "mode": "baseline",
+    "import_s": 0.06888400507159531,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 0,
+    "mode": "baseline",
+    "import_s": 0.21449770196340978,
+    "readback_exact_slots": 72
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 0,
+    "mode": "candidate",
+    "import_s": 0.12996868696063757,
+    "readback_exact_slots": 72
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 1,
+    "mode": "candidate",
+    "import_s": 0.13930363801773638,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 1,
+    "mode": "baseline",
+    "import_s": 0.21901632694061846,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 2,
+    "mode": "baseline",
+    "import_s": 0.2090958959888667,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 2,
+    "mode": "candidate",
+    "import_s": 0.13193458400201052,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 3,
+    "mode": "candidate",
+    "import_s": 0.12489791098050773,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 3,
+    "mode": "baseline",
+    "import_s": 0.19529414200223982,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 4,
+    "mode": "baseline",
+    "import_s": 0.2044212509645149,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 4,
+    "mode": "candidate",
+    "import_s": 0.13802955707069486,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 5,
+    "mode": "candidate",
+    "import_s": 0.13445502996910363,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 512,
+    "repeat": 5,
+    "mode": "baseline",
+    "import_s": 0.23691771703306586,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 0,
+    "mode": "baseline",
+    "import_s": 0.7273377829696983,
+    "readback_exact_slots": 72
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 0,
+    "mode": "candidate",
+    "import_s": 0.48954942100681365,
+    "readback_exact_slots": 72
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 1,
+    "mode": "candidate",
+    "import_s": 0.4716311839874834,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 1,
+    "mode": "baseline",
+    "import_s": 0.719557411968708,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 2,
+    "mode": "baseline",
+    "import_s": 0.7004507320234552,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 2,
+    "mode": "candidate",
+    "import_s": 0.4692181919235736,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 3,
+    "mode": "candidate",
+    "import_s": 0.45501433894969523,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 3,
+    "mode": "baseline",
+    "import_s": 0.7127122150268406,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 4,
+    "mode": "baseline",
+    "import_s": 0.7109097189968452,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 4,
+    "mode": "candidate",
+    "import_s": 0.4644277630141005,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 5,
+    "mode": "candidate",
+    "import_s": 0.4571030780207366,
+    "readback_exact_slots": 0
+  },
+  {
+    "input_tokens": 2048,
+    "repeat": 5,
+    "mode": "baseline",
+    "import_s": 0.7423239280469716,
+    "readback_exact_slots": 0
+  }
+]
