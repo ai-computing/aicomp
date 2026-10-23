@@ -1,0 +1,238 @@
+{
+  "owner_stream_cuda_overlap": {
+    "kv_copies": 882,
+    "copy_duration_ns": 160802873,
+    "kernel_overlap_ns": 886685,
+    "copies_with_kernel_overlap": 4,
+    "bytes": 3937517568,
+    "overlap_fraction": 0.005514111678837977,
+    "by_copy_bytes": {
+      "1040384": {
+        "kv_copies": 306,
+        "copy_duration_ns": 14684798,
+        "kernel_overlap_ns": 0,
+        "copies_with_kernel_overlap": 0,
+        "bytes": 318357504,
+        "overlap_fraction": 0.0
+      },
+      "4186112": {
+        "kv_copies": 288,
+        "copy_duration_ns": 48879897,
+        "kernel_overlap_ns": 0,
+        "copies_with_kernel_overlap": 0,
+        "bytes": 1205600256,
+        "overlap_fraction": 0.0
+      },
+      "8380416": {
+        "kv_copies": 288,
+        "copy_duration_ns": 97238178,
+        "kernel_overlap_ns": 886685,
+        "copies_with_kernel_overlap": 4,
+        "bytes": 2413559808,
+        "overlap_fraction": 0.009118692042954568
+      }
+    }
+  },
+  "replay_owner_cuda_overlap": {
+    "kv_copies": 882,
+    "copy_duration_ns": 161720622,
+    "kernel_overlap_ns": 153594182,
+    "copies_with_kernel_overlap": 762,
+    "bytes": 3937517568,
+    "overlap_fraction": 0.9497501314334544,
+    "by_copy_bytes": {
+      "1040384": {
+        "kv_copies": 306,
+        "copy_duration_ns": 15462176,
+        "kernel_overlap_ns": 9510732,
+        "copies_with_kernel_overlap": 192,
+        "bytes": 318357504,
+        "overlap_fraction": 0.6150966073597921
+      },
+      "4186112": {
+        "kv_copies": 288,
+        "copy_duration_ns": 48943874,
+        "kernel_overlap_ns": 47766766,
+        "copies_with_kernel_overlap": 283,
+        "bytes": 1205600256,
+        "overlap_fraction": 0.9759498400147074
+      },
+      "8380416": {
+        "kv_copies": 288,
+        "copy_duration_ns": 97314572,
+        "kernel_overlap_ns": 96316684,
+        "copies_with_kernel_overlap": 287,
+        "bytes": 2413559808,
+        "overlap_fraction": 0.9897457494854933
+      }
+    }
+  },
+  "replay_owner6": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.8880759690000001,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.381745385966497,
+      "completed_tok_s": 441.8428546422388,
+      "ttft_p50_ms": 106.44747834885493,
+      "ttft_p95_ms": 162.24862064700574,
+      "total_p95_ms": 2889.084128313698,
+      "max_text_gap_ms": 93.98915700148791
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 6.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 0.8048955879999999,
+      "requests": 96,
+      "client_workers": 96,
+      "successes": 96,
+      "errors": 0,
+      "duration_s": 17.49128432100406,
+      "completed_tok_s": 439.0758196513692,
+      "ttft_p50_ms": 146.46914531476796,
+      "ttft_p95_ms": 251.28540265723132,
+      "total_p95_ms": 1677.515270654112,
+      "max_text_gap_ms": 91.65996900992468
+    }
+  ],
+  "replay_owner12": [
+    {
+      "phase": 0,
+      "mode": "native",
+      "rate": 12.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 3.6214865,
+      "requests": 384,
+      "client_workers": 128,
+      "successes": 384,
+      "errors": 0,
+      "duration_s": 34.91159506098484,
+      "completed_tok_s": 879.9368790322296,
+      "ttft_p50_ms": 155.7593530160375,
+      "ttft_p95_ms": 272.0532479870599,
+      "total_p95_ms": 11582.077965314966,
+      "max_text_gap_ms": 273.95272298599593
+    },
+    {
+      "phase": 0,
+      "mode": "gpu",
+      "rate": 12.0,
+      "sse_reader": "read1",
+      "client_cpu_s": 3.100716429,
+      "requests": 384,
+      "client_workers": 128,
+      "successes": 384,
+      "errors": 0,
+      "duration_s": 33.638867635978386,
+      "completed_tok_s": 913.229313555831,
+      "ttft_p50_ms": 145.75398166198283,
+      "ttft_p95_ms": 263.5295053187292,
+      "total_p95_ms": 1803.934968309477,
+      "max_text_gap_ms": 100.47313300310634
+    }
+  ],
+  "quality": {
+    "cases": 9,
+    "equal": 9,
+    "exact": {
+      "native": 9,
+      "solo": 9,
+      "concurrent": 9
+    }
+  },
+  "cancellation": {
+    "cancel_after_headers": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "recovery": [
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      },
+      {
+        "status": 200,
+        "tokens": 8
+      }
+    ],
+    "health": 200
+  }
+}

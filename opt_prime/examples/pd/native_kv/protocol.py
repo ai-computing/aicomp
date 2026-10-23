@@ -76,11 +76,14 @@ def handshake(endpoint, layout):
     return bytes(data)
 
 
-def control(request_id, kind, block_ids=()):
+def control(request_id, kind, block_ids=(), *, start_pos=0):
     encoded = request_id.encode('ascii')
     if not 8 <= len(encoded) <= 127:
         raise ValueError('request ID must be 8..127 ASCII bytes')
     ids = list(block_ids)
+    if (type(start_pos) is not int or not 0 <= start_pos < MAX_POSITIONS or
+            (start_pos and (kind != 2 or not ids)) or start_pos + len(ids) > MAX_POSITIONS):
+        raise ValueError('invalid source prefix offset')
     if kind not in (1, 2, 3) or (kind != 2 and ids):
         raise ValueError('unsupported control message')
     if len(ids) > MAX_POSITIONS or len(set(ids)) != len(ids) or any(not 0 <= n < 272321 for n in ids):
@@ -95,6 +98,7 @@ def control(request_id, kind, block_ids=()):
     struct.pack_into('<I', data, root + 4, kind)
     string_ref(data, root + 8, 0, len(encoded))
     if kind == 2:
+        struct.pack_into('<I', data, root + 16, start_pos)
         struct.pack_into('<iIiI', data, root + 20, start - (root + 20), len(ids), -28, 0)
     return bytes(data)
 

@@ -4,9 +4,12 @@ import time
 from serve_gpu import validate
 
 
-def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepared, retire):
+def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepared, retire, recompute=None, stream_uploads=None):
     a = worker.args
     owned = {}
+    streaming = stream_uploads is not None
+    def chunk(context, first, last, packet):
+        stream_uploads.publish(context[0], first, last, packet)
 
     def acquire():
         if worker.stopping.is_set() or not credits.acquire(blocking=False): return None
@@ -44,6 +47,9 @@ def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepar
             'admitted_at_native_start':registry.count(),
             'pending_at_native_start':worker.jobs.qsize(),
         }
+        if recompute is not None:
+            job.prefix_length = recompute.admit(job, tokens, count)
+            job.stage_metrics['prefix_length'] = job.prefix_length
         return tokens, (job, tokens, count)
 
     def complete(context, packet, stats):
@@ -52,18 +58,31 @@ def run_rolling(worker, client, tokenizer, vocab_size, credits, registry, prepar
         delivered = False
         try:
             if worker.stopping.is_set(): job.cancel.set()
-            if job.cancel.is_set(): return
-            job.stage_metrics.update(native_ready_ms=stats['ready_ms'],
-                native_kv_ms=stats['kv_ready_ms'], native_complete_ms=stats['complete_ms'],
+            if job.cancel.is_set() and recompute is None and not streaming: return
+            job.stage_metrics.update(native_ready_ms=stats.get('ready_ms'),
+                native_kv_ms=stats.get('kv_ready_ms'), native_complete_ms=stats.get('complete_ms'),
                 cpu_pack_queue_ms=0.0, cpu_pack_ms=0.0)
             job.prepared_at = time.perf_counter()
-            prepared.put_nowait((job, tokens, count, packet.host))
+            if recompute is not None:
+                recompute.native_complete(job, None if packet is None else packet.host)
+            else:
+                prepared.put_nowait((job, tokens, count, packet if streaming else packet.host))
             delivered = True
         finally:
             if not delivered: retire(job)
 
     try:
         client.prefill_stream(a.model, acquire, complete, worker.stopping.is_set,
-                             max_pending=min(a.batch_size, a.native_batch_size), direct=True)
+                             max_pending=min(a.batch_size, a.native_batch_size), direct=True,
+                             **({'on_batch':chunk} if streaming else {}),
+                             **({'get_start_pos':lambda tokens, ctx:ctx[0].prefix_length}
+                                if recompute is not None else {}))
     finally:
-        for job in owned.values(): retire(job)
+        for job in owned.values():
+            if streaming:
+                job.cancel.set()
+                prepared.put_nowait((job, [], 0, None))
+            elif recompute is None: retire(job)
+            else:
+                job.cancel.set()
+                recompute.native_complete(job, None)

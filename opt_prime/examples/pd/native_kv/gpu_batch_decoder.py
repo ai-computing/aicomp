@@ -144,13 +144,15 @@ class BatchGraphDecoder:
         self.remaining[lane] = 0
         self.active[lane].fill_(False)
 
-    def step(self, eos_ids=(), ignore_eos=False, paused=()):
+    def step(self, eos_ids=(), ignore_eos=False, paused=(), during_replay=None):
         paused = set(paused)
         if any(not 0 <= lane < self.batch_size for lane in paused):
             raise ValueError('invalid paused lane')
         if not any(n and lane not in paused for lane, n in enumerate(self.remaining)): return {}
         for lane in paused: self.active[lane].fill_(False)
         (self.graph if any(self.remaining[1:]) else self.single_graph).replay()
+        # Only independent staging work may run here; active graph buffers stay owned.
+        if during_replay is not None: during_replay()
         tokens = self.input_id[:, 0].tolist()
         for lane in paused:
             if self.remaining[lane]: self.active[lane].fill_(True)
