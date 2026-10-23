@@ -42,6 +42,10 @@ from opt_prime.accel.pd.batching import ContinuousBatcher
 from opt_prime.accel.pd.sampling import select_token
 
 
+class InvalidKVImport(ValueError):
+    """Invalid remote KV rejected before any device write; the lane remains reusable."""
+
+
 _DLFLOAT = None
 
 
@@ -240,25 +244,25 @@ class AtomKVBlocks:
         positions start..start+n; the SDK's KV tensors are (key, value) per layer in bfloat16"""
         import numpy as np
         if keys.ndim != 4 or values.ndim != 4:
-            raise ValueError("KV export must have layer/head/token/dimension axes")
+            raise InvalidKVImport("KV export must have layer/head/token/dimension axes")
         block, n = self.lane_block[lane], keys.shape[2]
         if self.hybrid_cache and start:
-            raise ValueError("hybrid PD requires a full prefix from position zero")
+            raise InvalidKVImport("hybrid PD requires a full prefix from position zero")
         if keys.shape != values.shape or len(self.metas) != keys.shape[0] * 2:
-            raise ValueError("KV export geometry does not match compiled cache")
+            raise InvalidKVImport("KV export geometry does not match compiled cache")
         stage = self._staging()
         if len({buf.dtype for buf in stage}) != 1:
             raise ValueError("mixed physical KV formats are unsupported")
         destinations = []
         for m, buf in zip(self.metas, stage):
             if (keys.shape[1], keys.shape[3]) != (buf.shape[1], buf.shape[3]):
-                raise ValueError("KV export heads/dimensions do not match compiled cache")
+                raise InvalidKVImport("KV export heads/dimensions do not match compiled cache")
             local = self.hybrid_cache and m.get("layer_type") == "sliding_attention"
             if self.hybrid_cache and m.get("layer_type") not in ("sliding_attention", "full_attention"):
                 raise ValueError("unknown hybrid KV layer type")
             dest, offset, kept = (lane, 0, min(n, buf.shape[2])) if local else (block, start, n)
             if dest is None or not 0 <= dest < buf.shape[0] or offset < 0 or offset + kept > buf.shape[2]:
-                raise ValueError("KV import exceeds assigned cache capacity")
+                raise InvalidKVImport("KV import exceeds assigned cache capacity")
             destinations.append((dest, offset, kept))
         # all layers converted at once ([layers, 2, kv_heads, n, head_dim], K then V), then one copy per KV tensor
         kv = torch.stack([keys, values], dim=1).detach().to("cpu")
@@ -485,8 +489,13 @@ class AtomBatcher(ContinuousBatcher):
                 r.pending = None
                 ids = r.request.input_ids
                 t0 = time.perf_counter()
-                if out.keys.shape[2]:
-                    self.blocks.import_span(r.slot, out.start, out.keys, out.values)
+                try:
+                    if out.keys.shape[2]:
+                        self.blocks.import_span(r.slot, out.start, out.keys, out.values)
+                except InvalidKVImport as error:
+                    with self._lock:
+                        self._finish(r, error)
+                    continue
                 if self.hybrid_cache:
                     self.decoder.dec_attn_mask[r.slot].zero_()
                     self.decoder.dec_attn_mask[r.slot, :len(ids)] = 1

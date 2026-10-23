@@ -167,7 +167,10 @@ def test_hybrid_import_uses_lane_tail_and_global_block_with_physical_dtype(fake_
     assert len(writes) == 4
 
 
-def test_partial_hybrid_result_fails_request_without_poisoning_lane(fake_rebel):  # noqa: F811
+@pytest.mark.parametrize("invalid", ["partial", "heads", "values"])
+def test_invalid_hybrid_result_fails_request_without_poisoning_lane(
+    fake_rebel, invalid  # noqa: F811
+):
     import copy
 
     from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
@@ -185,8 +188,14 @@ def test_partial_hybrid_result_fails_request_without_poisoning_lane(fake_rebel):
         out = original(request, send_from)
         calls += 1
         if calls == 1:
-            out.start = 1
-            out.keys, out.values = out.keys[:, :, 1:], out.values[:, :, 1:]
+            if invalid == "partial":
+                out.start = 1
+                out.keys, out.values = out.keys[:, :, 1:], out.values[:, :, 1:]
+            elif invalid == "heads":
+                out.keys = out.keys.repeat(1, 2, 1, 1)
+                out.values = out.values.repeat(1, 2, 1, 1)
+            else:
+                out.values = out.values[:, :, :-1]
         return out
 
     engine.prefill = prefill
@@ -196,7 +205,7 @@ def test_partial_hybrid_result_fails_request_without_poisoning_lane(fake_rebel):
         prompt = _prompts(1, 20, 25)[0]
         bad = batcher.submit(PDRequest("partial", prompt, 3))
         batcher.run_until_idle()
-        with pytest.raises(ValueError, match="full"):
+        with pytest.raises(ValueError):
             bad.result()
         good = batcher.submit(PDRequest("next", prompt, 3))
         batcher.run_until_idle()
@@ -244,3 +253,30 @@ def test_hybrid_cancel_pending_then_reuse_ignores_late_result(fake_rebel):  # no
     batcher.run_until_idle()
     assert good.result() == _greedy(model.m, q, 5)
     assert not batcher.by_id and sorted(batcher.free) == [0, 1]
+
+
+@pytest.mark.parametrize("error_type", [RuntimeError, ValueError])
+def test_hybrid_device_import_failure_still_poisons(fake_rebel, error_type):  # noqa: F811
+    import copy
+
+    from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+
+    model = HybridFake()
+    fake_rebel["model"] = model
+    engine = TorchPrefillEngine(
+        copy.deepcopy(model.m), max_context=128, chunk=16, page_size=16
+    )
+    worker = PrefillWorker(engine)
+    try:
+        batcher = AtomBatcher(model, prefill_worker=worker, local_prefill=False)
+
+        def broken_import(*args):
+            raise error_type("device write failed")
+
+        batcher.blocks.import_span = broken_import
+        batcher.submit(PDRequest("device-failure", _prompts(1, 20, 25)[0], 3))
+        with pytest.raises(error_type, match="device write failed"):
+            batcher.run_until_idle()
+        assert batcher.poisoned
+    finally:
+        worker.close()
