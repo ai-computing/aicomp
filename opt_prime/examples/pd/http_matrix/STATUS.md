@@ -59,3 +59,7 @@ Allfour live GPU isolation runs pass: active512-token decode survives other-requ
 #263 Qwen4allfour routes complete:each36/36 structured answers and all36 token sequences equal acrossGPU/RNGD/ATOM. KONI/GemmaATOM pending; historical#256 remains open.
 
 #263 six-pair audit: Q06 passkey-3-2048 correct on RNGD→GPU but wrong on bothATOM routes; no universal quality-equivalence claim. KONI allfour complete31/36 scores; nativeGPU/nativeATOM andRNGD-GPU/RNGD-ATOM each36/36 exacttokens. OnlyGemma RNGD-ATOM pending.
+
+## Final held-out evaluation (#263)
+
+All 576 responses completed normally. Qwen3-4B: 36/36 structured answers and exact tokens on all four routes. Qwen3-0.6B and Gemma retain cross-route content counterexamples; all six route pairs are audited. Final published artifact auditor reproduces the summary exactly. Owned evaluation Pod absent. See evidence263 and the heldout-quality263 experiment; numerical compatibility and source streaming remain open.

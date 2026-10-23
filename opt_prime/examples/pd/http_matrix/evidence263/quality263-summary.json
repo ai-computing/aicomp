@@ -1417,7 +1417,193 @@
           ]
         },
         "rngd-atom": {
-          "stage": "not_collected"
+          "stage": "complete",
+          "cases": 36,
+          "answer_correct": 0,
+          "format_correct": 0,
+          "length_limited": 0,
+          "wrong_cases": [
+            {
+              "case": "arithmetic-0-0",
+              "expected": "96",
+              "text": "```json\n{\n  \"answer\": 96\n}\n```"
+            },
+            {
+              "case": "passkey-0-0",
+              "expected": "34HYL6W8",
+              "text": "```json\n{\n  \"answer\": \"34HYL6W8\"\n}\n```"
+            },
+            {
+              "case": "korean_table-0-0",
+              "expected": "춘천",
+              "text": "```json\n{\n  \"answer\": \"춘천\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-1-0",
+              "expected": "83",
+              "text": "```json\n{\n  \"answer\": 83\n}\n```"
+            },
+            {
+              "case": "passkey-1-0",
+              "expected": "CNBKEFR7",
+              "text": "```json\n{\n  \"answer\": \"CNBKEFR7\"\n}\n```"
+            },
+            {
+              "case": "korean_table-1-0",
+              "expected": "목포",
+              "text": "```json\n{\n  \"answer\": \"목포\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-0",
+              "expected": "43",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "passkey-2-0",
+              "expected": "WMLLRJUL",
+              "text": "```json\n{\n  \"answer\": \"WMLLRJUL\"\n}\n```"
+            },
+            {
+              "case": "korean_table-2-0",
+              "expected": "전주",
+              "text": "```json\n{\n  \"answer\": \"전주\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-3-0",
+              "expected": "63",
+              "text": "```json\n{\n  \"answer\": 63\n}\n```"
+            },
+            {
+              "case": "passkey-3-0",
+              "expected": "SBYZEGE7",
+              "text": "```json\n{\n  \"answer\": \"SBYZEGE7\"\n}\n```"
+            },
+            {
+              "case": "korean_table-3-0",
+              "expected": "속초",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-0-2048",
+              "expected": "96",
+              "text": "```json\n{\n  \"answer\": 96\n}\n```"
+            },
+            {
+              "case": "passkey-0-2048",
+              "expected": "34HYL6W8",
+              "text": "```json\n{\n  \"answer\": \"34HYL6W8\"\n}\n```"
+            },
+            {
+              "case": "korean_table-0-2048",
+              "expected": "춘천",
+              "text": "```json\nnull\n```"
+            },
+            {
+              "case": "arithmetic-1-2048",
+              "expected": "83",
+              "text": "```json\n{\n  \"answer\": 83\n}\n```"
+            },
+            {
+              "case": "passkey-1-2048",
+              "expected": "CNBKEFR7",
+              "text": "```json\n{\n  \"answer\": \"CNBKEFR7\"\n}\n```"
+            },
+            {
+              "case": "korean_table-1-2048",
+              "expected": "목포",
+              "text": "```json\n{\n  \"answer\": \"목포\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-2048",
+              "expected": "43",
+              "text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "passkey-2-2048",
+              "expected": "WMLLRJUL",
+              "text": "```json\n{\n  \"answer\": \"WMLLRJUL\"\n}\n```\n"
+            },
+            {
+              "case": "korean_table-2-2048",
+              "expected": "전주",
+              "text": "```json\n{\n  \"answer\": \"전주\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-3-2048",
+              "expected": "63",
+              "text": "```json\n{\n  \"answer\": 63\n}\n```"
+            },
+            {
+              "case": "passkey-3-2048",
+              "expected": "SBYZEGE7",
+              "text": "```json\n{\n  \"answer\": \"SBYZEGE7\"\n}\n```"
+            },
+            {
+              "case": "korean_table-3-2048",
+              "expected": "속초",
+              "text": "```json\n{\n  \"answer\": \"속초\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-0-8192",
+              "expected": "96",
+              "text": "```json\n{\n  \"answer\": \"96\"\n}\n```"
+            },
+            {
+              "case": "passkey-0-8192",
+              "expected": "34HYL6W8",
+              "text": "```json\n{\n  \"answer\": \"34HYL6W8\"\n}\n```"
+            },
+            {
+              "case": "korean_table-0-8192",
+              "expected": "춘천",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-1-8192",
+              "expected": "83",
+              "text": "```json\n{\"answer\": \"83\"}\n```"
+            },
+            {
+              "case": "passkey-1-8192",
+              "expected": "CNBKEFR7",
+              "text": "```json\n{\n  \"answer\": \"CNBKEFR7\"\n}\n```\n"
+            },
+            {
+              "case": "korean_table-1-8192",
+              "expected": "목포",
+              "text": "```json\n{\n  \"answer\": \"목포\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "expected": "43",
+              "text": "```json\n{\"answer\":\"33\"}\n```"
+            },
+            {
+              "case": "passkey-2-8192",
+              "expected": "WMLLRJUL",
+              "text": "```json\n{\n  \"answer\": \"WMLLRJUL\"\n}\n```"
+            },
+            {
+              "case": "korean_table-2-8192",
+              "expected": "전주",
+              "text": "```json\n{\n  \"answer\": \"전주\"\n}\n```"
+            },
+            {
+              "case": "arithmetic-3-8192",
+              "expected": "63",
+              "text": "```json\n{\"answer\": \"63\"}\n```"
+            },
+            {
+              "case": "passkey-3-8192",
+              "expected": "SBYZEGE7",
+              "text": "```json\n{\n  \"answer\": \"SBYZEGE7\"\n}\n```"
+            },
+            {
+              "case": "korean_table-3-8192",
+              "expected": "속초",
+              "text": "```json\n{\n  \"answer\": \"부산\"\n}\n```"
+            }
+          ]
         }
       },
       "pairs": {
@@ -1526,6 +1712,55 @@
             }
           }
         },
+        "native-gpu→rngd-atom": {
+          "cases": 36,
+          "correct_to_wrong": 0,
+          "wrong_to_correct": 0,
+          "token_equal": 33,
+          "changes": [
+            {
+              "case": "arithmetic-2-0",
+              "baseline_correct": false,
+              "candidate_correct": false,
+              "baseline_text": "```json\n{\n  \"answer\": 33\n}\n```\n",
+              "candidate_text": "```json\n{\n  \"answer\": 33\n}\n```"
+            },
+            {
+              "case": "arithmetic-1-8192",
+              "baseline_correct": false,
+              "candidate_correct": false,
+              "baseline_text": "```json\n{\n  \"answer\": \"83\"\n}\n```",
+              "candidate_text": "```json\n{\"answer\": \"83\"}\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "baseline_correct": false,
+              "candidate_correct": false,
+              "baseline_text": "```json\n{\"answer\": \"33\"}\n```",
+              "candidate_text": "```json\n{\"answer\":\"33\"}\n```"
+            }
+          ],
+          "by_context": {
+            "0": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 11
+            },
+            "2048": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "8192": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 10
+            }
+          }
+        },
         "rngd-gpu→native-atom": {
           "cases": 36,
           "correct_to_wrong": 0,
@@ -1565,6 +1800,75 @@
               "correct_to_wrong": 0,
               "wrong_to_correct": 0,
               "token_equal": 11
+            }
+          }
+        },
+        "rngd-gpu→rngd-atom": {
+          "cases": 36,
+          "correct_to_wrong": 0,
+          "wrong_to_correct": 0,
+          "token_equal": 34,
+          "changes": [
+            {
+              "case": "korean_table-0-2048",
+              "baseline_correct": false,
+              "candidate_correct": false,
+              "baseline_text": "```json\n{\n  \"answer\": \"춘천\"\n}\n```",
+              "candidate_text": "```json\nnull\n```"
+            },
+            {
+              "case": "arithmetic-2-8192",
+              "baseline_correct": false,
+              "candidate_correct": false,
+              "baseline_text": "```json\n{\n  \"answer\": \"33\"\n}\n```",
+              "candidate_text": "```json\n{\"answer\":\"33\"}\n```"
+            }
+          ],
+          "by_context": {
+            "0": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "2048": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 11
+            },
+            "8192": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 11
+            }
+          }
+        },
+        "native-atom→rngd-atom": {
+          "cases": 36,
+          "correct_to_wrong": 0,
+          "wrong_to_correct": 0,
+          "token_equal": 36,
+          "changes": [],
+          "by_context": {
+            "0": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "2048": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
+            },
+            "8192": {
+              "cases": 12,
+              "correct_to_wrong": 0,
+              "wrong_to_correct": 0,
+              "token_equal": 12
             }
           }
         }

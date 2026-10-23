@@ -84,3 +84,18 @@ Qwen3-4B allfour routes completed: each36/36 structured answers and36/36 format,
 Compare all six unordered route pairs, not only pairs anchored on nativeGPU. This exposes a Qwen0.6 counterexample: passkey-3-2048 is correct`SBYZEGE7` on RNGD→GPU, but nativeATOM and RNGD→ATOM emit`SYBZEGE7`. Thus each ATOM route has one correct→wrong transition relative to RNGD→GPU, despite no such transition relative to nativeGPU (which also answered this case incorrectly). Do not claim universal cross-route quality equivalence or infer the failing operator without matched-KV controls.
 
 KONI allfour routes completed:31/36 structured answers each; nativeGPU/nativeATOM36/36 exacttokens; RNGD→GPU/RNGD→ATOM36/36 exacttokens. Native vsRNGD pair35/36; the differing text only changes JSON whitespace. Gemma nativeATOM completed with code-fenced responses (strictscore0); RNGD→ATOM remains running.
+
+## Final completion
+
+All576 responses (4models×4routes×36cases) completed with normal EOS and no length-capped outputs or HTTP/inference failures. Frozen fixture hashes and all returned case/input hashes verified; exact parsed-answer scores recomputed from raw text. OwnedPod quality263 deletion independently confirmed absent.
+
+| Model | nativeGPU | RNGD→GPU | nativeATOM | RNGD→ATOM |
+|---|---:|---:|---:|---:|
+| Qwen3-0.6B |32/36|34/36|33/36|33/36|
+| Qwen3-4B |36/36|36/36|36/36|36/36|
+| KONI-8B |31/36|31/36|31/36|31/36|
+| Gemma3-1B |0/36|0/36|0/36|0/36|
+
+These are strict structured-answer adherence counts, not unrestricted semantic accuracy. Gemma emits Markdown code fences on every route. Its final ATOM native/PD pair is token-exact36/36; GPU→ATOM comparison still changes content: korean_table-0-2048 yields correct`춘천` on RNGD→GPU but`null` on RNGD→ATOM and nativeATOM. This is in addition to the Qwen0.6 passkey counterexample. Neither counterexample can be blamed on a particular operator or transport without matched-KV controls.
+
+NativeATOM/RNGD→ATOM exact pairs: Q06 36/36, Q4 36/36, KONI35/36 (JSON whitespace only), Gemma36/36. All six route-pair comparisons, per-context counts and changed raw texts are in quality263-summary.json. No universal quality-equivalence or performance-speedup conclusion. Numerical issues#233/#256/#261 and actual within-request streaming#265 remain separate work.
