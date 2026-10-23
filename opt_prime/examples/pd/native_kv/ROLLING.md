@@ -14,7 +14,7 @@ release unhanded credits. Completed tensors are not accumulated in a stream resu
 
 Validation includes interleaved IDs, admission of a third request while the second
 still waits for KV (max pending two), HTTP failures, invalid IDs, ownership transfer,
-cancellation and failure cleanup. Full suite:48 tests pass; an additional per-request deadline test passes in the eight-test targeted suite. The first editing command
+cancellation and failure cleanup. Final full suite:49 tests pass, including the per-request deadline test. The first editing command
 used an incorrect relative path and made no changes; its three passing tests were
 pre-change checks, not candidate validation.
 
@@ -52,4 +52,3 @@ rolling256ms remains slower than native162ms. Keep the option experimental and o
 default pending wider repetitions, burst/overload and cancellation/backpressure hardware
 checks. No change to decoder arithmetic; long retrieval smoke tests are not full quality
 evaluation. Goal remains unmet. Owned GPU/native servers stopped after measurement.
-
