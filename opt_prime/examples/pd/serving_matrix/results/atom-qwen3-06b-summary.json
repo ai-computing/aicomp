@@ -1,0 +1,66 @@
+[
+  {
+    "input_tokens": 128,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "ttft_ms": 12.232477078214288
+  },
+  {
+    "input_tokens": 128,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "ttft_ms": 12.217947980388999
+  },
+  {
+    "input_tokens": 512,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "ttft_ms": 47.33030509669334
+  },
+  {
+    "input_tokens": 512,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "ttft_ms": 53.11478499788791
+  },
+  {
+    "input_tokens": 2048,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "ttft_ms": 194.13930701557547
+  },
+  {
+    "input_tokens": 2048,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "ttft_ms": 194.2962990142405
+  },
+  {
+    "input_tokens": 8192,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "ttft_ms": 1224.128018016927
+  },
+  {
+    "input_tokens": 8192,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "ttft_ms": 1114.5757229533046
+  }
+]

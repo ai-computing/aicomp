@@ -17,7 +17,14 @@ p.add_argument("--model", required=True)
 p.add_argument("--width", type=int, required=True)
 p.add_argument("--output", required=True)
 p.add_argument("--fp32-rms-weights", action="store_true")
+p.add_argument("--experimental-long-width", action="store_true")
 a = p.parse_args()
+if a.experimental_long_width:
+    if a.fp32_rms_weights:
+        p.error("isolate width and RMS precision experiments")
+    from long_width_variant import load_variant
+
+    Prefill = load_variant()
 if a.fp32_rms_weights:
     from rms_precision_variant import load_variant
 
@@ -62,6 +69,7 @@ with open(a.output + ".jsonl", "w", buffering=1) as f:
         row = {
             "model": a.model,
             "fp32_rms_weights": a.fp32_rms_weights,
+            "experimental_long_width": a.experimental_long_width,
             "revision": path.name,
             "width": a.width,
             "repeat": repeat,
