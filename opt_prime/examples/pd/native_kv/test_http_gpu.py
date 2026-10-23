@@ -211,4 +211,31 @@ class BatchWorkerTest(unittest.TestCase):
         self.assertFalse(j.try_send('late'));self.assertEqual(j.events.get_nowait(),('first',None))
 
 
+class LocalWorkerTest(unittest.TestCase):
+    def test_error_path_terminates_with_full_consumer_queue(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from gpu_local_worker import LocalWorker
+        class Prefiller:
+            def __init__(self,*args):pass
+            def prefill(self,prompts):raise RuntimeError('cuda failure')
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory,'generation_config.json').write_text('{"eos_token_id":[9]}')
+            args=types.SimpleNamespace(model_dir=directory,device='cuda:0',fuse_mlp=False,fuse_qkv=False,
+                norm_mode='none',fused_elementwise=False,model='test',batch_size=2,native_batch_wait_ms=0)
+            with patch('gpu_decoder.load_model',return_value=types.SimpleNamespace(config=types.SimpleNamespace(vocab_size=10))), \
+                 patch('gpu_batch_decoder.BatchGraphDecoder',FakeBatchGraph), patch('gpu_local_prefill.LocalPrefiller',Prefiller), \
+                 patch('transformers.AutoTokenizer.from_pretrained'), patch('torch.set_num_threads'), \
+                 patch('torch.set_num_interop_threads'):
+                worker=LocalWorker(args)
+                try:
+                    job=Job({'prompt':[1,2],'max_tokens':4});job.events=queue.Queue(maxsize=1)
+                    worker.submit(job)
+                    worker.thread.join(2)
+                    self.assertFalse(worker.thread.is_alive());self.assertTrue(worker.stopping.is_set())
+                    self.assertTrue(job.cancel.is_set());self.assertEqual(job.events.get_nowait()[0],'start')
+                finally:worker.close()
+
+
 if __name__=='__main__':unittest.main()

@@ -231,9 +231,18 @@ class GPUHTTPServer(ThreadingHTTPServer):
 
 
 def main(a):
+    if getattr(a,'local_continuous',False) and (getattr(a,'prefill_backend','native')!='gpu' or getattr(a,'local_single_width',False)):
+        raise ValueError('--local-continuous requires GPU prefill and a fixed batch graph')
+    if getattr(a,'local_single_width',False) and getattr(a,'prefill_backend','native')!='gpu':
+        raise ValueError('--local-single-width requires --prefill-backend gpu')
     if getattr(a,'fused_elementwise',False) and (not a.fuse_mlp or a.norm_mode!='fused'):
         raise ValueError('--fused-elementwise requires --fuse-mlp and --norm-mode fused')
-    if getattr(a,'pipeline',False):
+    if getattr(a,'prefill_backend','native')=='gpu':
+        if a.pipeline or a.async_text or a.async_pack or a.adaptive_single:
+            raise ValueError('GPU-local prefill does not support native pipeline/async/adaptive flags')
+        from gpu_local_worker import LocalWorker
+        worker=LocalWorker(a)
+    elif getattr(a,'pipeline',False):
         from gpu_pipeline_worker import PipelineWorker
         worker=PipelineWorker(a)
     elif getattr(a,'batch_size',1)>1:
@@ -254,6 +263,12 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fused-elementwise',action='store_true')
+    p.add_argument('--local-continuous',action='store_true')
+    p.add_argument('--local-prefill-paged',action='store_true')
+    p.add_argument('--local-prefill-token-chunk',type=int,choices=(0,64,128,256,512),default=0)
+    p.add_argument('--local-prefill-batch-size',type=int,choices=range(1,17),default=16)
+    p.add_argument('--local-single-width',action='store_true',help='experimental one-request wave graph; no mid-request width switch')
+    p.add_argument('--prefill-backend',choices=['native','gpu'],default='native')
     p.add_argument('--pipeline',action='store_true')
     p.add_argument('--native-batch-size',type=int,choices=range(1,17),default=1)
     p.add_argument('--native-batch-wait-ms',type=int,choices=range(51),default=2)

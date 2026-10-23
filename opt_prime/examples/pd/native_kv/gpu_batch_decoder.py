@@ -107,6 +107,38 @@ class BatchGraphDecoder:
         torch.cuda.synchronize(self.device)
         self.remaining[lane] = count
 
+    def load_device_lane(self, lane, layers, last_token, count):
+        """Copy an owned GPU prefill prefix without a host round trip.
+
+        The prefix includes every prompt token; last_token is the first generated
+        token, and count is the number of outputs still requested after it.
+        """
+        import torch
+        if not 0 <= lane < self.batch_size or self.remaining[lane]:
+            raise ValueError('lane unavailable')
+        if len(layers) != 36 or any(len(pair) != 2 for pair in layers):
+            raise ValueError('expected 36 K/V pairs')
+        n = layers[0][0].shape[0]
+        if not 1 <= n < self.capacity or not 1 <= count <= self.capacity - n:
+            raise ValueError('prefix/output outside capacity')
+        if type(last_token) is not int or not 0 <= last_token < self.model.config.vocab_size:
+            raise ValueError('invalid token')
+        for pair in layers:
+            for tensor in pair:
+                if (tensor.shape != (n, 8, 128) or tensor.dtype != torch.bfloat16
+                        or tensor.device != self.device):
+                    raise ValueError('invalid device prefix')
+        with torch.inference_mode():
+            for i, (key, value) in enumerate(layers):
+                self.keys[i][lane, :n].copy_(key)
+                self.values[i][lane, :n].copy_(value)
+            self.input_id[lane].fill_(last_token)
+            self.position[lane].fill_(n)
+            self.active[lane].fill_(True)
+        # Complete ownership transfer before the producer may reuse its buffers.
+        torch.cuda.synchronize(self.device)
+        self.remaining[lane] = count
+
     def cancel_lane(self, lane):
         if not 0 <= lane < self.batch_size: raise ValueError('invalid lane')
         self.remaining[lane] = 0

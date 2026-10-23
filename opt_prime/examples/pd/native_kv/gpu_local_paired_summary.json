@@ -1,0 +1,298 @@
+{
+  "paired_c1": [
+    {
+      "input_tokens": 128,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 103.416,
+      "mean_ttft_ms": 21.051,
+      "mean_tpot_ms": 9.579,
+      "tok_s_range": [
+        102.99,
+        103.731
+      ]
+    },
+    {
+      "input_tokens": 128,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 96.953,
+      "mean_ttft_ms": 26.625,
+      "mean_tpot_ms": 10.183,
+      "tok_s_range": [
+        96.932,
+        97.022
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 100.163,
+      "mean_ttft_ms": 51.341,
+      "mean_tpot_ms": 9.657,
+      "tok_s_range": [
+        99.771,
+        100.328
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 94.295,
+      "mean_ttft_ms": 49.709,
+      "mean_tpot_ms": 10.3,
+      "tok_s_range": [
+        94.167,
+        94.329
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 97.712,
+      "mean_ttft_ms": 94.061,
+      "mean_tpot_ms": 9.583,
+      "tok_s_range": [
+        85.665,
+        97.902
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 90.589,
+      "mean_ttft_ms": 92.126,
+      "mean_tpot_ms": 10.399,
+      "tok_s_range": [
+        90.499,
+        90.592
+      ]
+    }
+  ],
+  "paired_c8": [
+    {
+      "input_tokens": 128,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 705.221,
+      "mean_ttft_ms": 103.994,
+      "mean_tpot_ms": 10.584,
+      "tok_s_range": [
+        701.196,
+        707.541
+      ]
+    },
+    {
+      "input_tokens": 128,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 372.712,
+      "mean_ttft_ms": 265.343,
+      "mean_tpot_ms": 10.476,
+      "tok_s_range": [
+        372.421,
+        710.293
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 574.877,
+      "mean_ttft_ms": 263.968,
+      "mean_tpot_ms": 11.798,
+      "tok_s_range": [
+        571.45,
+        576.962
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 594.618,
+      "mean_ttft_ms": 326.257,
+      "mean_tpot_ms": 10.871,
+      "tok_s_range": [
+        333.379,
+        599.158
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 445.533,
+      "mean_ttft_ms": 496.515,
+      "mean_tpot_ms": 13.807,
+      "tok_s_range": [
+        421.85,
+        447.32
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 296.578,
+      "mean_ttft_ms": 878.7,
+      "mean_tpot_ms": 11.1,
+      "tok_s_range": [
+        296.203,
+        296.797
+      ]
+    }
+  ],
+  "tuned_c1": [
+    {
+      "input_tokens": 128,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 103.17,
+      "mean_ttft_ms": 21.218,
+      "mean_tpot_ms": 9.602,
+      "tok_s_range": [
+        103.078,
+        103.173
+      ]
+    },
+    {
+      "input_tokens": 128,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 116.458,
+      "mean_ttft_ms": 32.038,
+      "mean_tpot_ms": 8.401,
+      "tok_s_range": [
+        116.356,
+        116.533
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 91.915,
+      "mean_ttft_ms": 51.982,
+      "mean_tpot_ms": 10.526,
+      "tok_s_range": [
+        91.679,
+        92.229
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 112.161,
+      "mean_ttft_ms": 56.536,
+      "mean_tpot_ms": 8.539,
+      "tok_s_range": [
+        112.133,
+        112.335
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 91.401,
+      "mean_ttft_ms": 92.323,
+      "mean_tpot_ms": 10.274,
+      "tok_s_range": [
+        90.944,
+        97.108
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 107.305,
+      "mean_ttft_ms": 99.946,
+      "mean_tpot_ms": 8.603,
+      "tok_s_range": [
+        107.195,
+        107.325
+      ]
+    }
+  ],
+  "tuned_c8": [
+    {
+      "input_tokens": 128,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 706.084,
+      "mean_ttft_ms": 101.785,
+      "mean_tpot_ms": 10.59,
+      "tok_s_range": [
+        702.535,
+        706.119
+      ]
+    },
+    {
+      "input_tokens": 128,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 703.468,
+      "mean_ttft_ms": 103.876,
+      "mean_tpot_ms": 10.583,
+      "tok_s_range": [
+        701.807,
+        704.042
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 577.427,
+      "mean_ttft_ms": 259.709,
+      "mean_tpot_ms": 11.729,
+      "tok_s_range": [
+        577.255,
+        581.015
+      ]
+    },
+    {
+      "input_tokens": 512,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 596.311,
+      "mean_ttft_ms": 328.139,
+      "mean_tpot_ms": 10.89,
+      "tok_s_range": [
+        595.37,
+        596.506
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "native",
+      "repeats": 3,
+      "aggregate_tok_s": 447.67,
+      "mean_ttft_ms": 498.849,
+      "mean_tpot_ms": 13.757,
+      "tok_s_range": [
+        446.095,
+        448.058
+      ]
+    },
+    {
+      "input_tokens": 1024,
+      "mode": "gpu",
+      "repeats": 3,
+      "aggregate_tok_s": 495.656,
+      "mean_ttft_ms": 632.183,
+      "mean_tpot_ms": 11.227,
+      "tok_s_range": [
+        494.883,
+        496.842
+      ]
+    }
+  ]
+}
