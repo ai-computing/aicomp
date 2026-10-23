@@ -89,3 +89,20 @@ def test_service_finish_reason_eos_stop_string_and_greedy_only_engines():
     assert err.value.status == 400
     with pytest.raises(StageError):
         engine.execute("prefill", "u", dict(body(1), top_p=0))
+
+
+def test_extreme_sampling_values_cannot_poison_a_batch():
+    # #167: a near-zero temperature is greedy (logits / 1e-40 overflow to NaN), a seed that would overflow
+    # manual_seed(seed * 1_000_003 + p) is rejected up front (HTTP 400), so a normal neighbour completes
+    from opt_prime.accel.pd.batching import ContinuousBatcher
+    model, _ = _runtime()
+    b = ContinuousBatcher(model, slots=2, max_context=64)
+    tiny = b.submit(PDRequest("tiny", PROMPT, 6, SamplingParams(temperature=1e-40, seed=1)))
+    good = b.submit(PDRequest("good", PROMPT, 6, SamplingParams(temperature=1.3, seed=5)))
+    b.run_until_idle()
+    assert tiny.result() == _hf_greedy(model, 6) and len(good.result()) == 6
+    with pytest.raises(ValueError):
+        SamplingParams(temperature=1.0, seed=2 ** 62)
+    with pytest.raises(StageError) as err:
+        service().execute("prefill", "big", dict(body(1), seed=2 ** 62))
+    assert err.value.status == 400

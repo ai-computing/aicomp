@@ -41,7 +41,8 @@ class SamplingParams:
     """Token selection. The default is greedy; engines without `supports_sampling` accept only that.
     `seed` makes sampling reproducible across processes (each position draws from its own seeded stream), so a
     prefill and a decode stage on different hosts continue one sequence. Generation ends early at any of
-    `stop_token_ids` (the stop token is kept in the output)."""
+    `stop_token_ids` (the stop token is kept in the output). A temperature below 1e-5 is greedy (dividing logits by
+    it overflows), and the seed is bounded so a position's stream seed fits torch's 64-bit `manual_seed`."""
     temperature: float = 0.0
     top_p: float = 1.0
     top_k: int = 0
@@ -55,14 +56,14 @@ class SamplingParams:
             raise ValueError("top_p must be in (0, 1]")
         if type(self.top_k) is not int or self.top_k < 0:
             raise ValueError("top_k must be a nonnegative integer")
-        if self.seed is not None and (type(self.seed) is not int or self.seed < 0):
-            raise ValueError("seed must be a nonnegative integer")
+        if self.seed is not None and (type(self.seed) is not int or not 0 <= self.seed < 2 ** 32):
+            raise ValueError("seed must be an integer in [0, 2**32)")
         if not isinstance(self.stop_token_ids, tuple) or any(type(t) is not int or t < 0 for t in self.stop_token_ids):
             raise ValueError("stop token IDs must be a tuple of nonnegative integers")
 
     @property
     def greedy(self):
-        return self.temperature == 0 or self.top_k == 1
+        return self.temperature < 1e-5 or self.top_k == 1
 
 
 GREEDY = SamplingParams()
