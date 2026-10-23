@@ -1,7 +1,0 @@
-{
-  "bench_producer_placement.py": "343c561a009ef39e6a2917441e1eebf1a39af072d6fcf1124783c4a74a358d94",
-  "summarize_placement.py": "40603734fba7a1045b8d4747006212de5d5c12dfcbb4d58bd5c5213ca07c2419",
-  "profile_pipeline_receive.py": "b98cb6bff8ba572ae79519a1a25176ae51a06f4c64ffd2e902babf704d422112",
-  "bench_arrival_http.py": "4ca70f5d64d05718e2a7802b85d078e3de6e2d0e7b82c11a42ac6bac59fff25a",
-  "check_long_http.py": "9a7a6d03507698cbdb65ab40652a811abd42b1f8c7da7c44aa3a15ec48e2d40b"
-}
