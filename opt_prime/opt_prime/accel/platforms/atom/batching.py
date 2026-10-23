@@ -29,6 +29,8 @@ block tables. That enables:
 Hybrid fresh PD imports global layers into their assigned block and the latest sliding window into the request
 lane. Source dtype metadata may differ from physical storage, so staging validates allocation size. Hybrid prefix
 and host-cache restoration remain unsupported; remote hybrid requests must return their full prompt KV.
+Static B1 cache-off PD may use its sole block: it never decodes an idle lane alongside an active lane.
+This path requires full prompt KV and releases the block after each request; it retains no prefix entries.
 Idle lanes then decode on a reserved scratch block. Measured on ATOM (Llama-3.2-1B, 600-token prompt): full prefill
 85.5 ms; device copy of a 512-token prefix 0.8 ms + 17.5 ms suffix prefill; host reload 8.9 ms; tokens identical.
 """
@@ -84,12 +86,14 @@ class AtomKVBlocks:
         self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
         self.unit, self.lanes = rc.prefill_chunk_size, lanes
         self.blocks = rc.kvcache_num_blocks
-        if self.blocks < lanes + 1:
+        self.single_block = self.blocks == lanes == 1 and not (prefix_cache or host_bytes or self.hybrid_cache)
+        if self.blocks < lanes + 1 and not self.single_block:
             raise ValueError("own block tables need kv_blocks >= lanes + 1 (a scratch block for idle lanes)")
         if prefix_cache and self.blocks < lanes + 2:     # else a prefix hit may find only its own source to evict
             raise ValueError("prefix caching needs kv_blocks >= lanes + 2 (a scratch block and an evictable entry)")
         self.scratch = self.blocks - 1
-        self.free = list(range(self.blocks - 1))
+        # B1 cache-off PD never decodes an idle lane beside an active one.
+        self.free = list(range(self.blocks if self.single_block else self.blocks - 1))
         self.lane_block = [None] * lanes
         self.prefix_cache = prefix_cache
         self.entries = OrderedDict()             # block -> prompt unit hashes (unreferenced, least recent first)
@@ -246,8 +250,8 @@ class AtomKVBlocks:
         if keys.ndim != 4 or values.ndim != 4:
             raise InvalidKVImport("KV export must have layer/head/token/dimension axes")
         block, n = self.lane_block[lane], keys.shape[2]
-        if self.hybrid_cache and start:
-            raise InvalidKVImport("hybrid PD requires a full prefix from position zero")
+        if (self.hybrid_cache or self.single_block) and start:
+            raise InvalidKVImport("hybrid or single-block PD requires a full prefix from position zero")
         if keys.shape != values.shape or len(self.metas) != keys.shape[0] * 2:
             raise InvalidKVImport("KV export geometry does not match compiled cache")
         stage = self._staging()
@@ -325,7 +329,10 @@ class AtomBatcher(ContinuousBatcher):
         self._remote_s = self._local_s = None    # moving averages (seconds per prompt)
         self.local_prefill = local_prefill
         self.blocks = None
-        if (getattr(rc, "kvcache_num_blocks", self.lanes) or self.lanes) > self.lanes:
+        blocks = getattr(rc, "kvcache_num_blocks", self.lanes) or self.lanes
+        single_pd = blocks == self.lanes == 1 and prefill_worker is not None and not (
+            prefix_cache or host_kv_gib or self.hybrid_cache)
+        if blocks > self.lanes or single_pd:
             self.blocks = AtomKVBlocks(model, self.lanes, prefix_cache=prefix_cache,
                                        host_bytes=int(host_kv_gib * 2 ** 30))
             self.block_size = self.blocks.unit
@@ -480,8 +487,8 @@ class AtomBatcher(ContinuousBatcher):
                     self.prefilling.remove(r)
                 try:
                     out = r.pending.result()
-                    if self.hybrid_cache and (out.start != 0 or out.keys.shape[2] != len(r.request.input_ids)):
-                        raise ValueError("hybrid PD requires the full prompt KV")
+                    if (self.hybrid_cache or self.blocks.single_block) and (out.start != 0 or out.keys.shape[2] != len(r.request.input_ids)):
+                        raise ValueError("hybrid or single-block PD requires the full prompt KV")
                 except BaseException as error:        # this request fails; the lanes go on
                     with self._lock:
                         self._finish(r, error)
