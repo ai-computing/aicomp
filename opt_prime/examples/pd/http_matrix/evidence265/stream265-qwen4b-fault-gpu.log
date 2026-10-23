@@ -1,0 +1,18 @@
+GPU loading qwen4b
+
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 398/398 [00:00<00:00, 9260.70it/s]
+Traceback (most recent call last):
+  File "/tmp/stream265-fault-gpu.py", line 55, in <module>
+    new=b.submit(PDRequest('reuse',prompts[0],16));drain(b)
+  File "/tmp/stream265-fault-gpu.py", line 35, in drain
+    batch.step()
+  File "/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/pd_batching.py", line 602, in step
+    self._admit_prefilled(block=not self.decoding)
+  File "/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/pd_batching.py", line 637, in _admit_prefilled
+    self._prefill_ready.wait(timeout=0.05)
+  File "/usr/lib/python3.10/threading.py", line 607, in wait
+    signaled = self._cond.wait(timeout)
+  File "/usr/lib/python3.10/threading.py", line 324, in wait
+    gotit = waiter.acquire(True, timeout)
+KeyboardInterrupt

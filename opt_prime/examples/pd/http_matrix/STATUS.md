@@ -77,3 +77,7 @@ Opt-in remote_prefetch / --pd-prefetch-next implemented for single-lane ATOM rem
 ## ATOM streaming and long source parity (#265)
 
 Long source24/24 conditions at2K/8K have exact KV/logits. ATOM partial import and B1 prefetch ownership implemented; failed/partial prompts no longer publish prefixes. Four models × four modes:16batches/32sequences same-route exact, all drain; owned Pod deleted and absence verified. Full626passed/15skipped/253subtests. Prerequisite #255 included. Long ATOM timing and streaming hardware faults remain pending; no ATOM speedup claim.
+
+## Streaming hardware fault checks (#265)
+
+Runtime33d6cb0: allfour GPU cancellation/reuse and partial-producer-death checks passed. Active512-token decode remains exact to same-route no-fault reference; kill at5/6/4/10 tokens. All child exits0 and local devices idle. Auditor reproduces summary. First harness-only AttributeError and interrupted follow-up retained. Long ATOM Q06 complete16batches/32sequences exact, median completion reduction35.66% without prefetch/39.25% with prefetch; remaining models running. ATOM hardware faults remain pending.
