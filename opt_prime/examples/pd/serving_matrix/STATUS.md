@@ -62,4 +62,6 @@ Reusable Gemma producer matches original RNGD K/V/full logits4/4 at width128. Re
 
 ## Four-model actual HTTP PD (#234/#236)
 
-All four models:56/56 normal/concurrent/reuse responses equal native ATOM,64RNGD prefills and0local fallbacks. Cancellation/disconnect reuse passes. B1, cache-off, short prompts; KONI uses existingk1 artifact with#236. HTTP uses#214 SIGPIPE fix. No live-transfer-overlap or throughput gain claim. Width2048 live queue pending; long/cache/hardware-batch/performance scope remains.
+All four models:56/56 normal/concurrent/reuse responses equal native ATOM,64RNGD prefills and0local fallbacks. Cancellation/disconnect reuse passes. B1, cache-off, short prompts; KONI uses existingk1 artifact with#236. HTTP uses#214 SIGPIPE fix. No live-transfer-overlap or throughput gain claim. Width2048 live queue passes all four models; width8192 live queue pending; long/cache/hardware-batch/performance scope remains.
+
+Medium live HTTP:1526–1643tokens,56/56 exact outputs and64remote/0local; short+medium112responses/128remote. Same cancellation/disconnect reuse checks pass. Long live queue active; full goal remains open. See live-http-mid234.

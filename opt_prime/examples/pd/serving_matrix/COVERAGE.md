@@ -13,9 +13,9 @@ All direct runs use fixed output lengths ignoring EOS. Repeats match within each
 
 ## Outstanding acceptance work
 
-- Standalone GPU HTTP covered by PR213 and ATOM HTTP by PR216: all four lifecycle checks pass through8K. Cache-off concurrent/serial equality48/48 on each backend. RNGD/heterogeneous HTTP remains incomplete.
+- Standalone GPU HTTP covered by PR213 and ATOM HTTP by PR216: all four lifecycle checks pass through8K. Cache-off concurrent/serial equality48/48 on each backend. Real RNGD->ATOM short-input HTTP now passes56/56 output checks (#235/#237); medium/long live and broader conditions remain incomplete.
 - Qwen ATOM device/host-cache cases pass12/12 concurrent equality each (PR216). GPU BF16 cache has numerical ties; FP32 controls match48/48 (PR213). Gemma sliding-state restoration is unimplemented, KONI k1 has no spare prefix-cache blocks.
-- Production integration of validated research KONI/Gemma long-prefix producers; genuine cache-aware producer chunking remains open.
+- Short live producer/scheduler integration is verified for all four models. Live long prefixes and genuine cache-aware producer chunking remain open.
 - Layer/logit diagnosis and broader semantic fixtures for cross-backend output differences; matching a repeated capital question is not a quality evaluation.
 - Actual producer/consumer overlap and end-to-end serving benefit, distinct from faster CPU staging.
 
@@ -23,12 +23,22 @@ Evidence: PR203 matrix results, PR206 staging optimization, PR209 Gemma probe, e
 
 ## EOS-aware native fixtures (#227)
 
-192 GPU/ATOM runs, all EOS-ended;96 repeat pairs exact. Cross-backend exact cases: Qwen0.6B12/12,Qwen4B12/12,KONI12/12,Gemma11/12. Four short questions with0/100/400 repeated context notes give23–6428 input tokens. Shared wrong factual answers are retained, so this is not a general quality pass. Research EOS policy includes both generation-config and tokenizer turn-end tokens; original KONI policy failure preserved. RNGD and heterogeneous HTTP coverage of these exact semantic inputs remains missing.
+192 GPU/ATOM runs, all EOS-ended;96 repeat pairs exact. Cross-backend exact cases: Qwen0.6B12/12,Qwen4B12/12,KONI12/12,Gemma11/12. Four short questions with0/100/400 repeated context notes give23–6428 input tokens. Shared wrong factual answers are retained, so this is not a general quality pass. Research EOS policy includes both generation-config and tokenizer turn-end tokens; original KONI policy failure preserved. Subsequent RNGD and live HTTP evidence is listed below; matching outputs still does not certify answer quality.
 
 ## RNGD semantic handoff follow-up (#227)
 
-All four models now execute the same four short chat cases through RNGD prefill and GPU/ATOM continuation.32/32 decoder comparisons match native tokens through EOS,48prefill runs finite/repeat-exact. Exact saved IDs and true KV lengths verified, excluding right padding; per-model52/56/72/64slots read back exactly. Qwen/KONI original/portable importer logits agree; Gemma raw native-state roundtrip also passes. Inputs23–143 tokens (compiled width128 or512), so long semantic fixtures remain pending. This is host-staged full-prefix handoff, not actual compute/transfer overlap or production PD serving. See semantic-rngd227 record and evidence227.
+All four models now execute the same four short chat cases through RNGD prefill and GPU/ATOM continuation.32/32 decoder comparisons match native tokens through EOS,48prefill runs finite/repeat-exact. Exact saved IDs and true KV lengths verified, excluding right padding; per-model52/56/72/64slots read back exactly. Qwen/KONI original/portable importer logits agree; Gemma raw native-state roundtrip also passes. Inputs23–143 tokens (compiled width128 or512), with subsequent long-context results below. This is host-staged full-prefix handoff, not actual compute/transfer overlap or production PD serving. See semantic-rngd227 record and evidence227.
 
 ## Medium semantic handoff (#227)
 
-Inputs1526–1643tokens in width2048 buckets now pass all32 model/case/decoder EOS comparisons (four models,four cases,GPU/ATOM).48prefill runs finite/repeat-exact; true IDs/KV lengths and52/56/72/64slot readbacks verified. Native GPU/ATOM sequences agree for these cases, including shared wrong answers documented earlier. Approximately6K semantic inputs and production heterogeneous serving/overlap remain open. See semantic-mid227 experiment and evidence227.
+Inputs1526–1643tokens in width2048 buckets now pass all32 model/case/decoder EOS comparisons (four models,four cases,GPU/ATOM).48prefill runs finite/repeat-exact; true IDs/KV lengths and52/56/72/64slot readbacks verified. Native GPU/ATOM sequences agree for these cases, including shared wrong answers documented earlier. Approximately6K semantic results and short live HTTP are now available below; true overlap and broader serving conditions remain open. See semantic-mid227 experiment and evidence227.
+
+## Long semantic handoff (#227/#233)
+
+Four models,48producer runs,31/32 EOS comparisons at6026–6428input tokens. Both Qwens and KONI match4/4cases on each decoder; Gemma matches3/4GPU and4/4ATOM. All KV readbacks pass. The retained Gemma arithmetic mismatch is30(nativeGPU BF16/FP32) vs25(RNGD/ATOM), both wrong. Same layer equations on GPU choose a different first token from RNGD; operator cause unresolved in#233. See semantic-long227 and evidence227.
+
+## Real RNGD to ATOM HTTP (#234/#236)
+
+All four short-input paths pass14normal/concurrent/reuse responses each:56total,64remote prefills including cancellation requests,0local fallbacks. Requests trigger actual RNGD subprocess computation; no KV replay. Each model passes explicit cancellation, socket disconnection and subsequent reuse. Gemma/Qwen usek3; static B1 KONI usesk1 with#236. SIGPIPE-safe HTTP is#214/#215. These are B1 hardware requests with queued client concurrency, not hardware batch4. Native parity includes shared wrong answers.
+
+Width2048 live checks now pass for all four models:56responses and64remote prefills. Short+medium total112responses/128prefills, with no local fallbacks. Width8192 live queue is pending. Full live6K, pending-prefill hardware cancellation/worker-failure recovery, GPU live PD, hybrid prefix/host restore, applicable hardware batch>1, genuine producer/transfer overlap and matched native-vs-PD latency/throughput comparisons remain unverified. Overall goal remains active.

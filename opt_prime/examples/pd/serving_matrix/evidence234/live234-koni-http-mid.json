@@ -1,0 +1,445 @@
+{
+  "worker": "live_rngd_subprocess_prefill",
+  "rows": [
+    {
+      "case": "capital-100",
+      "request": "normal-0-0",
+      "response": {
+        "id": "normal-0-0",
+        "object": "text_completion",
+        "created": 1792764074,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is Paris.",
+            "token_ids": [
+              791,
+              6864,
+              315,
+              9822,
+              374,
+              12366,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1638,
+          "completion_tokens": 8,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 2.5393513729795814
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "normal-0-1",
+      "response": {
+        "id": "normal-0-1",
+        "object": "text_completion",
+        "created": 1792764076,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              2983,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1637,
+          "completion_tokens": 2,
+          "total_tokens": 1639
+        }
+      },
+      "latency_s": 1.323795892065391
+    },
+    {
+      "case": "korean-100",
+      "request": "normal-0-2",
+      "response": {
+        "id": "normal-0-2",
+        "object": "text_completion",
+        "created": 1792764077,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "대한민국의 수도는 서울입니다.",
+            "token_ids": [
+              113760,
+              108709,
+              21028,
+              116992,
+              16969,
+              106010,
+              80052,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1639,
+          "completion_tokens": 9,
+          "total_tokens": 1648
+        }
+      },
+      "latency_s": 1.7511723199859262
+    },
+    {
+      "case": "retrieval-100",
+      "request": "normal-0-3",
+      "response": {
+        "id": "normal-0-3",
+        "object": "text_completion",
+        "created": 1792764079,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              18082,
+              877,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1643,
+          "completion_tokens": 3,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 1.280155176995322
+    },
+    {
+      "case": "capital-100",
+      "request": "normal-1-0",
+      "response": {
+        "id": "normal-1-0",
+        "object": "text_completion",
+        "created": 1792764080,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is Paris.",
+            "token_ids": [
+              791,
+              6864,
+              315,
+              9822,
+              374,
+              12366,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1638,
+          "completion_tokens": 8,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 1.5194910150021315
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "normal-1-1",
+      "response": {
+        "id": "normal-1-1",
+        "object": "text_completion",
+        "created": 1792764081,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              2983,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1637,
+          "completion_tokens": 2,
+          "total_tokens": 1639
+        }
+      },
+      "latency_s": 1.0988063589902595
+    },
+    {
+      "case": "korean-100",
+      "request": "normal-1-2",
+      "response": {
+        "id": "normal-1-2",
+        "object": "text_completion",
+        "created": 1792764083,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "대한민국의 수도는 서울입니다.",
+            "token_ids": [
+              113760,
+              108709,
+              21028,
+              116992,
+              16969,
+              106010,
+              80052,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1639,
+          "completion_tokens": 9,
+          "total_tokens": 1648
+        }
+      },
+      "latency_s": 1.4861711430130526
+    },
+    {
+      "case": "retrieval-100",
+      "request": "normal-1-3",
+      "response": {
+        "id": "normal-1-3",
+        "object": "text_completion",
+        "created": 1792764084,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              18082,
+              877,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1643,
+          "completion_tokens": 3,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 1.0849265129072592
+    },
+    {
+      "case": "capital-100",
+      "request": "concurrent-0",
+      "response": {
+        "id": "concurrent-0",
+        "object": "text_completion",
+        "created": 1792764085,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is Paris.",
+            "token_ids": [
+              791,
+              6864,
+              315,
+              9822,
+              374,
+              12366,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1638,
+          "completion_tokens": 8,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 1.425872788997367
+    },
+    {
+      "case": "arithmetic-100",
+      "request": "concurrent-1",
+      "response": {
+        "id": "concurrent-1",
+        "object": "text_completion",
+        "created": 1792764086,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "42",
+            "token_ids": [
+              2983,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1637,
+          "completion_tokens": 2,
+          "total_tokens": 1639
+        }
+      },
+      "latency_s": 2.4230585580226034
+    },
+    {
+      "case": "korean-100",
+      "request": "concurrent-2",
+      "response": {
+        "id": "concurrent-2",
+        "object": "text_completion",
+        "created": 1792764088,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "대한민국의 수도는 서울입니다.",
+            "token_ids": [
+              113760,
+              108709,
+              21028,
+              116992,
+              16969,
+              106010,
+              80052,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1639,
+          "completion_tokens": 9,
+          "total_tokens": 1648
+        }
+      },
+      "latency_s": 3.934952615061775
+    },
+    {
+      "case": "retrieval-100",
+      "request": "concurrent-3",
+      "response": {
+        "id": "concurrent-3",
+        "object": "text_completion",
+        "created": 1792764089,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "MAPLE",
+            "token_ids": [
+              18082,
+              877,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1643,
+          "completion_tokens": 3,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 5.026510157971643
+    },
+    {
+      "case": "capital-100",
+      "request": "after-cancel",
+      "response": {
+        "id": "after-cancel",
+        "object": "text_completion",
+        "created": 1792764091,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is Paris.",
+            "token_ids": [
+              791,
+              6864,
+              315,
+              9822,
+              374,
+              12366,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1638,
+          "completion_tokens": 8,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 1.4203430189518258
+    },
+    {
+      "case": "capital-100",
+      "request": "after-disconnect",
+      "response": {
+        "id": "after-disconnect",
+        "object": "text_completion",
+        "created": 1792764094,
+        "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+        "choices": [
+          {
+            "index": 0,
+            "text": "The capital of France is Paris.",
+            "token_ids": [
+              791,
+              6864,
+              315,
+              9822,
+              374,
+              12366,
+              13,
+              128009
+            ],
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1638,
+          "completion_tokens": 8,
+          "total_tokens": 1646
+        }
+      },
+      "latency_s": 1.435384924057871
+    }
+  ],
+  "stats_pd": {
+    "remote": 16,
+    "local": 0
+  },
+  "free": [
+    0
+  ],
+  "cancellation_reuse": true
+}
