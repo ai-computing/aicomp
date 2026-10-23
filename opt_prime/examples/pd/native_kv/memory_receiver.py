@@ -35,7 +35,7 @@ class CanonicalAssembler:
         start, count = rel(header, root+12), u32(header, root+16)
         final = u32(header, root+20)
         n = self.positions
-        if (start < 0 or start + count*16 != root or not 0 < count <= 4*n or
+        if (start < 0 or start + count*16 != root or not 0 < count <= getattr(self, "max_batch_slots", 4)*n or
             count % n or final not in (0,1) or header[root+24:] != b'\0'*12 or
             (payload_size is not None and payload_size != count*2048)):
             raise ValueError('invalid metadata or payload size')
@@ -127,7 +127,9 @@ class LegacyAssembler:
 
 
 class NativeKVClient:
-    def __init__(self, http_url, prefill_port, receiver_port, layout, timeout=90):
+    def __init__(self, http_url, prefill_port, receiver_port, layout, timeout=90, *, max_batch_slots=4):
+        if max_batch_slots not in (4,8): raise ValueError("max_batch_slots must be 4 or 8")
+        self.max_batch_slots = max_batch_slots
         from urllib.parse import urlparse
         u = urlparse(http_url)
         if u.scheme!='http' or u.hostname!='127.0.0.1' or u.username or u.password:
@@ -139,7 +141,7 @@ class NativeKVClient:
         self.executor = concurrent.futures.ThreadPoolExecutor(1)
         self.ctx = zmq.Context()
         self.rx, self.tx = self.ctx.socket(zmq.PULL),self.ctx.socket(zmq.PUSH)
-        self.rx.setsockopt(zmq.MAXMSGSIZE,32*1024*1024)
+        self.rx.setsockopt(zmq.MAXMSGSIZE,32*1024*1024)   # per frame; 8 slots x 2047 x 2048 B still fits
         self.rx.setsockopt(zmq.RCVHWM,32)
         self.tx.setsockopt(zmq.SNDTIMEO,int(timeout*1000))
         self.poisoned = False
@@ -152,6 +154,7 @@ class NativeKVClient:
             raise
 
     def prefill(self, model, tokens, mode='fast', on_batch=None):
+        if getattr(self, 'max_batch_slots', 4) != 4:raise ValueError('larger groups require direct prefill_many')
         if self.poisoned:raise RuntimeError('failed client cannot be reused; restart dedicated server')
         if not 2 <= len(tokens) <= 2048:raise ValueError('prompt length must be 2..2048')
         if mode not in ('fast','legacy','views'):raise ValueError('unknown assembly mode')

@@ -12,6 +12,7 @@ from multiplex_receiver import MultiplexKVClient
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', required=True)
+    parser.add_argument('--max-batch-slots',type=int,choices=(4,8),default=4)
     parser.add_argument('--repeats', type=int, default=3)
     args = parser.parse_args()
     torch.set_num_threads(1)
@@ -44,7 +45,7 @@ def main():
             return value
 
     layout = json.loads(Path(__file__).with_name('qwen3_8b_layout.json').read_text())
-    client = MultiplexKVClient('http://127.0.0.1:19101',19201,19202,layout)
+    client = MultiplexKVClient('http://127.0.0.1:19101',19201,19202,layout,max_batch_slots=args.max_batch_slots)
     rows = []
     try:
         with patch.object(pinned_receiver, 'PinnedAssembler', TimedAssembler):

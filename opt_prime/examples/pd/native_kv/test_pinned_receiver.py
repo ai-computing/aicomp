@@ -54,4 +54,41 @@ class PinnedReceiveTest(unittest.TestCase):
             self.assertTrue(a.failed);self.assertFalse(a.seen.any())
         finally:tx.close(0);rx.close(0);context.term()
 
+    def test_eight_slot_tcp_frames_exact_at_capacity(self):
+        context=zmq.Context();tx=context.socket(zmq.PUSH);rx=context.socket(zmq.PULL)
+        rx.setsockopt(zmq.MAXMSGSIZE,32*1024*1024);rx.setsockopt(zmq.RCVTIMEO,5000)
+        port=rx.bind_to_random_port('tcp://127.0.0.1');tx.connect(f'tcp://127.0.0.1:{port}')
+        try:
+            for n in (1,511,2047):
+                direct=PinnedAssembler('memory-test-139',n,max_batch_slots=8)
+                reference=CanonicalAssembler('memory-test-139',n)
+                # Reference consumes default four-slot frames built from the same bytes.
+                for first in range(0,72,8):
+                    header,payload=batch(range(first,first+8),n,first==64)
+                    tx.send_multipart([header,payload]);done=direct.receive(rx.recv(),rx)
+                    size=4*n*2048
+                    for offset in (0,4):
+                        h,_=batch(range(first+offset,first+offset+4),n,first+offset==68)
+                        reference.accept(h,payload[(offset//4)*size:(offset//4+1)*size])
+                self.assertTrue(done)
+                np.testing.assert_array_equal(direct.array,reference.data.transpose(0,2,1,3))
+                self.assertTrue(direct.data.host.is_pinned('cuda'))
+        finally:tx.close(0);rx.close(0);context.term()
+
+    def test_group_bound_rejects_before_receive(self):
+        socket=Mock()
+        for limit,count in ((4,8),(8,9)):
+            a=PinnedAssembler('memory-test-139',3,max_batch_slots=limit)
+            header,_=batch(range(count),3)
+            with self.assertRaises(ValueError):a.receive(header,socket)
+            self.assertTrue(a.failed);self.assertFalse(a.seen.any())
+        socket.recv_into.assert_not_called()
+        with self.assertRaises(ValueError):PinnedAssembler('memory-test-139',3,max_batch_slots=16)
+
+    def test_extended_group_requires_direct_client_path(self):
+        from multiplex_receiver import MultiplexKVClient
+        a=MultiplexKVClient.__new__(MultiplexKVClient);a.max_batch_slots=8;a.poisoned=False
+        with self.assertRaises(ValueError):a.prefill_many('test',[[1,2]])
+        with self.assertRaises(ValueError):a.prefill('test',[1,2])
+
 if __name__=='__main__':unittest.main()

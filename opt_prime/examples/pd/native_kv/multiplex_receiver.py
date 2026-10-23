@@ -14,6 +14,8 @@ class MultiplexKVClient(NativeKVClient):
         if not 1 <= len(prompts) <= 16: raise ValueError('expected 1..16 prompts')
         if any(not 2 <= len(tokens) <= 2048 for tokens in prompts):
             raise ValueError('prompt length must be 2..2048')
+        max_batch_slots = getattr(self, 'max_batch_slots', 4)
+        if max_batch_slots != 4 and not direct: raise ValueError('larger groups require direct receive')
         if direct:
             from pinned_receiver import PinnedAssembler
             if not hasattr(self.rx, 'recv_into'): raise RuntimeError('direct receive requires pyzmq recv_into')
@@ -30,7 +32,7 @@ class MultiplexKVClient(NativeKVClient):
                 # Each concurrent HTTP call owns its session; ZMQ stays on this thread.
                 future = pool.submit(requests.post, self.http_url+'/v1/completions', json=body, timeout=self.timeout)
                 pending[rid] = {'index':index, 'n':len(tokens)-1, 'future':future,
-                    'assembler':(PinnedAssembler(rid,len(tokens)-1) if direct else ViewAssembler(rid,len(tokens)-1)), 'ready':False, 'done':False,
+                    'assembler':(PinnedAssembler(rid,len(tokens)-1,max_batch_slots=max_batch_slots) if direct else ViewAssembler(rid,len(tokens)-1)), 'ready':False, 'done':False,
                     'ready_ms':None, 'kv_ready_ms':None, 'batches':0}
             while pending:
                 if time.perf_counter()-start >= self.timeout: raise TimeoutError('multiplex KV receive')
