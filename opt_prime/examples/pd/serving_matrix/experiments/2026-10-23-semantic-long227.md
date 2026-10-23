@@ -1,4 +1,6 @@
-# Six-thousand-token semantic handoff (partial results)
+# Six-thousand-token semantic handoff (all four models)
+
+Final comparison count:31/32; unresolved Gemma arithmetic drift is tracked in #233. This completes this measurement matrix, not the full serving goal.
 
 - **Date**: 2026-10-23
 - **Task**: EOS-aware four-model validation (aicomp #227)
@@ -33,7 +35,7 @@ For each completed producer, run check_rngd_gpu.py with the pinned local model, 
 | KONI-8B | 6137–6143 | 12 | 4/4 | 4/4 | 2.672–2.966 |
 | Qwen3-0.6B | 6026–6031 | 12 | 4/4 | 4/4 | 1.308–1.457 |
 | Gemma3-1B | 6423–6428 | 12 | 3/4 | 4/4 | 1.588–1.608 |
-| Qwen3-4B | pending | pending | pending | pending | pending |
+| Qwen3-4B | 6026–6031 | 12 | 4/4 | 4/4 | 2.744–2.982 |
 
 KONI64 and Qwen56 KV slots read back exactly. ATOM original and portable imports match native tokens and each other's logits. Native GPU and ATOM token lists also agree for these eight cases. Timing ranges are observations, not normalized serving performance or overlap measurements.
 
@@ -54,3 +56,7 @@ Completed long-context comparisons now23/24, not24/24. Qwen3-4B is compiling in 
 The unchanged GemmaLayer equations executed on GPU, at matching padded width8192 and both BF16/FP32, pick first token3, unlike RNGD token2. BF16 first-layer K/V relative RMS versus RNGD is0.00001666/0.000000205, rising to0.07479/0.11380 in the last layer. FP32 logits for3 and2 are33.33634/33.24598 (margin0.09036); BF16 logits32.5/29.625. This supports accumulated execution/numerical differences before transfer; it does not identify the causal operator or certify all equations/precisions. Both generated answers remain wrong. Follow-up issue:https://github.com/ai-computing/aicomp/issues/233.
 
 Reproduction: `CUDA_VISIBLE_DEVICES=0 python check_gemma_equations.py --model "$GEMMA_SNAPSHOT" --export semantic227-gemma-rngd8192-1.pt --width 8192 --output semantic227-gemma-long-equations-final.json`. TF32 disabled, GPU A10080GB, four CPU threads, pinned weights, same gemma_parts.py equations. This is a diagnostic, not a latency benchmark.
+
+## Final Qwen3-4B and matrix completion
+
+The original queue exited0 for all four models. Qwen3-4B12prefill runs are finite/repeat-exact, with4/4 GPU and4/4 ATOM EOS comparisons. True fixture IDs and KV lengths verified (36layers,8KV heads,128head dimension);72slot readbacks exact, both ATOM importers and nativeGPU/ATOM sequences agree. All four models now total48producer runs and31/32 model/question/decoder comparisons. The earlier pending/partial entries above describe intermediate checkpoints; no producer queue remains live. Final summary:semantic227-long-summary.json. The one Gemma mismatch is retained, not waived. Serving performance, real producer integration, cache restoration and overlap remain open.

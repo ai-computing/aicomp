@@ -1,0 +1,50 @@
+{
+  "koni": {
+    "gpu_matches": 4,
+    "atom_matches": 4,
+    "cases": 4,
+    "input_tokens": [
+      6138,
+      6137,
+      6139,
+      6143
+    ]
+  },
+  "qwen06b": {
+    "gpu_matches": 4,
+    "atom_matches": 4,
+    "cases": 4,
+    "input_tokens": [
+      6026,
+      6027,
+      6031,
+      6031
+    ]
+  },
+  "gemma": {
+    "gpu_matches": 3,
+    "atom_matches": 4,
+    "cases": 4,
+    "input_tokens": [
+      6423,
+      6424,
+      6424,
+      6428
+    ]
+  },
+  "qwen4b": {
+    "gpu_matches": 4,
+    "atom_matches": 4,
+    "cases": 4,
+    "input_tokens": [
+      6026,
+      6027,
+      6031,
+      6031
+    ]
+  },
+  "total": {
+    "matches": 31,
+    "comparisons": 32
+  }
+}
