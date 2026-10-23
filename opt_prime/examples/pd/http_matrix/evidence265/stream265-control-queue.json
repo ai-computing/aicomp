@@ -1,0 +1,18 @@
+[
+  {
+    "label": "qwen06b",
+    "exit_code": 0
+  },
+  {
+    "label": "qwen4b",
+    "exit_code": 0
+  },
+  {
+    "label": "gemma",
+    "exit_code": 0
+  },
+  {
+    "label": "koni",
+    "exit_code": 0
+  }
+]

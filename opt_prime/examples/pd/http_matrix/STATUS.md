@@ -83,3 +83,7 @@ Long source24/24 conditions at2K/8K have exact KV/logits. ATOM partial import an
 Runtime33d6cb0: allfour GPU cancellation/reuse and partial-producer-death checks passed. Active512-token decode remains exact to same-route no-fault reference; kill at5/6/4/10 tokens. All child exits0 and local devices idle. Auditor reproduces summary. First harness-only AttributeError and interrupted follow-up retained. Long ATOM Q06 complete16batches/32sequences exact, median completion reduction35.66% without prefetch/39.25% with prefetch; remaining models running. ATOM hardware faults remain pending.
 
 Qwen4 long ATOM completed16batches/32sequences exact: median completion reduction21.26% prefetchoff/22.90% on,3samples/mode. Gemma/KONI pending. Added two partial-prefetch failure/cancellation regressions; related39passed in5.00s. Production unchanged; previous full626-test run predates these two added tests.
+
+## Notification-timing control (#265)
+
+Allfour GPU control48batches/96sequences exact. Early-vs-deferred completion reduction4.64/2.99/0.40/1.72%; deferred-vs-whole22.74/19.62/2.84/21.25%. Most Qwen/KONI gain persists without within-request early notification; deferred still changes source assembly/destination import and permits cross-request overlap, so no pure source-assembly or DMA-overlap attribution. Three samples/mode; Gemma ranges overlap. Auditor reproduces summary. Gemma long ATOM complete16batches/32sequences exact,9.79/11.21% reduction without/with prefetch. KONI long ATOM and ATOM faults pending.
