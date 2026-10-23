@@ -39,13 +39,17 @@ ATOM k1 artifact initially fails the checker before generation: `b.blocks` is No
 
 Broader CPU test command (`PYTHONPATH=opt_prime python -m pytest -q opt_prime/tests opt_prime/examples/pd/serving_matrix/test_*.py`) before the single-block helper:21passed,2failed. Both failures are `test_kv_cache_generation_matches_hf[1]` and `[2]`: unregistered transformers DynamicCache output during AOTAutograd tracing. Both reproduce unchanged on parent6787628; no full-suite green claim.
 
-The same partitioned architecture is now being compiled for8192tokens on RNGD; no8K result yet.
+The same architecture succeeds at8192tokens. RMS0.293s, attention154.434s, FFN182.725s; init403.451s. Three full32-layer prefill+export runs4.047805/3.317492/2.933984s, all finite and bit-exact across repeats, shape[32,8,8192,128]. Timing dispersion needs controlled repetitions before a performance conclusion.
+
+8K GPU BF16 native/imported32tokens match,64slots readback exact. Relative RMS versus GPU: K3.2969%, V5.8546%, logits2.4353%.8K ATOM native/original-import/portable-import32tokens all match;64slots readback per importer and all31 decode-logit vectors exact between importers. ATOM original/portable import1.2517/1.0614s (single diagnostic samples, not controlled timing). Some logits remain tied even when argmax agrees. No numerical identity or broad quality claim.
+
+All experiments terminal; owned RNGD and ATOM allocations released. Draft PR222 contains the implementation and evidence.
 
 Private logs under analysis/serving-matrix-201: rngd-koni-8b-2048-parts221{,-shape,-layout}.log, shape-probe221.log, output-probe221.log, context-probe221.log, retain-probe221.log, attention-probe221.log. The optional stack-output microprobe fails compilation; it was not adopted.
 
 ## Conclusion
 
-The partitioned engine now executes full2K KONI on RNGD and passes the selected GPU continuation fixture. ATOM transport/continuation works on the exclusive k1 research path, with the native-output divergence documented.8K execution remains under test. Keep full four-model goal active.
+The partitioned engine now executes full2K KONI on RNGD and passes the selected GPU continuation fixture. ATOM transport/continuation works on the exclusive k1 research path, with the native-output divergence documented.8K execution and both handoff paths pass this fixture, while broad numerical/quality coverage and production serving integration remain open. Keep full four-model goal active.
 
 ## Additional commands and validation
 
@@ -60,3 +64,7 @@ PYTHONPATH=opt_prime python -m pytest -q opt_prime/tests opt_prime/examples/pd/s
 Latest expanded CPU suite:27passed,2failed (the same two parent-reproduced DynamicCache tracing failures). Scoped Ruff passes. New research code does not modify the core trace/cache implementation responsible for those failures.
 
 Sensitive-data scan: staged change files pass. Full repository scan reports7 unrelated existing findings, reproduced on parent6787628; none occur in the changed files.
+
+## 8K handoff reproduction
+
+Use the GPU/ATOM commands above with `rngd-koni-8b-8192-parts221-layout.pt` and separate output names (`rngd-koni-8b-8192-gpu221.json`, `rngd-koni-8b-8192-atom221.json`). Implementation commit720e8dc; code hashes in evidence221/summary.json. No code changes between2K and8K runs. The executable dependency revisions match the setup and parent #219 record.
