@@ -4,10 +4,17 @@ import json
 import os
 from pathlib import Path
 import signal
+import socket
 import subprocess
 import sys
 import time
 import requests
+
+
+def require_free(port):
+    """a server left on the port would answer /health and be benchmarked instead of the new one"""
+    with socket.socket() as s:
+        if s.connect_ex(('127.0.0.1',port))==0:raise RuntimeError(f'port {port} is already in use')
 
 
 def ready(proc, port):
@@ -63,6 +70,7 @@ def main():
                 '--no-enable-prefix-caching','--experimental-kv-transfer-config',
                 json.dumps({'kv_connector':'TcpConnector','host':'127.0.0.1','port':19201,'poll_timeout_ms':1})]
             log=(root/f'{label}_native.log').open('wb');logs.append(log)
+            require_free(19101);require_free(19201)
             native=subprocess.Popen(native_cmd,cwd=source,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             state['native_pid']=native.pid;save();ready(native,19101)
             env=dict(os.environ,SWITCH_INTERVAL='0.005',RECEIVE_PROFILE=str(root/f'{label}_receive.jsonl'))
@@ -72,6 +80,7 @@ def main():
                 '--norm-mode','fused','--fuse-mlp','--fuse-qkv','--native-pack','direct',
                 '--profile-stages',str(root/f'{label}_stages.jsonl')]
             log=(root/f'{label}_gpu.log').open('wb');logs.append(log)
+            require_free(19111)
             gpu=subprocess.Popen(gpu_cmd,cwd=source,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             state['gpu_pid']=gpu.pid;save();ready(gpu,19111)
             state['state']='benchmarking';save();print(json.dumps(state),flush=True)

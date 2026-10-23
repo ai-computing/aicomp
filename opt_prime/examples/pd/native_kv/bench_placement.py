@@ -4,10 +4,26 @@ import json
 import os
 from pathlib import Path
 import signal
+import socket
 import subprocess
 import sys
 import time
 import requests
+
+
+def require_free(port):
+    """a server left on the port would answer /health and be benchmarked instead of the new one"""
+    with socket.socket() as s:
+        if s.connect_ex(('127.0.0.1', port)) == 0:
+            raise RuntimeError(f'port {port} is already in use')
+
+
+def thread_affinities(pid):
+    affinities = set()
+    for t in Path(f'/proc/{pid}/task').iterdir():
+        try: affinities.add(','.join(map(str, sorted(os.sched_getaffinity(int(t.name))))))
+        except ProcessLookupError: pass              # the thread exited during the scan
+    return sorted(affinities)
 
 
 def main():
@@ -36,6 +52,7 @@ def main():
             '--profile-stages',str(root/f'{label}_stages.jsonl')]
         env = dict(os.environ, SWITCH_INTERVAL='0.005', RECEIVE_PROFILE=str(root/f'{label}_receive.jsonl'))
         server = None
+        require_free(19111)
         try:
             with (root/f'{label}_server.log').open('wb') as log:
                 server = subprocess.Popen(command,cwd=source,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -53,7 +70,7 @@ def main():
                 state['state'] = 'benchmarking';save();print(json.dumps(state),flush=True)
                 with (root/f'{label}_arrival.log').open('wb') as benchlog:
                     subprocess.run([sys.executable,str(source/'bench_arrival_http.py'),'--rates','6,6','--requests','96','--out',str(root/f'{label}_arrival.json')],cwd=source,stdout=benchlog,stderr=subprocess.STDOUT,check=True,timeout=180)
-                state['thread_affinities'] = sorted({','.join(map(str,sorted(os.sched_getaffinity(int(t.name))))) for t in Path(f'/proc/{server.pid}/task').iterdir() if t.exists()})
+                state['thread_affinities'] = thread_affinities(server.pid)
                 state['numastat'] = subprocess.check_output(['numastat','-p',str(server.pid)],text=True)
                 if index == 0:
                     state['state']='quality';save()
