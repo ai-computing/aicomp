@@ -41,3 +41,5 @@ Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} fro
 ## Qwen3-4B numerical controls (#256)
 
 Original RNGD/GPU8K parity fails before EOS. Matching nativeGPU full-prefill fixes the32-token comparison but output128still diverges at token108;15/20token checks and45/60texts match the independent full-prefill control. No production fix or speedup claim. See experiments/2026-10-24-qwen4-numerics256.md and evidence256.
+
+Qwen4 forced-prefix diagnostic complete: nativeBF16 tied13/315 at35.75, retainedRNGDKV favors315 by0.5. FP32 native/import both select315. Diagnostic only; no all-token parity or quality claim.
