@@ -1,0 +1,38 @@
+F
+=================================== FAILURES ===================================
+_ test_b1_prefetch_overlaps_decode_and_holds_source_until_import[False-success] _
+
+fake_rebel = {'model': <test_atom_batching.FakeBlocks object at 0x77747516d4e0>}
+outcome = 'success', cache = False
+
+    @pytest.mark.parametrize('outcome', ['success', 'cancel', 'error'])
+    @pytest.mark.parametrize('cache', [False, True])
+    def test_b1_prefetch_overlaps_decode_and_holds_source_until_import(fake_rebel, outcome, cache):
+        """A reserved prefill must neither wait for the decode lane nor reuse a still-written source slot."""
+        import copy
+        from concurrent.futures import Future
+        from opt_prime.accel.pd.pd_batching import TorchPrefillEngine
+
+        class ControlledProducer:
+            def __init__(self):
+                self.calls = []
+
+            def submit(self, request, send_from=0, slot=None):
+                assert send_from == slot == 0
+                future = Future()
+                self.calls.append((request, future))
+                return future
+
+        model = _llama()
+        fake = _blocks_model(fake_rebel, model, batch=1, blocks=3 if cache else 1)
+        producer = ControlledProducer()
+        engine = TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16)
+>       b = AtomBatcher(fake, prefix_cache=cache, host_kv_gib=1.0 if cache else 0,
+                        prefill_worker=producer, local_prefill=False, remote_prefetch=True)
+E       TypeError: AtomBatcher.__init__() got an unexpected keyword argument 'remote_prefetch'
+
+opt_prime/tests/test_atom_batching.py:461: TypeError
+=========================== short test summary info ============================
+FAILED opt_prime/tests/test_atom_batching.py::test_b1_prefetch_overlaps_decode_and_holds_source_until_import[False-success]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 21 deselected in 2.74s

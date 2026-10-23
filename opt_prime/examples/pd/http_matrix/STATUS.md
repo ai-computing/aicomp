@@ -37,3 +37,7 @@ A real terminated subprocess producer previously left /ready200 and new requests
 ## Batched producer timing (#249)
 
 Candidate exports airm_pd_producer_seconds_total{stage="prefill"|"transfer"} from existing accumulated batcher durations. Repeated scrapes do not add observations; missing timing keys are omitted. Tiny real-model admission test covers fixed worker-reported durations and legacy omissions. These counters are worker-reported admitted-handoff sums, not request latency or proof of zero cost for workers that do not measure stages. Full CPU suite:467passed,17skipped,135subtests,1existing warning. See pd-stage-metrics249 experiment.
+
+## B1 next-request prefill (#253), 2026-10-24
+
+Opt-in remote_prefetch / --pd-prefetch-next implemented for single-lane ATOM remote-only PD. Keep one source result reserved through owner import; cancelled writers drain before reuse. Prefix/host cache admission remains late, so early prefill transfers the full prompt.35focused tests and full511passed34skipped253subtests; real four-model hardware pipeline/performance validation pending. No speedup claim. See experiments/2026-10-24-atom-prefetch253.md.
