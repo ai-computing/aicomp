@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "repeat_exact": true,
+  "token": 578,
+  "shape": [
+    32,
+    8,
+    128,
+    128
+  ],
+  "dtype": "torch.bfloat16",
+  "load_s": 135.9559567340184,
+  "observed_prefill_export_s": [
+    3.308735191996675,
+    3.0253824070096016
+  ],
+  "width": 8192,
+  "logical_prompt": 128,
+  "runtime": "32ce5d5",
+  "revision": "0172bf7e73977ae213613529f3d2d5400a33f678",
+  "comparison": "Two owned copies from the same live producer; GPU replay not yet checked"
+}
