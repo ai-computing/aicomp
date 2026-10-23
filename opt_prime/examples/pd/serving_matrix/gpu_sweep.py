@@ -22,6 +22,7 @@ def main():
     p.add_argument("--batches", type=int, nargs="+", default=[1, 4])
     p.add_argument("--new-tokens", type=int, default=32)
     p.add_argument("--repeats", type=int, default=2)
+    p.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     a = p.parse_args()
     if min(*a.lengths, *a.batches, a.new_tokens, a.repeats) <= 0:
         p.error("sizes and repeats must be positive")
@@ -37,7 +38,7 @@ def main():
         AutoModelForCausalLM.from_pretrained(
             model_path,
             local_files_only=True,
-            dtype=torch.bfloat16,
+            dtype=getattr(torch, a.dtype),
             attn_implementation="sdpa",
         )
         .to(device)
@@ -49,7 +50,7 @@ def main():
         "device": torch.cuda.get_device_name(device),
         "torch": torch.__version__,
         "transformers": importlib.metadata.version("transformers"),
-        "dtype": "bfloat16",
+        "dtype": a.dtype,
         "attention": "sdpa",
         "fixed_outputs_ignore_eos": True,
         "prefix_cache": False,
