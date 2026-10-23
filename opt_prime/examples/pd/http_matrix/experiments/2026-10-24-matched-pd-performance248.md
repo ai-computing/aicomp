@@ -88,3 +88,46 @@ Contamination note: CPU-only focused regression tests for issue249 (OMP_NUM_THRE
 Queue exited0; no GPU compute processes remain. All12model/mode combinations pass workflow and parity,144measured batches total. Gemma8192input/c4/output32: native20.2289,PD23.1076,DP239.6639tok/s; firstSSE3.2272/2.8150/1.6396seconds. All four models favor DP2 in this initial long-input concurrency4 condition. Summary: analysis/serving-matrix-201/perf248-summary-a.json.
 
 This block still needs quiet, reverse-order replication and longer-output conditions. FullCPU regression for issue249 started only after this GPU queue terminated. Actual overlap and RNGD-to-ATOM controlled throughput remain separate outstanding requirements.
+
+## Publication and reversed block B
+
+Initial harness/evidence committed aba3ad2, Draft PR251. Duration counters committed273952a, Draft PR250; fullCPU validation467passed/17skipped/135subtests before restarting GPU work. BlockB uses identical inputs128/8192,outputs32,concurrency1/4,repeat3, references from original blockA native. Model order reversed (Gemma,KONI,Qwen4,Qwen06), mode orderDP2,PD,native. Runtime PYTHONPATH points to aicomp-metrics-249/opt_prime (273952a); benchmark/CLI entrypoint from aicomp-perf-248 (aba3ad2), HTTPcandidate9e442cd. Only runtime difference fromA is additive metrics export, no scheduling/compute/transfer modification.
+
+Command from aicomp-perf-248: `/home/gspark/venvs/pt213/bin/python /tmp/run_perf248_reverse.py`. Expanded commands in analysis/serving-matrix-201/perf248-reverse-b.log; copied queue script run_perf248_reverse.py in same directory. GPU compute-process list was empty before launch. Do not run CPU regression suites during this block. Stage counters are cumulative across warmup/checks/timed requests and must not be treated as isolated per-condition timing.
+
+## First reversed-model result: Gemma
+
+All three blockB modes passed parity,36batches. Long-input/c4 throughput comparison:
+
+| Mode | Block | tok/s |
+|---|---|---:|
+|native|a|20.2289|
+|native|b|19.5801|
+|pd|a|23.1076|
+|pd|b|17.7899|
+|dp2|a|39.6639|
+|dp2|b|38.4918|
+
+PD blockB exports prefill30.8477465seconds and transfer0.3611378seconds across all42admitted handoffs including warmup/correctness. The transfer total is positive and worker timing is now observable; totals are not per-condition critical-path attribution. The ~23% PD throughput drop requires diagnosis; additive metrics code is outside the compute path but version/order effects must be separated by a paired rerun. Observed host load at follow-up1.43/1.80/1.61, not contemporaneous per-request telemetry. No claim that the initial PD improvement is stable. Queue continues with KONI DP2.
+
+Heterogeneous setup audit: control access works and experiment namespace has no Pods. Existing ATOM runner uses PYTHONUSERBASE and bootstrap to restrict one assigned ATOM; artifacts are B1/context9216. Need a matched native/PD benchmark with fixed-output requests rather than reuse EOS-terminated lifecycle latency. No accelerator allocation created during this audit.
+
+## KONI reversed PD and follow-up preparation
+
+KONI blockB PD and DP2 each completed12batches with parity. At8192input/c4:PD14.0186tok/s versus14.4674inA;DP224.6388 versus24.6932inA. PD accumulated worker-reported prefill43.6859s and transfer1.68334s across42admitted handoffs. KONI native still running at this observation. Unlike Gemma, these two modes show only modest block-to-block differences; do not generalize Gemma variability to every model.
+
+Source audit: current factory uses threaded PrefillWorker, so producer/decoder share a Python process. Existing ProcessPrefillWorker uses spawn plus CUDA IPC and a receiver copy. This is a candidate experiment for launch contention, not a demonstrated cause or performance fix. Its lifecycle differs from hardened SubprocessPrefillWorker and must be validated before exposing a new serving default.
+
+Prepared (not yet launched) /tmp/run_perf248_long128.py, copied to analysis/serving-matrix-201/run_perf248_long128.py. It uses all four models/native-PD-DP2, input128/8192, output128, concurrency1/4/8, three repeats and native-long128 references. Start only after blockB terminal and device availability check. No improvement claim from preparation.
+
+## Qwen3-4B reversed block and heterogeneous harness preparation
+
+Qwen3-4B all36blockB batches passed parity. At8192/c4 native12.6604,PD15.1194,DP224.9782tok/s; blockA12.8632/13.2452/25.1737. PD varies upward here (~14%), unlike Gemma's downward variation, while DP2 stays close. PD worker totals39.4895prefill seconds and2.16473transfer seconds across42handoffs. Keep the variability conclusion, not a deterministic per-model speedup claim.
+
+New isolated worktree aicomp-heteroperf-248, branch exp/248-heterogeneous-http from latestmain plus aba3ad2 dependency, adds --server-config to reuse the same client/timing/correctness workflow with trusted argv templates. Config requires a standalone {port}, nonempty argv arrays and resource metadata restricted to known fields; external metadata replaces GPU-specific assumptions. Red test1failed/1passed before implementation; final2passed in0.03s, Ruff/diff clean. This was a negligible standard-library-only test, not a Torch/CPU regression suite. Hardware external-server integration is not yet verified; no NPU allocation started. Current GPU queue uses untouched benchmark branch.
+
+## BlockB complete and longer-output run started
+
+Reverse queue exited0; all144blockB batches pass parity (288acrossA/B). At8192/c4 blockB native/PD/DP2 tok/s: Qwen06=19.8565/18.4056/39.3672; Qwen4=12.6604/15.1194/24.9782; KONI=12.3868/14.0186/24.6388; Gemma=19.5801/17.7899/38.4918. Same-two-GPU DP2 advantage persists; PD versus one-GPU native is variable. Summary: perf248-summary-b-longc4.json.
+
+After confirming no GPU processes, launched /tmp/run_perf248_long128.py from aicomp-perf-248. Raw queue log:analysis/serving-matrix-201/perf248-long128.log. Output128,inputs128/8192,concurrency1/4/8,repeat3. Separate NPU host benchmark does not share these GPU-host compute resources.

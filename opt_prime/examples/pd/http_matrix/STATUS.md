@@ -37,3 +37,5 @@ A real terminated subprocess producer previously left /ready200 and new requests
 ## Matched performance block A (#248)
 
 Four models times native/PD/DP2 completed144measured batches with parity. Inputs128/8192, outputs32, concurrency1/4, three repeats. DP2 leads all four at8192/c4. BlockA is ordered and has a short concurrent CPU-test window during KONI; quiet reversed-order replication and longer outputs remain. No within-request compute/copy overlap in this Torch baseline. See evidence248 and matched-pd-performance248 record.
+
+BlockB reverse-model/mode repetition completed144additional batches with parity (288A/B total). Same-two-GPU DP2 leads all four at8192/c4. PD relative to native is variable: Gemma23.11->17.79tok/s,Qwen0.6B22.37->18.41,Qwen4B13.25->15.12,KONI14.47->14.02. No stable native-to-PD speedup claim. Runtime273952a adds stage counters; scheduling/compute unchanged. Longer-output and actual heterogeneous benchmarking ongoing.

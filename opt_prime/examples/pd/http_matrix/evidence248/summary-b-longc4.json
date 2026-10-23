@@ -1,0 +1,62 @@
+[
+  {
+    "model": "qwen06b",
+    "mode": "native",
+    "tok_s": 19.85653860288478
+  },
+  {
+    "model": "qwen06b",
+    "mode": "pd",
+    "tok_s": 18.405629300719113
+  },
+  {
+    "model": "qwen06b",
+    "mode": "dp2",
+    "tok_s": 39.367234302807546
+  },
+  {
+    "model": "qwen4b",
+    "mode": "native",
+    "tok_s": 12.660373395778896
+  },
+  {
+    "model": "qwen4b",
+    "mode": "pd",
+    "tok_s": 15.119406655647083
+  },
+  {
+    "model": "qwen4b",
+    "mode": "dp2",
+    "tok_s": 24.9782450413708
+  },
+  {
+    "model": "koni",
+    "mode": "native",
+    "tok_s": 12.386813361569047
+  },
+  {
+    "model": "koni",
+    "mode": "pd",
+    "tok_s": 14.018615839536057
+  },
+  {
+    "model": "koni",
+    "mode": "dp2",
+    "tok_s": 24.63883952092516
+  },
+  {
+    "model": "gemma",
+    "mode": "native",
+    "tok_s": 19.580050245708623
+  },
+  {
+    "model": "gemma",
+    "mode": "pd",
+    "tok_s": 17.789941039703642
+  },
+  {
+    "model": "gemma",
+    "mode": "dp2",
+    "tok_s": 38.491819934458526
+  }
+]
