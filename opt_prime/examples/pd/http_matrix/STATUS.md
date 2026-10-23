@@ -45,3 +45,5 @@ Opt-in remote_prefetch / --pd-prefetch-next implemented for single-lane ATOM rem
 KONI hardware prefetch validation complete:48timed batches exact,8fixed-output/4EOS groups pass, cancellation/reuse and producer-exit isolation/readiness503 pass. Same-warm-instance off/on3repeat c4 gains23.48–40.87%; c1 near-neutral. Host producer/decode overlap only in enabled mode. Remaining three models pending; no default promotion. See evidence253/atom253-koni-summary.json and experiment.
 
 Qwen3-4B also passes48timed batches,8fixed/4EOS groups and live cancellation/producer-exit isolation. c4 median gains21.20–41.00%; c1 near-neutral. Qwen0.6/Gemma remain pending. This does not resolve the separate GPU decoder pre-EOS drift in#256.
+
+Qwen3-0.6B: 48 prefetch off/on batches and fixed-output/EOS/lifecycle checks passed. At 8K input/output128/c4, 35.016 -> 48.231 tok/s (+37.74%); c1 roughly neutral. Gemma hardware validation remains pending.

@@ -142,3 +142,20 @@ Exit0; queue advanced to Qwen3-0.6B.48timed batches exact versus warm-off refere
 |8192|128|4|12.886|17.253|+33.89%|
 
 Cancellation: victim499, exact recovery, current128-token decode preserved. Producer termination: victim500, subsequent request503/readiness503, current decode preserved, batcher drained with no reservation or poisoned state. Measured host-call overlap off0/60 and on36/60, union78.42756s; not device-kernel proof. Raw atom253-qwen4b-a.json and trace, final atom253-qwen4b-summary.json. This validates the ATOM prefetch change; the separate RNGD-to-GPU Qwen4 pre-EOS discrepancy tracked in#256 remains unresolved.
+
+## Qwen3-0.6B completed
+
+Runtime 3e16c33; 48 timed batches, eight fixed-output check groups and four normal-EOS groups passed; cancellation and producer-exit lifecycle passed. Cold initialization 326.490 s excluded. Input 128/8192, output32/128, concurrency1/4, three alternating repeats per condition. Raw atom253-qwen06b-a.json and producer trace; summary atom253-qwen06b-summary.json. Reproduce analysis: `python3 analysis/serving-matrix-201/summarize_atom253.py analysis/serving-matrix-201/atom253-qwen06b-a.json analysis/serving-matrix-201/atom253-qwen06b-a.producer.jsonl --output analysis/serving-matrix-201/atom253-qwen06b-summary.json`.
+
+| Input | Output | Concurrency | Off tok/s | On tok/s | Change |
+|---:|---:|---:|---:|---:|---:|
+| 128 | 32 | 1 | 24.605 | 24.618 | +0.05% |
+| 128 | 32 | 4 | 24.633 | 28.232 | +14.61% |
+| 128 | 128 | 1 | 66.049 | 65.552 | -0.75% |
+| 128 | 128 | 4 | 65.539 | 97.517 | +48.79% |
+| 8192 | 32 | 1 | 11.805 | 11.766 | -0.33% |
+| 8192 | 32 | 4 | 12.033 | 13.164 | +9.40% |
+| 8192 | 128 | 1 | 34.977 | 34.558 | -1.20% |
+| 8192 | 128 | 4 | 35.016 | 48.231 | +37.74% |
+
+Host-call overlap: off0/60, on36/60, union24.246s. Not a device-kernel trace. Single-request throughput remains approximately flat; queued requests benefit. Prefetch compares on/off identical producer, not general native GPU numerical equivalence. Gemma has now started in the existing queue.
