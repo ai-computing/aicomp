@@ -9,3 +9,6 @@ Not complete: fresh four-model NPU/PD coverage, long-context RNGD, Gemma RNGD su
 Next: extend RNGD beyond512tokens and profile ATOM import; use compiled Qwen3-4B context9216 artifact; continue remaining model/backend cells and exact numerical diagnosis. Dedicated validation allocation has ended; no task servers remain.
 
 These are exported research records for review. The local research-hub retains the authoritative tracking log and synchronizes it; no direct Plane calls are made.
+
+## Long-input extension
+Qwen3-4B RNGD2048 warm570–575ms;32-token fixture output matches GPU and ATOM native. Qwen3-0.6B ATOM16 runs complete through8K; repeat8/8 but GPU full output4/8 match. Gemma long artifact compiles but external hybrid cache tables fail (#207). See experiments/2026-10-23-long-model-matrix.md.
