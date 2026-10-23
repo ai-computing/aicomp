@@ -51,3 +51,5 @@ Allfour live GPU isolation runs pass: active512-token decode survives other-requ
 #263 held-out suite: Qwen3-0.6B/Qwen3-4B/KONI-8B/Gemma3-1B inputs frozen (36/model); scorer distinguishes parsed answer, JSON format and exact token parity. Tests9passed after9expected failures. Hardware results pending; #256/#261 remain open.
 
 #263 evaluator verification:10focused passed; full prior collection533passed/15skipped/253subtests. Frozen fixtures hashed before inference; GPU route queue started, hardware results pending.
+
+#263 first GPU pairs complete: Qwen0.6 native32/36 versus RNGD34/36, no paired regression,34/36 token equality; Qwen4 both36/36, alltokens equal. KONI/Gemma and ATOM queues still running; old long-output failures are retained.

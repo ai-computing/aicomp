@@ -1,0 +1,10 @@
+{
+  "cases": 36,
+  "correct_to_wrong": 0,
+  "wrong_to_correct": 2,
+  "token_equal": 34,
+  "answer_counts": [
+    32,
+    34
+  ]
+}

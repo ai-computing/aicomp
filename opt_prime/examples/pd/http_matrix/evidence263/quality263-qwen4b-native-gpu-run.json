@@ -1,0 +1,43 @@
+{
+  "label": "qwen4b",
+  "route": "native-gpu",
+  "argv": [
+    "/home/gspark/venvs/pt213/bin/python",
+    "-c",
+    "import sys,importlib.util,runpy\ns=importlib.util.spec_from_file_location('opt_prime.accel.serve.llmd','/tmp/llmd240.py')\nm=importlib.util.module_from_spec(s);sys.modules[s.name]=m;s.loader.exec_module(m)\nrunpy.run_path('/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/examples/pd/serve_batched.py',run_name='__main__')\n",
+    "--model",
+    "/tmp/serving-matrix-models/Qwen3-4B",
+    "--device",
+    "cuda:0",
+    "--dtype",
+    "bfloat16",
+    "--slots",
+    "4",
+    "--max-context",
+    "9216",
+    "--max-output",
+    "128",
+    "--kv",
+    "paged",
+    "--page-size",
+    "64",
+    "--chunk",
+    "256",
+    "--port",
+    "54879"
+  ],
+  "env": {
+    "OMP_NUM_THREADS": "4",
+    "MKL_NUM_THREADS": "4",
+    "TORCH_DEVICE_BACKEND_AUTOLOAD": "0",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "PYTHONPATH": "/tmp/rngd-gpu201-src:/home/gspark/workspace/aicomp-live-pd-234/opt_prime/examples/pd/serving_matrix:/home/gspark/workspace/aicomp-dense-hybrid-258/opt_prime"
+  },
+  "runtime_commit": "32ce5d5",
+  "stage": "complete",
+  "cases": 36,
+  "answer_correct": 36,
+  "format_correct": 36,
+  "server_exit": -15
+}

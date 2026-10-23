@@ -3,7 +3,7 @@
 - **Date**: 2026-10-24
 - **Task**: Structured answer compatibility (aicomp #263)
 - **Host / device**: GPU and RNGD+ATOM roles; hardware results pending
-- **Commit**: evaluator based on f9ce6e8, exp/263-heldout-quality (uncommitted); production runtime 32ce5d5
+- **Commit**: evaluator 7b2fd19, draft PR264 (base f9ce6e8); production runtime 32ce5d5
 
 ## Question
 
@@ -40,3 +40,20 @@ Raw logs: /tmp/quality263-red.log, /tmp/quality263-full.log; fixtures/results un
 ## Conclusion
 
 This small synthetic set can expose paired regressions but cannot establish general model quality or statistical equivalence. The compatibility preference question remains unanswered; exact token failures are not waived.
+
+## First completed paired run
+
+Qwen3-0.6B, 36 paired cases: nativeGPU32correct/36validformat; RNGD→GPU34correct/36validformat. Correct→wrong0, wrong→correct2; exacttoken34/36. This is a structured synthetic task result, not a general model quality advantage. Raw: quality263-qwen06b-{native-gpu,rngd-gpu}.jsonl and quality263-qwen06b-gpu-summary.json under analysis/serving-matrix-201. Other models remain in the active sequential queue.
+
+## ATOM execution
+
+Owned quality263 Pod allocated one ATOM and one RNGD through device plugins; no existing Pod modified. All36 stored prompts are re-tokenized with the remote model tokenizer and asserted equal to frozen input IDs before inference. B1, context9216, cacheoff, normalEOS, max128output; nativeATOM and liveRNGD→ATOM run sequentially with existing compiled artifacts. Runtime3e16c33; kv_blocks3 except KONI1; Gemma global225 artifacts. Queue deletes only its own Pod in finally.
+
+Local exact orchestrator commands:
+```bash
+/home/gspark/venvs/pt213/bin/python analysis/serving-matrix-201/run_quality263_gpu.py > analysis/serving-matrix-201/quality263-gpu-queue.log 2>&1
+/home/gspark/venvs/pt213/bin/python analysis/serving-matrix-201/run_quality263_atom_queue.py > analysis/serving-matrix-201/quality263-atom-queue.log 2>&1
+```
+Per-route argv/environment and raw HTTP outputs are retained; first-stage ATOM tokenizer equality passed. No final ATOM scores yet.
+
+Qwen3-4B GPU pair completed:36/36 answers and36/36 JSON format on both routes; exacttoken36/36; correct→wrong0 and wrong→correct0. Prior long-free-generation mismatch in#256 remains open.
