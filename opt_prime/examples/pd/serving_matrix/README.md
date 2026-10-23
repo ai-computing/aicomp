@@ -124,3 +124,28 @@ single-block artifact. `SingleBlockTarget` reuses the existing staging/import
 arithmetic for block zero; it does not enable the production PD scheduler,
 prefix caching, hybrid caches or concurrent requests on that artifact.
 See the experiment record and `evidence221/` for measured results and failures.
+
+## Gemma3 RNGD producer (#223)
+
+`rngd_gemma_sweep.py` pins Gemma3-1B and runs all26layers with offset RMS
+weights, four residual-path norms, Q/K normalization, GELU gating, scaled
+embeddings, and the checkpoint's local/global causal masks and RoPE. It uses
+full-prefix attention, with embeddings and final norm/head on CPU. Local/global
+mask inputs share one compiled layer graph. This is an experimental producer,
+not a production-serving or overlap implementation.
+
+```bash
+./furiosa_prefill_python.sh -m probe_gemma_layer
+./furiosa_prefill_python.sh -m probe_compile_layout
+./furiosa_prefill_python.sh -m rngd_gemma_sweep --width 128 --output gemma128
+python3 check_rngd_gpu.py --model "$GEMMA_SNAPSHOT" --exports gemma128.pt \
+  --output gemma128-gpu.json
+```
+
+Compiler samples must match the contiguous runtime layout. Preserving the strides
+of transposed checkpoint weights with `zeros_like` silently changed matrix
+results in the validated SDK; the layout probe retains that negative control.
+The GPU checker validates absolute cache positions and compares only the retained
+window for sliding layers; it still requires the full prefix for global layers.
+It also checks the cache contents after import, not just the upload tensor.
+See the experiment record for failed runs, tolerances and remaining scope.

@@ -1,0 +1,2 @@
+{"layout": "preserve", "sample_stride": [1, 128], "runtime_stride": [64, 1], "relative_rms": 1.372542142868042}
+{"layout": "contiguous", "sample_stride": [64, 1], "runtime_stride": [64, 1], "relative_rms": 0.0}

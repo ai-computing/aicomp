@@ -2,9 +2,11 @@
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 import torch
+from cache_comparison import retained_export
 from transformers import AutoModelForCausalLM, DynamicCache
 
 p = argparse.ArgumentParser(description=__doc__)
@@ -48,6 +50,14 @@ def relative(a, b):
     )
 
 
+def relative_many(actual, expected):
+    numerator = sum(
+        float((a.float() - b.float()).square().sum()) for a, b in zip(actual, expected)
+    )
+    denominator = sum(float(b.float().square().sum()) for b in expected)
+    return math.sqrt(numerator / denominator)
+
+
 with torch.inference_mode():
     for path in a.exports:
         r = torch.load(path, weights_only=True)
@@ -56,8 +66,11 @@ with torch.inference_mode():
             use_cache=True,
             logits_to_keep=1,
         )
-        keys = torch.stack([l.keys[0].cpu() for l in o.past_key_values.layers])
-        values = torch.stack([l.values[0].cpu() for l in o.past_key_values.layers])
+        layers = o.past_key_values.layers
+        keys = [layer.keys[0].cpu() for layer in layers]
+        values = [layer.values[0].cpu() for layer in layers]
+        matched_k = [retained_export(k, layer) for k, layer in zip(r["keys"], layers)]
+        matched_v = [retained_export(v, layer) for v, layer in zip(r["values"], layers)]
         logits = o.logits[0, -1].cpu()
         native = decode(int(logits.argmax()), o.past_key_values)
         cache = DynamicCache(config=model.config)
@@ -65,17 +78,24 @@ with torch.inference_mode():
             dk, dv = [t[None].to(device="cuda", dtype=model.dtype) for t in (k, v)]
             assert torch.equal(dk.cpu()[0], k) and torch.equal(dv.cpu()[0], v)
             cache.update(dk, dv, i)
+            assert torch.equal(
+                cache.layers[i].keys[0].cpu(), retained_export(k, cache.layers[i])
+            )
+            assert torch.equal(
+                cache.layers[i].values[0].cpu(), retained_export(v, cache.layers[i])
+            )
         transferred = decode(int(r["logits"].argmax()), cache)
         row = {
             "export": Path(path).name,
             "decode_dtype": a.dtype,
-            "key_layer_relative_rms": [relative(x, y) for x, y in zip(r["keys"], keys)],
+            "key_layer_relative_rms": [relative(x, y) for x, y in zip(matched_k, keys)],
             "value_layer_relative_rms": [
-                relative(x, y) for x, y in zip(r["values"], values)
+                relative(x, y) for x, y in zip(matched_v, values)
             ],
             "input_tokens": len(r["ids"]),
-            "key_relative_rms": relative(r["keys"], keys),
-            "value_relative_rms": relative(r["values"], values),
+            "compared_cache_lengths": [key.shape[-2] for key in keys],
+            "key_relative_rms": relative_many(matched_k, keys),
+            "value_relative_rms": relative_many(matched_v, values),
             "logit_relative_rms": relative(r["logits"], logits),
             "first_equal": native[0] == transferred[0],
             "tokens_equal": native == transferred,
