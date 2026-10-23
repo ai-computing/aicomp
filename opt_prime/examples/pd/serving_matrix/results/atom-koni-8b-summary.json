@@ -1,0 +1,114 @@
+[
+  {
+    "input_tokens": 128,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "first_difference": 31,
+    "ttft_ms": 100.89046298526227,
+    "tpot_ms": 67.52226387165607,
+    "gpu_eos_equal": false,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 128,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "first_difference": 31,
+    "ttft_ms": 102.05049498472363,
+    "tpot_ms": 68.8032408897567,
+    "gpu_eos_equal": false,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 512,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "first_difference": null,
+    "ttft_ms": 399.9299299903214,
+    "tpot_ms": 68.09565364458267,
+    "gpu_eos_equal": true,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 512,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "first_difference": 51,
+    "ttft_ms": 399.91197700146586,
+    "tpot_ms": 68.22867366195634,
+    "gpu_eos_equal": false,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 2048,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "first_difference": 27,
+    "ttft_ms": 1633.3730929763988,
+    "tpot_ms": 72.54578312858939,
+    "gpu_eos_equal": false,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 2048,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": false,
+    "first_equal": true,
+    "first_difference": 27,
+    "ttft_ms": 1631.163558922708,
+    "tpot_ms": 69.8544664022432,
+    "gpu_eos_equal": false,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 8192,
+    "output_tokens": 32,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "first_difference": null,
+    "ttft_ms": 7321.11583603546,
+    "tpot_ms": 73.1610080016957,
+    "gpu_eos_equal": true,
+    "eos_token_ids": [
+      128001
+    ]
+  },
+  {
+    "input_tokens": 8192,
+    "output_tokens": 128,
+    "repeat_equal": true,
+    "gpu_equal": true,
+    "first_equal": true,
+    "first_difference": null,
+    "ttft_ms": 7313.993646064773,
+    "tpot_ms": 72.00756281023978,
+    "gpu_eos_equal": true,
+    "eos_token_ids": [
+      128001
+    ]
+  }
+]
