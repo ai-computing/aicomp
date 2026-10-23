@@ -180,9 +180,41 @@ def stream_result(engine, req, slab, publish):
     return logits
 
 
+def factory_engine(a):
+    """Load a trusted CLI factory using the same FP32 checkpoint inputs as research workers."""
+    from importlib import import_module
+    from pathlib import Path
+    from safetensors import safe_open
+    path = Path(a.model)
+    config = json.loads((path / "config.json").read_text())
+    width = int(a.width)
+    head_dim = config.get("head_dim") or config["hidden_size"] // config["num_attention_heads"]
+    if (not 0 < width <= a.max_context or a.slots <= 0
+            or (a.layers, a.kv_heads, a.head_dim) !=
+            (config["num_hidden_layers"], config["num_key_value_heads"], head_dim)):
+        raise ValueError("factory width or shared-memory geometry does not match checkpoint")
+    module, sep, name = (a.engine_factory or "").partition(":")
+    if not sep or not module or not name:
+        raise ValueError("engine factory must be module:callable")
+    factory = getattr(import_module(module), name)
+    if not callable(factory):
+        raise ValueError("engine factory must be callable")
+    weights = {}
+    for shard in sorted(path.glob("*.safetensors")):
+        with safe_open(shard, framework="pt") as f:
+            for key in f.keys():
+                if key in weights:
+                    raise ValueError("duplicate tensor in checkpoint shards")
+                weights[key] = f.get_tensor(key).float()
+    if not weights:
+        raise ValueError("factory requires local safetensors weights")
+    return factory(config, weights, width=width, chip=a.chip)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen", "rngd-full"])
+    ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen", "rngd-full", "factory"])
+    ap.add_argument("--engine-factory", help="trusted local module:callable; used only with --engine factory")
     ap.add_argument("--model", required=True); ap.add_argument("--model-id", default=None)
     ap.add_argument("--shm", required=True); ap.add_argument("--slots", type=int, required=True)
     ap.add_argument("--layers", type=int, required=True); ap.add_argument("--kv-heads", type=int, required=True)
@@ -214,6 +246,8 @@ def main():
         engine = TorchPrefillEngine(model, max_context=a.max_context, chunk=a.chunk)
     elif a.engine == "rngd-full":
         engine = _RngdFull(a)
+    elif a.engine == "factory":
+        engine = factory_engine(a)
     else:
         engine = _RngdQwen(a)
     streaming = callable(getattr(engine, "prefill_stream", None))
@@ -238,7 +272,7 @@ def main():
                 out = engine.prefill(PDRequest(f"p{req['id']}", tokens, 1, sampling), start)
                 keys, values, token, cached = out.keys, out.values, out.token, out.prefill_cached
             else:
-                keys, values, logits = engine.prefill(tokens)
+                keys, values, logits = engine.prefill(list(tokens))
                 keys, values = keys[:, :, start:], values[:, :, start:]
                 token, cached = select_token(logits, sampling, len(tokens)), 0
             n = keys.shape[2]

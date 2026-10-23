@@ -1,0 +1,21 @@
+loading GPU qwen06b
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 9023.94it/s]
+start mode False
+Traceback (most recent call last):
+  File "/tmp/stream265-gpu-hardware.py", line 23, in <module>
+    batch.run_until_idle();tokens=[f.result(timeout=1) for f in futures]
+  File "/tmp/stream265-gpu-hardware.py", line 23, in <listcomp>
+    batch.run_until_idle();tokens=[f.result(timeout=1) for f in futures]
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/pd_batching.py", line 644, in _admit_prefilled
+    out = r.pending.result()                 # failures never import remaining notifications
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+RuntimeError: prefill subprocess: TypeError('can only concatenate tuple (not "list") to tuple')

@@ -60,3 +60,9 @@ Opt-in subprocess progress validation and incremental GPU imports implemented; p
 Production SHM source protocol and rngd-full per-group export connected. Torch CLI opt-in added; unsupported owners rejected. Full591pass before final legacy-head helper; final source13pass. Actual KONI source parity running; no numerical or speedup claim yet. Four-model long-context factories and ATOM ownership integration remain pending.
 
 Hardware attempt ended before inference: legacy FullPrefillEngine on-card head requires missing furiosa.native_llm_common. Group graph compiled74s; no KV/logit parity result. Continue with the already validated four-model factory adapters and KONI partitioned host-head path.
+
+## Four-model streaming factories (#265)
+
+Validated producers connected:24/24 actual RNGD source cases exact K/V/logits;8/8 real RNGD-GPU fixed8-token pairs exact, all four models. Width128/512 only. Factory tuple/list integration bug reproduced and corrected;27focused tests pass. Long-context repeated timing, hardware fault isolation under streaming and ATOM owner remain pending. Same-route parity does not waive previous cross-backend content counterexamples.
+
+Final factory integration full regression:606passed,15skipped,253subtests in166.21s. Short-width source/GPU hardware checks complete; long-context matrix is the next measurement.

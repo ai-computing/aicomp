@@ -1,0 +1,8 @@
+{
+  "model": "qwen06b",
+  "width": 128,
+  "cases": [],
+  "scope": "same-route real RNGD to GPU token parity, not cross-backend quality or speedup",
+  "stage": "failed",
+  "error": "RuntimeError('prefill subprocess: TypeError(\\'can only concatenate tuple (not \"list\") to tuple\\')')"
+}

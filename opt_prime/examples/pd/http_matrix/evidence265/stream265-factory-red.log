@@ -1,0 +1,86 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+______________ test_factory_receives_same_fp32_weights_and_config ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-197/test_factory_receives_same_fp30')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f38b226b5e0>
+
+    def test_factory_receives_same_fp32_weights_and_config(tmp_path,monkeypatch):
+        args,calls=setup(tmp_path,monkeypatch)
+>       engine=server.factory_engine(args)
+E       AttributeError: module 'opt_prime.accel.pd.prefill_server' has no attribute 'factory_engine'
+
+tests/test_prefill_factory.py:26: AttributeError
+________ test_factory_rejects_bad_setup_before_construction[head_dim-8] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-197/test_factory_rejects_bad_setup0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f38b20bb460>
+field = 'head_dim', value = 8
+
+    @pytest.mark.parametrize('field,value',[('head_dim',8),('layers',3),('width','0'),('width','128'),('engine_factory','bad')])
+    def test_factory_rejects_bad_setup_before_construction(tmp_path,monkeypatch,field,value):
+        args,calls=setup(tmp_path,monkeypatch);setattr(args,field,value)
+>       with pytest.raises(ValueError):server.factory_engine(args)
+E       AttributeError: module 'opt_prime.accel.pd.prefill_server' has no attribute 'factory_engine'
+
+tests/test_prefill_factory.py:37: AttributeError
+_________ test_factory_rejects_bad_setup_before_construction[layers-3] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-197/test_factory_rejects_bad_setup1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f38b20b1030>
+field = 'layers', value = 3
+
+    @pytest.mark.parametrize('field,value',[('head_dim',8),('layers',3),('width','0'),('width','128'),('engine_factory','bad')])
+    def test_factory_rejects_bad_setup_before_construction(tmp_path,monkeypatch,field,value):
+        args,calls=setup(tmp_path,monkeypatch);setattr(args,field,value)
+>       with pytest.raises(ValueError):server.factory_engine(args)
+E       AttributeError: module 'opt_prime.accel.pd.prefill_server' has no attribute 'factory_engine'
+
+tests/test_prefill_factory.py:37: AttributeError
+_________ test_factory_rejects_bad_setup_before_construction[width-0] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-197/test_factory_rejects_bad_setup2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f38b20ba170>
+field = 'width', value = '0'
+
+    @pytest.mark.parametrize('field,value',[('head_dim',8),('layers',3),('width','0'),('width','128'),('engine_factory','bad')])
+    def test_factory_rejects_bad_setup_before_construction(tmp_path,monkeypatch,field,value):
+        args,calls=setup(tmp_path,monkeypatch);setattr(args,field,value)
+>       with pytest.raises(ValueError):server.factory_engine(args)
+E       AttributeError: module 'opt_prime.accel.pd.prefill_server' has no attribute 'factory_engine'
+
+tests/test_prefill_factory.py:37: AttributeError
+________ test_factory_rejects_bad_setup_before_construction[width-128] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-197/test_factory_rejects_bad_setup3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f38b20b21a0>
+field = 'width', value = '128'
+
+    @pytest.mark.parametrize('field,value',[('head_dim',8),('layers',3),('width','0'),('width','128'),('engine_factory','bad')])
+    def test_factory_rejects_bad_setup_before_construction(tmp_path,monkeypatch,field,value):
+        args,calls=setup(tmp_path,monkeypatch);setattr(args,field,value)
+>       with pytest.raises(ValueError):server.factory_engine(args)
+E       AttributeError: module 'opt_prime.accel.pd.prefill_server' has no attribute 'factory_engine'
+
+tests/test_prefill_factory.py:37: AttributeError
+____ test_factory_rejects_bad_setup_before_construction[engine_factory-bad] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-gspark/pytest-197/test_factory_rejects_bad_setup4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f38b20b93f0>
+field = 'engine_factory', value = 'bad'
+
+    @pytest.mark.parametrize('field,value',[('head_dim',8),('layers',3),('width','0'),('width','128'),('engine_factory','bad')])
+    def test_factory_rejects_bad_setup_before_construction(tmp_path,monkeypatch,field,value):
+        args,calls=setup(tmp_path,monkeypatch);setattr(args,field,value)
+>       with pytest.raises(ValueError):server.factory_engine(args)
+E       AttributeError: module 'opt_prime.accel.pd.prefill_server' has no attribute 'factory_engine'
+
+tests/test_prefill_factory.py:37: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_prefill_factory.py::test_factory_receives_same_fp32_weights_and_config
+FAILED tests/test_prefill_factory.py::test_factory_rejects_bad_setup_before_construction[head_dim-8]
+FAILED tests/test_prefill_factory.py::test_factory_rejects_bad_setup_before_construction[layers-3]
+FAILED tests/test_prefill_factory.py::test_factory_rejects_bad_setup_before_construction[width-0]
+FAILED tests/test_prefill_factory.py::test_factory_rejects_bad_setup_before_construction[width-128]
+FAILED tests/test_prefill_factory.py::test_factory_rejects_bad_setup_before_construction[engine_factory-bad]
+6 failed in 0.97s

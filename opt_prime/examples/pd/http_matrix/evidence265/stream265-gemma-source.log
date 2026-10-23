@@ -1,0 +1,8 @@
+initializing gemma
+initialized gemma
+{"input_len": 14, "send_from": 0, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 107, "token_stream": 107, "elapsed_s": 0.038745975005440414}
+{"input_len": 14, "send_from": 7, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 107, "token_stream": 107, "elapsed_s": 0.039138174965046346}
+{"input_len": 14, "send_from": 14, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 107, "token_stream": 107, "elapsed_s": 0.03659393702400848}
+{"input_len": 128, "send_from": 0, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 563, "token_stream": 563, "elapsed_s": 0.04015004099346697}
+{"input_len": 128, "send_from": 64, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 563, "token_stream": 563, "elapsed_s": 0.038649025023914874}
+{"input_len": 128, "send_from": 128, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 563, "token_stream": 563, "elapsed_s": 0.03811698401113972}
