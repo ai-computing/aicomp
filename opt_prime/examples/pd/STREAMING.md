@@ -48,7 +48,10 @@ This is blocking per-group CPU export followed by incremental decoder import.
 It can allow decoder import during later source computation, but does not imply
 asynchronous RNGD download, device DMA overlap, or a serving speedup. Hardware
 source parity has been checked at widths128/512 and8192. Recorded GPU timing
-improvements apply only to the measured c2 workload; ATOM timing and hardware
-fault isolation still require verification. None establishes cross-backend
+improvements apply only to the measured c2 workload. Four-model ATOM timing
+and same-route parity are also verified for B1/two queued2K/8K prompts, fixed32
+outputs, and prefetch off/on. Actual ATOM streaming fault isolation remains pending.
+Notification-timing controls show that total improvement is not solely the effect
+of early notification; source/host path changes and cross-request overlap remain. None establishes cross-backend
 numerical equivalence. See the experiment record for exact cases,
 failed attempts and the current verification scope.

@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-10-23T22:53:35.562541+00:00",
+  "role": "RNGD+ATOM host",
+  "pod": "stream265long",
+  "source_rss_kib": 38245120,
+  "source_swap_kib": 0,
+  "source_threads": 29,
+  "pod_memory_bytes": 50786693120,
+  "oom": 0,
+  "oom_kill": 0,
+  "memory_pressure_avg10": 0.0,
+  "cgroup_usage_usec": 6627115061,
+  "cgroup_throttled_usec": 16360853,
+  "scope": "read-only owned-Pod snapshot during source startup; CPU activity does not prove successful initialization"
+}

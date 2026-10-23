@@ -1,0 +1,98 @@
+[
+  {
+    "model": "qwen06b",
+    "prefetch": false,
+    "whole_median_s": 5.125747713027522,
+    "stream_median_s": 3.2979267289629206,
+    "reduction_percent": 35.659597124123756,
+    "ttft_reduction_percent": [
+      41.23414546268639,
+      38.23089366858257
+    ],
+    "early_spans": 167
+  },
+  {
+    "model": "qwen06b",
+    "prefetch": true,
+    "whole_median_s": 4.877636607037857,
+    "stream_median_s": 2.9632957129506394,
+    "reduction_percent": 39.24730455165619,
+    "ttft_reduction_percent": [
+      43.44382559522811,
+      42.22054100311543
+    ],
+    "early_spans": 168
+  },
+  {
+    "model": "qwen4b",
+    "prefetch": false,
+    "whole_median_s": 10.82617872802075,
+    "stream_median_s": 8.524408538010903,
+    "reduction_percent": 21.261150844039854,
+    "ttft_reduction_percent": [
+      29.7140981941056,
+      24.276592177708135
+    ],
+    "early_spans": 216
+  },
+  {
+    "model": "qwen4b",
+    "prefetch": true,
+    "whole_median_s": 9.738162335939705,
+    "stream_median_s": 7.5079914659727365,
+    "reduction_percent": 22.901352360252712,
+    "ttft_reduction_percent": [
+      29.342427035246676,
+      26.46086118330181
+    ],
+    "early_spans": 216
+  },
+  {
+    "model": "gemma",
+    "prefetch": false,
+    "whole_median_s": 4.116701549035497,
+    "stream_median_s": 3.713744434993714,
+    "reduction_percent": 9.78834897895845,
+    "ttft_reduction_percent": [
+      9.571127084085196,
+      10.61573022706579
+    ],
+    "early_spans": 156
+  },
+  {
+    "model": "gemma",
+    "prefetch": true,
+    "whole_median_s": 3.8077105110278353,
+    "stream_median_s": 3.3809777799760923,
+    "reduction_percent": 11.207068652300267,
+    "ttft_reduction_percent": [
+      10.186455310670716,
+      12.57718101629598
+    ],
+    "early_spans": 156
+  },
+  {
+    "model": "koni",
+    "prefetch": false,
+    "whole_median_s": 12.90809719497338,
+    "stream_median_s": 10.430965394014493,
+    "reduction_percent": 19.190526407900943,
+    "ttft_reduction_percent": [
+      15.529698233572786,
+      23.21147988908351
+    ],
+    "early_spans": 192
+  },
+  {
+    "model": "koni",
+    "prefetch": true,
+    "whole_median_s": 10.638944105943665,
+    "stream_median_s": 8.847241929033771,
+    "reduction_percent": 16.840977441632788,
+    "ttft_reduction_percent": [
+      12.53853831927616,
+      21.31030439014715
+    ],
+    "early_spans": 96
+  }
+]

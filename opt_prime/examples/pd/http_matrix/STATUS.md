@@ -87,3 +87,7 @@ Qwen4 long ATOM completed16batches/32sequences exact: median completion reductio
 ## Notification-timing control (#265)
 
 Allfour GPU control48batches/96sequences exact. Early-vs-deferred completion reduction4.64/2.99/0.40/1.72%; deferred-vs-whole22.74/19.62/2.84/21.25%. Most Qwen/KONI gain persists without within-request early notification; deferred still changes source assembly/destination import and permits cross-request overlap, so no pure source-assembly or DMA-overlap attribution. Three samples/mode; Gemma ranges overlap. Auditor reproduces summary. Gemma long ATOM complete16batches/32sequences exact,9.79/11.21% reduction without/with prefetch. KONI long ATOM and ATOM faults pending.
+
+## Complete long ATOM timing (#265)
+
+Allfour64batches/128sequences same-route exact; full auditor passes. Whole-vs-stream completion reductions35.66/21.26/9.79/19.19% without prefetch and39.25/22.90/11.21/16.84% with prefetch, Q06/Q4/Gemma/KONI. Three measured batches/mode, synthetic2K/8K fixed32output, B1/two queued requests. Timing Pod absence independently verified after termination; queue exited0. Separate owned ATOM hardware fault matrix now running; no fault result yet.
