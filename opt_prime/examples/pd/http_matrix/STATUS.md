@@ -115,3 +115,7 @@ Allthree modes independently pass8conditions each;whole/stream exact. Native str
 ## GPU HTTP c16 matrix completed (#265)
 
 Allfour models x3modes completed:96conditions,1536token checks,1536SSE text checks. Whole/stream exact8/8 permodel. Native/whole exact Qwen06=8/8,Qwen4=4/8,Gemma=4/8(EOStrim8/8),KONI=5/8;earlier numerical/quality failures retained. KONI observed throughput+20.94–33.93%,single batches only. RemainingATOMmatrix andwidth268 probes active. See experiments/2026-10-24-stream265-gpu-http-complete.md.
+
+## ATOM HTTP progress (#265/#267)
+
+Three models pass whole/stream controls, eight conditions each. Qwen4 and Gemma native results also audited; Gemma remains slower than native. KONI native180s timeout retained and600s diagnostic pending. Listener and width variants are not production changes. See experiments/2026-10-24-stream265-atom-http-progress.md.

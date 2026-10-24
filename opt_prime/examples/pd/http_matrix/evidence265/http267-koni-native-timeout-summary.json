@@ -1,0 +1,149 @@
+{
+  "stage": "failed_timeout",
+  "source_sha256": "b9770a17f5621550b0645fa5b7b9ab0d01031437a22c4e347a0a3cb4e08596ba",
+  "completed_correctness_conditions": 7,
+  "completed_correctness_responses": 112,
+  "completed_timed_batches": 0,
+  "failure": {
+    "input_tokens": 8192,
+    "output_tokens": 128,
+    "concurrency": 16,
+    "stream": false,
+    "elapsed_s": 180.0348081990378,
+    "snapshot": {
+      "monotonic_s": 788272.193684478,
+      "servers": [
+        {
+          "pid": 38,
+          "returncode": null,
+          "status": [
+            "Name:\tpython",
+            "State:\tS (sleeping)",
+            "VmHWM:\t19905136 kB",
+            "VmRSS:\t19905084 kB",
+            "Threads:\t18"
+          ]
+        }
+      ],
+      "cgroup": {
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+        "memory.current": "20676923392",
+        "memory.max": "137438953472",
+        "memory.peak": "20686716928"
+      },
+      "listen": {
+        "ListenOverflows": 0,
+        "ListenDrops": 0
+      }
+    },
+    "futures": [
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "TimeoutError('timed out')"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": false,
+        "cancelled": false,
+        "exception": null
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "TimeoutError('timed out')"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": false,
+        "cancelled": false,
+        "exception": null
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": false,
+        "cancelled": false,
+        "exception": null
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "None"
+      },
+      {
+        "done": true,
+        "cancelled": false,
+        "exception": "TimeoutError('timed out')"
+      }
+    ]
+  },
+  "diagnostics": {
+    "monotonic_s": 788272.261400326,
+    "servers": [
+      {
+        "pid": 38,
+        "returncode": null,
+        "status": [
+          "Name:\tpython",
+          "State:\tS (sleeping)",
+          "VmHWM:\t19905136 kB",
+          "VmRSS:\t19905084 kB",
+          "Threads:\t15"
+        ]
+      }
+    ],
+    "cgroup": {
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.current": "20675215360",
+      "memory.max": "137438953472",
+      "memory.peak": "20686716928"
+    },
+    "listen": {
+      "ListenOverflows": 0,
+      "ListenDrops": 0
+    }
+  },
+  "limits": "Server was alive with no OOM/listen drops at observation. Does not prove queueing-only cause. Preserve 180-second failure; a longer-deadline diagnostic must have a distinct result identity."
+}
