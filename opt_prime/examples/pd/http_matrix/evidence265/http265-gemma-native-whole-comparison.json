@@ -1,0 +1,113 @@
+{
+  "scope": "Fixed-length ignore_eos synthetic HTTP references; strict and EOS-trimmed comparisons reported separately. No universal quality claim or waiver of earlier Gemma numerical/content counterexamples.",
+  "conditions": [
+    {
+      "condition": "128:128",
+      "tokens_exact": true,
+      "first_difference": null,
+      "native_token": null,
+      "whole_token": null,
+      "first_eos_zero_based": [
+        2,
+        2
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "128:32",
+      "tokens_exact": true,
+      "first_difference": null,
+      "native_token": null,
+      "whole_token": null,
+      "first_eos_zero_based": [
+        2,
+        2
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "2048:128",
+      "tokens_exact": false,
+      "first_difference": 24,
+      "native_token": 236743,
+      "whole_token": 160068,
+      "first_eos_zero_based": [
+        2,
+        2
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "2048:32",
+      "tokens_exact": false,
+      "first_difference": 24,
+      "native_token": 236743,
+      "whole_token": 160068,
+      "first_eos_zero_based": [
+        2,
+        2
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "512:128",
+      "tokens_exact": false,
+      "first_difference": 8,
+      "native_token": 42547,
+      "whole_token": 10525,
+      "first_eos_zero_based": [
+        2,
+        2
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "512:32",
+      "tokens_exact": false,
+      "first_difference": 8,
+      "native_token": 42547,
+      "whole_token": 10525,
+      "first_eos_zero_based": [
+        2,
+        2
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "8192:128",
+      "tokens_exact": true,
+      "first_difference": null,
+      "native_token": null,
+      "whole_token": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "8192:32",
+      "tokens_exact": true,
+      "first_difference": null,
+      "native_token": null,
+      "whole_token": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    }
+  ],
+  "eos_token_ids": [
+    1,
+    106
+  ]
+}

@@ -107,3 +107,7 @@ Four models complete32batches/512sequences exact, c16 queued behind4slots, mixed
 ## Qwen HTTP c16 streaming (#265)
 
 Qwen0.6/Qwen4 native/whole/stream six modes independently pass eight conditions each. Whole/stream references exact. Qwen4 observed throughput22.1–27.2% above whole in single batches; native/PD numerical differences remain. Short-input PD remains slower, fixedwidth8192 cost is not yet isolated. Gemma/KONI and ATOM matrix pending. See experiments/2026-10-24-stream265-qwen-http.md and evidence265.
+
+## Gemma HTTP c16 follow-up (#265)
+
+Allthree modes independently pass8conditions each;whole/stream exact. Native strict4/8 differences occur afterEOS;throughEOS8/8 on these fixtures only. Observed+1.51–3.17% throughput is small and needs repeat measurements. Earlier Gemma content/numerical counterexamples remain. KONI GPU and remainingATOM cases active. See experiments/2026-10-24-stream265-gemma-http.md.

@@ -28,5 +28,20 @@
     "model": "qwen4b",
     "mode": "stream",
     "exit_code": 0
+  },
+  {
+    "model": "gemma",
+    "mode": "native",
+    "exit_code": 0
+  },
+  {
+    "model": "gemma",
+    "mode": "whole",
+    "exit_code": 0
+  },
+  {
+    "model": "gemma",
+    "mode": "stream",
+    "exit_code": 0
   }
 ]
