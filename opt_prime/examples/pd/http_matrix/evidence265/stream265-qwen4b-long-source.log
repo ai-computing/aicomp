@@ -1,0 +1,8 @@
+initializing qwen4b
+initialized qwen4b
+{"input_len": 2048, "send_from": 0, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 6722, "token_stream": 6722, "elapsed_s": 2.454865112027619}
+{"input_len": 2048, "send_from": 1024, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 6722, "token_stream": 6722, "elapsed_s": 2.387871148006525}
+{"input_len": 2048, "send_from": 2048, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 6722, "token_stream": 6722, "elapsed_s": 2.175041227019392}
+{"input_len": 8192, "send_from": 0, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 374, "token_stream": 374, "elapsed_s": 2.7627293840050697}
+{"input_len": 8192, "send_from": 4096, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 374, "token_stream": 374, "elapsed_s": 2.5153270449955016}
+{"input_len": 8192, "send_from": 8192, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 374, "token_stream": 374, "elapsed_s": 2.1610806839889847}

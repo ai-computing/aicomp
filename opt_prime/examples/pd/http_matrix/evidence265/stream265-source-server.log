@@ -1,0 +1,58 @@
+.....F                                                                   [100%]
+=================================== FAILURES ===================================
+____________ test_real_server_and_receiver_stream_before_completion ____________
+
+children = (<function children.<locals>.make at 0x73c3fcb04430>, [<Popen: returncode: 1 args: ['/tmp/pytest-of-gspark/pytest-192/test_real_ser...>], ['psm_f0688770'], PosixPath('/tmp/pytest-of-gspark/pytest-192/test_real_server_and_receiver_0/gate'))
+
+    def test_real_server_and_receiver_stream_before_completion(children):
+        import sys,time
+        from opt_prime.accel.pd import PDRequest
+        make,_,_,gate=children
+        child=gate.parent/'child'
+        child.write_text(f'#!{sys.executable}\n'+'''
+    import sys,os,time
+    from pathlib import Path
+    import torch
+    from opt_prime.accel.pd import prefill_server as server
+    class Engine:
+        def __init__(self,args):pass
+        def prefill_stream(self,tokens,emit):
+            k=torch.ones((1,1,1,2),dtype=torch.bfloat16)
+            emit(0,0,k,k)
+            gate=Path(os.environ['PREFILL_TEST_GATE'])
+            while not gate.exists():time.sleep(.005)
+            emit(0,1,k*2,k*2)
+            return torch.tensor([0.,1.])
+    server._RngdFull=Engine
+    sys.argv=[sys.argv[0]]+sys.argv[3:]+['--engine','rngd-full','--model',str(Path.cwd())]
+    server.main()
+    ''')
+>       w=make(stream_layers=True)
+
+tests/test_prefill_source_progress.py:92:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_prefill_failure.py:70: in make
+    w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+opt_prime/accel/pd/pd_batching.py:383: in __init__
+    ready.result(timeout=startup_timeout)
+/usr/lib/python3.10/concurrent/futures/_base.py:458: in result
+    return self.__get_result()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = None
+
+    def __get_result(self):
+        if self._exception:
+            try:
+>               raise self._exception
+E               RuntimeError: prefill subprocess response failed: prefill subprocess exited
+
+/usr/lib/python3.10/concurrent/futures/_base.py:403: RuntimeError
+----------------------------- Captured stderr call -----------------------------
+Traceback (most recent call last):
+  File "/tmp/pytest-of-gspark/pytest-192/test_real_server_and_receiver_0/child", line 6, in <module>
+    from opt_prime.accel.pd import prefill_server as server
+ModuleNotFoundError: No module named 'opt_prime'
+=========================== short test summary info ============================
+FAILED tests/test_prefill_source_progress.py::test_real_server_and_receiver_stream_before_completion
+1 failed, 5 passed in 2.61s

@@ -1,0 +1,30 @@
+[
+  {
+    "model": "qwen06b",
+    "cancel_reuse": "passed",
+    "partial_producer_death": "passed",
+    "survivor_tokens": 512,
+    "tokens_at_death": 5
+  },
+  {
+    "model": "qwen4b",
+    "cancel_reuse": "passed",
+    "partial_producer_death": "passed",
+    "survivor_tokens": 512,
+    "tokens_at_death": 6
+  },
+  {
+    "model": "gemma",
+    "cancel_reuse": "passed",
+    "partial_producer_death": "passed",
+    "survivor_tokens": 512,
+    "tokens_at_death": 4
+  },
+  {
+    "model": "koni",
+    "cancel_reuse": "passed",
+    "partial_producer_death": "passed",
+    "survivor_tokens": 512,
+    "tokens_at_death": 10
+  }
+]

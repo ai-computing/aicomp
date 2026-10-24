@@ -1,0 +1,216 @@
+{
+  "stage": "audited_native_whole",
+  "runs": [
+    {
+      "mode": "native",
+      "response_audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "raw_sha256": "41ac41d1717db9c6a164d2088088d8a13dde46c6d8c8f526b137b8edc2affc4e",
+      "oom_delta": {
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "listen_delta": {
+        "ListenDrops": 0,
+        "ListenOverflows": 0
+      }
+    },
+    {
+      "mode": "whole",
+      "response_audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "raw_sha256": "75ef65364370c2d6095337750af833c1199dbb0e390fa05139a1e98dfd0e8e24",
+      "oom_delta": {
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "listen_delta": {
+        "ListenDrops": 0,
+        "ListenOverflows": 0
+      }
+    }
+  ],
+  "strict_reference_parity": {
+    "128:32": {
+      "exact": true,
+      "first_difference": null
+    },
+    "128:128": {
+      "exact": false,
+      "first_difference": 40
+    },
+    "512:32": {
+      "exact": true,
+      "first_difference": null
+    },
+    "512:128": {
+      "exact": true,
+      "first_difference": null
+    },
+    "2048:32": {
+      "exact": true,
+      "first_difference": null
+    },
+    "2048:128": {
+      "exact": true,
+      "first_difference": null
+    },
+    "8192:32": {
+      "exact": true,
+      "first_difference": null
+    },
+    "8192:128": {
+      "exact": false,
+      "first_difference": 37
+    }
+  },
+  "conditions": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "native": {
+        "tok_s": 14.649856690445366,
+        "median_first_sse_s": 16.48193749098573,
+        "median_e2e_s": 18.567270205996465,
+        "max_e2e_s": 34.948056298075244
+      },
+      "whole": {
+        "tok_s": 5.943039632170596,
+        "median_first_sse_s": 43.73900943301851,
+        "median_e2e_s": 45.813424271997064,
+        "max_e2e_s": 86.14948765002191
+      },
+      "whole_vs_native_throughput": 0.40567220265346654
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "native": {
+        "tok_s": 14.795141906513853,
+        "median_first_sse_s": 64.96426502696704,
+        "median_e2e_s": 73.51471531949937,
+        "max_e2e_s": 138.42350667098071
+      },
+      "whole": {
+        "tok_s": 10.846756579119388,
+        "median_first_sse_s": 91.9415118995239,
+        "median_e2e_s": 100.4754439680255,
+        "max_e2e_s": 188.81151911302004
+      },
+      "whole_vs_native_throughput": 0.7331296075196068
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 32,
+      "native": {
+        "tok_s": 12.85332862112104,
+        "median_first_sse_s": 19.073718019004446,
+        "median_e2e_s": 21.16420643404126,
+        "max_e2e_s": 39.831848663976416
+      },
+      "whole": {
+        "tok_s": 5.895430593266502,
+        "median_first_sse_s": 44.01350364199607,
+        "median_e2e_s": 46.09699993551476,
+        "max_e2e_s": 86.84380189992953
+      },
+      "whole_vs_native_throughput": 0.45866956078434995
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "native": {
+        "tok_s": 14.26664534602918,
+        "median_first_sse_s": 67.69957133894786,
+        "median_e2e_s": 76.26901895646006,
+        "max_e2e_s": 143.54990259802435
+      },
+      "whole": {
+        "tok_s": 10.735028747537033,
+        "median_first_sse_s": 92.71299128147075,
+        "median_e2e_s": 101.25601403805194,
+        "max_e2e_s": 190.77672667696606
+      },
+      "whole_vs_native_throughput": 0.752456410541172
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 32,
+      "native": {
+        "tok_s": 8.554407797432148,
+        "median_first_sse_s": 29.699063670472242,
+        "median_e2e_s": 31.814278150501195,
+        "max_e2e_s": 59.850330515997484
+      },
+      "whole": {
+        "tok_s": 5.54313325133188,
+        "median_first_sse_s": 46.98791355499998,
+        "median_e2e_s": 49.093498558038846,
+        "max_e2e_s": 92.36315784801263
+      },
+      "whole_vs_native_throughput": 0.6479856212835459
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "native": {
+        "tok_s": 12.429333529232911,
+        "median_first_sse_s": 78.83277508150786,
+        "median_e2e_s": 87.50043595948955,
+        "max_e2e_s": 164.76926262804773
+      },
+      "whole": {
+        "tok_s": 10.393459757963031,
+        "median_first_sse_s": 96.07742246001726,
+        "median_e2e_s": 104.74805362947518,
+        "max_e2e_s": 197.0439418120077
+      },
+      "whole_vs_native_throughput": 0.8362041080898144
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "native": {
+        "tok_s": 3.3583639756961565,
+        "median_first_sse_s": 78.7620534109883,
+        "median_e2e_s": 80.9921307489858,
+        "max_e2e_s": 152.4518511199858
+      },
+      "whole": {
+        "tok_s": 4.669321741380397,
+        "median_first_sse_s": 55.90989222348435,
+        "median_e2e_s": 58.13753176550381,
+        "max_e2e_s": 109.65061521797907
+      },
+      "whole_vs_native_throughput": 1.3903560707449798
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "native": {
+        "tok_s": 7.784659444506533,
+        "median_first_sse_s": 130.6080112894997,
+        "median_e2e_s": 139.75500574003672,
+        "max_e2e_s": 263.0787795180222
+      },
+      "whole": {
+        "tok_s": 9.311345552253993,
+        "median_first_sse_s": 108.1640919635538,
+        "median_e2e_s": 117.28367826750036,
+        "max_e2e_s": 219.94643647992052
+      },
+      "whole_vs_native_throughput": 1.1961146943717376
+    }
+  ],
+  "limits": "One timed batch per condition. Native uses1ATOM; whole adds1RNGD, not equal-resource performance. Same-route264 response audit does not establish native/PD numerical or answer-quality equivalence. Stream pending; original180s native timeout remains failed."
+}

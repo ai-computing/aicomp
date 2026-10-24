@@ -1,0 +1,24 @@
+
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8560.83it/s]
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "/usr/lib/python3.10/runpy.py", line 289, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/usr/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/examples/pd/serve_batched.py", line 152, in <module>
+    owner.run()                                   # owner loop on the main thread
+  File "/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/opt_prime/accel/serve/batched.py", line 217, in run
+    b.step()
+  File "/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/opt_prime/accel/pd/pd_batching.py", line 468, in step
+    self._admit_prefilled(block=not self.decoding)
+  File "/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/opt_prime/accel/pd/pd_batching.py", line 497, in _admit_prefilled
+    self.kv.write_span(r.slot, out.start, out.keys, out.values)
+  File "/home/gspark/workspace/aicomp-atom-prefetch-253/opt_prime/opt_prime/accel/pd/paged.py", line 455, in write_span
+    pk[:, :, idx] = k.to(self.device, pk.dtype, non_blocking=True)
+RuntimeError: shape mismatch: value tensor of shape [26, 1, 128, 256] cannot be broadcast to indexing result of shape [22, 1, 128, 256]
+/usr/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

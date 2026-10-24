@@ -1,0 +1,141 @@
+{
+  "scope": "HTTPc16 same-route checks,one measured batch per condition; native/PD numerical discrepancies remain separate.",
+  "rows": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 1.3253986519994214,
+        "output_tok_s": 159.01363193357108
+      },
+      "whole": {
+        "ttft_s": 25.787289747502655,
+        "output_tok_s": 10.553143761128151
+      },
+      "stream": {
+        "ttft_s": 20.54686916747596,
+        "output_tok_s": 13.062216147906943
+      },
+      "stream_vs_whole_throughput_pct": 23.775591838526864
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 4.204140768502839,
+        "output_tok_s": 184.34819746151035
+      },
+      "whole": {
+        "ttft_s": 25.704003082501004,
+        "output_tok_s": 40.800116486419036
+      },
+      "stream": {
+        "ttft_s": 20.68576326800394,
+        "output_tok_s": 49.34320672651434
+      },
+      "stream_vs_whole_throughput_pct": 20.93888688513672
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 1.7559854989813175,
+        "output_tok_s": 126.48680670974369
+      },
+      "whole": {
+        "ttft_s": 25.29261620849138,
+        "output_tok_s": 10.665138224594699
+      },
+      "stream": {
+        "ttft_s": 20.228287370991893,
+        "output_tok_s": 13.301181143620363
+      },
+      "stream_vs_whole_throughput_pct": 24.716444020826
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 4.7987363485153764,
+        "output_tok_s": 168.73720223358194
+      },
+      "whole": {
+        "ttft_s": 25.332793043518905,
+        "output_tok_s": 40.912097581250976
+      },
+      "stream": {
+        "ttft_s": 20.682178853981895,
+        "output_tok_s": 50.0316529295389
+      },
+      "stream_vs_whole_throughput_pct": 22.290608126793266
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 4.3901233180076815,
+        "output_tok_s": 56.810866423048246
+      },
+      "whole": {
+        "ttft_s": 26.047173374478007,
+        "output_tok_s": 10.372169539168821
+      },
+      "stream": {
+        "ttft_s": 20.6012105315167,
+        "output_tok_s": 12.898165636333484
+      },
+      "stream_vs_whole_throughput_pct": 24.353594372186514
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 7.385878722998314,
+        "output_tok_s": 119.73121091234819
+      },
+      "whole": {
+        "ttft_s": 25.689061603479786,
+        "output_tok_s": 39.779786716383505
+      },
+      "stream": {
+        "ttft_s": 19.95131698602927,
+        "output_tok_s": 51.20723219069808
+      },
+      "stream_vs_whole_throughput_pct": 28.726764061829723
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 21.286734168010298,
+        "output_tok_s": 12.390588937087307
+      },
+      "whole": {
+        "ttft_s": 29.496646780520678,
+        "output_tok_s": 9.697976625385127
+      },
+      "stream": {
+        "ttft_s": 22.115119235473685,
+        "output_tok_s": 12.988135945511814
+      },
+      "stream_vs_whole_throughput_pct": 33.92624510472078
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 22.66956914498587,
+        "output_tok_s": 44.292673136376116
+      },
+      "whole": {
+        "ttft_s": 28.242891130503267,
+        "output_tok_s": 36.920845051796064
+      },
+      "stream": {
+        "ttft_s": 20.848844775522593,
+        "output_tok_s": 49.21046601692602
+      },
+      "stream_vs_whole_throughput_pct": 33.28640216086309
+    }
+  ]
+}

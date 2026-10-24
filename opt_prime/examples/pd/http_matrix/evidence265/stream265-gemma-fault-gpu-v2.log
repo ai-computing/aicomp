@@ -1,0 +1,4 @@
+GPU loading gemma
+
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 340/340 [00:00<00:00, 8669.34it/s]

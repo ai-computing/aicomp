@@ -1,0 +1,195 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+____________ test_progress_reads_actual_shm_before_final_completion ____________
+
+children = (<function children.<locals>.make at 0x797a991a1f30>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_progress_reads_actual_shm0/gate'))
+
+    def test_progress_reads_actual_shm_before_final_completion(children):
+>       w,gate=make_stream(children)
+
+tests/test_subprocess_layer_progress.py:58:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'ok', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+____________ test_bad_stream_never_completes_successfully[overlap] _____________
+
+children = (<function children.<locals>.make at 0x797a9901eb90>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_bad_stream_never_complete0/gate'))
+mode = 'overlap'
+
+    @pytest.mark.parametrize('mode',['overlap','hole','short','exit'])
+    def test_bad_stream_never_completes_successfully(children,mode):
+>       w,gate=make_stream(children,mode)
+
+tests/test_subprocess_layer_progress.py:74:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'overlap', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+______________ test_bad_stream_never_completes_successfully[hole] ______________
+
+children = (<function children.<locals>.make at 0x797a9901ecb0>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_bad_stream_never_complete1/gate'))
+mode = 'hole'
+
+    @pytest.mark.parametrize('mode',['overlap','hole','short','exit'])
+    def test_bad_stream_never_completes_successfully(children,mode):
+>       w,gate=make_stream(children,mode)
+
+tests/test_subprocess_layer_progress.py:74:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'hole', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+_____________ test_bad_stream_never_completes_successfully[short] ______________
+
+children = (<function children.<locals>.make at 0x797a9901ed40>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_bad_stream_never_complete2/gate'))
+mode = 'short'
+
+    @pytest.mark.parametrize('mode',['overlap','hole','short','exit'])
+    def test_bad_stream_never_completes_successfully(children,mode):
+>       w,gate=make_stream(children,mode)
+
+tests/test_subprocess_layer_progress.py:74:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'short', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+______________ test_bad_stream_never_completes_successfully[exit] ______________
+
+children = (<function children.<locals>.make at 0x797a9901e8c0>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_bad_stream_never_complete3/gate'))
+mode = 'exit'
+
+    @pytest.mark.parametrize('mode',['overlap','hole','short','exit'])
+    def test_bad_stream_never_completes_successfully(children,mode):
+>       w,gate=make_stream(children,mode)
+
+tests/test_subprocess_layer_progress.py:74:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'exit', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+_______________ test_streaming_opt_in_requires_capable_producer ________________
+
+children = (<function children.<locals>.make at 0x797a9901eb90>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_streaming_opt_in_requires0/gate'))
+
+    def test_streaming_opt_in_requires_capable_producer(children):
+        make,procs,_,_=children
+        with pytest.raises(RuntimeError,match='progress'):
+>           make(stream_layers=True,startup_timeout=1)
+
+tests/test_subprocess_layer_progress.py:86:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'ok', kwargs = {'stream_layers': True, 'startup_timeout': 1}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+___________ test_cancel_then_same_slot_reuse_keeps_new_stream_owned ____________
+
+children = (<function children.<locals>.make at 0x797a9901f520>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_cancel_then_same_slot_reu0/gate'))
+
+    def test_cancel_then_same_slot_reuse_keeps_new_stream_owned(children):
+>       w,gate=make_stream(children)
+
+tests/test_subprocess_layer_progress.py:91:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'ok', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+____________ test_progress_positions_are_absolute_for_cached_prefix ____________
+
+children = (<function children.<locals>.make at 0x797a9901f130>, [], [], PosixPath('/tmp/pytest-of-gspark/pytest-180/test_progress_positions_are_ab0/gate'))
+
+    def test_progress_positions_are_absolute_for_cached_prefix(children):
+>       w,gate=make_stream(children)
+
+tests/test_subprocess_layer_progress.py:104:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_subprocess_layer_progress.py:45: in make_stream
+    return make(mode,stream_layers=True),gate
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mode = 'ok', kwargs = {'stream_layers': True}
+
+    def make(mode="ok", **kwargs):
+        env = dict(os.environ, PREFILL_TEST_MODE=mode, PREFILL_TEST_GATE=str(tmp_path / "gate"))
+>       w = SubprocessPrefillWorker(str(script), [], slots=2, layers=1, kv_heads=1,
+                                   head_dim=2, max_context=8, env=env, **kwargs)
+E       TypeError: SubprocessPrefillWorker.__init__() got an unexpected keyword argument 'stream_layers'
+
+tests/test_subprocess_prefill_failure.py:70: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_subprocess_layer_progress.py::test_progress_reads_actual_shm_before_final_completion
+FAILED tests/test_subprocess_layer_progress.py::test_bad_stream_never_completes_successfully[overlap]
+FAILED tests/test_subprocess_layer_progress.py::test_bad_stream_never_completes_successfully[hole]
+FAILED tests/test_subprocess_layer_progress.py::test_bad_stream_never_completes_successfully[short]
+FAILED tests/test_subprocess_layer_progress.py::test_bad_stream_never_completes_successfully[exit]
+FAILED tests/test_subprocess_layer_progress.py::test_streaming_opt_in_requires_capable_producer
+FAILED tests/test_subprocess_layer_progress.py::test_cancel_then_same_slot_reuse_keeps_new_stream_owned
+FAILED tests/test_subprocess_layer_progress.py::test_progress_positions_are_absolute_for_cached_prefix
+8 failed in 1.47s

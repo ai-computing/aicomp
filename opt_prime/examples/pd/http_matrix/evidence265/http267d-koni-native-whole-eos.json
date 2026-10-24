@@ -1,0 +1,57 @@
+{
+  "eos_ids": [
+    128001,
+    128009
+  ],
+  "rows": {
+    "128:32": {
+      "strict_exact": true,
+      "through_eos_exact": true,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "128:128": {
+      "strict_exact": false,
+      "through_eos_exact": false,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "512:32": {
+      "strict_exact": true,
+      "through_eos_exact": true,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "512:128": {
+      "strict_exact": true,
+      "through_eos_exact": true,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "2048:32": {
+      "strict_exact": true,
+      "through_eos_exact": true,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "2048:128": {
+      "strict_exact": true,
+      "through_eos_exact": true,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "8192:32": {
+      "strict_exact": true,
+      "through_eos_exact": true,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    },
+    "8192:128": {
+      "strict_exact": false,
+      "through_eos_exact": false,
+      "native_first_eos_index": null,
+      "whole_first_eos_index": null
+    }
+  },
+  "limits": "EOS set from local model/generation config plus tokenizer EOS; full fixed-length runs ignoreEOS. Token equality is not semantic answer-quality evaluation."
+}

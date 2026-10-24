@@ -1,0 +1,8 @@
+loading GPU gemma
+
+Loading weights:   0%|          | 0/340 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 340/340 [00:00<00:00, 9939.66it/s]
+start mode False
+{"stream_layers": false, "tokens": [[107, 106, 107, 106, 107, 106, 107, 106], [563, 506, 5279, 529, 4257, 15400, 236761, 4308]], "stats": {"iterations": 8, "prefill_chunks": 0, "decode_steps": 8, "decode_rows": 14, "progress_spans": 0, "prefills": 2, "transferred_tokens": 142, "decode_cached_tokens": 0, "prefill_cached_tokens": 0, "prefill_s": 0.09421391598880291, "transfer_s": 0.0}, "idle": true}
+start mode True
+{"stream_layers": true, "tokens": [[107, 106, 107, 106, 107, 106, 107, 106], [563, 506, 5279, 529, 4257, 15400, 236761, 4308]], "stats": {"iterations": 35, "prefill_chunks": 0, "decode_steps": 9, "decode_rows": 14, "progress_spans": 52, "prefills": 2, "transferred_tokens": 142, "decode_cached_tokens": 0, "prefill_cached_tokens": 0, "prefill_s": 0.10299855103949085, "transfer_s": 0.0}, "idle": true}

@@ -1,0 +1,116 @@
+{
+  "scope": "HTTPc16 same-route checks,one measured batch per condition; native/PD numerical discrepancies remain separate.",
+  "models": {
+    "qwen06b": {
+      "modes": {
+        "native": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "whole": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "stream": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        }
+      },
+      "whole_stream_references_equal": true
+    },
+    "qwen4b": {
+      "modes": {
+        "native": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "whole": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "stream": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        }
+      },
+      "whole_stream_references_equal": true
+    },
+    "gemma": {
+      "modes": {
+        "native": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "whole": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "stream": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        }
+      },
+      "whole_stream_references_equal": true
+    },
+    "koni": {
+      "modes": {
+        "native": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "whole": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "stream": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        }
+      },
+      "whole_stream_references_equal": true
+    }
+  },
+  "totals": {
+    "completed_modes": 12,
+    "conditions": 96,
+    "warmups": 96,
+    "retained_token_checks": 1536,
+    "timed_sse_text_checks": 1536
+  }
+}

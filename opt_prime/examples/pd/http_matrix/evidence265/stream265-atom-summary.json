@@ -1,0 +1,30 @@
+[
+  {
+    "model": "qwen06b",
+    "cases": 4,
+    "exact_sequences": 8,
+    "stream_spans": 112,
+    "early_spans": 44
+  },
+  {
+    "model": "qwen4b",
+    "cases": 4,
+    "exact_sequences": 8,
+    "stream_spans": 144,
+    "early_spans": 36
+  },
+  {
+    "model": "gemma",
+    "cases": 4,
+    "exact_sequences": 8,
+    "stream_spans": 104,
+    "early_spans": 99
+  },
+  {
+    "model": "koni",
+    "cases": 4,
+    "exact_sequences": 8,
+    "stream_spans": 128,
+    "early_spans": 96
+  }
+]

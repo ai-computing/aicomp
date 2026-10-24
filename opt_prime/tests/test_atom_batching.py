@@ -434,3 +434,80 @@ def test_single_block_pd_cancel_late_result_and_reuse(fake_rebel):
     assert good.result() == _greedy(model,q,5)
     assert b.blocks.free == [0] and b.blocks.lane_block == [None]
     assert not b.by_id and not b.poisoned
+
+
+@pytest.mark.parametrize('outcome', ['success', 'cancel', 'error'])
+@pytest.mark.parametrize('cache', [False, True])
+def test_b1_prefetch_overlaps_decode_and_holds_source_until_import(fake_rebel, outcome, cache):
+    """A reserved prefill must neither wait for the decode lane nor reuse a still-written source slot."""
+    import copy
+    from concurrent.futures import Future
+    from opt_prime.accel.pd.pd_batching import TorchPrefillEngine
+
+    class ControlledProducer:
+        def __init__(self):
+            self.calls = []
+
+        def submit(self, request, send_from=0, slot=None):
+            assert send_from == slot == 0
+            future = Future()
+            self.calls.append((request, future))
+            return future
+
+    model = _llama()
+    fake = _blocks_model(fake_rebel, model, batch=1, blocks=3 if cache else 1)
+    producer = ControlledProducer()
+    engine = TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16)
+    b = AtomBatcher(fake, prefix_cache=cache, host_kv_gib=1.0 if cache else 0,
+                    prefill_worker=producer, local_prefill=False, remote_prefetch=True)
+    p, q = _prompts(2, 40, 41, seed=253)
+    first = b.submit(PDRequest('first', p, 8))
+    second = b.submit(PDRequest('second', p, 5))
+    third = b.submit(PDRequest('third', q, 5))
+    b.step()
+    request, pending = producer.calls[0]
+    pending.set_result(engine.prefill(request))
+    b.step()
+    assert not first.done() and b.decoding
+    assert len(producer.calls) == 2, 'next producer must start before the first decode finishes'
+    request, pending = producer.calls[1]
+    if outcome == 'success':
+        pending.set_result(engine.prefill(request))
+    elif outcome == 'error':
+        pending.set_exception(RuntimeError('producer failed'))
+    else:
+        assert b.cancel('second')
+        assert b.cancel('third')
+        b.step()
+        with pytest.raises(RequestCancelled):
+            second.result()
+        with pytest.raises(RequestCancelled):
+            third.result()
+        assert not pending.cancelled(), 'cancellation must not imply that the remote writer has stopped'
+    while not first.done():
+        assert len(producer.calls) == 2, 'one retained prefill must bound producer reservations'
+        b.step()
+    assert first.result() == _greedy(model, p, 8)
+    if outcome == 'cancel':
+        assert not b.idle, 'the owner must keep draining an orphaned producer after every client has left'
+        third = b.submit(PDRequest('third', q, 5))
+        b.step()
+        assert len(producer.calls) == 2, 'cancelled writer still owns its shared source slot'
+        pending.set_result(engine.prefill(request))
+    for _ in range(30):
+        b.step()
+        if len(producer.calls) == 3:
+            break
+    assert len(producer.calls) == 3
+    request, pending = producer.calls[2]
+    pending.set_result(engine.prefill(request))
+    b.run_until_idle()
+    if outcome == 'success':
+        assert second.result() == _greedy(model, p, 5)
+        if cache:
+            assert b.hit_tokens >= 32
+    elif outcome == 'error':
+        with pytest.raises(RuntimeError, match='producer failed'):
+            second.result()
+    assert third.result() == _greedy(model, q, 5)
+    assert b.free == [0] and not b.by_id and not b.poisoned

@@ -1,0 +1,245 @@
+FFFFFFFFFFF                                                              [100%]
+=================================== FAILURES ===================================
+____ test_partial_prefix_and_out_of_order_layers_require_complete_coverage _____
+
+    def test_partial_prefix_and_out_of_order_layers_require_complete_coverage():
+>       p=tracker(3,5,9)
+
+opt_prime/tests/test_pd_layer_progress.py:16:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 5, 9)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+________________ test_overlap_rejection_is_atomic_across_layers ________________
+
+    def test_overlap_rejection_is_atomic_across_layers():
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:29:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span0] ________________
+
+span = (-1, 1, 0, 4)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span1] ________________
+
+span = (0, 4, 0, 4)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span2] ________________
+
+span = (0, 1, -1, 4)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span3] ________________
+
+span = (0, 1, 0, 5)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span4] ________________
+
+span = (0, 0, 0, 4)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span5] ________________
+
+span = (0, 1, 2, 2)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span6] ________________
+
+span = (True, 2, 0, 4)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_______________ test_invalid_progress_never_enters_queue[span7] ________________
+
+span = (0, 1, 0.0, 4)
+
+    @pytest.mark.parametrize('span',[(-1,1,0,4),(0,4,0,4),(0,1,-1,4),
+        (0,1,0,5),(0,0,0,4),(0,1,2,2),(True,2,0,4),(0,1,0.0,4)])
+    def test_invalid_progress_never_enters_queue(span):
+>       p=tracker(3,0,4)
+
+opt_prime/tests/test_pd_layer_progress.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 0, 4)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+_________________ test_empty_uncached_suffix_needs_no_transfer _________________
+
+    def test_empty_uncached_suffix_needs_no_transfer():
+>       p=tracker(3,8,8)
+
+opt_prime/tests/test_pd_layer_progress.py:49:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (3, 8, 8)
+
+    def tracker(*args):
+>       assert path.exists(), 'layer-progress validator is not implemented'
+E       AssertionError: layer-progress validator is not implemented
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/opt_prime/accel/pd/layer_progress.py').exists
+
+opt_prime/tests/test_pd_layer_progress.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_partial_prefix_and_out_of_order_layers_require_complete_coverage
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_overlap_rejection_is_atomic_across_layers
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span0]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span1]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span2]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span3]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span4]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span5]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span6]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_invalid_progress_never_enters_queue[span7]
+FAILED opt_prime/tests/test_pd_layer_progress.py::test_empty_uncached_suffix_needs_no_transfer
+11 failed in 0.05s

@@ -1,0 +1,16 @@
+GPU loading qwen4b
+
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 398/398 [00:00<00:00, 9879.81it/s]
+{"stream_layers": false, "mode": "whole", "warmup": true, "elapsed_s": 8.084331010992173, "ttft_s": [3.4361977269873023, 7.3273318680003285], "tokens_exact": true, "progress_spans": 0, "idle": true}
+{"stream_layers": true, "mode": "early", "warmup": true, "elapsed_s": 5.596095936954953, "ttft_s": [2.2810370060033165, 4.806744809960946], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": true, "mode": "deferred", "warmup": true, "elapsed_s": 5.782560603984166, "ttft_s": [2.312400949012954, 4.997357635991648], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": true, "mode": "early", "warmup": false, "elapsed_s": 5.728027609002311, "ttft_s": [2.2769200630136766, 4.896490986982826], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": true, "mode": "deferred", "warmup": false, "elapsed_s": 5.9350821080151945, "ttft_s": [2.333611780020874, 5.104842959030066], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": false, "mode": "whole", "warmup": false, "elapsed_s": 7.319470223039389, "ttft_s": [3.1322515420033596, 6.516812551009934], "tokens_exact": true, "progress_spans": 0, "idle": true}
+{"stream_layers": true, "mode": "deferred", "warmup": false, "elapsed_s": 5.817856362031307, "ttft_s": [2.3198140790336765, 5.046010941034183], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": false, "mode": "whole", "warmup": false, "elapsed_s": 7.298562044976279, "ttft_s": [3.0370845219586045, 6.49596800096333], "tokens_exact": true, "progress_spans": 0, "idle": true}
+{"stream_layers": true, "mode": "early", "warmup": false, "elapsed_s": 5.608699768024962, "ttft_s": [2.27205154200783, 4.802047517034225], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": false, "mode": "whole", "warmup": false, "elapsed_s": 7.233659856021404, "ttft_s": [3.082467970030848, 6.433444507012609], "tokens_exact": true, "progress_spans": 0, "idle": true}
+{"stream_layers": true, "mode": "early", "warmup": false, "elapsed_s": 5.691522600944154, "ttft_s": [2.281957914994564, 4.871746651944704], "tokens_exact": true, "progress_spans": 72, "idle": true}
+{"stream_layers": true, "mode": "deferred", "warmup": false, "elapsed_s": 5.866723619052209, "ttft_s": [2.3015720969997346, 5.045666555000935], "tokens_exact": true, "progress_spans": 72, "idle": true}

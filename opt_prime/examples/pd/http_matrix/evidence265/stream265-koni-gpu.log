@@ -1,0 +1,8 @@
+loading GPU koni
+
+Loading weights:   0%|          | 0/291 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 291/291 [00:00<00:00, 8568.88it/s]
+start mode False
+{"stream_layers": false, "tokens": [[51289, 374, 279, 6864, 315, 4987, 12126, 13], [11206, 374, 279, 6864, 315, 4987, 12126, 13]], "stats": {"iterations": 17, "prefill_chunks": 0, "decode_steps": 8, "decode_rows": 14, "progress_spans": 0, "prefills": 2, "transferred_tokens": 527, "decode_cached_tokens": 0, "prefill_cached_tokens": 0, "prefill_s": 0.6764575680135749, "transfer_s": 0.0}, "idle": true}
+start mode True
+{"stream_layers": true, "tokens": [[51289, 374, 279, 6864, 315, 4987, 12126, 13], [11206, 374, 279, 6864, 315, 4987, 12126, 13]], "stats": {"iterations": 53, "prefill_chunks": 0, "decode_steps": 14, "decode_rows": 14, "progress_spans": 64, "prefills": 2, "transferred_tokens": 527, "decode_cached_tokens": 0, "prefill_cached_tokens": 0, "prefill_s": 0.6322675049887039, "transfer_s": 0.0}, "idle": true}

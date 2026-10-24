@@ -1,0 +1,109 @@
+............FF................                                           [100%]
+=================================== FAILURES ===================================
+_________________ test_recurrent_pd_hands_over_state[qwen3_5] __________________
+
+make = <function _qwen35 at 0x73d66db4f880>
+
+    @RECURRENT
+    def test_recurrent_pd_hands_over_state(make):
+        model = make()
+        engine = TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=8, page_size=8, prefix_cache=False)
+        b = PDBatcher(model, PrefillWorker(engine), slots=2, max_context=128, page_size=8)
+        prompts = _prompts(4, 6, 30, seed=4)
+        fs = [b.submit(PDRequest(f"p{i}", p, 12)) for i, p in enumerate(prompts)]
+>       b.run_until_idle()
+
+tests/test_pd_hybrid.py:157:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+opt_prime/accel/pd/batching.py:207: in run_until_idle
+    self.step()
+opt_prime/accel/pd/pd_batching.py:468: in step
+    self._admit_prefilled(block=not self.decoding)
+opt_prime/accel/pd/pd_batching.py:497: in _admit_prefilled
+    self.kv.write_span(r.slot, out.start, out.keys, out.values)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <opt_prime.accel.pd.paged.PagedKV object at 0x73d626af4b80>, slot = 0
+start = 0
+keys = tensor([[[[-0.0660,  2.0859,  0.4345, -1.4313,  0.4459, -0.0251, -0.4985,
+           -1.7052, -1.7932,  0.2561,  1.213...26, -0.4552,
+           -0.7853,  0.2788, -2.0608, -0.8472, -0.4423, -0.3608,  1.5063,
+           -1.4844,  0.3283]]]])
+values = tensor([[[[-2.4548e-01, -2.1482e-01,  7.9515e-03,  2.1531e-01, -9.8814e-03,
+           -1.9493e-02, -1.3410e-01,  1.33...3, -3.6229e-02,
+           -1.5983e-01,  8.6865e-02,  1.8228e-01,  1.4877e-02, -7.5556e-02,
+            2.9426e-01]]]])
+
+    def write_span(self, slot, start, keys, values):
+        """keys/values [layers, kv_heads, n, head_dim] for positions start .. start+n of `slot` (a list of those, one
+        per KV group, for hybrid models), each group in one indexed copy (the PD admission of KV that another engine
+        prefilled)"""
+        if isinstance(keys, torch.Tensor) and isinstance(values, torch.Tensor):
+            layers = max(self.layer_group) + 1
+            if keys.ndim != 4 or values.shape != keys.shape or keys.shape[0] != layers:
+>               raise ValueError("dense KV span must contain every model layer with matching K/V shapes")
+E               ValueError: dense KV span must contain every model layer with matching K/V shapes
+
+opt_prime/accel/pd/paged.py:454: ValueError
+_______________ test_recurrent_pd_hands_over_state[qwen3_5_moe] ________________
+
+make = <function _qwen35_moe at 0x73d66db4f910>
+
+    @RECURRENT
+    def test_recurrent_pd_hands_over_state(make):
+        model = make()
+        engine = TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=8, page_size=8, prefix_cache=False)
+        b = PDBatcher(model, PrefillWorker(engine), slots=2, max_context=128, page_size=8)
+        prompts = _prompts(4, 6, 30, seed=4)
+        fs = [b.submit(PDRequest(f"p{i}", p, 12)) for i, p in enumerate(prompts)]
+>       b.run_until_idle()
+
+tests/test_pd_hybrid.py:157:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+opt_prime/accel/pd/batching.py:207: in run_until_idle
+    self.step()
+opt_prime/accel/pd/pd_batching.py:468: in step
+    self._admit_prefilled(block=not self.decoding)
+opt_prime/accel/pd/pd_batching.py:497: in _admit_prefilled
+    self.kv.write_span(r.slot, out.start, out.keys, out.values)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <opt_prime.accel.pd.paged.PagedKV object at 0x73d6253e5f60>, slot = 0
+start = 0
+keys = tensor([[[[-1.3119e+00, -4.6383e-02,  4.9614e-01, -9.4488e-01, -4.3832e-01,
+            2.6910e-01,  6.3046e-01, -1.59...1,  1.3446e+00,
+            4.5665e-01,  1.3538e-01,  3.4665e-01, -1.7604e-01, -2.0072e-02,
+           -1.5641e+00]]]])
+values = tensor([[[[-3.2685e-01,  2.6668e-01,  4.5333e-03,  7.0952e-02,  1.8279e-01,
+            2.7009e-01,  1.4598e-01,  2.43...2, -9.8851e-02,
+           -5.3184e-02, -4.8559e-02,  9.7567e-02,  8.8385e-02,  8.4103e-02,
+           -3.2886e-02]]]])
+
+    def write_span(self, slot, start, keys, values):
+        """keys/values [layers, kv_heads, n, head_dim] for positions start .. start+n of `slot` (a list of those, one
+        per KV group, for hybrid models), each group in one indexed copy (the PD admission of KV that another engine
+        prefilled)"""
+        if isinstance(keys, torch.Tensor) and isinstance(values, torch.Tensor):
+            layers = max(self.layer_group) + 1
+            if keys.ndim != 4 or values.shape != keys.shape or keys.shape[0] != layers:
+>               raise ValueError("dense KV span must contain every model layer with matching K/V shapes")
+E               ValueError: dense KV span must contain every model layer with matching K/V shapes
+
+opt_prime/accel/pd/paged.py:454: ValueError
+=============================== warnings summary ===============================
+tests/test_pd_hybrid.py::test_batched_beyond_window_matches_hf[gemma3]
+  /home/gspark/venvs/pt213/lib/python3.10/site-packages/torch/nn/attention/flex_attention.py:2481: UserWarning: flex_attention called without torch.compile() - this will use an unfused implementation that materializes the full scores matrix instead of generating a fused kernel.
+
+  SOLUTION: Use torch.compile(flex_attention)(...)
+
+  If you want to debug your score_mod/mask_mod, you can set:
+  torch.nn.attention.flex_attention._FLEX_ATTENTION_DISABLE_COMPILE_DEBUG = True
+
+  This will allow you to use print statements or breakpoints. Note: This doesn't work with the backwards pass and may produce incorrect results.
+    _warn_once(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_pd_hybrid.py::test_recurrent_pd_hands_over_state[qwen3_5]
+FAILED tests/test_pd_hybrid.py::test_recurrent_pd_hands_over_state[qwen3_5_moe]
+2 failed, 28 passed, 1 warning in 26.53s

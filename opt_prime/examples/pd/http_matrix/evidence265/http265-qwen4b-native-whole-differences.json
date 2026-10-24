@@ -1,0 +1,81 @@
+{
+  "scope": "Reference sequences, fixed-length ignore_eos HTTP run; EOS from local generation_config, no semantic quality inference",
+  "eos_token_ids": [
+    151643,
+    151645
+  ],
+  "rows": [
+    {
+      "condition": "128:32",
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false
+    },
+    {
+      "condition": "128:128",
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false
+    },
+    {
+      "condition": "512:32",
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false
+    },
+    {
+      "condition": "512:128",
+      "first_difference_zero_based": 50,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true
+    },
+    {
+      "condition": "2048:32",
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false
+    },
+    {
+      "condition": "2048:128",
+      "first_difference_zero_based": 49,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true
+    },
+    {
+      "condition": "8192:32",
+      "first_difference_zero_based": 12,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true
+    },
+    {
+      "condition": "8192:128",
+      "first_difference_zero_based": 12,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true
+    }
+  ]
+}

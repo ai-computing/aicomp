@@ -1,0 +1,44 @@
+F..F                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_hybrid_partial_import_happens_before_completion_without_admission ____
+
+    def test_hybrid_partial_import_happens_before_completion_without_admission():
+        model,worker,b=setup();prompt=_prompts(1,25,26,265)[0]
+        result=b.submit(PDRequest('stream',prompt,8));b.step()
+        request=b.by_id['stream'];idx=b.kv.span_index(request.slot,0,len(prompt))
+        keys,_=b.kv.layer_kv(0)
+>       torch.testing.assert_close(keys[:,idx],worker.jobs[0][2].keys[0])
+E       AssertionError: Tensor-likes are not close!
+E
+E       Mismatched elements: 800 / 800 (100.0%)
+E       Greatest absolute difference: 2.84375 at index (1, 4, 1) (up to 1e-05 allowed)
+E       Greatest relative difference: 1.0 at index (0, 0, 0) (up to 0.016 allowed)
+
+tests/test_pd_stream_admission.py:59: AssertionError
+___________ test_unvalidated_stream_completion_cannot_publish_cache ____________
+
+    def test_unvalidated_stream_completion_cannot_publish_cache():
+        _,worker,b=setup();prompt=_prompts(1,25,26,271)[0]
+        result=b.submit(PDRequest('incomplete',prompt,8));b.step();worker.finish(complete=False)
+        b.run_until_idle()
+>       with pytest.raises(RuntimeError,match='coverage'):result.result()
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_pd_stream_admission.py:91: Failed
+=============================== warnings summary ===============================
+tests/test_pd_stream_admission.py::test_cancellation_and_late_old_completion_do_not_corrupt_reused_cache
+  /home/gspark/venvs/pt213/lib/python3.10/site-packages/torch/nn/attention/flex_attention.py:2481: UserWarning: flex_attention called without torch.compile() - this will use an unfused implementation that materializes the full scores matrix instead of generating a fused kernel.
+
+  SOLUTION: Use torch.compile(flex_attention)(...)
+
+  If you want to debug your score_mod/mask_mod, you can set:
+  torch.nn.attention.flex_attention._FLEX_ATTENTION_DISABLE_COMPILE_DEBUG = True
+
+  This will allow you to use print statements or breakpoints. Note: This doesn't work with the backwards pass and may produce incorrect results.
+    _warn_once(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_pd_stream_admission.py::test_hybrid_partial_import_happens_before_completion_without_admission
+FAILED tests/test_pd_stream_admission.py::test_unvalidated_stream_completion_cannot_publish_cache
+2 failed, 2 passed, 1 warning in 5.83s

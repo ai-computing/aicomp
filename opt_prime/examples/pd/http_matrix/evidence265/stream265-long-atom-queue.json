@@ -1,0 +1,22 @@
+[
+  {
+    "model": "qwen06b",
+    "exit_code": 0,
+    "copy_exit_code": 0
+  },
+  {
+    "model": "qwen4b",
+    "exit_code": 0,
+    "copy_exit_code": 0
+  },
+  {
+    "model": "gemma",
+    "exit_code": 0,
+    "copy_exit_code": 0
+  },
+  {
+    "model": "koni",
+    "exit_code": 0,
+    "copy_exit_code": 0
+  }
+]
