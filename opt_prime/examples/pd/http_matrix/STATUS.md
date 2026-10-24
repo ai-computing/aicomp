@@ -95,3 +95,7 @@ Allfour64batches/128sequences same-route exact; full auditor passes. Whole-vs-st
 ## Higher-load GPU streaming (#265)
 
 C4/fixed128output, mixed2K/8K/2K/8K: allfour32batches/128sequences exact, exits0 and local devices idle. Whole-vs-stream median completion reductions20.72/16.44/2.26/19.34% (Q06/Q4/Gemma/KONI),3measured batches/mode. Auditor verifies outputs, ordering, arrivals/spans and reproduces summaries. STREAMING.md now maps source/transport/destination/CLI code and explicitly scopes same-host research-factory support. ATOM Q06 faults passed; other models still running.
+
+## Complete actual ATOM streaming faults (#265)
+
+Allfour models pass all3 actual cases (12 total), independently comparing retained16-token replacement and512-token survivor arrays. Producer death at survivor13/6/10/5tokens; owners drain without poisoning, incomplete prefixes remain private. All child/copy exits0; queue terminal0 and owned Pod absence verified. See experiments/2026-10-24-stream265-atom-faults.md and evidence265/stream265-atom-fault-summary.json. Native numerical differences and hybrid-prefix support remain separate limitations.

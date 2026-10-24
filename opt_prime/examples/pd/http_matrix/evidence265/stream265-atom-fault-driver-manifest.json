@@ -1,0 +1,7 @@
+{
+  "driver_sha256": "7ec939b50a94ddce9aee21a6489d2e91a88f11d298e97659bf94df7bf8423c5b",
+  "remote_copy_matches": true,
+  "role": "RNGD+ATOM host",
+  "production_runtime": "33d6cb0",
+  "note": "Driver unchanged after launch; source package hashes are recorded per model. output_tokens16 is the initial cancel/reuse case; prefetch isolation retains512 tokens."
+}

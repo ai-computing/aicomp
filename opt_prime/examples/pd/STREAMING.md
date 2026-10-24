@@ -74,7 +74,7 @@ asynchronous RNGD download, device DMA overlap, or a serving speedup. Hardware
 source parity has been checked at widths128/512 and8192. Recorded GPU timing
 improvements apply only to the measured c2/fixed32 and c4/fixed128 workloads. Four-model ATOM timing
 and same-route parity are also verified for B1/two queued2K/8K prompts, fixed32
-outputs, and prefetch off/on. Actual ATOM streaming fault isolation remains pending.
+outputs, and prefetch off/on. Actual ATOM streaming faults pass all four models: cancellation/reuse after partial import, source death before admission, and prefetched source death preserving an active512-token decode. The retained16/512-token arrays match same-route references; see `http_matrix/experiments/2026-10-24-stream265-atom-faults.md`.
 Notification-timing controls show that total improvement is not solely the effect
 of early notification; source/host path changes and cross-request overlap remain. None establishes cross-backend
 numerical equivalence. See the experiment record for exact cases,
