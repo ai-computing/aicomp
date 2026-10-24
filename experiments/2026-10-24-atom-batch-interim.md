@@ -166,3 +166,23 @@ Run the published test against the recorded PR266 checkout (eaf7daa219a6cea68db4
 ```bash
 PYTHONPATH="$PR266/opt_prime:$PR266/opt_prime/tests" "$TEST_PYTHON" -m pytest experiments/evidence270/test_atom270_dense_partial.py "$PR266/opt_prime/tests/test_atom_batching.py" "$PR266/opt_prime/tests/test_atom_hybrid.py" "$PR266/opt_prime/tests/test_atom_stream_progress.py" -q
 ```
+
+
+## Qwen3-0.6B long-input whole/stream ABBA (2026-10-25)
+
+Repeated whole/stream/stream/whole in one Pod on ATOM2 with width8192,B4/TP1/k5,concurrency16,cacheoff,inputs2048/8192 and outputs32/128. All528responses passed (16warmups,256full-token checks,256timed SSE responses). Independent audit rechecked full prompts/references, config equality except the stream flag, compiled geometry, actual device binding, raw hashes and timing arithmetic. The queue completed and the owned Pod was cleaned up. Two timed batches per route/condition; no confidence interval or arbitrary-prompt quality claim.
+
+| Input/output | Whole tok/s | Stream tok/s | Stream/whole | Median E2E whole/stream s |
+|---|---:|---:|---:|---:|
+|2048/32|23.579|30.152|1.2788|12.111/9.423|
+|2048/128|93.515|113.257|1.2111|12.645/11.222|
+|8192/32|20.441|16.196|0.7923|15.826/19.796|
+|8192/128|53.113|53.354|1.0045|24.817/26.332|
+
+Values are medians of two batches. Streaming improves2K throughput21–28percent but reduces8K/32throughput20.8percent and increases completion latency25.1percent. Both stream samples are below both whole samples for8K/32. At8K/128throughput is effectively unchanged(+0.45percent), with6.1percent higher completion latency. The earlier single-run22percent8K/128throughput penalty did not reproduce here. This supports condition-specific investigation, not globally enabling/disabling streaming.
+
+Import host totals inABBAorder:76.672,95.628,98.060,78.305s, with132,3696,3696,132calls respectively. Successful4-active-lane calls:639,1143,1065,619. Import includes torch stacking, dtype conversion, staging assignment and SDK calls; these counters do not isolate network/DMA or establish a causal bottleneck. Extra component instrumentation is a separate follow-up with no result claimed here. Startup14.05–14.30s is excluded from steady-state metrics and does not independently establish compiler-cache hits.
+
+The first attempt's whole arm passed132responses but its controller rejected missing binding logs caused by the older bootstrap configuration; it cleaned up its Pod. Those data were preserved separately and excluded from this ABBA. All four accepted arms were rerun after fixing the bootstrap and adding a preallocation guard. No production engine/default changed.
+
+Compact audit: atom270-qwen06-regression-retry1-audit.json. Eight raw results/logs remain outside Git; qwen06-regression-evidence-manifest.json records full hashes and research event ID. Remote archive synchronization has not been independently verified. For each restored raw result, use the included audit_http265.audit_result with backend atom, mode whole/stream, lengths=(2048,8192), expected_slots=4 and expected_atom_devices=1; compare complete reference dictionaries across arms and recompute median summaries from batches. This evidence does not waive the remaining Qwen4 native numerics, Gemma quality or hardware partial-victim-import gaps.

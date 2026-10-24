@@ -1,0 +1,38 @@
+{
+  "research_event_id": "06f53eaae36443dab95b4b3eb0861283",
+  "storage": "research-hub attachments registered locally; remote synchronization not independently verified",
+  "files": {
+    "atom270-qwen06-regression-retry1-r0-whole.json": {
+      "sha256": "5fc169b062bd3181b0a6fcfeef06e7586b79b2d0e502c2d485b22a4e020ba940",
+      "bytes": 319795
+    },
+    "atom270-qwen06-regression-retry1-r0-whole.server0.log": {
+      "sha256": "c109d050bdd9023aec04eec148a045715aa0cd8ce56be9ecc18160146ba0bb9c",
+      "bytes": 845427
+    },
+    "atom270-qwen06-regression-retry1-r1-stream.json": {
+      "sha256": "3ff17acf90f08ffe318f60155a0c23a0e3f65f6b0533f81eded290040e8056b5",
+      "bytes": 319821
+    },
+    "atom270-qwen06-regression-retry1-r1-stream.server0.log": {
+      "sha256": "81173dc46ac2c9c6da6230801fce5895e0858437e29091d40eb3bc9bd4023d01",
+      "bytes": 600651
+    },
+    "atom270-qwen06-regression-retry1-r2-stream.json": {
+      "sha256": "0a53097c042a7c46bd55c12c428c99afb792ed579816dd727a239a0dda0adf12",
+      "bytes": 319811
+    },
+    "atom270-qwen06-regression-retry1-r2-stream.server0.log": {
+      "sha256": "34ab0eff903c0f7f3589d7864d473f56bd3bb7470d904b926cf5135ca15e8fb1",
+      "bytes": 602127
+    },
+    "atom270-qwen06-regression-retry1-r3-whole.json": {
+      "sha256": "7621b42a720e44bce355e342ea536578b51fff212a93bf679b21c50704ad7bd7",
+      "bytes": 319814
+    },
+    "atom270-qwen06-regression-retry1-r3-whole.server0.log": {
+      "sha256": "611ba99cae925155b06b967f018bea0d28a25b1ad26b0e983979b38fa0e3f736",
+      "bytes": 872030
+    }
+  }
+}
