@@ -210,3 +210,12 @@ python3 experiments/evidence270/audit_atom270_imported_faults.py "$RAW_RESULT"
 ```
 
 Raw token arrays stay outside Git; imported-fault-evidence-manifest.json records hashes and the research event ID. Remote archive synchronization is unverified. The included driver requires the existing bootstrap, atom_server270_http helpers, streaming factory and task worker environment; it is not standalone on main.
+
+
+## Same-card Qwen3-4B lane diagnosis (2026-10-25)
+
+The same-Pod normal/fixed-prefill/fixed-prefill/normal ABBA completed128 cases. Each arm checks all16 decode-lane/KV-block placements for free32-token and forced-prefix14-token outputs. All four arms have identical tokens and recorded logits; only lane0 matches the saved reference (4/16free cases per arm). At forced index13 lane0 selects369 and lanes1–3 select264. Four matching binding records remove the earlier cross-card confound. Child/copy/cleanup all0; no task Pods remain.
+
+The first attempt failed SDK INIT_INTERNAL when loading a second engine in one process; the retry uses fresh processes in the same Pod. Both failure and accepted retry were recorded. This result plus the earlier direct SDK replay narrows the reproduction to SDK/compiled decode behavior, without identifying the faulty operator or declaring either numerical output correct. The production runtime is unchanged and B4 native parity remains failed.
+
+See evidence270/QWEN4-LANE-REPRO.md for the minimal token fixture, measured diagnostic scripts, prerequisite artifact/SDK versions, exact commands, acceptance criteria and archive hashes. No new hardware run was needed to package this reproduction.

@@ -1,0 +1,61 @@
+{
+  "complete": true,
+  "cases": 128,
+  "identical_rows_across_all_arms": true,
+  "free_reference_matches_per_arm": 4,
+  "free_cases_per_arm": 16,
+  "binding": {
+    "visible_count": 1,
+    "physical_to_visible": {
+      "2": 0
+    },
+    "opened": [
+      "/dev/rbln2"
+    ]
+  },
+  "forced_index13": [
+    {
+      "lane": 0,
+      "token": 369,
+      "logit369": 29.75,
+      "logit264": 29.625
+    },
+    {
+      "lane": 1,
+      "token": 264,
+      "logit369": 29.625,
+      "logit264": 29.625
+    },
+    {
+      "lane": 2,
+      "token": 264,
+      "logit369": 29.625,
+      "logit264": 29.625
+    },
+    {
+      "lane": 3,
+      "token": 264,
+      "logit369": 29.625,
+      "logit264": 29.625
+    }
+  ],
+  "raws": [
+    {
+      "file": "atom270-qwen4b-samecard-retry1-a1.json",
+      "sha256": "0c7ef20fd373eb1993680aaab83d12c63ab0ed1d45098abca30332dfc6c9383f"
+    },
+    {
+      "file": "atom270-qwen4b-samecard-retry1-b1-prefill0.json",
+      "sha256": "c8f9b4c29d4f583c9753785f67fc90fb35d0088abb1e8820c75972abada0ba77"
+    },
+    {
+      "file": "atom270-qwen4b-samecard-retry1-b2-prefill0.json",
+      "sha256": "c8f9b4c29d4f583c9753785f67fc90fb35d0088abb1e8820c75972abada0ba77"
+    },
+    {
+      "file": "atom270-qwen4b-samecard-retry1-a2.json",
+      "sha256": "0c7ef20fd373eb1993680aaab83d12c63ab0ed1d45098abca30332dfc6c9383f"
+    }
+  ],
+  "cleanup_exit_code": 0
+}
