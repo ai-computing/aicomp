@@ -92,3 +92,20 @@ Concurrent quality reproduction (same fixed36case fixtures/EOS; launch sequentia
 python3 experiments/evidence274/native274_quality_concurrent.py --fixtures "$FROZEN_KONI_FIXTURES" --endpoint "$ENDPOINT" --model "$KONI_SNAPSHOT" --output "$NEW_QUALITY_JSONL" --eos-token-ids 128001 128009
 python3 experiments/evidence274/selfcheck_native274_quality_concurrent.py
 ```
+
+## Full cache matrix completed
+
+Controller exited0 after336responses,24successful all-tier resets,96metric snapshots and48batch walls,zero request errors. All24reuse batches have positive observed prefix-cache hit deltas. At c1, all8reset-before batches have zero hit delta, and reuse has n-1hit tokens; their output token sequences match cold/reuse and cache-off references. At c4/c16, reset-before batches also show within-batch hits, as anticipated; do not call every request cold.
+
+Cold-start/reuse generated-token multisets match19/24conditions. Five differ:2048input/32output/c16;2048/128/c4;2048/128/c16;8192/128/c4;8192/128/c16. Preserve these failures independently from cache-off reference differences. Cache-off single-reference mismatches total63/168 in cold-start batches and81/168 in reuse batches; these controls also contain known native concurrency/shape sensitivity and do not by themselves identify cache corruption. No equivalent-output speedup claim. Raw hashes and every metric delta/batch wall are in native276-cache-summary.json.
+
+The cache-specific difference triggers the planned follow-up frozen quality checks. Those are not yet run for cache-on. All native quality results previously published used cache off.
+
+Related#276. Reproduce on an explicitly owned localhost server with --enable-prefix-caching and process-local FURIOSA_SERVER_DEV_MODE=1; keep all other model/FXB/context settings unchanged. Never reset a shared server.
+
+```bash
+python3 experiments/evidence274/native276_cache.py --endpoint "$OWNED_ENDPOINT" --model "$KONI_SNAPSHOT" --source "$CACHE_OFF_RESULT_JSON" --output "$NEW_CACHE_JSONL"
+python3 experiments/evidence274/selfcheck_native276_cache.py
+```
+
+The local336-response fixture checks24resets,96metric snapshots,busy-reset rejection before inference,and exclusive-output protection. Hardware controller completed and owned Pod UID-checked deletion succeeded. Timing is nonstream batch wall time, including thread submission, excluding reset/metric calls; not a TTFT/TPOT measurement. One cold-start/reuse pair per condition; no confidence interval.

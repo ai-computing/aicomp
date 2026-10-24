@@ -1,0 +1,538 @@
+{
+  "raw_sha256": "a59da245b42f49d575c3819d87f783cf97b39458a405e0b6d79a504493cdb4ec",
+  "conditions": [
+    {
+      "input": 128,
+      "output": 32,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 128.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.506285871961154
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 127.0,
+          "queries": 127.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.4912915510358289
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 128,
+      "output": 32,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 381.0,
+          "queries": 509.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 0.6199433569563553
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 508.0,
+          "queries": 508.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 0.5740069140447304
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 128,
+      "output": 32,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 1905.0,
+          "queries": 2033.0
+        },
+        "reference_mismatches": 7,
+        "wall_s": 1.0413335709599778
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 2032.0,
+          "queries": 2032.0
+        },
+        "reference_mismatches": 7,
+        "wall_s": 0.881747868959792
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 128,
+      "output": 128,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 128.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.918701244983822
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 127.0,
+          "queries": 127.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.9077634310815483
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 128,
+      "output": 128,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 381.0,
+          "queries": 509.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 2.0624934340594336
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 508.0,
+          "queries": 508.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 2.058239247999154
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 128,
+      "output": 128,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 1905.0,
+          "queries": 2033.0
+        },
+        "reference_mismatches": 16,
+        "wall_s": 2.4826741099823266
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 2032.0,
+          "queries": 2032.0
+        },
+        "reference_mismatches": 16,
+        "wall_s": 2.503308805054985
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 512,
+      "output": 32,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 512.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.5317196260439232
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 511.0,
+          "queries": 511.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.4946943719405681
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 512,
+      "output": 32,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 1533.0,
+          "queries": 2045.0
+        },
+        "reference_mismatches": 1,
+        "wall_s": 0.6292275009909645
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 2044.0,
+          "queries": 2044.0
+        },
+        "reference_mismatches": 1,
+        "wall_s": 0.5850984019925818
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 512,
+      "output": 32,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 7665.0,
+          "queries": 8177.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.9516497160075232
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 8176.0,
+          "queries": 8176.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.9010121769970283
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 512,
+      "output": 128,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 512.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.929985665017739
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 511.0,
+          "queries": 511.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.9052177669946104
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 512,
+      "output": 128,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 1533.0,
+          "queries": 2045.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 2.143807522021234
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 2044.0,
+          "queries": 2044.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 2.098486556089483
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 512,
+      "output": 128,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 7665.0,
+          "queries": 8177.0
+        },
+        "reference_mismatches": 15,
+        "wall_s": 2.666500224964693
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 8176.0,
+          "queries": 8176.0
+        },
+        "reference_mismatches": 15,
+        "wall_s": 2.6214001229964197
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 2048,
+      "output": 32,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 1024.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.7092334489570931
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 2047.0,
+          "queries": 2047.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.5040121030760929
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 2048,
+      "output": 32,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 4095.0,
+          "queries": 7165.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.250912974937819
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 8188.0,
+          "queries": 8188.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.7515445870812982
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 2048,
+      "output": 32,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 28659.0,
+          "queries": 31729.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.664120294037275
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 32752.0,
+          "queries": 32752.0
+        },
+        "reference_mismatches": 8,
+        "wall_s": 1.1497647179057822
+      },
+      "same_token_multiset": false
+    },
+    {
+      "input": 2048,
+      "output": 128,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 1024.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 2.1251815190771595
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 2047.0,
+          "queries": 2047.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.9510350250639021
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 2048,
+      "output": 128,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 4095.0,
+          "queries": 7165.0
+        },
+        "reference_mismatches": 3,
+        "wall_s": 2.7650677369674668
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 8188.0,
+          "queries": 8188.0
+        },
+        "reference_mismatches": 3,
+        "wall_s": 2.215802166960202
+      },
+      "same_token_multiset": false
+    },
+    {
+      "input": 2048,
+      "output": 128,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 28659.0,
+          "queries": 31729.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 3.8687867149710655
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 32752.0,
+          "queries": 32752.0
+        },
+        "reference_mismatches": 8,
+        "wall_s": 3.3771532060345635
+      },
+      "same_token_multiset": false
+    },
+    {
+      "input": 8192,
+      "output": 32,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 1024.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.418436971027404
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 8191.0,
+          "queries": 8191.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.5757744549773633
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 8192,
+      "output": 32,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 10239.0,
+          "queries": 25597.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 4.759951652958989
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 32764.0,
+          "queries": 32764.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 0.8495321290101856
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 8192,
+      "output": 32,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 108531.0,
+          "queries": 123889.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 5.433617747039534
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 131056.0,
+          "queries": 131056.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 1.677821111981757
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 8192,
+      "output": 128,
+      "concurrency": 1,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 0.0,
+          "queries": 1024.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 2.987033835030161
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 8191.0,
+          "queries": 8191.0
+        },
+        "reference_mismatches": 0,
+        "wall_s": 2.1529798950068653
+      },
+      "same_token_multiset": true
+    },
+    {
+      "input": 8192,
+      "output": 128,
+      "concurrency": 4,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 10239.0,
+          "queries": 25597.0
+        },
+        "reference_mismatches": 3,
+        "wall_s": 7.0929622809635475
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 32764.0,
+          "queries": 32764.0
+        },
+        "reference_mismatches": 4,
+        "wall_s": 2.918806640896946
+      },
+      "same_token_multiset": false
+    },
+    {
+      "input": 8192,
+      "output": 128,
+      "concurrency": 16,
+      "cold_start": {
+        "cache_delta": {
+          "hits": 108531.0,
+          "queries": 123889.0
+        },
+        "reference_mismatches": 6,
+        "wall_s": 8.648408679990098
+      },
+      "reuse": {
+        "cache_delta": {
+          "hits": 131056.0,
+          "queries": 131056.0
+        },
+        "reference_mismatches": 7,
+        "wall_s": 5.0283978609368205
+      },
+      "same_token_multiset": false
+    }
+  ],
+  "responses": 336,
+  "reset_successes": 24,
+  "request_errors": 0,
+  "same_cold_reuse_token_multisets": 19,
+  "reuse_positive_hit_conditions": 24
+}

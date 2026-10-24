@@ -15,5 +15,8 @@
   "native274-logprobs-summary.json": "b5fa5cd02bdd51b278115e14e3c8c71519f4b163adc5f51b09fc106670e81aa6",
   "native274_quality_concurrent.py": "49efaf6bf35d004457b7cb90bd5a56efd4b10f17f7427e818feee39d8241adcc",
   "selfcheck_native274_quality_concurrent.py": "befdfafd80238b695454b668f0abf8bf176cb06be81f9090d1b73effdc4b493b",
-  "native274-quality-summary.json": "064937f337bd7758317fd8374429bfd188a9d48c44b00a4ee76f4ae063e0010a"
+  "native274-quality-summary.json": "064937f337bd7758317fd8374429bfd188a9d48c44b00a4ee76f4ae063e0010a",
+  "native276_cache.py": "5cb4096f8c8f800dbfeeef72eb8890c7a7e720fb6c90f4b0643f187c983ea04d",
+  "selfcheck_native276_cache.py": "8c1095cf099b3ce34c757409e612a737077249348745fc78690b109fd8229032",
+  "native276-cache-summary.json": "1e0dd2fb6ae63c1639cb83c90570180174b93fd4e8c4e9049299005625068724"
 }
