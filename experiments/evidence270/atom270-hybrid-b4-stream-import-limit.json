@@ -1,0 +1,8 @@
+{
+  "source": "opt_prime/accel/platforms/atom/batching.py",
+  "sha256": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+  "finding": "_import_progress returns for hybrid_cache and lanes>1 unless final=True. _pd_step imports progress with final=True only after pending producer future completes.",
+  "reason": "Fixed-batch decode gives inactive lanes dummy token/position0 and local tables for all lanes; comments explicitly retain local-KV ownership until joining decode.",
+  "scope": "Gemma B4 hybrid cache: early ATOM layer import is deliberately deferred. Producer layer emission/host transport may still pipeline. This is source evidence, not measured device overlap. Qwen dense cache takes a different branch.",
+  "next": "Measure stage timing separately; any early hybrid import requires proven local-cache ownership across inactive decode lanes, with corruption/cancel/reuse regressions before promotion."
+}

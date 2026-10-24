@@ -50,7 +50,7 @@ The inventory JSON records source result hashes and results of rerunning the HTT
 
 ## Remaining work
 
-Finish corrected Gemma B4 whole and stream (B1 and the four-lane causal controls are complete); diagnose/fix Qwen3-4B B4 numerical differences; repeat Qwen3-0.6B B4 performance with producer/import/decode timing; perform batched cancellation/reuse checks; package exact commands/harness source and SDK/driver identities; obtain engine-owned compile/cache handling under#271. No completion or universal performance claim is made.
+Diagnose corrected Gemma B4 whole occupancy failure and collect its stream comparison (B1 and the four-lane causal controls are complete); diagnose/fix Qwen3-4B B4 numerical differences; repeat Qwen3-0.6B B4 performance with producer/import/decode timing; perform batched cancellation/reuse checks; package exact commands/harness source and SDK/driver identities; obtain engine-owned compile/cache handling under#271. No completion or universal performance claim is made.
 
 Generated with Codex; evidence reviewed against local result files.
 
@@ -78,3 +78,12 @@ python container_bootstrap270.py check_gemma270_causality_b4.py --cache-dir atom
 ```
 
 Export scripts reject existing artifact directories; diagnostics reject output overwrites and never compile missing models. These are research reproductions, not the engine-owned compatibility implementation requested in #271.
+
+
+## Corrected Gemma B4 whole follow-up: correctness passes, occupancy fails
+
+All 264 responses passed within-route HTTP checks, but the full B4 audit failed: successful decode-call lane histogram `[0, 14313, 3132, 93, 0]` contains no four-lane calls. Native and whole ran on the same physical ATOM2 and corrected artifact. Their full reference sequences match in 6/8 conditions and through EOS in 8/8. At 8K/128, full tokens match; whole reaches 77.0898 tok/s, median first SSE 13.3368 s and completion 15.7735 s, versus native 95.1626 tok/s and completion 14.7210 s. This is one timed batch per condition, with an extra RNGD for whole; no statistical or equal-resource speedup claim is supported.
+
+The strict queue stopped before stream and cleaned up its Pod. The occupancy failure remains a failure; HTTP correctness does not validate B4 utilization. A separate diagnostic pair is being collected with host-side producer completion and decode queue-state timestamps. No root cause or correction is yet established. The serial producer and eager decode admission are a hypothesis to test.
+
+For hybrid Gemma B4, `_import_progress` deliberately defers device import until the producer completes: idle compiled lanes can otherwise overwrite local sliding-window KV. Host layer streaming therefore does not establish early ATOM import overlap. Removing this guard requires an ownership solution and cancellation/reuse validation, not just a performance change. See the two new evidence JSON files.
