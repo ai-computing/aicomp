@@ -99,3 +99,7 @@ C4/fixed128output, mixed2K/8K/2K/8K: allfour32batches/128sequences exact, exits0
 ## Complete actual ATOM streaming faults (#265)
 
 Allfour models pass all3 actual cases (12 total), independently comparing retained16-token replacement and512-token survivor arrays. Producer death at survivor13/6/10/5tokens; owners drain without poisoning, incomplete prefixes remain private. All child/copy exits0; queue terminal0 and owned Pod absence verified. See experiments/2026-10-24-stream265-atom-faults.md and evidence265/stream265-atom-fault-summary.json. Native numerical differences and hybrid-prefix support remain separate limitations.
+
+## Complete c16 queued streaming matrix (#265)
+
+Four models complete32batches/512sequences exact, c16 queued behind4slots, mixed2K/8K fixed128output. Whole-to-stream median completion reductions25.20/20.02/2.33/20.91% (Q06/Q4/Gemma/KONI),3samples/mode. Full independent auditor and its malformed-evidence self-check pass; queue0/devices idle verified. See experiments/2026-10-24-stream265-c16.md. HTTPc16 runs are separate and still in progress; numerical boundaries remain.
