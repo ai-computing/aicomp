@@ -87,3 +87,33 @@ All 264 responses passed within-route HTTP checks, but the full B4 audit failed:
 The strict queue stopped before stream and cleaned up its Pod. The occupancy failure remains a failure; HTTP correctness does not validate B4 utilization. A separate diagnostic pair is being collected with host-side producer completion and decode queue-state timestamps. No root cause or correction is yet established. The serial producer and eager decode admission are a hypothesis to test.
 
 For hybrid Gemma B4, `_import_progress` deliberately defers device import until the producer completes: idle compiled lanes can otherwise overwrite local sliding-window KV. Host layer streaming therefore does not establish early ATOM import overlap. Removing this guard requires an ownership solution and cancellation/reuse validation, not just a performance change. See the two new evidence JSON files.
+
+
+## Gemma B4 host timeline pair
+
+The diagnostic pair completed on the same physical ATOM2. Both routes passed 264 HTTP responses; all eight full reference sequences match. Neither produced a successful four-active-lane decode call: whole histogram `[0,13952,3299,102,0]`, stream `[0,13676,3452,92,0]`. These occupancy failures remain failures even though HTTP correctness passed.
+
+| Host observation | Whole | Stream |
+|---|---:|---:|
+| Backlogged KV completion gap, median | 1.5548 s | 1.5085 s |
+| Decode call, median | 13.1467 ms | 12.8802 ms |
+| Ready prefill left at decode entry | 0 / 17353 | 0 / 17220 |
+| 8K/128 output throughput | 76.2890 tok/s | 77.8249 tok/s |
+| 8K/128 median completion | 15.9551 s | 15.6698 s |
+
+The observations support producer-limited readiness, rather than a universal scheduler cap below B4. Completion gaps include host delivery and Python timing; they are not pure NPU compute. Queue states are snapshots, and timing sums overlap. The roughly 2% throughput difference is one timed batch per route, not a stable speedup. All-global synthetic CPU controls also admit four lanes when all four results are ready, but do not emulate Gemma sliding-window hardware.
+
+For whole mode, backlogged completion-gap medians remain about 1.55 s at every input length from 128 to 8192. A short-input-only width1024 follow-up is running against pinned width8192 outputs. It does not replace the wide path for long inputs or establish heldout quality. Earlier Gemma strict-format quality tests failed in both widths; zero regressions there is not quality acceptance.
+
+Whole initialization took 840.58 s and subsequent stream initialization 18.40 s. This warm-state difference is not isolated. Do not assume every startup takes 14 minutes or attribute the difference to streaming alone.
+
+Raw HTTP results and host-timeline logs are included under evidence270. Recompute host summaries with the included analyzer (use a new output filename; overwrites are rejected):
+
+```bash
+python analyze_timeline270.py atom270-timeline-gemma-b4-whole.server0.log --output whole-recomputed.json
+python analyze_timeline270.py atom270-timeline-gemma-b4-stream.server0.log --output stream-recomputed.json
+python selfcheck_timeline270.py
+python selfcheck_analyze_timeline270.py
+```
+
+The probe entrypoint depends on the original HTTP harness and PR266 runtime stack; it is not a standalone server in this branch. Raw-result HTTP audits use the included audit_http265.audit_result with backend atom, expected_slots=4, expected_atom_devices=1. Neither raw timing evidence nor the synthetic tests prove device DMA overlap.
