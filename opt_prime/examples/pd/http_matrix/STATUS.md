@@ -124,3 +124,5 @@ Three models pass whole/stream controls, eight conditions each. Qwen4 and Gemma 
 ## KONI native long-wait diagnostic
 
 Separate600s native run passes264 responses across8 conditions, with original180s failure retained. At8K/128/c16 max firstSSE253.93s and max completion263.08s; no OOM/listen drops. Whole/stream remain running. See stream265-atom-http-progress record and evidence265/http267d-koni-native-complete-summary.json.
+
+KONI whole HTTP diagnostic:264 responses pass,8K/128 throughput7.7847(native) ->9.3113(whole)tok/s; short inputs slower. Native/whole strict and EOS parity6/8. Stream is pending on a fresh physical-card allocation; no new runtime change. See stream265 ATOM HTTP progress record.
