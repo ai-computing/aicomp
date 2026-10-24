@@ -1,0 +1,46 @@
+{
+  "research_event_id": "f2ce561ebec14afba60d52baad18094e",
+  "archive": "Local raw evidence; result JSONs registered with research-hub; remote synchronization unverified",
+  "files": {
+    "atom270-qwen4b-allcore-abba-a1.json": {
+      "sha256": "0a5b574e4382e9a2402b6f9f0799f0627310481fc8de9389a7379f60f200e381",
+      "bytes": 251121
+    },
+    "atom270-qwen4b-allcore-abba-a1.server0.log": {
+      "sha256": "9b7366cd6fe02e8b1d0ab75690d46c287dc13590051ed0020a3d13d1b4418bd1",
+      "bytes": 233
+    },
+    "atom270-qwen4b-allcore-abba-b1.json": {
+      "sha256": "26bfb41d507f171cd073078166b3afb346ae935451c6ce16f3a4f4e6af9594c5",
+      "bytes": 252978
+    },
+    "atom270-qwen4b-allcore-abba-b1.server0.log": {
+      "sha256": "9b7366cd6fe02e8b1d0ab75690d46c287dc13590051ed0020a3d13d1b4418bd1",
+      "bytes": 233
+    },
+    "atom270-qwen4b-allcore-abba-b2.json": {
+      "sha256": "1750d0b6a8844b8968900528f01be11ffba0da36eb7df77bc8a66c5e9e692a07",
+      "bytes": 252987
+    },
+    "atom270-qwen4b-allcore-abba-b2.server0.log": {
+      "sha256": "9b7366cd6fe02e8b1d0ab75690d46c287dc13590051ed0020a3d13d1b4418bd1",
+      "bytes": 233
+    },
+    "atom270-qwen4b-allcore-abba-a2.json": {
+      "sha256": "a7729ef1958aadcd6b70662c15f116275bebaf570a5b55df81e5be9db58e3fbe",
+      "bytes": 251128
+    },
+    "atom270-qwen4b-allcore-abba-a2.server0.log": {
+      "sha256": "9b7366cd6fe02e8b1d0ab75690d46c287dc13590051ed0020a3d13d1b4418bd1",
+      "bytes": 233
+    },
+    "atom270-allcore-abba-outer.json": {
+      "sha256": "0b5e495fbac1334417819c223ba95372717e00a621744a4e55e2277083e2eb56",
+      "bytes": 2079
+    },
+    "atom270-allcore-abba-arms.json": {
+      "sha256": "0d923ac06cbc430b304b9bf3d103b67ccb08d45261e57c85f6deb3233102b9fd",
+      "bytes": 3001
+    }
+  }
+}

@@ -257,3 +257,17 @@ Re-reading raw historical records across four models, GPU B4 and ATOM B1/B4, and
 All576 historical frozen quality responses were rescored without postprocessing. Strict answer counts, in native-GPU/RNGD-GPU/native-ATOM/RNGD-ATOM order, are Qwen3-0.6B32/34/33/33, Qwen3-4B36/36/36/36, KONI31/31/31/31 and Gemma0/0/0/0, each out of36. Strict format counts are36 for Qwen,34 for KONI and0 for Gemma. These model/task quality limitations are distinct from transport/runtime failure. Native-to-PD full-token discrepancies are recorded separately from within-route acceptance.
 
 `evidence270/audit_four_model_current270.py` recomputes these gates and records SHA256 for all raw files in `four-model-current270-audit.json`; run it in the task evidence directory containing the named raw records and existing audit/scoring helpers. This inventory covers historical experimental runtimes and isolated exports, not current-main support. At the read-only GitHub check, PR206 and PR266 remain unmerged and issue271 is open. Remaining work is candidate Qwen4 B4 PD compatibility, Gemma occupancy/import restrictions and owner integration, with measured performance and unchanged quality gates. No complete four-model support claim.
+
+
+## Same-card all-core ABBA completes: consistency costs throughput (2026-10-25)
+
+Original/all-core/all-core/original runs each complete66responses at512/8192input,128output,c16, using fresh processes in one Pod on the same physical ATOM3. Same PR266 runtime, TP1/B4/k5/context9216, SDK0.11.0/optimum0.11.0.post1, caches off. Every arm has identical occupancy [0,262,8,8,2020]. A1/A2 each fail12full-token and12timed-text comparisons; B1/B2 have zero mismatches. Same-variant warmup references match, cross-variant references differ at both lengths. Full controller/copy/cleanup exit0; individual arm exits remain1/0/0/1, preserving the parity failures.
+
+| Input/output | Original mean tok/s | All-core mean tok/s | Change | Original mean of median E2E (s) | All-core mean of median E2E (s) |
+|---|---:|---:|---:|---:|---:|
+|512/128|75.976|62.894|-17.22%|17.195|20.775|
+|8192/128|18.253|16.489|-9.66%|77.575|86.071|
+
+Two timed batches per variant/condition, each after warmup and complete token checks. These are means of batch statistics, not pooled-request quantiles or confidence intervals. Read-only metrics polling occurred during the run and is disclosed. The repeatable within-batch consistency improvement incurs serving cost; the candidate is not a speedup or production default. Different cross-variant outputs preclude an equivalent-output performance claim. Pending candidate RNGD→ATOM compatibility is a separate experiment, not evidence of support yet.
+
+The independent auditor recomputes flags and timing summaries, validates metadata, geometry, all four bindings, occupancy, arm exit semantics and terminal cleanup. Its self-check retains the historical failure and rejects altered flags, tokens, throughput and a missing batch. Published source is audit_atom270_allcore_abba.py; run it beside the named raw results/logs and terminal controller records. The child runner documents exact ordering and CLI; site configs, owned-Pod allocation and shell environment remain local prerequisites. Full raw hashes and archive event are in allcore-abba-evidence-manifest.json. No measured arm was retried or discarded.
