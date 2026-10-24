@@ -64,7 +64,7 @@ proven. It is diagnostic-only and is not integrated into this PR's runtime.
 Separate width-1024 experiments (#268) are also not part of this PR: Qwen3-0.6B
 has a heldout answer regression and KONI has width-dependent token divergence.
 Production source width/default behavior is unchanged here. Repeated timing,
-full KONI ATOM coverage, and direct device-DMA overlap remain outstanding.
+ATOM compiled batch >1, and direct device-DMA overlap remain outstanding.
 
 
 ## KONI native 600-second diagnostic completed
@@ -85,8 +85,7 @@ from prefill time or prove the original nonstreamed timeout's precise cause.
 The600-second value controls socket wait, not a guaranteed total request deadline.
 Nonstreamed correctness checks retain token arrays but not individual durations.
 One timed batch per condition is diagnostic, not statistical performance evidence.
-The original180-second failure remains failed. RNGD-to-ATOM whole subsequently completed as recorded below; streaming remains
-in progress and is not counted as a success.
+The original180-second failure remains failed. RNGD-to-ATOM whole subsequently completed as recorded below; streaming also completed as recorded below.
 
 Reproduce the diagnostic with run_http267_deadline_atom.py, --model koni,
 --pod http267d-koni and the existing site-specific --host. It uses the same model
@@ -130,5 +129,44 @@ Before the next phase, the owned Pod had 2265 seconds remaining versus 2842 seco
 used by the completed whole phase. After child/copy completion and absence of
 benchmark/engine processes were checked, only that Pod was recreated. No active
 measurement was restarted. Stream now uses a different physical ATOM card of
-the same class, a limitation for subsequent timing comparisons. It is still in
-startup; no streaming completion or timing claim is made here.
+the same class, a limitation for subsequent timing comparisons. That streaming phase subsequently completed as recorded below.
+
+
+## Completed KONI streaming and four-model whole/stream coverage
+
+All three KONI children and both artifact copies per child exited zero; outer
+queue exited zero. Independent raw audit validates each route's eight conditions,
+eight warmups, 128 full-token checks and 128 timed SSE text checks. Whole/stream
+reference arrays match all eight conditions. Native/whole remains six of eight;
+the two pre-EOS differences remain. Original 180-second failure remains retained.
+Completed Pod absence was verified after parent cleanup.
+
+| Input/output tokens | Native tok/s | Whole KV tok/s | Streaming tok/s |
+|---|---:|---:|---:|
+| 128/32 | 14.6499 | 5.9430 | 6.7293 |
+| 128/128 | 14.7951 | 10.8468 | 11.3686 |
+| 512/32 | 12.8533 | 5.8954 | 6.8371 |
+| 512/128 | 14.2666 | 10.7350 | 11.3826 |
+| 2048/32 | 8.5544 | 5.5431 | 6.7273 |
+| 2048/128 | 12.4293 | 10.3935 | 11.4099 |
+| 8192/32 | 3.3584 | 4.6693 | 6.6058 |
+| 8192/128 | 7.7847 | 9.3113 | 10.8298 |
+
+At 8K/128, streaming has 16.3% greater observed throughput than whole transfer,
+39.1% greater than native. Median completion is 100.698 seconds versus 117.284
+whole and 139.755 native; median first SSE is 91.565 versus 108.164 and 130.608.
+Streaming maximum completion is 189.105 seconds, so a 180-second total response
+SLO is still not met. Shorter inputs remain slower than native. One timed batch
+per condition and different physical ATOM cards limit timing conclusions; PD adds
+one RNGD versus native. Stream OOM events and listener drop/overflow deltas are
+zero; server alive at final snapshot before normal teardown. No DMA-overlap claim.
+
+Together with the preceding Qwen3-0.6B, Qwen3-4B and Gemma3-1B results, all four
+models now have completed B1/c16 ATOM whole/stream HTTP controls, eight exact
+reference pairs per model. This does not establish native equivalence, semantic
+answer quality, batch-four behavior or equal-resource performance superiority.
+
+Raw three-route JSON and summary with hashes, terminal and copy evidence are in
+evidence265/http267d-koni-atom-c16-{native,whole,stream}.json and
+http267d-koni-three-route-summary.json. Reproduce with the diagnostic runner above;
+stream uses the corresponding whole result as --reference. Runtime stays33d6cb0.
