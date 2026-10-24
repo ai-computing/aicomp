@@ -1,0 +1,35 @@
+{
+  "sdk": "furiosa-llm2026.4.0",
+  "scope": "native FXB registry/build preflight only; no hardware serving result",
+  "models": {
+    "qwen06b": {
+      "model": "Qwen/Qwen3-0.6B",
+      "snapshot": "c1899de289a04d12100db370d81485cdf75e47ca",
+      "config_sha256": "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd",
+      "exit_code": 1,
+      "result": "No model registry entry for exact architecture/dimensions/quantization"
+    },
+    "qwen4b": {
+      "model": "Qwen/Qwen3-4B",
+      "snapshot": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "config_sha256": "8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a",
+      "exit_code": 1,
+      "result": "No model registry entry for exact architecture/dimensions/quantization"
+    },
+    "koni": {
+      "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+      "snapshot": "0172bf7e73977ae213613529f3d2d5400a33f678",
+      "config_sha256": "1a9a5f1cf563a1f466da4f346de2ae05e3173830ce4574b0a7fde2f6a1c910de",
+      "exit_code": 0,
+      "result": "105 TCL kernels generated; compilation skipped"
+    },
+    "gemma": {
+      "model": "unsloth/gemma-3-1b-it",
+      "snapshot": "5b11413a10db4e486ef16a20101fd028f8f2499c",
+      "config_sha256": "c5b2136c452797c0c52cba5793ced59d95453dfdc3444433b03e27699ff1c2cd",
+      "exit_code": 1,
+      "result": "No model registry entry for exact architecture/dimensions/quantization"
+    }
+  },
+  "raw_sha256": "b36fe370286dc71a59eab4cbb8c4b6d1e81aca23dd23671bdf654c9dc72ac744"
+}

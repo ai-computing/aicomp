@@ -1,0 +1,35 @@
+{
+  "source_sha256": "fe90c32fa91dee3987cac7fcb0253daee43f8f7e181267dd89fc81b9dd6086fb",
+  "execution_complete": true,
+  "parity_passed": false,
+  "warmups": 8,
+  "response_count": 344,
+  "counts": [
+    {
+      "concurrency": 1,
+      "token_checks": 8,
+      "token_mismatches": 0,
+      "stream_checks": 8,
+      "stream_mismatches": 0
+    },
+    {
+      "concurrency": 4,
+      "token_checks": 32,
+      "token_mismatches": 13,
+      "stream_checks": 32,
+      "stream_mismatches": 13
+    },
+    {
+      "concurrency": 16,
+      "token_checks": 128,
+      "token_mismatches": 50,
+      "stream_checks": 128,
+      "stream_mismatches": 50
+    }
+  ],
+  "limitations": [
+    "One measured batch per condition; no repeated performance confidence interval",
+    "Exact token parity failed at concurrency4/16; no equivalent-output speedup claim",
+    "No PD transport involved; compiler/numerical root cause not established"
+  ]
+}
