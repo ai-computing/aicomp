@@ -50,7 +50,7 @@ The inventory JSON records source result hashes and results of rerunning the HTT
 
 ## Remaining work
 
-Diagnose corrected Gemma B4 whole occupancy failure and collect its stream comparison (B1 and the four-lane causal controls are complete); diagnose/fix Qwen3-4B B4 numerical differences; repeat Qwen3-0.6B B4 performance with producer/import/decode timing; perform batched cancellation/reuse checks; package exact commands/harness source and SDK/driver identities; obtain engine-owned compile/cache handling under#271. No completion or universal performance claim is made.
+Complete the four-model B4 fault-isolation matrix and operational generalization; diagnose/fix Qwen3-4B B4 numerical differences; repeat Qwen3-0.6B B4 performance with producer/import/decode timing; perform batched cancellation/reuse checks; package exact commands/harness source and SDK/driver identities; obtain engine-owned compile/cache handling under#271. No completion or universal performance claim is made.
 
 Generated with Codex; evidence reviewed against local result files.
 
@@ -84,7 +84,7 @@ Export scripts reject existing artifact directories; diagnostics reject output o
 
 All 264 responses passed within-route HTTP checks, but the full B4 audit failed: successful decode-call lane histogram `[0, 14313, 3132, 93, 0]` contains no four-lane calls. Native and whole ran on the same physical ATOM2 and corrected artifact. Their full reference sequences match in 6/8 conditions and through EOS in 8/8. At 8K/128, full tokens match; whole reaches 77.0898 tok/s, median first SSE 13.3368 s and completion 15.7735 s, versus native 95.1626 tok/s and completion 14.7210 s. This is one timed batch per condition, with an extra RNGD for whole; no statistical or equal-resource speedup claim is supported.
 
-The strict queue stopped before stream and cleaned up its Pod. The occupancy failure remains a failure; HTTP correctness does not validate B4 utilization. A separate diagnostic pair is being collected with host-side producer completion and decode queue-state timestamps. No root cause or correction is yet established. The serial producer and eager decode admission are a hypothesis to test.
+The strict queue stopped before stream and cleaned up its Pod. The occupancy failure remains a failure; HTTP correctness does not validate B4 utilization. The separate host-timeline pair below supports producer-limited readiness. The same-Pod width ABBA below then tests a short-input correction.
 
 For hybrid Gemma B4, `_import_progress` deliberately defers device import until the producer completes: idle compiled lanes can otherwise overwrite local sliding-window KV. Host layer streaming therefore does not establish early ATOM import overlap. Removing this guard requires an ownership solution and cancellation/reuse validation, not just a performance change. See the two new evidence JSON files.
 
@@ -103,7 +103,7 @@ The diagnostic pair completed on the same physical ATOM2. Both routes passed 264
 
 The observations support producer-limited readiness, rather than a universal scheduler cap below B4. Completion gaps include host delivery and Python timing; they are not pure NPU compute. Queue states are snapshots, and timing sums overlap. The roughly 2% throughput difference is one timed batch per route, not a stable speedup. All-global synthetic CPU controls also admit four lanes when all four results are ready, but do not emulate Gemma sliding-window hardware.
 
-For whole mode, backlogged completion-gap medians remain about 1.55 s at every input length from 128 to 8192. A short-input-only width1024 follow-up is running against pinned width8192 outputs. It does not replace the wide path for long inputs or establish heldout quality. Earlier Gemma strict-format quality tests failed in both widths; zero regressions there is not quality acceptance.
+For whole mode, backlogged completion-gap medians remain about 1.55 s at every input length from 128 to 8192. The short-input-only width1024 follow-up and same-Pod ABBA below completed against pinned width8192 outputs. It does not replace the wide path for long inputs or establish heldout quality. Earlier Gemma strict-format quality tests failed in both widths; zero regressions there is not quality acceptance.
 
 Whole initialization took 840.58 s and subsequent stream initialization 18.40 s. This warm-state difference is not isolated. Do not assume every startup takes 14 minutes or attribute the difference to streaming alone.
 
@@ -117,3 +117,28 @@ python selfcheck_analyze_timeline270.py
 ```
 
 The probe entrypoint depends on the original HTTP harness and PR266 runtime stack; it is not a standalone server in this branch. Raw-result HTTP audits use the included audit_http265.audit_result with backend atom, expected_slots=4, expected_atom_devices=1. Neither raw timing evidence nor the synthetic tests prove device DMA overlap.
+
+
+## Same-Pod Gemma B4 width ABBA: measured short-input improvement
+
+Four whole-transfer runs used width8192 → 1024 → 1024 → 8192 in one Pod on ATOM3. All 528 responses passed (16 warmups, 256 full-token checks, 256 timed SSE responses). Independent audit rechecked the physical binding, compiled geometry, identical prompts/reference outputs, timing arithmetic and server settings differing only in producer width. Each condition has two timed batches per width.
+
+| Input / output tokens | Width8192 tok/s | Width1024 tok/s | Ratio | Median completion, wide → narrow |
+|---|---:|---:|---:|---:|
+| 128 / 32 | 20.199 | 40.348 | 1.9975× | 13.661 → 6.958 s |
+| 128 / 128 | 76.874 | 145.839 | 1.8971× | 15.004 → 8.398 s |
+| 512 / 32 | 19.943 | 40.157 | 2.0136× | 13.824 → 6.960 s |
+| 512 / 128 | 76.522 | 144.942 | 1.8941× | 15.119 → 8.496 s |
+
+Values are medians of the two measured batches per width. Backlogged KV completion medians in run order were 1.5651, 0.7661, 0.7695 and 1.5618 s. Successful decode calls reached at most two active lanes in the wide arms and three in the narrow arms. None reached four: the B4 occupancy criterion remains failed, despite the measured serving gain and exact outputs.
+
+This supports selecting a smaller producer shape for short inputs in this configuration. It does not establish a production default, arbitrary-prompt quality, long-input support, GPU/other-model improvement, confidence intervals or device DMA overlap. Inputs above1024 require a separate wider path; the experiments here used only128 and512. Existing strict Gemma output-format quality failures remain unresolved. Qwen3-4B B4 numerical divergence also remains unresolved and is not waived by this Gemma result.
+
+Raw results, server logs, per-run host summaries and terminal queue are included. Reproduce the full audit from evidence270 with a fresh output filename:
+
+```bash
+python selfcheck_atom270_abba.py
+python audit_atom270_abba.py --queue atom270-abba-gemma-outer.json --output abba-recomputed.json
+```
+
+The self-check uses explicitly derived fixtures and rejects eight corruption types; it is not another hardware measurement. The CPU readiness control requires the PR266 test/runtime stack and tests synthetic all-global KV, not Gemma sliding-window hardware. The four-model hardware cancellation/reuse/producer-death matrix is running separately; no pass is claimed here.

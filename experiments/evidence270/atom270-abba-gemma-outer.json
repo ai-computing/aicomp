@@ -1,0 +1,159 @@
+{
+  "state": "complete",
+  "uid": "1813819b-478a-4ed1-a35a-6405d454e7cd",
+  "runs": [
+    {
+      "mode": "whole",
+      "stem": "atom270-abba-gemma-b4-r0-w8192",
+      "width": 8192,
+      "exit_code": 0,
+      "http_audit": {
+        "stage": "passed",
+        "conditions": 4,
+        "warmups": 4,
+        "correctness_responses": 64,
+        "timed_text_responses": 64
+      },
+      "geometry": {
+        "batch_size": 4,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "3": 0
+        },
+        "opened": [
+          "/dev/rbln3"
+        ]
+      },
+      "occupancy_audit": {
+        "stage": "failed",
+        "histogram": [
+          0,
+          9554,
+          437,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "mode": "whole",
+      "stem": "atom270-abba-gemma-b4-r1-w1024",
+      "width": 1024,
+      "exit_code": 0,
+      "http_audit": {
+        "stage": "passed",
+        "conditions": 4,
+        "warmups": 4,
+        "correctness_responses": 64,
+        "timed_text_responses": 64
+      },
+      "geometry": {
+        "batch_size": 4,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "3": 0
+        },
+        "opened": [
+          "/dev/rbln3"
+        ]
+      },
+      "occupancy_audit": {
+        "stage": "failed",
+        "histogram": [
+          0,
+          2745,
+          2124,
+          1145,
+          0
+        ]
+      }
+    },
+    {
+      "mode": "whole",
+      "stem": "atom270-abba-gemma-b4-r2-w1024",
+      "width": 1024,
+      "exit_code": 0,
+      "http_audit": {
+        "stage": "passed",
+        "conditions": 4,
+        "warmups": 4,
+        "correctness_responses": 64,
+        "timed_text_responses": 64
+      },
+      "geometry": {
+        "batch_size": 4,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "3": 0
+        },
+        "opened": [
+          "/dev/rbln3"
+        ]
+      },
+      "occupancy_audit": {
+        "stage": "failed",
+        "histogram": [
+          0,
+          2736,
+          1899,
+          1298,
+          0
+        ]
+      }
+    },
+    {
+      "mode": "whole",
+      "stem": "atom270-abba-gemma-b4-r3-w8192",
+      "width": 8192,
+      "exit_code": 0,
+      "http_audit": {
+        "stage": "passed",
+        "conditions": 4,
+        "warmups": 4,
+        "correctness_responses": 64,
+        "timed_text_responses": 64
+      },
+      "geometry": {
+        "batch_size": 4,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "3": 0
+        },
+        "opened": [
+          "/dev/rbln3"
+        ]
+      },
+      "occupancy_audit": {
+        "stage": "failed",
+        "histogram": [
+          0,
+          9200,
+          614,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "cleanup_exit_code": 0
+}
