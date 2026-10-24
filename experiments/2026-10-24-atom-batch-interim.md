@@ -155,7 +155,7 @@ Gemma3-1B, Qwen3-0.6B, Qwen3-4B and KONI-8B each completed one direct-batcher co
 | Qwen3-4B | [0,120,120,376,15] | [0,110,110,386,15] | [0,108,108,403,0] |
 | KONI-8B (TP2) | [0,174,174,322,15] | [0,164,164,332,15] | [0,171,171,340,0] |
 
-The longer512-output workload achieved real four-active-lane calls in control/reuse. This does not erase the short-output occupancy failures above. In all four models, both injected faults occurred with host-pending victim KV and **zero victim device-import spans**. Hardware safety after partial victim KV import remains unproven. Gemma's multilane hybrid path deliberately defers import; its guard has not been removed.
+The longer512-output workload achieved real four-active-lane calls in control/reuse. This does not erase the short-output occupancy failures above. In all four models, both injected faults occurred with host-pending victim KV and **zero victim device-import spans**. At this stage hardware safety after partial victim KV import was unproven; the follow-up below covers the three dense models. Gemma's multilane hybrid path deliberately defers import; its guard has not been removed.
 
 The terminal queue and raw arrays were independently audited: eight fault cases,12,288 survivor-token comparisons and64 replacement-token comparisons match; all four owned Pods were cleaned up successfully. The separate Qwen3-4B B4 lane-dependent numerical divergence remains unresolved despite the same-lane fault test passing. Its three survivor control lanes happened to agree for this fixture on the RNGD-prefill route; that does not waive independent native-prefill failures on other prompts. Compact audits and source driver are included; raw token arrays are archived separately with full hashes and research event IDs in fault-evidence-manifest.json. Remote archive synchronization has not been independently verified. The driver requires the PR266 runtime and original hardware harness; it is not standalone on main.
 
@@ -185,4 +185,28 @@ Import host totals inABBAorder:76.672,95.628,98.060,78.305s, with132,3696,3696,1
 
 The first attempt's whole arm passed132responses but its controller rejected missing binding logs caused by the older bootstrap configuration; it cleaned up its Pod. Those data were preserved separately and excluded from this ABBA. All four accepted arms were rerun after fixing the bootstrap and adding a preallocation guard. No production engine/default changed.
 
-Compact audit: atom270-qwen06-regression-retry1-audit.json. Eight raw results/logs remain outside Git; qwen06-regression-evidence-manifest.json records full hashes and research event ID. Remote archive synchronization has not been independently verified. For each restored raw result, use the included audit_http265.audit_result with backend atom, mode whole/stream, lengths=(2048,8192), expected_slots=4 and expected_atom_devices=1; compare complete reference dictionaries across arms and recompute median summaries from batches. This evidence does not waive the remaining Qwen4 native numerics, Gemma quality or hardware partial-victim-import gaps.
+Compact audit: atom270-qwen06-regression-retry1-audit.json. Eight raw results/logs remain outside Git; qwen06-regression-evidence-manifest.json records full hashes and research event ID. Remote archive synchronization has not been independently verified. For each restored raw result, use the included audit_http265.audit_result with backend atom, mode whole/stream, lengths=(2048,8192), expected_slots=4 and expected_atom_devices=1; compare complete reference dictionaries across arms and recompute median summaries from batches. This evidence does not waive the remaining Qwen4 native numerics, Gemma quality or remaining hybrid partial-import limits.
+
+
+## Dense B4 faults after actual victim import (2026-10-25)
+
+The earlier hardware triggers occurred before device import. The strict follow-up driver waits for a positive victim progress-span count after the real import call, with the producer still pending, three active survivors, and the victim not admitted. No runtime or SDK behavior is patched. A separate driver preserves the original test and evidence. Gemma multilane hybrid import remains deliberately deferred and is excluded from this trigger.
+
+All three dense models passed cancellation/reuse and producer-death on RNGD→ATOM, B4/k5/context9216/producer-width8192. Survivors use512-input/512-output tokens, victim8192/16, replacement512/16. KONI usesTP2; Qwen modelsTP1. Runtime source hashes are included in the compact audit; the PR266 runtime and the same ATOM/RNGD SDK environment documented above are required.
+
+| Model | Victim spans at cancel/death | Active survivor tokens at cancel | At producer death |
+|---|---|---|---|
+| Qwen3-0.6B | 1 / 1 | 206,109,11 | 192,94,8 |
+| Qwen3-4B | 1 / 1 | 115,57,6 | 108,55,5 |
+| KONI-8B TP2 | 1 / 1 | 178,91,7 | 182,90,6 |
+
+Independent raw-array audit confirms9216 survivor-token comparisons and48 replacement-token comparisons exact against same-lane controls. Both controllers exited0; all three owned Pods were cleaned up and the task namespace was empty. The audit rejects the previous zero-import result. The test proves isolation for these fault points and fixtures; it does not prove correctness for every import boundary, native-reference parity, semantic quality, or a throughput improvement. Qwen4 native lane-dependent numerics remain unresolved. Hardware import is observed through the real SDK import call returning and the engine progress counter; no separate physical DMA trace is claimed.
+
+Reproduce using the existing PR266 hardware harness, an already compiled B4/k5/context9216 artifact, and the allocated task devices. MODEL/FAMILY/TP are Qwen/Qwen3-0.6B/qwen/1, Qwen/Qwen3-4B/qwen/1 or KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024/koni/2. Supply site paths through local variables:
+
+```bash
+"$ATOM_PYTHON" container_bootstrap270.py check_atom270_b4_imported_faults.py --model "$MODEL" --family "$FAMILY" --cache-dir "$CACHE_DIR" --tensor-parallel-size "$TP" --worker-python "$WORKER_PYTHON" --output "$RAW_RESULT"
+python3 experiments/evidence270/audit_atom270_imported_faults.py "$RAW_RESULT"
+```
+
+Raw token arrays stay outside Git; imported-fault-evidence-manifest.json records hashes and the research event ID. Remote archive synchronization is unverified. The included driver requires the existing bootstrap, atom_server270_http helpers, streaming factory and task worker environment; it is not standalone on main.
