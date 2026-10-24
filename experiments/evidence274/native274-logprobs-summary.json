@@ -1,0 +1,1000 @@
+{
+  "raw_sha256": "cd8ef6d6c7dcea86800700c6b51477e6eefdcd49771a598c379a4374d32ec534",
+  "responses": 168,
+  "instrumented": 84,
+  "errors": 0,
+  "same_condition_token_multisets_all_arms": true,
+  "first_divergences": [
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 2,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 0,
+      "first_divergence": 14,
+      "reference_token": 779,
+      "batch_token": 10035,
+      "reference_pair_logprobs": [
+        -0.9704664945602417,
+        -0.9704664945602417
+      ],
+      "batch_pair_logprobs": [
+        -1.0509388446807861,
+        -0.925118625164032
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 3,
+      "first_divergence": 14,
+      "reference_token": 779,
+      "batch_token": 10035,
+      "reference_pair_logprobs": [
+        -0.9704664945602417,
+        -0.9704664945602417
+      ],
+      "batch_pair_logprobs": [
+        -1.0509388446807861,
+        -0.925118625164032
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 1,
+      "first_divergence": 14,
+      "reference_token": 779,
+      "batch_token": 10035,
+      "reference_pair_logprobs": [
+        -0.9704664945602417,
+        -0.9704664945602417
+      ],
+      "batch_pair_logprobs": [
+        -1.0509388446807861,
+        -0.925118625164032
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 10,
+      "first_divergence": 49,
+      "reference_token": 2822,
+      "batch_token": 31879,
+      "reference_pair_logprobs": [
+        -2.143980026245117,
+        -2.143980026245117
+      ],
+      "batch_pair_logprobs": [
+        -2.186539649963379,
+        -2.1233608722686768
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 3,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 14,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 13,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 1,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 15,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 11,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 5,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 12,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 2,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 0,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 6,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 8,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 4,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 9,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 4,
+      "request_index": 3,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.2013720273971558,
+        -1.2013720273971558
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 4,
+      "request_index": 0,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.194899559020996,
+        -1.194899559020996
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 9,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.7959069013595581,
+        -0.6699801087379456
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 1,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.8002453446388245,
+        -0.6776430010795593
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 7,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.8002453446388245,
+        -0.6776430010795593
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 14,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.2013720273971558,
+        -1.2013720273971558
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 12,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.1820788383483887,
+        -1.1820788383483887
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 10,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.1757296323776245,
+        -1.1757296323776245
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 2,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.194899559020996,
+        -1.194899559020996
+      ]
+    },
+    {
+      "arm": "b1",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 4,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.8002453446388245,
+        -0.6776430010795593
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 0,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 3,
+      "first_divergence": 14,
+      "reference_token": 779,
+      "batch_token": 10035,
+      "reference_pair_logprobs": [
+        -0.9704664945602417,
+        -0.9704664945602417
+      ],
+      "batch_pair_logprobs": [
+        -1.0509388446807861,
+        -0.925118625164032
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 1,
+      "first_divergence": 14,
+      "reference_token": 779,
+      "batch_token": 10035,
+      "reference_pair_logprobs": [
+        -0.9704664945602417,
+        -0.9704664945602417
+      ],
+      "batch_pair_logprobs": [
+        -1.0509388446807861,
+        -0.925118625164032
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 4,
+      "request_index": 2,
+      "first_divergence": 14,
+      "reference_token": 779,
+      "batch_token": 10035,
+      "reference_pair_logprobs": [
+        -0.9704664945602417,
+        -0.9704664945602417
+      ],
+      "batch_pair_logprobs": [
+        -1.0509388446807861,
+        -0.925118625164032
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 9,
+      "first_divergence": 49,
+      "reference_token": 2822,
+      "batch_token": 31879,
+      "reference_pair_logprobs": [
+        -2.143980026245117,
+        -2.143980026245117
+      ],
+      "batch_pair_logprobs": [
+        -2.186539649963379,
+        -2.1233608722686768
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 14,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 15,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 2,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 1,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 4,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 0,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 7,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2547179460525513,
+        -1.2547179460525513
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 11,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 13,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 12,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 3,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 10,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 5,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 128,
+      "concurrency": 16,
+      "request_index": 8,
+      "first_divergence": 11,
+      "reference_token": 11190,
+      "batch_token": 4495,
+      "reference_pair_logprobs": [
+        -1.2144441604614258,
+        -1.282497525215149
+      ],
+      "batch_pair_logprobs": [
+        -1.2966822385787964,
+        -1.2343783378601074
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 4,
+      "request_index": 1,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.2013720273971558,
+        -1.2013720273971558
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 4,
+      "request_index": 3,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.194899559020996,
+        -1.194899559020996
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 15,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.7959069013595581,
+        -0.6699801087379456
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 5,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.8002453446388245,
+        -0.6776430010795593
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 2,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.8002453446388245,
+        -0.6776430010795593
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 9,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.2013720273971558,
+        -1.2013720273971558
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 13,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.1820788383483887,
+        -1.1820788383483887
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 12,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.1757296323776245,
+        -1.1757296323776245
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 7,
+      "first_divergence": 98,
+      "reference_token": 18112,
+      "batch_token": 16924,
+      "reference_pair_logprobs": [
+        -1.1694204807281494,
+        -1.2966822385787964
+      ],
+      "batch_pair_logprobs": [
+        -1.194899559020996,
+        -1.194899559020996
+      ]
+    },
+    {
+      "arm": "b2",
+      "input": 8192,
+      "concurrency": 16,
+      "request_index": 11,
+      "first_divergence": 37,
+      "reference_token": 279,
+      "batch_token": 44564,
+      "reference_pair_logprobs": [
+        -0.737066388130188,
+        -0.737066388130188
+      ],
+      "batch_pair_logprobs": [
+        -0.8002453446388245,
+        -0.6776430010795593
+      ]
+    }
+  ],
+  "limitations": [
+    "Top5 reported log probabilities, not raw logits",
+    "Shared token prefix does not establish identical hidden states or KV tensors",
+    "No specific kernel or compiler root cause identified"
+  ]
+}

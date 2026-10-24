@@ -1,0 +1,13 @@
+{
+  "source_sha256": "14a5c1547127021782cace785a3b2018d478852fa6f8752491ab8e4372781b3d",
+  "cases": 36,
+  "answers_correct": 31,
+  "format_correct": 34,
+  "all_finish_stop": true,
+  "errors": 0,
+  "scope": "Sequential frozen synthetic quality cases, not concurrent quality or general model benchmark",
+  "explicit_eos_ids": [
+    128001,
+    128009
+  ]
+}
