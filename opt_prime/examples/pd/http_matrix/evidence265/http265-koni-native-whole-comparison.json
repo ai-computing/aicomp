@@ -1,0 +1,98 @@
+{
+  "scope": "Fixed synthetic prompts,ignore_eos. Same-route checks pass; cross-route strict and EOS comparisons separate. No answer-quality claim.",
+  "eos_token_ids": [
+    128001,
+    128009
+  ],
+  "conditions": [
+    {
+      "condition": "128:128",
+      "tokens_exact": false,
+      "first_difference_zero_based": 64,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true,
+      "tokens_equal_through_first_eos": false
+    },
+    {
+      "condition": "128:32",
+      "tokens_exact": true,
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "2048:128",
+      "tokens_exact": false,
+      "first_difference_zero_based": 56,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true,
+      "tokens_equal_through_first_eos": false
+    },
+    {
+      "condition": "2048:32",
+      "tokens_exact": true,
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "512:128",
+      "tokens_exact": true,
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "512:32",
+      "tokens_exact": true,
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    },
+    {
+      "condition": "8192:128",
+      "tokens_exact": false,
+      "first_difference_zero_based": 98,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": true,
+      "tokens_equal_through_first_eos": false
+    },
+    {
+      "condition": "8192:32",
+      "tokens_exact": true,
+      "first_difference_zero_based": null,
+      "first_eos_zero_based": [
+        null,
+        null
+      ],
+      "difference_before_either_eos": false,
+      "tokens_equal_through_first_eos": true
+    }
+  ],
+  "eos_source": "Union of generation_config.eos_token_id and tokenizer EOS, matching serving policy#229"
+}

@@ -43,5 +43,20 @@
     "model": "gemma",
     "mode": "stream",
     "exit_code": 0
+  },
+  {
+    "model": "koni",
+    "mode": "native",
+    "exit_code": 0
+  },
+  {
+    "model": "koni",
+    "mode": "whole",
+    "exit_code": 0
+  },
+  {
+    "model": "koni",
+    "mode": "stream",
+    "exit_code": 0
   }
 ]

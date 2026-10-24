@@ -111,3 +111,7 @@ Qwen0.6/Qwen4 native/whole/stream six modes independently pass eight conditions 
 ## Gemma HTTP c16 follow-up (#265)
 
 Allthree modes independently pass8conditions each;whole/stream exact. Native strict4/8 differences occur afterEOS;throughEOS8/8 on these fixtures only. Observed+1.51–3.17% throughput is small and needs repeat measurements. Earlier Gemma content/numerical counterexamples remain. KONI GPU and remainingATOM cases active. See experiments/2026-10-24-stream265-gemma-http.md.
+
+## GPU HTTP c16 matrix completed (#265)
+
+Allfour models x3modes completed:96conditions,1536token checks,1536SSE text checks. Whole/stream exact8/8 permodel. Native/whole exact Qwen06=8/8,Qwen4=4/8,Gemma=4/8(EOStrim8/8),KONI=5/8;earlier numerical/quality failures retained. KONI observed throughput+20.94–33.93%,single batches only. RemainingATOMmatrix andwidth268 probes active. See experiments/2026-10-24-stream265-gpu-http-complete.md.
