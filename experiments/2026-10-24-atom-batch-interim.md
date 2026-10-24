@@ -107,7 +107,7 @@ For whole mode, backlogged completion-gap medians remain about 1.55 s at every i
 
 Whole initialization took 840.58 s and subsequent stream initialization 18.40 s. This warm-state difference is not isolated. Do not assume every startup takes 14 minutes or attribute the difference to streaming alone.
 
-Raw HTTP results and host-timeline logs are included under evidence270. Recompute host summaries with the included analyzer (use a new output filename; overwrites are rejected):
+Raw HTTP results and host-timeline logs are registered as research-hub attachments, identified by `raw-evidence-manifest.json` (research event `578a57666040434b90f5b76a51871973`). Remote synchronization has not been independently checked. Restore those exact files into evidence270 and verify their hashes before recomputing host summaries (use a new output filename; overwrites are rejected):
 
 ```bash
 python analyze_timeline270.py atom270-timeline-gemma-b4-whole.server0.log --output whole-recomputed.json
@@ -134,11 +134,11 @@ Values are medians of the two measured batches per width. Backlogged KV completi
 
 This supports selecting a smaller producer shape for short inputs in this configuration. It does not establish a production default, arbitrary-prompt quality, long-input support, GPU/other-model improvement, confidence intervals or device DMA overlap. Inputs above1024 require a separate wider path; the experiments here used only128 and512. Existing strict Gemma output-format quality failures remain unresolved. Qwen3-4B B4 numerical divergence also remains unresolved and is not waived by this Gemma result.
 
-Raw results, server logs, per-run host summaries and terminal queue are included. Reproduce the full audit from evidence270 with a fresh output filename:
+Per-run host summaries and the terminal queue are included. Raw results/logs remain in the separate research archive above, as required by the contribution guide. After restoring the hash-matched raw files, reproduce the full audit from evidence270 with a fresh output filename:
 
 ```bash
 python selfcheck_atom270_abba.py
 python audit_atom270_abba.py --queue atom270-abba-gemma-outer.json --output abba-recomputed.json
 ```
 
-The self-check uses explicitly derived fixtures and rejects eight corruption types; it is not another hardware measurement. The CPU readiness control requires the PR266 test/runtime stack and tests synthetic all-global KV, not Gemma sliding-window hardware. The four-model hardware cancellation/reuse/producer-death matrix is running separately; no pass is claimed here.
+The self-check uses small synthetic fixtures and rejects eight corruption types; it runs without archived data and is not another hardware measurement. The CPU readiness control requires the PR266 test/runtime stack and tests synthetic all-global KV, not Gemma sliding-window hardware. The four-model hardware cancellation/reuse/producer-death matrix is running separately; no pass is claimed here.
