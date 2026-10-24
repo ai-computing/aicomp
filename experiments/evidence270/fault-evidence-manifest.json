@@ -1,0 +1,15 @@
+{
+  "storage": "research-hub artifact attachments; registered locally, remote sync not independently verified",
+  "files": {
+    "atom270-fault-b4-gemma.json": {
+      "sha256": "83b17d8acf98989a1e1df0dbb263cdf9588b3aa56b1942c29024458985227821",
+      "bytes": 71897,
+      "research_event_id": "24e3094043994026b5acb35209abcabe"
+    },
+    "atom270-fault-b4-qwen06b.json": {
+      "sha256": "e61b9829ed90c84f08186b84ab42c5a6472ed8e5a55cb37e20af92b653f0a0e2",
+      "bytes": 74403,
+      "research_event_id": "a5225a891b594a978d45f0464fca32f5"
+    }
+  }
+}

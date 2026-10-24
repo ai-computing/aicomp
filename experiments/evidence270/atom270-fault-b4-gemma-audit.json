@@ -1,0 +1,75 @@
+{
+  "model": "unsloth/gemma-3-1b-it",
+  "stage": "audited",
+  "source_sha256": "83b17d8acf98989a1e1df0dbb263cdf9588b3aa56b1942c29024458985227821",
+  "survivors": 3,
+  "survivor_output_tokens": 512,
+  "replacement_output_tokens": 16,
+  "cases": {
+    "control": {
+      "case": "control",
+      "histogram": [
+        0,
+        220,
+        220,
+        276,
+        15
+      ]
+    },
+    "cancel-reuse": {
+      "case": "cancel-reuse",
+      "trigger": {
+        "host_pending": true,
+        "victim_imported_spans": 0,
+        "slot": 3,
+        "active_tokens": [
+          225,
+          110,
+          4
+        ],
+        "progress_spans": 78,
+        "admitted": false
+      },
+      "histogram": [
+        0,
+        221,
+        221,
+        275,
+        15
+      ],
+      "survivors_exact": true,
+      "idle": true,
+      "poisoned": false,
+      "replacement_exact": true
+    },
+    "producer-death": {
+      "case": "producer-death",
+      "trigger": {
+        "host_pending": true,
+        "victim_imported_spans": 0,
+        "slot": 3,
+        "active_tokens": [
+          215,
+          103,
+          3
+        ],
+        "progress_spans": 78,
+        "admitted": false
+      },
+      "histogram": [
+        0,
+        212,
+        212,
+        299,
+        0
+      ],
+      "survivors_exact": true,
+      "idle": true,
+      "poisoned": false,
+      "victim_error": "RuntimeError('prefill subprocess response failed: prefill subprocess exited')"
+    }
+  },
+  "producer_startup_s": 779.9282271610573,
+  "decoder_load_s": 4.666098878020421,
+  "limits": "One direct-batcher hardware control/cancel-reuse/producer-death sequence, same compiled B4 artifact. Not HTTP disconnect coverage, arbitrary workload quality, or compiler-cache reuse proof."
+}
