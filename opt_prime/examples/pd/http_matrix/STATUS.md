@@ -103,3 +103,7 @@ Allfour models pass all3 actual cases (12 total), independently comparing retain
 ## Complete c16 queued streaming matrix (#265)
 
 Four models complete32batches/512sequences exact, c16 queued behind4slots, mixed2K/8K fixed128output. Whole-to-stream median completion reductions25.20/20.02/2.33/20.91% (Q06/Q4/Gemma/KONI),3samples/mode. Full independent auditor and its malformed-evidence self-check pass; queue0/devices idle verified. See experiments/2026-10-24-stream265-c16.md. HTTPc16 runs are separate and still in progress; numerical boundaries remain.
+
+## Qwen HTTP c16 streaming (#265)
+
+Qwen0.6/Qwen4 native/whole/stream six modes independently pass eight conditions each. Whole/stream references exact. Qwen4 observed throughput22.1–27.2% above whole in single batches; native/PD numerical differences remain. Short-input PD remains slower, fixedwidth8192 cost is not yet isolated. Gemma/KONI and ATOM matrix pending. See experiments/2026-10-24-stream265-qwen-http.md and evidence265.

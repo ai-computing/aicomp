@@ -1,0 +1,15 @@
+{
+  "stage": "prepared_not_executed",
+  "runtime_head": "5978c35d9d478a62c6e30819f03e7962925c1ae1",
+  "sha256": {
+    "http_driver": "37884efe3d87506437eb0c2dee4a8ee31fbbf75c13b553656e70ee48f88c05b3",
+    "benchmark": "cfd4821e2a2112f3fcf7f242f3e76efe47134640e4bf22b3b63fb808be6148f0",
+    "http_module": "9f97e5a9b270dc5719e339748a6d6bdccbe6dfdf5267c1dd4451bab123687975",
+    "source_launcher": "1a417cc6dde8ec6837362153406e618b006169513851131f8d324ff46aa96d9a",
+    "serve_batched": "cf509e2c392a39aab7b47d7296447ff62cc8237e193e42d7d9cd76fdc47d9c30",
+    "factories": "77745350973cc54bf508e0c8b473efc442afef20b1c64f7c4edc179ea1471389",
+    "pd_batching": "c827775c1d399bf724a9747c3424ee5ea69f93054493bfbb71d5f0cf08fff65b",
+    "prefill_server": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d"
+  },
+  "scope": "HTTP c16 smoke; hashes captured before launch; recheck if code changes"
+}
