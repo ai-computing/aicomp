@@ -119,3 +119,16 @@ Q1/Q2 each score32/36 strict answers and35/36 formats; C1/C2 each score31/36 ans
 Compared with separate cache-off runs, sequential output differs on passkey-0-8192 (strict format/answer failure becomes success); concurrent output differs on that same case in the opposite direction. C1 also changes JSON whitespace on passkey-0-2048 without changing its score. Therefore neither universal output equivalence nor a general quality gain is established. This36-case synthetic set does not isolate cache corruption or the numerical root cause. No equivalent-output performance gain is claimed. Raw hashes, counters and per-case changes are in evidence274/native276-quality-summary.json.
 
 Reproduction: use the sequential and concurrent quality clients above, same frozen fixtures and explicit EOS IDs128001/128009, with --enable-prefix-caching and process-local FURIOSA_SERVER_DEV_MODE=1. Require successful all-tier reset before Q1 and C1 only, and capture /metrics before/after all four passes. Exact site-specific controller is retained with raw local artifacts and is not published.
+
+## Native context boundaries and recovery (#277)
+
+Same assigned RNGD, two consecutive server launches with cache off/on; only the cache CLI switch changed. KONI snapshot/FXB/SDK unchanged, runtime context9216. Each mode completed15requests: one baseline, seven probes and seven normal recovery requests. All30rows pass status, length, echoed-input and health checks;14/14recoveries exactly match their same-server32-token reference. Accepted outputs also match across these two cache modes.
+
+Accepted (input,output) pairs: (9214,1),(9215,1),(9212,4). Rejected withHTTP400: (9216,1),(9217,1),(9215,2),(128,-1). Error bodies identify context overflow or negative max_tokens. This confirms input plus requested output is checked at context9216. All requests use repeated valid token1000, temperature0, ignore_eos=true. It is a capacity/recovery probe, not semantic quality or a realistic latency benchmark. No concurrent cancellation coverage is implied.
+
+Raw response hashes, statuses and per-request durations: evidence274/native277-boundary-summary.json. Task-specific client preserves unexpected responses and proceeds to recovery; controller exit0 is not by itself a passing result. The local HTTP fixture checks accepted/rejected paths, a simulatedHTTP500 retained as failure with continued recovery, and exclusive output protection. Both hardware controllers exited0 and stopped only their own servers.
+
+```bash
+python3 experiments/evidence274/selfcheck_native277_boundary.py
+python3 experiments/evidence274/native277_boundary.py --endpoint "$OWNED_ENDPOINT" --model "$KONI_SNAPSHOT" --output "$NEW_OUTPUT" --capacity 9216
+```

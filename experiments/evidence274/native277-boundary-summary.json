@@ -1,0 +1,340 @@
+{
+  "capacity": 9216,
+  "model": "KONI-Llama3.1-8B-Instruct-20241024",
+  "sdk": "2026.4",
+  "arms": {
+    "off": {
+      "raw_sha256": "be5759970e4933de20fa1ecb6644cdf4e23a852b153e3dc902cea9fb1c13a926",
+      "requests": 15,
+      "passed": 15,
+      "rejected": 4,
+      "exact_recoveries": 7,
+      "cases": [
+        {
+          "case": "baseline",
+          "kind": "baseline",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.5058761920081452,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "below_edge",
+          "kind": "boundary",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 1.159803549060598,
+          "input_tokens": 9214,
+          "max_tokens": 1,
+          "output_tokens": 1
+        },
+        {
+          "case": "below_edge-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4837102129822597,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "exact_edge_one",
+          "kind": "boundary",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 1.0245060790330172,
+          "input_tokens": 9215,
+          "max_tokens": 1,
+          "output_tokens": 1
+        },
+        {
+          "case": "exact_edge_one-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4861153580714017,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "exact_edge_four",
+          "kind": "boundary",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 1.079422948998399,
+          "input_tokens": 9212,
+          "max_tokens": 4,
+          "output_tokens": 4
+        },
+        {
+          "case": "exact_edge_four-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4909511589212343,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "prompt_at_capacity",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.005448329029604793,
+          "input_tokens": 9216,
+          "max_tokens": 1,
+          "output_tokens": 0,
+          "error_message": "This model's maximum context length is 9216 tokens, but the request totals 9217 tokens (9216 input + 1 completion). Please reduce the input length or max_tokens."
+        },
+        {
+          "case": "prompt_at_capacity-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4888267059577629,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "prompt_over_capacity",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.003927721991203725,
+          "input_tokens": 9217,
+          "max_tokens": 1,
+          "output_tokens": 0,
+          "error_message": "This model's maximum context length is 9216 tokens, but the request totals 9218 tokens (9217 input + 1 completion). Please reduce the input length or max_tokens."
+        },
+        {
+          "case": "prompt_over_capacity-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4888016649056226,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "total_over_capacity",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.0065952109871432185,
+          "input_tokens": 9215,
+          "max_tokens": 2,
+          "output_tokens": 0,
+          "error_message": "This model's maximum context length is 9216 tokens, but the request totals 9217 tokens (9215 input + 2 completion). Please reduce the input length or max_tokens."
+        },
+        {
+          "case": "total_over_capacity-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.491617914987728,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "negative_output",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.0020182819571346045,
+          "input_tokens": 128,
+          "max_tokens": -1,
+          "output_tokens": 0,
+          "error_message": "max_tokens must be at least 1, got -1."
+        },
+        {
+          "case": "negative_output-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.48889323603361845,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        }
+      ]
+    },
+    "on": {
+      "raw_sha256": "96fa73a8a15594d2f0560c20ec5fa08500f797ae37b226a5e40f6371f47a19f3",
+      "requests": 15,
+      "passed": 15,
+      "rejected": 4,
+      "exact_recoveries": 7,
+      "cases": [
+        {
+          "case": "baseline",
+          "kind": "baseline",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.49774592800531536,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "below_edge",
+          "kind": "boundary",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 1.2256891400320455,
+          "input_tokens": 9214,
+          "max_tokens": 1,
+          "output_tokens": 1
+        },
+        {
+          "case": "below_edge-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.48239116300828755,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "exact_edge_one",
+          "kind": "boundary",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.048756664036773145,
+          "input_tokens": 9215,
+          "max_tokens": 1,
+          "output_tokens": 1
+        },
+        {
+          "case": "exact_edge_one-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4866940589854494,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "exact_edge_four",
+          "kind": "boundary",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.09909393498674035,
+          "input_tokens": 9212,
+          "max_tokens": 4,
+          "output_tokens": 4
+        },
+        {
+          "case": "exact_edge_four-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4808494650060311,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "prompt_at_capacity",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.005969544989056885,
+          "input_tokens": 9216,
+          "max_tokens": 1,
+          "output_tokens": 0,
+          "error_message": "This model's maximum context length is 9216 tokens, but the request totals 9217 tokens (9216 input + 1 completion). Please reduce the input length or max_tokens."
+        },
+        {
+          "case": "prompt_at_capacity-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4807716839713976,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "prompt_over_capacity",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.005857231910340488,
+          "input_tokens": 9217,
+          "max_tokens": 1,
+          "output_tokens": 0,
+          "error_message": "This model's maximum context length is 9216 tokens, but the request totals 9218 tokens (9217 input + 1 completion). Please reduce the input length or max_tokens."
+        },
+        {
+          "case": "prompt_over_capacity-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4785035600652918,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "total_over_capacity",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.005811812006868422,
+          "input_tokens": 9215,
+          "max_tokens": 2,
+          "output_tokens": 0,
+          "error_message": "This model's maximum context length is 9216 tokens, but the request totals 9217 tokens (9215 input + 2 completion). Please reduce the input length or max_tokens."
+        },
+        {
+          "case": "total_over_capacity-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.48051541100721806,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        },
+        {
+          "case": "negative_output",
+          "kind": "boundary",
+          "status": 400,
+          "passed": true,
+          "elapsed_seconds": 0.0022260339464992285,
+          "input_tokens": 128,
+          "max_tokens": -1,
+          "output_tokens": 0,
+          "error_message": "max_tokens must be at least 1, got -1."
+        },
+        {
+          "case": "negative_output-recovery",
+          "kind": "recovery",
+          "status": 200,
+          "passed": true,
+          "elapsed_seconds": 0.4802510580047965,
+          "input_tokens": 128,
+          "max_tokens": 32,
+          "output_tokens": 32
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Sequential single-server capacity/recovery test, not concurrent cancellation or model-quality certification",
+    "Repeated valid token1000 input; not a realistic latency workload"
+  ],
+  "cross_cache_output_equal": true,
+  "same_assigned_device": true,
+  "only_server_argv_change": "--no-enable-prefix-caching -> --enable-prefix-caching"
+}
