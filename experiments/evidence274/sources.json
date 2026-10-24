@@ -9,5 +9,8 @@
   "native201-four-model-support-summary.json": "ebf620474c5ad98dd19ff2582de3ab0aa36f7be2cd3a77044c767c36eb0bbbeb",
   "native201-koni-http-summary.json": "1a7ccd5edfb4842aefe1b22b9bf1dfab12b15ec507bc258102b448c4067c2ba2",
   "native201-koni-quality-summary.json": "dc7702ddbc4e8ffd3e6b2b7c12df3e3bde29d054cdec2a5d1dae6852fbedf3d1",
-  "native274-abba-summary.json": "492a92e9e81b4c1bca5693cda787dd8c5f887ca1d6fa595c546e51a397531a4b"
+  "native274-abba-summary.json": "492a92e9e81b4c1bca5693cda787dd8c5f887ca1d6fa595c546e51a397531a4b",
+  "native274_logprobs.py": "4767782c0381f0a38a9d99b1b97b0c4630a7e2a75de7a526cbac2d0f4ae69eb3",
+  "selfcheck_native274_logprobs.py": "f8f29025a57eb841d362ec1269c8575aab6c9114f879e431e81b5f304679a693",
+  "native274-logprobs-summary.json": "b5fa5cd02bdd51b278115e14e3c8c71519f4b163adc5f51b09fc106670e81aa6"
 }

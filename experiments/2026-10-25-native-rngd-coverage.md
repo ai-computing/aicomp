@@ -62,3 +62,20 @@ python3 experiments/evidence274/selfcheck_native201_quality.py
 Same physical RNGD/Pod, four fresh server processes in default/off/off/default order, same model/FXB/input IDs/cache settings. The only server-config difference was --no-profile-guided-decode-batching. All four arms completed6conditions/86responses each (344total) and failed exact parity:29/42 token checks and29/42 SSE text checks in every arm. The two c1reference records, per-condition token-sequence multisets and per-condition SSE-text multisets were identical across all four arms. Request identities were not assumed to map to the same physical lane. Summary and raw hashes: evidence274/native274-abba-summary.json.
 
 This public setting did not remove the failure on the tested cases. It does not prove the general scheduler or compiler is uninvolved. The two-run mean throughput change with the option disabled ranged+0.14% to+2.56%, while A2 was slower than A1 in all six conditions. Two observations/configuration and this temporal drift do not establish a stable speedup. No default change is recommended from these data. All servers stopped and the owned Pod was UID-checked and deleted (exit0). Original numerical/compiler cause, broader native model registry support and concurrent held-out quality remain open.
+
+## Public log-probability observation completed
+
+168/168 responses completed,84 with top5 log probabilities,zero errors. All four arms have identical condition-level generated-token multisets; this diagnostic option did not change the output distribution in these cases. The58 divergent instrumented responses have identical generated histories to their corresponding c1reference before their first divergent step. Both competing token IDs are present in all58reported candidate pairs; the reference candidate is at least tied highest between the pair for c1, and the other candidate is at least tied highest in the concurrent response.
+
+Examples (B1): short first divergence11: reference token11190 vs4495 has logprob -1.214444/-1.282498 at c1, versus a tie -1.254718/-1.254718 at c4. Long divergence98:18112 vs16924 is -1.169420/-1.296682 at c1 versus a tie -1.201372/-1.201372 at c4. Other observed first-divergence positions14/49(short) and37(long) show changes from a c1tie to a preference for the alternative token.
+
+These observations support batch-dependent changes in reported candidate probabilities, rather than only a different tie-break decision on otherwise identical probabilities. They do not establish identical hidden/KV state, full raw logits, the precision used at each layer, or a particular faulty compiler/kernel transformation. Raw source hash and every compared pair are in native274-logprobs-summary.json; no output forcing or correction was applied. Controller exit0; server terminated by owner after completion (return-15). Pod cleanup confirmation is recorded separately.
+
+Reproduce against an owned, unchanged native server:
+
+```bash
+python3 experiments/evidence274/native274_logprobs.py --endpoint "$ENDPOINT" --model "$KONI_SNAPSHOT" --source "$NATIVE_A1_RESULT_JSON" --output "$NEW_LOGPROBS_JSONL"
+python3 experiments/evidence274/selfcheck_native274_logprobs.py
+```
+
+The client runs128/8192input,128output,c1/4/16 in no-logprobs/logprobs/logprobs/no-logprobs order, uses logprobs=5 and return_tokens_as_token_ids=True, retains raw responses and verifies echoed inputs/token alignment. This diagnoses probability reporting and is not a timing comparison.
