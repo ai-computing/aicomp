@@ -79,3 +79,16 @@ python3 experiments/evidence274/selfcheck_native274_logprobs.py
 ```
 
 The client runs128/8192input,128output,c1/4/16 in no-logprobs/logprobs/logprobs/no-logprobs order, uses logprobs=5 and return_tokens_as_token_ids=True, retains raw responses and verifies echoed inputs/token alignment. This diagnoses probability reporting and is not a timing comparison.
+
+## Same-server sequential/concurrent quality completed
+
+All144 responses completed with zero request errors and finish_reason=stop. Same server, fixed model/FXB/inputs/EOS/scorer, Q1sequential→C1concurrent→C2concurrent→Q2sequential. Q1/Q2 both31/36answers and34/36formats, and all36 token sequences match between Q1/Q2. C1/C2 both32/36answers and35/36formats. Compared to Q1, C1 has2different token sequences and C2 has1. passkey-0-8192 changes from a bare correct passkey (strict format/answer failure) to the required JSON answer in both concurrent runs. passkey-0-2048 differs only in JSON whitespace in C1, with strict answer/format still correct.
+
+Thus batch dependence can affect structured-format compliance, while most cases remain unchanged. No general quality improvement, universal degradation, or engine fix follows from these36synthetic cases. Client12-request cohorts overlap in all three strata in both concurrent runs; physical execution lanes are not inferred. Raw hashes/counts/deltas are in native274-quality-summary.json. Server stopped by owner after controller exit0.
+
+Concurrent quality reproduction (same fixed36case fixtures/EOS; launch sequential client before and after two concurrent runs):
+
+```bash
+python3 experiments/evidence274/native274_quality_concurrent.py --fixtures "$FROZEN_KONI_FIXTURES" --endpoint "$ENDPOINT" --model "$KONI_SNAPSHOT" --output "$NEW_QUALITY_JSONL" --eos-token-ids 128001 128009
+python3 experiments/evidence274/selfcheck_native274_quality_concurrent.py
+```

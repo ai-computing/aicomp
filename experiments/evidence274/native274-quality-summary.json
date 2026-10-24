@@ -1,0 +1,82 @@
+{
+  "arms": {
+    "q1": {
+      "raw_sha256": "73e5c38023d3f92132bafeecf8ec6e88b3e5b192dfe2ac2f27da74d894835f76",
+      "cases": 36,
+      "answers_correct": 31,
+      "format_correct": 34,
+      "stop_completions": 36,
+      "request_errors": 0
+    },
+    "c1": {
+      "raw_sha256": "c7763f31a576641c81d5263fc55ec1a8abb0df4bf2421c33dc1706436d2c050e",
+      "cases": 36,
+      "answers_correct": 32,
+      "format_correct": 35,
+      "stop_completions": 36,
+      "request_errors": 0,
+      "cohort_client_overlap": {
+        "0": true,
+        "2048": true,
+        "8192": true
+      }
+    },
+    "c2": {
+      "raw_sha256": "3862547981b1b1e635da184e82ded1f1b386232dbfbb71220efed9fd8bd06b76",
+      "cases": 36,
+      "answers_correct": 32,
+      "format_correct": 35,
+      "stop_completions": 36,
+      "request_errors": 0,
+      "cohort_client_overlap": {
+        "0": true,
+        "2048": true,
+        "8192": true
+      }
+    },
+    "q2": {
+      "raw_sha256": "07ace35a35fa63fd95a04747fec1d3765b38e58a1b83c3f3b45df25e613f9fdf",
+      "cases": 36,
+      "answers_correct": 31,
+      "format_correct": 34,
+      "stop_completions": 36,
+      "request_errors": 0
+    }
+  },
+  "comparison_to_q1": {
+    "c1": [
+      {
+        "case": "passkey-0-2048",
+        "token_equal": false,
+        "answer_before": true,
+        "answer_after": true,
+        "format_before": true,
+        "format_after": true
+      },
+      {
+        "case": "passkey-0-8192",
+        "token_equal": false,
+        "answer_before": false,
+        "answer_after": true,
+        "format_before": false,
+        "format_after": true
+      }
+    ],
+    "c2": [
+      {
+        "case": "passkey-0-8192",
+        "token_equal": false,
+        "answer_before": false,
+        "answer_after": true,
+        "format_before": false,
+        "format_after": true
+      }
+    ],
+    "q2": []
+  },
+  "limitations": [
+    "Frozen36synthetic cases, not broad quality benchmark",
+    "Client cohorts12, not guaranteed physical lane occupancy",
+    "Observed score increase is not a general quality improvement or an engine fix"
+  ]
+}
