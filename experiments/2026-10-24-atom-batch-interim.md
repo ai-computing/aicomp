@@ -144,18 +144,20 @@ python audit_atom270_abba.py --queue atom270-abba-gemma-outer.json --output abba
 The self-check uses small synthetic fixtures and rejects eight corruption types; it runs without archived data and is not another hardware measurement. The CPU readiness control requires the PR266 test/runtime stack and tests synthetic all-global KV, not Gemma sliding-window hardware. The four-model hardware cancellation/reuse/producer-death matrix is running separately; completed cases and their limits follow below.
 
 
-## B4 fault isolation: two hardware cases complete, two pending
+## B4 fault isolation: all four hardware cases complete
 
-Gemma3-1B and Qwen3-0.6B each completed one direct-batcher control/cancel-reuse/producer-death sequence. Three survivor requests each produced512tokens exactly matching their same-lane controls after either fault. The reused fourth lane produced16tokens matching its control. Owners drained idle/nonpoisoned; all slots were returned. These are hardware fault-isolation results, not HTTP disconnect, semantic-quality or throughput acceptance.
+Gemma3-1B, Qwen3-0.6B, Qwen3-4B and KONI-8B each completed one direct-batcher control/cancel-reuse/producer-death sequence. Three survivor requests each produced512tokens exactly matching their same-lane controls after either fault. The reused fourth lane produced16tokens matching its control. Owners drained idle/nonpoisoned; all slots were returned. These are hardware fault-isolation results, not HTTP disconnect, semantic-quality or throughput acceptance.
 
 | Model | Control active-lane histogram (0–4) | Cancel/reuse histogram | Producer-death histogram |
 |---|---|---|---|
 | Gemma3-1B | [0,220,220,276,15] | [0,221,221,275,15] | [0,212,212,299,0] |
 | Qwen3-0.6B | [0,168,168,328,15] | [0,158,158,338,15] | [0,167,167,344,0] |
+| Qwen3-4B | [0,120,120,376,15] | [0,110,110,386,15] | [0,108,108,403,0] |
+| KONI-8B (TP2) | [0,174,174,322,15] | [0,164,164,332,15] | [0,171,171,340,0] |
 
-The longer512-output workload achieved real four-active-lane calls in control/reuse. This does not erase the short-output occupancy failures above. In both models, both injected faults occurred with host-pending victim KV and **zero victim device-import spans**. Hardware safety after partial victim KV import remains unproven. Gemma's multilane hybrid path deliberately defers import; its guard has not been removed.
+The longer512-output workload achieved real four-active-lane calls in control/reuse. This does not erase the short-output occupancy failures above. In all four models, both injected faults occurred with host-pending victim KV and **zero victim device-import spans**. Hardware safety after partial victim KV import remains unproven. Gemma's multilane hybrid path deliberately defers import; its guard has not been removed.
 
-Qwen3-4B and KONI-8B remain pending in this matrix. The separate Qwen3-4B B4 lane-dependent numerical divergence remains unresolved even if a same-lane fault test later passes. Compact audits and source driver are included; raw token arrays are archived separately with full hashes and research event IDs in fault-evidence-manifest.json. Remote archive synchronization has not been independently verified. The driver requires the PR266 runtime and original hardware harness; it is not standalone on main.
+The terminal queue and raw arrays were independently audited: eight fault cases,12,288 survivor-token comparisons and64 replacement-token comparisons match; all four owned Pods were cleaned up successfully. The separate Qwen3-4B B4 lane-dependent numerical divergence remains unresolved despite the same-lane fault test passing. Its three survivor control lanes happened to agree for this fixture on the RNGD-prefill route; that does not waive independent native-prefill failures on other prompts. Compact audits and source driver are included; raw token arrays are archived separately with full hashes and research event IDs in fault-evidence-manifest.json. Remote archive synchronization has not been independently verified. The driver requires the PR266 runtime and original hardware harness; it is not standalone on main.
 
 CPU coverage additionally verifies **actual partial writes** using the real AtomBatcher with the existing fake SDK: three active survivors, fourth-lane cancellation/late completion or producer error, same-lane reuse, and no stale overwrite of replacement KV. Survivor24-token outputs equal a no-fault control. New cases2passed; with related batching/hybrid/stream checks53passed6.19s on Torch2.13/Transformers5.15. The initial new tests failed because the test assumed an admitted attribute exists before admission; the test now follows the runtime's getattr default. No runtime change was made. This is CPU evidence, not NPU hardware or full-suite acceptance.
 

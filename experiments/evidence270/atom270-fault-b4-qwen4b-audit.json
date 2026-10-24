@@ -1,0 +1,76 @@
+{
+  "model": "Qwen/Qwen3-4B",
+  "producer_startup_s": 822.2584600540577,
+  "decoder_load_s": 7.551017142017372,
+  "stage": "audited",
+  "source_sha256": "f73a020b719e01212d239bcf0ce7ea6b0ce7d69c0c08f6d7abb7604e77a92e96",
+  "survivors": 3,
+  "survivor_output_tokens": 512,
+  "replacement_output_tokens": 16,
+  "cases": {
+    "control": {
+      "case": "control",
+      "histogram": [
+        0,
+        120,
+        120,
+        376,
+        15
+      ]
+    },
+    "cancel-reuse": {
+      "case": "cancel-reuse",
+      "trigger": {
+        "host_pending": true,
+        "victim_imported_spans": 0,
+        "slot": 3,
+        "active_tokens": [
+          114,
+          59,
+          4
+        ],
+        "progress_spans": 108,
+        "admitted": false
+      },
+      "histogram": [
+        0,
+        110,
+        110,
+        386,
+        15
+      ],
+      "survivors_exact": true,
+      "idle": true,
+      "poisoned": false,
+      "replacement_exact": true
+    },
+    "producer-death": {
+      "case": "producer-death",
+      "trigger": {
+        "host_pending": true,
+        "victim_imported_spans": 0,
+        "slot": 3,
+        "active_tokens": [
+          112,
+          57,
+          4
+        ],
+        "progress_spans": 108,
+        "admitted": false
+      },
+      "histogram": [
+        0,
+        108,
+        108,
+        403,
+        0
+      ],
+      "survivors_exact": true,
+      "idle": true,
+      "poisoned": false,
+      "victim_error": "RuntimeError('prefill subprocess response failed: prefill subprocess exited')"
+    }
+  },
+  "control_survivor_lanes_equal": true,
+  "limits": "One direct-batcher same-lane fault sequence. Does not resolve independently reproduced native B4 lane-dependent numerical differences. Not HTTP disconnect, quality, performance/cache-reuse acceptance, or partial victim-import coverage."
+}
