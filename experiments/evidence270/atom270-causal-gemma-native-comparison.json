@@ -1,0 +1,99 @@
+{
+  "audit": {
+    "stage": "audited",
+    "responses": {
+      "stage": "passed",
+      "conditions": 8,
+      "warmups": 8,
+      "correctness_responses": 128,
+      "timed_text_responses": 128
+    },
+    "compiled": {
+      "batch_size": 1,
+      "kv_blocks": 5,
+      "context": 9216,
+      "tensor_parallel_size": 1
+    },
+    "max_active_lanes": 1,
+    "active_lane_histogram": [
+      0,
+      20856
+    ],
+    "binding": {
+      "visible_count": 1,
+      "physical_to_visible": {
+        "0": 0
+      },
+      "opened": [
+        "/dev/rbln0"
+      ]
+    },
+    "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+  },
+  "source_sha256": "76b81b2728303015358810b1a76391f5bad2f63291ab4b8aad39c44ced7d19b9",
+  "eos_ids": [
+    1,
+    106
+  ],
+  "comparisons": {
+    "128:32": {
+      "old_native_full": true,
+      "previous_whole_full": false,
+      "previous_whole_through_eos": true,
+      "first_difference": 5
+    },
+    "128:128": {
+      "old_native_full": true,
+      "previous_whole_full": false,
+      "previous_whole_through_eos": true,
+      "first_difference": 5
+    },
+    "512:32": {
+      "old_native_full": true,
+      "previous_whole_full": true,
+      "previous_whole_through_eos": true,
+      "first_difference": null
+    },
+    "512:128": {
+      "old_native_full": true,
+      "previous_whole_full": true,
+      "previous_whole_through_eos": true,
+      "first_difference": null
+    },
+    "2048:32": {
+      "old_native_full": true,
+      "previous_whole_full": true,
+      "previous_whole_through_eos": true,
+      "first_difference": null
+    },
+    "2048:128": {
+      "old_native_full": true,
+      "previous_whole_full": true,
+      "previous_whole_through_eos": true,
+      "first_difference": null
+    },
+    "8192:32": {
+      "old_native_full": true,
+      "previous_whole_full": true,
+      "previous_whole_through_eos": true,
+      "first_difference": null
+    },
+    "8192:128": {
+      "old_native_full": true,
+      "previous_whole_full": true,
+      "previous_whole_through_eos": true,
+      "first_difference": null
+    }
+  },
+  "metrics_8192_128": {
+    "requests": 16,
+    "output_tokens": 2048,
+    "wall_s": 35.574109970009886,
+    "output_tok_s": 57.56995752603592,
+    "median_first_sse_s": 17.3802980305627,
+    "median_tpot_est_s": 0.011212882113745656,
+    "median_e2e_s": 18.801305017026607,
+    "all_text_equal": true
+  },
+  "limits": "Historical corrected k3 native and prior k5 PD references, same prompt IDs. Current corrected whole/stream still running. One timed batch; no statistical claim. Full128-token fixture continues after EOS; report strict and through-EOS separately."
+}

@@ -1,0 +1,147 @@
+{
+  "audits": {
+    "native": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 1,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 1,
+      "active_lane_histogram": [
+        0,
+        20856
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "0": 0
+        },
+        "opened": [
+          "/dev/rbln0"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    },
+    "whole": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 1,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 1,
+      "active_lane_histogram": [
+        0,
+        20856
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "0": 0
+        },
+        "opened": [
+          "/dev/rbln0"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    }
+  },
+  "comparisons": {
+    "128:32": {
+      "full": false,
+      "through_eos": true,
+      "first_difference": 5,
+      "whole_unchanged_from_old": true
+    },
+    "128:128": {
+      "full": false,
+      "through_eos": true,
+      "first_difference": 5,
+      "whole_unchanged_from_old": true
+    },
+    "512:32": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null,
+      "whole_unchanged_from_old": true
+    },
+    "512:128": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null,
+      "whole_unchanged_from_old": true
+    },
+    "2048:32": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null,
+      "whole_unchanged_from_old": true
+    },
+    "2048:128": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null,
+      "whole_unchanged_from_old": true
+    },
+    "8192:32": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null,
+      "whole_unchanged_from_old": true
+    },
+    "8192:128": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null,
+      "whole_unchanged_from_old": true
+    }
+  },
+  "eos_ids": [
+    1,
+    106
+  ],
+  "metrics_8192_128": {
+    "native": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 35.574109970009886,
+      "output_tok_s": 57.56995752603592,
+      "median_first_sse_s": 17.3802980305627,
+      "median_tpot_est_s": 0.011212882113745656,
+      "median_e2e_s": 18.801305017026607,
+      "all_text_equal": true
+    },
+    "whole": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 51.24334673094563,
+      "output_tok_s": 39.966164012531635,
+      "median_first_sse_s": 25.982786704960745,
+      "median_tpot_est_s": 0.01119109856718271,
+      "median_e2e_s": 27.402480554475915,
+      "all_text_equal": true
+    }
+  },
+  "load_s": {
+    "native": 9.349328789045103,
+    "whole": 837.6305059780134
+  },
+  "limits": "One timed batch, same ATOM and compiled artifact; native/PD full6/8 and throughEOS8/8. No statistical or answer-quality claim; stream still running."
+}

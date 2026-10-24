@@ -1,0 +1,348 @@
+{
+  "scope": "Four-model native B1/B4 cross-check. Corrected causal Gemma only. Raw timings are not equivalent-output speedup when full tokens differ; hardware bindings/card differences and one-repeat limitations remain in per-model reports.",
+  "models": [
+    {
+      "model": "qwen06b",
+      "tp": 1,
+      "b4_within_route_parity": true,
+      "comparison": {
+        "128:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "128:128": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "512:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "512:128": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "2048:32": {
+          "full": false,
+          "first_difference": 1,
+          "token_pair": [
+            374,
+            594
+          ]
+        },
+        "2048:128": {
+          "full": false,
+          "first_difference": 1,
+          "token_pair": [
+            374,
+            594
+          ]
+        },
+        "8192:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "8192:128": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        }
+      },
+      "source_sha256": {
+        "1": "1375ae8c9eb389b2a14bd70420539d3c48276261bae0d61c55e8e46973ac7b6f",
+        "4": "c9f2a5e4f193b0db8a4d498d332443ceea21b02bf982c6fdb1fe1256d09f96e9"
+      },
+      "metrics_8192_128": {
+        "1": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 40.69590429693926,
+          "output_tok_s": 50.324474548020554,
+          "median_first_sse_s": 20.20046385045862,
+          "median_tpot_est_s": 0.01152950295661466,
+          "median_e2e_s": 21.6256192799774,
+          "all_text_equal": true
+        },
+        "4": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 32.18251903599594,
+          "output_tok_s": 63.63703219469319,
+          "median_first_sse_s": 14.797579117992427,
+          "median_tpot_est_s": 0.05466472298799699,
+          "median_e2e_s": 21.75026416644687,
+          "all_text_equal": true
+        }
+      }
+    },
+    {
+      "model": "qwen4b",
+      "tp": 1,
+      "b4_within_route_parity": false,
+      "comparison": {
+        "128:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "128:128": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "512:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "512:128": {
+          "full": false,
+          "first_difference": 64,
+          "token_pair": [
+            30339,
+            911
+          ]
+        },
+        "2048:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "2048:128": {
+          "full": false,
+          "first_difference": 59,
+          "token_pair": [
+            8365,
+            7196
+          ]
+        },
+        "8192:32": {
+          "full": false,
+          "first_difference": 12,
+          "token_pair": [
+            4588,
+            374
+          ]
+        },
+        "8192:128": {
+          "full": false,
+          "first_difference": 12,
+          "token_pair": [
+            4588,
+            374
+          ]
+        }
+      },
+      "source_sha256": {
+        "1": "eb11ac21e4a6f74f2a258aaa319cabfcc7eea0b3b2e30f6dd4f1208d5f5e9c5a",
+        "4": "11d07b625862acc161aa95c34cd2d1087e9bd302477c01ff7e7f66677f9234f7"
+      },
+      "metrics_8192_128": {
+        "1": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 166.73132611101028,
+          "output_tok_s": 12.283234637241682,
+          "median_first_sse_s": 83.1327906565275,
+          "median_tpot_est_s": 0.042929202673395755,
+          "median_e2e_s": 88.58196617756039,
+          "all_text_equal": true
+        },
+        "4": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 112.26723379304167,
+          "output_tok_s": 18.242188132784786,
+          "median_first_sse_s": 54.54269025201211,
+          "median_tpot_est_s": 0.1815217392240453,
+          "median_e2e_s": 77.60018511646194,
+          "all_text_equal": true
+        }
+      }
+    },
+    {
+      "model": "koni",
+      "tp": 2,
+      "b4_within_route_parity": true,
+      "comparison": {
+        "128:32": {
+          "full": false,
+          "first_difference": 11,
+          "token_pair": [
+            4495,
+            11190
+          ]
+        },
+        "128:128": {
+          "full": false,
+          "first_difference": 11,
+          "token_pair": [
+            4495,
+            11190
+          ]
+        },
+        "512:32": {
+          "full": false,
+          "first_difference": 8,
+          "token_pair": [
+            70869,
+            9290
+          ]
+        },
+        "512:128": {
+          "full": false,
+          "first_difference": 8,
+          "token_pair": [
+            70869,
+            9290
+          ]
+        },
+        "2048:32": {
+          "full": false,
+          "first_difference": 27,
+          "token_pair": [
+            9257,
+            6366
+          ]
+        },
+        "2048:128": {
+          "full": false,
+          "first_difference": 27,
+          "token_pair": [
+            9257,
+            6366
+          ]
+        },
+        "8192:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "8192:128": {
+          "full": false,
+          "first_difference": 37,
+          "token_pair": [
+            279,
+            44564
+          ]
+        }
+      },
+      "source_sha256": {
+        "1": "111c24490d36d835efa369d11ba05ce9a63e7c53da89ca4d7d8a72119c688f39",
+        "4": "b865d242b87b6a948b81fa3bf97927b302db923c3834f013fbacb0b9de6c509c"
+      },
+      "metrics_8192_128": {
+        "1": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 136.36672446795274,
+          "output_tok_s": 15.018326560166782,
+          "median_first_sse_s": 67.78715079504764,
+          "median_tpot_est_s": 0.036702179535581754,
+          "median_e2e_s": 72.43892477202462,
+          "all_text_equal": true
+        },
+        "4": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 85.87466673506424,
+          "output_tok_s": 23.848709728543998,
+          "median_first_sse_s": 41.86685951001709,
+          "median_tpot_est_s": 0.1383990001654817,
+          "median_e2e_s": 59.45633385749534,
+          "all_text_equal": true
+        }
+      }
+    },
+    {
+      "model": "gemma",
+      "tp": 1,
+      "b4_within_route_parity": true,
+      "comparison": {
+        "128:32": {
+          "full": false,
+          "first_difference": 5,
+          "token_pair": [
+            107,
+            130614
+          ]
+        },
+        "128:128": {
+          "full": false,
+          "first_difference": 5,
+          "token_pair": [
+            107,
+            130614
+          ]
+        },
+        "512:32": {
+          "full": false,
+          "first_difference": 8,
+          "token_pair": [
+            42547,
+            10525
+          ]
+        },
+        "512:128": {
+          "full": false,
+          "first_difference": 8,
+          "token_pair": [
+            42547,
+            10525
+          ]
+        },
+        "2048:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "2048:128": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "8192:32": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        },
+        "8192:128": {
+          "full": true,
+          "first_difference": null,
+          "token_pair": null
+        }
+      },
+      "source_sha256": {
+        "1": "76b81b2728303015358810b1a76391f5bad2f63291ab4b8aad39c44ced7d19b9",
+        "4": "d9b5752d5fefe4a26d95118699c7ee50407ab20fc7ea9ee1909fb0a1eec41e78"
+      },
+      "metrics_8192_128": {
+        "1": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 35.574109970009886,
+          "output_tok_s": 57.56995752603592,
+          "median_first_sse_s": 17.3802980305627,
+          "median_tpot_est_s": 0.011212882113745656,
+          "median_e2e_s": 18.801305017026607,
+          "all_text_equal": true
+        },
+        "4": {
+          "requests": 16,
+          "output_tokens": 2048,
+          "wall_s": 21.52105758502148,
+          "output_tok_s": 95.16260954691163,
+          "median_first_sse_s": 10.135787407518364,
+          "median_tpot_est_s": 0.036070315672843675,
+          "median_e2e_s": 14.72101910848869,
+          "all_text_equal": true
+        }
+      }
+    }
+  ]
+}
