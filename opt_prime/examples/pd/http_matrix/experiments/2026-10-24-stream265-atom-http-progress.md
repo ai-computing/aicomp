@@ -54,7 +54,7 @@ KONI native ATOM failed the original 180-second socket response wait at
 warmups completed; no timed batch completed. Server remained alive at the
 failure snapshot, with zero OOM events and zero listener drops/overflows.
 This does not establish a queueing-only cause. Whole/stream were not launched.
-A distinct 600-second diagnostic is running; it does not erase or fix the
+A distinct 600-second native diagnostic completed; it does not erase or fix the
 original deadline failure. The failed-run summary is retained in evidence265.
 
 The listener candidate eliminated observed overflow/drop counters in a paired
@@ -65,3 +65,31 @@ Separate width-1024 experiments (#268) are also not part of this PR: Qwen3-0.6B
 has a heldout answer regression and KONI has width-dependent token divergence.
 Production source width/default behavior is unchanged here. Repeated timing,
 full KONI ATOM coverage, and direct device-DMA overlap remain outstanding.
+
+
+## KONI native 600-second diagnostic completed
+
+The separate native child and artifact copies exited0. Independent audit passes
+all eight conditions: eight warmups,128 full-token checks and128 timed SSE text
+checks (264 responses). Prompts and all eight reference token arrays match the
+original failed180-second run. End-of-run listener drops/overflows and OOM event
+deltas are zero; the server was alive before normal cleanup.
+
+At8K input/128 output, native ATOM throughput is7.7847tok/s, median first SSE
+130.6080s and median completion139.7550s. Maximum first SSE is253.9345s and maximum
+completion263.0788s; five timed requests wait over180s for first SSE and six finish
+after180s. This is a single ATOM execution slot with16 queued requests. It shows
+long latency also exists without PD; the evidence does not separate queue wait
+from prefill time or prove the original nonstreamed timeout's precise cause.
+
+The600-second value controls socket wait, not a guaranteed total request deadline.
+Nonstreamed correctness checks retain token arrays but not individual durations.
+One timed batch per condition is diagnostic, not statistical performance evidence.
+The original180-second failure remains failed. RNGD-to-ATOM whole and streaming
+modes are still running and are not counted as KONI successes here.
+
+Reproduce the diagnostic with run_http267_deadline_atom.py, --model koni,
+--pod http267d-koni and the existing site-specific --host. It uses the same model
+and hardware configuration, and benchmark267_deadline.py --request-timeout 600.
+See evidence265/http267d-koni-native-complete-summary.json for all eight timing
+rows and the raw-result SHA256. Runtime remains33d6cb0; no serving code changed.

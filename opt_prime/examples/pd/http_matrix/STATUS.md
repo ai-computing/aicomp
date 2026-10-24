@@ -119,3 +119,8 @@ Allfour models x3modes completed:96conditions,1536token checks,1536SSE text chec
 ## ATOM HTTP progress (#265/#267)
 
 Three models pass whole/stream controls, eight conditions each. Qwen4 and Gemma native results also audited; Gemma remains slower than native. KONI native180s timeout retained and600s diagnostic pending. Listener and width variants are not production changes. See experiments/2026-10-24-stream265-atom-http-progress.md.
+
+
+## KONI native long-wait diagnostic
+
+Separate600s native run passes264 responses across8 conditions, with original180s failure retained. At8K/128/c16 max firstSSE253.93s and max completion263.08s; no OOM/listen drops. Whole/stream remain running. See stream265-atom-http-progress record and evidence265/http267d-koni-native-complete-summary.json.

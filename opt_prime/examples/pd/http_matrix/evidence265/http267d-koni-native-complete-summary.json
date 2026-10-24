@@ -1,0 +1,121 @@
+{
+  "stage": "audited",
+  "responses": {
+    "stage": "passed",
+    "conditions": 8,
+    "warmups": 8,
+    "correctness_responses": 128,
+    "timed_text_responses": 128
+  },
+  "request_timeout_s": 600,
+  "source_sha256": "41ac41d1717db9c6a164d2088088d8a13dde46c6d8c8f526b137b8edc2affc4e",
+  "original_failed_run_references_exact": {
+    "128:32": true,
+    "128:128": true,
+    "512:32": true,
+    "512:128": true,
+    "2048:32": true,
+    "2048:128": true,
+    "8192:32": true,
+    "8192:128": true
+  },
+  "listen_delta": {
+    "ListenOverflows": 0,
+    "ListenDrops": 0
+  },
+  "oom_event_delta": {
+    "oom": 0,
+    "oom_kill": 0
+  },
+  "rows": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "tok_s": 14.649856690445366,
+      "median_first_sse_s": 16.48193749098573,
+      "median_e2e_s": 18.567270205996465,
+      "max_first_sse_s": 32.86763596907258,
+      "max_e2e_s": 34.948056298075244,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "tok_s": 14.795141906513853,
+      "median_first_sse_s": 64.96426502696704,
+      "median_e2e_s": 73.51471531949937,
+      "max_first_sse_s": 129.88275529898237,
+      "max_e2e_s": 138.42350667098071,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 32,
+      "tok_s": 12.85332862112104,
+      "median_first_sse_s": 19.073718019004446,
+      "median_e2e_s": 21.16420643404126,
+      "max_first_sse_s": 37.74333533400204,
+      "max_e2e_s": 39.831848663976416,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "tok_s": 14.26664534602918,
+      "median_first_sse_s": 67.69957133894786,
+      "median_e2e_s": 76.26901895646006,
+      "max_first_sse_s": 134.96305020502768,
+      "max_e2e_s": 143.54990259802435,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 32,
+      "tok_s": 8.554407797432148,
+      "median_first_sse_s": 29.699063670472242,
+      "median_e2e_s": 31.814278150501195,
+      "max_first_sse_s": 57.73659730097279,
+      "max_e2e_s": 59.850330515997484,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "tok_s": 12.429333529232911,
+      "median_first_sse_s": 78.83277508150786,
+      "median_e2e_s": 87.50043595948955,
+      "max_first_sse_s": 156.06174736004323,
+      "max_e2e_s": 164.76926262804773,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "tok_s": 3.3583639756961565,
+      "median_first_sse_s": 78.7620534109883,
+      "median_e2e_s": 80.9921307489858,
+      "max_first_sse_s": 150.22194355900865,
+      "max_e2e_s": 152.4518511199858,
+      "responses_e2e_over180": 0,
+      "responses_first_sse_over180": 0
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "tok_s": 7.784659444506533,
+      "median_first_sse_s": 130.6080112894997,
+      "median_e2e_s": 139.75500574003672,
+      "max_first_sse_s": 253.93450460897293,
+      "max_e2e_s": 263.0787795180222,
+      "responses_e2e_over180": 6,
+      "responses_first_sse_over180": 5
+    }
+  ],
+  "limits": "One measured batch per condition, native ATOM slot1/c16. Longer socket timeout is diagnostic, not an improvement or satisfaction of original180s deadline. Timed SSE latency is not per-request nonstreamed correctness latency; original timeout cause is not proven."
+}
