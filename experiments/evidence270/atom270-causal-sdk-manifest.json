@@ -1,0 +1,24 @@
+{
+  "atom": {
+    "python": "3.10.12",
+    "packages": {
+      "torch": "2.11.0+cpu",
+      "transformers": "5.8.1",
+      "rebel-compiler": "0.11.0",
+      "optimum-rbln": "0.11.0.post1",
+      "furiosa-torch": null,
+      "furiosa-llm": null
+    }
+  },
+  "rngd": {
+    "python": "3.10.12",
+    "packages": {
+      "torch": "2.10.0+cpu",
+      "transformers": "5.19.0",
+      "rebel-compiler": null,
+      "optimum-rbln": null,
+      "furiosa-torch": "2026.4.0",
+      "furiosa-llm": "2026.4.0"
+    }
+  }
+}

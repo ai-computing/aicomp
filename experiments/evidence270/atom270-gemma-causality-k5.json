@@ -1,0 +1,323 @@
+[
+  {
+    "artifact": "unsloth--gemma-3-1b-it-tp1-s9216-b1-k5",
+    "kv_blocks": 5,
+    "input_tokens": 128,
+    "unchanged_prefix": 64,
+    "slots": [
+      {
+        "slot": 0,
+        "layer": 0,
+        "equal": true,
+        "changed_fraction": 0.0
+      },
+      {
+        "slot": 1,
+        "layer": 0,
+        "equal": true,
+        "changed_fraction": 0.0
+      },
+      {
+        "slot": 2,
+        "layer": 1,
+        "equal": false,
+        "changed_fraction": 0.99652099609375
+      },
+      {
+        "slot": 3,
+        "layer": 1,
+        "equal": false,
+        "changed_fraction": 0.99786376953125
+      },
+      {
+        "slot": 4,
+        "layer": 2,
+        "equal": false,
+        "changed_fraction": 0.99615478515625
+      },
+      {
+        "slot": 5,
+        "layer": 2,
+        "equal": false,
+        "changed_fraction": 0.997314453125
+      },
+      {
+        "slot": 6,
+        "layer": 3,
+        "equal": false,
+        "changed_fraction": 0.9959716796875
+      },
+      {
+        "slot": 7,
+        "layer": 3,
+        "equal": false,
+        "changed_fraction": 0.99761962890625
+      },
+      {
+        "slot": 8,
+        "layer": 4,
+        "equal": false,
+        "changed_fraction": 0.9962158203125
+      },
+      {
+        "slot": 9,
+        "layer": 4,
+        "equal": false,
+        "changed_fraction": 0.9984130859375
+      },
+      {
+        "slot": 10,
+        "layer": 5,
+        "equal": false,
+        "changed_fraction": 0.99749755859375
+      },
+      {
+        "slot": 11,
+        "layer": 5,
+        "equal": false,
+        "changed_fraction": 0.997802734375
+      },
+      {
+        "slot": 12,
+        "layer": 6,
+        "equal": false,
+        "changed_fraction": 0.99755859375
+      },
+      {
+        "slot": 13,
+        "layer": 6,
+        "equal": false,
+        "changed_fraction": 0.99847412109375
+      },
+      {
+        "slot": 14,
+        "layer": 7,
+        "equal": false,
+        "changed_fraction": 0.9970703125
+      },
+      {
+        "slot": 15,
+        "layer": 7,
+        "equal": false,
+        "changed_fraction": 0.99822998046875
+      },
+      {
+        "slot": 16,
+        "layer": 8,
+        "equal": false,
+        "changed_fraction": 0.99810791015625
+      },
+      {
+        "slot": 17,
+        "layer": 8,
+        "equal": false,
+        "changed_fraction": 0.9989013671875
+      },
+      {
+        "slot": 18,
+        "layer": 9,
+        "equal": false,
+        "changed_fraction": 0.99798583984375
+      },
+      {
+        "slot": 19,
+        "layer": 9,
+        "equal": false,
+        "changed_fraction": 0.998779296875
+      },
+      {
+        "slot": 20,
+        "layer": 10,
+        "equal": false,
+        "changed_fraction": 0.99713134765625
+      },
+      {
+        "slot": 21,
+        "layer": 10,
+        "equal": false,
+        "changed_fraction": 0.9990234375
+      },
+      {
+        "slot": 22,
+        "layer": 11,
+        "equal": false,
+        "changed_fraction": 0.99847412109375
+      },
+      {
+        "slot": 23,
+        "layer": 11,
+        "equal": false,
+        "changed_fraction": 0.9991455078125
+      },
+      {
+        "slot": 24,
+        "layer": 12,
+        "equal": false,
+        "changed_fraction": 0.998046875
+      },
+      {
+        "slot": 25,
+        "layer": 12,
+        "equal": false,
+        "changed_fraction": 0.99908447265625
+      },
+      {
+        "slot": 26,
+        "layer": 13,
+        "equal": false,
+        "changed_fraction": 0.99822998046875
+      },
+      {
+        "slot": 27,
+        "layer": 13,
+        "equal": false,
+        "changed_fraction": 0.99920654296875
+      },
+      {
+        "slot": 28,
+        "layer": 14,
+        "equal": false,
+        "changed_fraction": 0.99835205078125
+      },
+      {
+        "slot": 29,
+        "layer": 14,
+        "equal": false,
+        "changed_fraction": 0.99884033203125
+      },
+      {
+        "slot": 30,
+        "layer": 15,
+        "equal": false,
+        "changed_fraction": 0.99871826171875
+      },
+      {
+        "slot": 31,
+        "layer": 15,
+        "equal": false,
+        "changed_fraction": 0.99908447265625
+      },
+      {
+        "slot": 32,
+        "layer": 16,
+        "equal": false,
+        "changed_fraction": 0.99859619140625
+      },
+      {
+        "slot": 33,
+        "layer": 16,
+        "equal": false,
+        "changed_fraction": 0.99932861328125
+      },
+      {
+        "slot": 34,
+        "layer": 17,
+        "equal": false,
+        "changed_fraction": 0.99871826171875
+      },
+      {
+        "slot": 35,
+        "layer": 17,
+        "equal": false,
+        "changed_fraction": 0.9984130859375
+      },
+      {
+        "slot": 36,
+        "layer": 18,
+        "equal": false,
+        "changed_fraction": 0.998291015625
+      },
+      {
+        "slot": 37,
+        "layer": 18,
+        "equal": false,
+        "changed_fraction": 0.99932861328125
+      },
+      {
+        "slot": 38,
+        "layer": 19,
+        "equal": false,
+        "changed_fraction": 0.99853515625
+      },
+      {
+        "slot": 39,
+        "layer": 19,
+        "equal": false,
+        "changed_fraction": 0.99932861328125
+      },
+      {
+        "slot": 40,
+        "layer": 20,
+        "equal": false,
+        "changed_fraction": 0.998291015625
+      },
+      {
+        "slot": 41,
+        "layer": 20,
+        "equal": false,
+        "changed_fraction": 0.99920654296875
+      },
+      {
+        "slot": 42,
+        "layer": 21,
+        "equal": false,
+        "changed_fraction": 0.99835205078125
+      },
+      {
+        "slot": 43,
+        "layer": 21,
+        "equal": false,
+        "changed_fraction": 0.99945068359375
+      },
+      {
+        "slot": 44,
+        "layer": 22,
+        "equal": false,
+        "changed_fraction": 0.9984130859375
+      },
+      {
+        "slot": 45,
+        "layer": 22,
+        "equal": false,
+        "changed_fraction": 0.9993896484375
+      },
+      {
+        "slot": 46,
+        "layer": 23,
+        "equal": false,
+        "changed_fraction": 0.9984130859375
+      },
+      {
+        "slot": 47,
+        "layer": 23,
+        "equal": false,
+        "changed_fraction": 0.99932861328125
+      },
+      {
+        "slot": 48,
+        "layer": 24,
+        "equal": false,
+        "changed_fraction": 0.99871826171875
+      },
+      {
+        "slot": 49,
+        "layer": 24,
+        "equal": false,
+        "changed_fraction": 0.9993896484375
+      },
+      {
+        "slot": 50,
+        "layer": 25,
+        "equal": false,
+        "changed_fraction": 0.99859619140625
+      },
+      {
+        "slot": 51,
+        "layer": 25,
+        "equal": false,
+        "changed_fraction": 0.9993896484375
+      }
+    ],
+    "prefix_exact": false
+  }
+]

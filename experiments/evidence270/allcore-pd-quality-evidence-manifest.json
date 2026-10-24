@@ -1,0 +1,34 @@
+{
+  "research_event_id": "658d1ea450bc436cb73ebc1a484a05bc",
+  "archive": "Local raw evidence; JSONL results registered with research-hub; remote sync unverified",
+  "files": {
+    "atom270-allcore-pd-quality-outer.json": {
+      "sha256": "babe893e654293a781155dc7cc320fd004d9efa5762949ad06d45af768c2daa5",
+      "bytes": 1983
+    },
+    "atom270-qwen4b-allcore-pd-quality-whole.jsonl": {
+      "sha256": "f868c1bf6d024a8284e362ea2a89b55ba4b71cf02513023d1ba55fd581565070",
+      "bytes": 30294
+    },
+    "atom270-qwen4b-allcore-pd-quality-whole.server0.log": {
+      "sha256": "db709634d7c48970710d625606d84e52386314f3adc8dbdf58c4ccad78826be4",
+      "bytes": 301
+    },
+    "atom270-qwen4b-allcore-pd-quality-whole-run.json": {
+      "sha256": "5ee76d392020991ca918337f76d5428dd88e323c778f45b16d23e877a3c2701c",
+      "bytes": 1372
+    },
+    "atom270-qwen4b-allcore-pd-quality-stream.jsonl": {
+      "sha256": "4016161cc6d72357ae8a76b911ccc39199d53093c9f63d46fe5323cb90be6c2b",
+      "bytes": 30305
+    },
+    "atom270-qwen4b-allcore-pd-quality-stream.server0.log": {
+      "sha256": "e97e8808d5261893538e315840ccbd20aeb061ea073dc6504c0d237df7467df1",
+      "bytes": 301
+    },
+    "atom270-qwen4b-allcore-pd-quality-stream-run.json": {
+      "sha256": "791ec7f4c26fe7f4024758d48bc33c3e6b21ba50d9d927ad905eba5eee79bc95",
+      "bytes": 1395
+    }
+  }
+}

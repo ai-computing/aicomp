@@ -1,0 +1,422 @@
+{
+  "scope": "On-disk source snapshot during corrected Gemma B1 whole startup; not proof of every imported dependency or exact in-memory code.",
+  "files": {
+    "container_bootstrap270.py": {
+      "sha256": "fdde633301da000e59c6d7be26aefbef404bf300769d7f81e6ef285c051c62e9",
+      "bytes": 3151
+    },
+    "atom_server270_http.py": {
+      "sha256": "e34a3eeb79c1d0a9547a21b6ad7f55c31484641661616edb1cba9e590119d278",
+      "bytes": 7147
+    },
+    "benchmark270_http.py": {
+      "sha256": "6a4f2ea720ab35fb8478fd172244a4776824af6641c3d5fe4d1e446262767751",
+      "bytes": 315
+    },
+    "benchmark267_deadline.py": {
+      "sha256": "c8ebb077a608e3da70a9748aed19c03f22ae87355f0167a2fb1e68b88ec21d79",
+      "bytes": 15230
+    },
+    "llmd267_backlog.py": {
+      "sha256": "4db30f755a1a1ecfe2f895ae01ef9327b9c582577e94dfedb1ab131aa51a2bb4",
+      "bytes": 33092
+    },
+    "streaming_factories.py": {
+      "sha256": "77745350973cc54bf508e0c8b473efc442afef20b1c64f7c4edc179ea1471389",
+      "bytes": 3517
+    },
+    "gemma_prefill.py": {
+      "sha256": "35791a3d1a9156533da6e0d8ed0bfacf544f5ac76085be3925251a40774d0353",
+      "bytes": 3712
+    },
+    "gemma_parts.py": {
+      "sha256": "51209fcd511bafe311e7b990b92ec73499de72949b8b6dc83139cbd420554617",
+      "bytes": 5164
+    },
+    "furiosa_prefill_python.sh": {
+      "sha256": "317036f016a063d4495f8d81af9523b327a95a52bc7d1d740d664e5f197a0edc",
+      "bytes": 717
+    },
+    "run-http270-atom.sh": {
+      "sha256": "b03644ed32448479cda724dbaf106f4a8dbb79a363e11ecc0bb2cf0ade84cfbb",
+      "bytes": 913
+    },
+    "gemma_causal_compat.py": {
+      "sha256": "c4a48fa1cce28865405a3211559e0ff2556b893072b789e9543b96bd34907930",
+      "bytes": 766
+    },
+    "gemma_global_causal_compat.py": {
+      "sha256": "c4c51d76dec643a8b7643e3f127c0e067a7ebb735b38bf67cb73212e20db17cb",
+      "bytes": 961
+    },
+    "stream265-code/opt_prime/IR.py": {
+      "sha256": "861c59b8e6467c2d2846e4d49ea5c51917a65ed2628f5cb9b6eb95da121cf02f",
+      "bytes": 145910
+    },
+    "stream265-code/opt_prime/__init__.py": {
+      "sha256": "6a60757b7460af785a9ea6c10f54ae2c012c6d7effbf72b0ca55b9f32ec9a3f5",
+      "bytes": 1780
+    },
+    "stream265-code/opt_prime/accel/__init__.py": {
+      "sha256": "f470435c102151bbbc982209ac82fa0d18fd587646d493f9cbfe9f2059120ab8",
+      "bytes": 1197
+    },
+    "stream265-code/opt_prime/accel/engines/__init__.py": {
+      "sha256": "8a66570663cd43a05c6d8b6a61ff1c8d4d2a7aea9268a0a8a14c7cb3275f5e37",
+      "bytes": 1788
+    },
+    "stream265-code/opt_prime/accel/engines/base.py": {
+      "sha256": "ada8e3363f44f9c250386c4d231682c19a20bc7dfff37caf66bf015ab83c34d7",
+      "bytes": 3139
+    },
+    "stream265-code/opt_prime/accel/engines/optimus.py": {
+      "sha256": "acd06d624343c1ada74a45a88378ef6deefef2d4bd2e3a0e87b1a496ee5f1994",
+      "bytes": 1578
+    },
+    "stream265-code/opt_prime/accel/moe/__init__.py": {
+      "sha256": "777ec452dd7e039f2c5a43e1e2582caf172567bd2744c89d492f5cbb90b892a0",
+      "bytes": 3036
+    },
+    "stream265-code/opt_prime/accel/moe/api.py": {
+      "sha256": "0f86bc3dba8c04fef69193ea7a8336e9727e12f138d5c58664c04e9122e54713",
+      "bytes": 5932
+    },
+    "stream265-code/opt_prime/accel/moe/backends.py": {
+      "sha256": "95f523ae8823f351ce09fed89ae5055d2332921f2ecc32591645a3ca258baead",
+      "bytes": 4764
+    },
+    "stream265-code/opt_prime/accel/moe/batched.py": {
+      "sha256": "aa9b2ba8766e26698eded50e4b11a112effe85225d73f45289e6397217fde5dc",
+      "bytes": 3824
+    },
+    "stream265-code/opt_prime/accel/moe/config.py": {
+      "sha256": "9c769a40f9c311e3e5cb00054a047c745a50505818154a20de84f9f9c9847230",
+      "bytes": 5636
+    },
+    "stream265-code/opt_prime/accel/moe/layer.py": {
+      "sha256": "387ad5c16368eb9a07039852ed73301f133f7303d2f70340738fe9c88d90ce7f",
+      "bytes": 22264
+    },
+    "stream265-code/opt_prime/accel/moe/ops.py": {
+      "sha256": "7b4ca318dd0d564ad2d1f98e7074bd81613f5c40a03c06ca60ecadfe84873ac8",
+      "bytes": 3121
+    },
+    "stream265-code/opt_prime/accel/moe/placement.py": {
+      "sha256": "ea5ba8f6fa67942dbb343e508f210075f0a8682085c635fc7d02a8ce43c58268",
+      "bytes": 1602
+    },
+    "stream265-code/opt_prime/accel/moe/planner.py": {
+      "sha256": "71446a3057d3b74b1d5df9066f9d6b9b6c9dff3371df42283a86989b3cdc4aff",
+      "bytes": 6993
+    },
+    "stream265-code/opt_prime/accel/moe/profiler.py": {
+      "sha256": "4a8e178c93ee4111872e78aa814361d2083a860d913e008f4338171ec94e0d79",
+      "bytes": 2129
+    },
+    "stream265-code/opt_prime/accel/moe/train.py": {
+      "sha256": "c45799a29e5b6f31e1f243a98cf89fc131c3442de324781fbb47aa1199ae40b7",
+      "bytes": 2180
+    },
+    "stream265-code/opt_prime/accel/pd/__init__.py": {
+      "sha256": "5ddd216926c7a81cc30a115bf966af863d9f90ba8ced04f6920b07591acdfde6",
+      "bytes": 540
+    },
+    "stream265-code/opt_prime/accel/pd/batching.py": {
+      "sha256": "94454441abe16037f221b48d4a7f082b4738aa222765af33216dffa48b763755",
+      "bytes": 13671
+    },
+    "stream265-code/opt_prime/accel/pd/capabilities.py": {
+      "sha256": "d7f5aca335aae432e21b1afb37f87cce67842996e5b4fe0ddb02247e2698598d",
+      "bytes": 1558
+    },
+    "stream265-code/opt_prime/accel/pd/contracts.py": {
+      "sha256": "390ba741e1fe42cf04433917aa4b7320794f0eb43a51a74e45d54f814781f941",
+      "bytes": 7162
+    },
+    "stream265-code/opt_prime/accel/pd/hetero_p2p.py": {
+      "sha256": "371e6c21cf53b57c37119f20d4011806393618d403ab53a9e4cb7bb6fb7900a4",
+      "bytes": 1662
+    },
+    "stream265-code/opt_prime/accel/pd/koni.py": {
+      "sha256": "c1d255d80627c351ad23b6313713cd32831f73f55d69425256b4db0455bfa4fa",
+      "bytes": 6007
+    },
+    "stream265-code/opt_prime/accel/pd/kvstore.py": {
+      "sha256": "e3ae98f1f72d64f96b2b71bdef889db9e751a905488a2d151ec6fc262bb1cb81",
+      "bytes": 7511
+    },
+    "stream265-code/opt_prime/accel/pd/layer_progress.py": {
+      "sha256": "19c8853cd20b386dc11064d4be63fa696468c86a26b76ecf5c48cdf3905a700b",
+      "bytes": 2529
+    },
+    "stream265-code/opt_prime/accel/pd/npu/__init__.py": {
+      "sha256": "b39b3b5363fe22a699feee7298ca212b2be12618076a246b3d095438a2200450",
+      "bytes": 280
+    },
+    "stream265-code/opt_prime/accel/pd/npu/engines.py": {
+      "sha256": "15e6f5815a0f89ece93bf65894e128683ca132e948cfbc8d1f483e0c268ce9da",
+      "bytes": 5985
+    },
+    "stream265-code/opt_prime/accel/pd/npu/factory.py": {
+      "sha256": "918dda5f9e80fe5b0b39e0d8372d4dc811d0e3ffa8105ced93d88a27d6210d1e",
+      "bytes": 8761
+    },
+    "stream265-code/opt_prime/accel/pd/npu/model.py": {
+      "sha256": "973c0b105b3890f286b4bca160844432b42beb67587f8c7db7232be60ff2a384",
+      "bytes": 3770
+    },
+    "stream265-code/opt_prime/accel/pd/npu/provenance.py": {
+      "sha256": "6222654b7ccaf284458f69c17be1e4fe809b2ce70479d836f2aaac8362f30891",
+      "bytes": 1648
+    },
+    "stream265-code/opt_prime/accel/pd/npu/shared_kv.py": {
+      "sha256": "6b6a1fb1744f02ccd93f394ef7dd309ce506e7c148f6f61fa6ec8fddaa6e8905",
+      "bytes": 2106
+    },
+    "stream265-code/opt_prime/accel/pd/npu/worker.py": {
+      "sha256": "744fd7a11111454cf4757be04fa866169f3f33a0f10875158c004d8a94c12f22",
+      "bytes": 7523
+    },
+    "stream265-code/opt_prime/accel/pd/paged.py": {
+      "sha256": "c9cfa1d39b9795a53fa2387ee4e5ac1db76a85f769597d0b942ad480eceb43c6",
+      "bytes": 31631
+    },
+    "stream265-code/opt_prime/accel/pd/pd_batching.py": {
+      "sha256": "c827775c1d399bf724a9747c3424ee5ea69f93054493bfbb71d5f0cf08fff65b",
+      "bytes": 32215
+    },
+    "stream265-code/opt_prime/accel/pd/prefill_server.py": {
+      "sha256": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d",
+      "bytes": 15515
+    },
+    "stream265-code/opt_prime/accel/pd/runtime.py": {
+      "sha256": "f61b3803941e95ab2dc3b2fac4356146323320f1363836d115f552a852b40404",
+      "bytes": 9093
+    },
+    "stream265-code/opt_prime/accel/pd/sampling.py": {
+      "sha256": "8ee1303875cc1a58660fda75f014bec6b007f6424ec044dcb28bf75e98b966d2",
+      "bytes": 1204
+    },
+    "stream265-code/opt_prime/accel/pd/torch_cache.py": {
+      "sha256": "af42f8219e84cdb13e1303a4c6ee51dd36bed59ddc84b168c3347cbe0fd61796",
+      "bytes": 3211
+    },
+    "stream265-code/opt_prime/accel/pd/torch_engine.py": {
+      "sha256": "5f884074d1b920f026549672625ff062681d8596b6b8a689597f411a220b9d0e",
+      "bytes": 7410
+    },
+    "stream265-code/opt_prime/accel/pd/torch_models.py": {
+      "sha256": "3fa209f9649a868602dd97b030801d9e32ad74a144d83317dce75b96e5d1250d",
+      "bytes": 6088
+    },
+    "stream265-code/opt_prime/accel/platforms/__init__.py": {
+      "sha256": "6d062e2bbdb2c50cb2618de0729b01d1500d62c61b20e3cd51a24198075cbf27",
+      "bytes": 2144
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/__init__.py": {
+      "sha256": "82a797e83449ff1624e95bc1e14fc3080a8431515909b56ca107bf1b56e76ca5",
+      "bytes": 61
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/batching.py": {
+      "sha256": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+      "bytes": 33586
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/device.py": {
+      "sha256": "8d85a6e85b6be4e3ad16e2e73f28a973bf5574b81ab6b1096dea5114eac4b9c9",
+      "bytes": 4994
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/engine.py": {
+      "sha256": "aff783fc796278ad63b62f9ba99a2026d8a2f0dd695cd29b42ff561eeb73c153",
+      "bytes": 7235
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/experts.py": {
+      "sha256": "101508da2369881647127b43200a831f027e96bde0fcae701b7ad0bcb365185b",
+      "bytes": 3657
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/pd.py": {
+      "sha256": "be78e27c105a5b6d1de288f2c205bf18bbc3804e130546b29e4f350fb063980d",
+      "bytes": 2773
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/pd_native.py": {
+      "sha256": "662ebfdaa874988fda0b4f367b273dadd98174a4aab28409fd1e0fcc2bf3ec4a",
+      "bytes": 5623
+    },
+    "stream265-code/opt_prime/accel/platforms/atom/pd_runtime.py": {
+      "sha256": "0e25819a56a99305f4a49c941cfe1094d2e22060c310ff5e83904473661e8018",
+      "bytes": 6970
+    },
+    "stream265-code/opt_prime/accel/platforms/capabilities.py": {
+      "sha256": "22eddcc844ce871fea3cba3a8530c4823ffc8c94afaff19d1e4f8105ff417442",
+      "bytes": 2195
+    },
+    "stream265-code/opt_prime/accel/platforms/cpu/__init__.py": {
+      "sha256": "82a797e83449ff1624e95bc1e14fc3080a8431515909b56ca107bf1b56e76ca5",
+      "bytes": 61
+    },
+    "stream265-code/opt_prime/accel/platforms/cpu/device.py": {
+      "sha256": "cd7310a5116a8ee8f10b10723a8c80db80a4d472494a6ecd649d4173c7a4cb52",
+      "bytes": 773
+    },
+    "stream265-code/opt_prime/accel/platforms/cpu/experts.py": {
+      "sha256": "43eacc7867b7d25c871a8ea74421e4adf0d9abd3f2571c1d2123c2618d76c9d4",
+      "bytes": 7823
+    },
+    "stream265-code/opt_prime/accel/platforms/cpu/native.py": {
+      "sha256": "000c6b5eff9e1ef3dc1528076a36bcdbb34d7910ccbb3187402e502e90f15892",
+      "bytes": 3274
+    },
+    "stream265-code/opt_prime/accel/platforms/cuda/__init__.py": {
+      "sha256": "82a797e83449ff1624e95bc1e14fc3080a8431515909b56ca107bf1b56e76ca5",
+      "bytes": 61
+    },
+    "stream265-code/opt_prime/accel/platforms/cuda/device.py": {
+      "sha256": "a89aef3677b7b63a62c186084047b473c84bbaa604b48225482d28c3f935a7e8",
+      "bytes": 1081
+    },
+    "stream265-code/opt_prime/accel/platforms/cuda/experts.py": {
+      "sha256": "ec5d29b9d774372c34e3f63106f7d5f46e2cc248ba8c09376d204a8de3022a97",
+      "bytes": 6556
+    },
+    "stream265-code/opt_prime/accel/platforms/lease.py": {
+      "sha256": "9e3bb982bcae961afa0c344e182a38ad8e87feaf27d1e2d62ccab97f88f6e61d",
+      "bytes": 5585
+    },
+    "stream265-code/opt_prime/accel/platforms/npu_graph.py": {
+      "sha256": "f1c01661c99530adf140544cca4a58a7d049fb0228a7bd7dc16b7d1bc5ef5bd3",
+      "bytes": 13336
+    },
+    "stream265-code/opt_prime/accel/platforms/registry.py": {
+      "sha256": "7c826ed1ce79569f0995830912d38af8b7b9f905481843b60a2f9f7c5ef3e699",
+      "bytes": 7370
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/__init__.py": {
+      "sha256": "82a797e83449ff1624e95bc1e14fc3080a8431515909b56ca107bf1b56e76ca5",
+      "bytes": 61
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/batching.py": {
+      "sha256": "fe13939f4bf6df9176cf32ca5b639529a5fec7fa59ea137e8ee25db98f98beb8",
+      "bytes": 16675
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/device.py": {
+      "sha256": "b3ae2dddd357c73d67abfddbfb6808e21e8f4cc2bee053aae06895b43229dc2e",
+      "bytes": 1864
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/engine.py": {
+      "sha256": "8ba4aa0eea25c3c53f88a2dca80d6ac503d8a810cc78ff429b5da2d060f0e565",
+      "bytes": 5161
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/experts.py": {
+      "sha256": "39124a145695186c565f182b32e53e7d686429dce93b5f8917cf1f2b1b443a3e",
+      "bytes": 3288
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/experts_opt.py": {
+      "sha256": "7910762835ac904db36f4084870a4394cc772b01e86a17c4d547dcdb238a9aa3",
+      "bytes": 11991
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/pd.py": {
+      "sha256": "74a06401eb48c9bd850271c6b16074916cbe92893a83b3a8638397d68a9f90aa",
+      "bytes": 8470
+    },
+    "stream265-code/opt_prime/accel/platforms/rngd/pd_packing.py": {
+      "sha256": "c015a1d742decee36f212cbc7841e5da6eddd9f0f0a0732f33da0fd0ff170491",
+      "bytes": 1989
+    },
+    "stream265-code/opt_prime/accel/serve/__init__.py": {
+      "sha256": "4347f5d1f61d3614e069f35cfd29b0aa13673129fa057dc9a5290e07c6c825c9",
+      "bytes": 42
+    },
+    "stream265-code/opt_prime/accel/serve/batched.py": {
+      "sha256": "81fa8c78648064c38a8146f52f5207553cf91fb5de8d9048f2de3340f4a8b316",
+      "bytes": 12131
+    },
+    "stream265-code/opt_prime/accel/serve/kv_events.py": {
+      "sha256": "3c6cdf45301f6a87eda86762a3f08d181b693adb8b9101f216bc579eb37b4844",
+      "bytes": 3033
+    },
+    "stream265-code/opt_prime/accel/serve/llmd.py": {
+      "sha256": "e3449979b88d03edb6d5bf0d402a708e5d98054fdf203e22b480f3d7e6fd759a",
+      "bytes": 32412
+    },
+    "stream265-code/opt_prime/accel/serve/metrics.py": {
+      "sha256": "deddb63fd17c2575fc40b7b644ca456cb68115dacaead7e5cc6e8364e4e5b7f9",
+      "bytes": 4826
+    },
+    "stream265-code/opt_prime/accel/spec/__init__.py": {
+      "sha256": "c44cdaee8215145fdf7d009fabaff2da83ae6c161a7380e687c576d4f255fcaa",
+      "bytes": 556
+    },
+    "stream265-code/opt_prime/accel/spec/adapters.py": {
+      "sha256": "71d065ee4390c48e3c830251e07662a01ec6c5e36bfcd281037331cb2338f06e",
+      "bytes": 7366
+    },
+    "stream265-code/opt_prime/accel/spec/blocks.py": {
+      "sha256": "44c6ba9b1a5d3696a7b3a735b51415b1056b3e9f7d9ab144eed7a5d850ae5dfe",
+      "bytes": 6541
+    },
+    "stream265-code/opt_prime/accel/spec/config.py": {
+      "sha256": "8c7b554d892bba21dc44b32e67749375f8f7b2adf62a86ea58b662a4526feac5",
+      "bytes": 1796
+    },
+    "stream265-code/opt_prime/accel/spec/discover.py": {
+      "sha256": "e2e83492dda003f8c889b4319e6e56de04f542fc447611c9203d759c607cd6ed",
+      "bytes": 1967
+    },
+    "stream265-code/opt_prime/accel/spec/experts.py": {
+      "sha256": "9fd7d7511bb08c3dd597a664b77129c69553b25386cd1a2de940ae1e5207ea67",
+      "bytes": 1983
+    },
+    "stream265-code/opt_prime/accel/spec/hf.py": {
+      "sha256": "e8c31fec5521a324d27b7287bc8591b1043229a7c563d6bf16d5cbdd08ed8cd0",
+      "bytes": 11521
+    },
+    "stream265-code/opt_prime/accel/testing.py": {
+      "sha256": "a3958066d9e54e227f15607da3b76222b668565fafb1de3e49025f34218b3763",
+      "bytes": 4057
+    },
+    "stream265-code/opt_prime/accel/train/__init__.py": {
+      "sha256": "a4e7ed011f2ef61353bd9c4ee57f40981968071cc61f9a79b4bd56863910ddd3",
+      "bytes": 1047
+    },
+    "stream265-code/opt_prime/accel/train/backends.py": {
+      "sha256": "fa01536ef84caab9148d32fde97126cfa603bfd560916154b2b845de4977a530",
+      "bytes": 14738
+    },
+    "stream265-code/opt_prime/comm.py": {
+      "sha256": "2cb826d82e498281663f27cd9d1d562f90d5a125f030d23effc924d45c4860d0",
+      "bytes": 15100
+    },
+    "stream265-code/opt_prime/hf_ckpt.py": {
+      "sha256": "090dad24ab0330e8b7d9f8ce2c5d625658dfc6a9a3a794498a2fc6f92cfc8621",
+      "bytes": 10146
+    },
+    "stream265-code/opt_prime/inference.py": {
+      "sha256": "f8259ff9e44d36fbd3e0b887cf1893dc61f5d16b294f6c08dee536e31059f56e",
+      "bytes": 52917
+    },
+    "stream265-code/opt_prime/kv_cache.py": {
+      "sha256": "38dfa13f5e8e1391c7d466e18801332a0c6a85d1624ae92bd5cae49cc596bb3e",
+      "bytes": 15267
+    },
+    "stream265-code/opt_prime/lora.py": {
+      "sha256": "71b4122c9aa88d2d8023310db61f2a77cffa150c5e98bd51cf537fc7bb7ce18c",
+      "bytes": 11440
+    },
+    "stream265-code/opt_prime/mps_manager.py": {
+      "sha256": "0482e0bf13d7e048806944bf35e25f5c25904fbcd3bd4ca9f1e153c0e401b21d",
+      "bytes": 38444
+    },
+    "stream265-code/opt_prime/opti_pri.py": {
+      "sha256": "6d97eecd85664261978a0bd2b980157a0f9e5cb558cf7ffb42bc33e21f5ab6db",
+      "bytes": 56155
+    },
+    "stream265-code/opt_prime/schedule.py": {
+      "sha256": "5cffc60057b86a728068fa79ca3519ffa8c021a0ef607e2076e80cc5ff9022e4",
+      "bytes": 56779
+    },
+    "stream265-code/opt_prime/schedule_infer.py": {
+      "sha256": "d66b245add5e57b21badb570256bd5fdc5358c1bde1cabc7bc837559dc06dd21",
+      "bytes": 18989
+    }
+  },
+  "missing": []
+}

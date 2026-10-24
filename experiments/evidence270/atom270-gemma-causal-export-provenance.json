@@ -1,0 +1,11 @@
+{
+  "model": "unsloth/gemma-3-1b-it",
+  "batch": 1,
+  "kv_blocks": 5,
+  "context": 9216,
+  "correction": "text prefill causal; image prefill retains bidirectionality",
+  "patch_sha256": {
+    "gemma_causal_compat.py": "c4a48fa1cce28865405a3211559e0ff2556b893072b789e9543b96bd34907930",
+    "gemma_global_causal_compat.py": "c4c51d76dec643a8b7643e3f127c0e067a7ebb735b38bf67cb73212e20db17cb"
+  }
+}

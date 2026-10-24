@@ -1,0 +1,48 @@
+{
+  "remote": {
+    "completed": 132,
+    "errors": 0,
+    "submit_to_completion_s": {
+      "count": 132,
+      "sum": 630.5492389528081,
+      "min": 1.5467666470212862,
+      "median": 4.665469824976753,
+      "max": 6.3881797469221056
+    },
+    "completion_gap_s": {
+      "count": 131,
+      "sum": 215.70328289608005,
+      "min": 1.5291937199654058,
+      "median": 1.5664046419551596,
+      "max": 3.263799298903905
+    },
+    "backlogged_completion_gap_s": {
+      "count": 120,
+      "sum": 187.63299905497115,
+      "min": 1.5291937199654058,
+      "median": 1.565149066504091,
+      "max": 1.6199305519694462
+    }
+  },
+  "decode": {
+    "calls": 9991,
+    "errors": 0,
+    "lane_histogram": {
+      "1": 9554,
+      "2": 437
+    },
+    "max_lanes": 2,
+    "calls_with_ready_prefill": 0,
+    "calls_with_waiting": 7291,
+    "calls_with_prefilling": 9043,
+    "host_call_s": {
+      "count": 9991,
+      "sum": 127.78043289273046,
+      "min": 0.01172367692925036,
+      "median": 0.01277005800511688,
+      "max": 0.018381373956799507
+    }
+  },
+  "limits": "All harness phases included. Completion gaps include client/phase idle periods; submit-to-completion includes producer queueing. Queue states are snapshots at decode entry, not continuous ready-time measurements. Python intervals do not prove DMA overlap; overlapping sums are not wall-clock decomposition.",
+  "source_sha256": "89bf71fea58f9d11673ef8b71999777a8927d8cc9ea95674eb10b8acafafb0f2"
+}

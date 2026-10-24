@@ -1,0 +1,139 @@
+{
+  "stage": "audited",
+  "models": 4,
+  "fault_cases": 8,
+  "survivor_token_comparisons": 12288,
+  "replacement_token_comparisons": 64,
+  "all_task_pods_cleanup_exit_zero": true,
+  "rows": [
+    {
+      "model": "unsloth/gemma-3-1b-it",
+      "raw_sha256": "83b17d8acf98989a1e1df0dbb263cdf9588b3aa56b1942c29024458985227821",
+      "fault_cases": 2,
+      "survivor_token_comparisons": 3072,
+      "replacement_token_comparisons": 16,
+      "control_histogram": [
+        0,
+        220,
+        220,
+        276,
+        15
+      ],
+      "cancel_histogram": [
+        0,
+        221,
+        221,
+        275,
+        15
+      ],
+      "death_histogram": [
+        0,
+        212,
+        212,
+        299,
+        0
+      ],
+      "victim_imported_spans": [
+        0,
+        0
+      ]
+    },
+    {
+      "model": "Qwen/Qwen3-0.6B",
+      "raw_sha256": "e61b9829ed90c84f08186b84ab42c5a6472ed8e5a55cb37e20af92b653f0a0e2",
+      "fault_cases": 2,
+      "survivor_token_comparisons": 3072,
+      "replacement_token_comparisons": 16,
+      "control_histogram": [
+        0,
+        168,
+        168,
+        328,
+        15
+      ],
+      "cancel_histogram": [
+        0,
+        158,
+        158,
+        338,
+        15
+      ],
+      "death_histogram": [
+        0,
+        167,
+        167,
+        344,
+        0
+      ],
+      "victim_imported_spans": [
+        0,
+        0
+      ]
+    },
+    {
+      "model": "Qwen/Qwen3-4B",
+      "raw_sha256": "f73a020b719e01212d239bcf0ce7ea6b0ce7d69c0c08f6d7abb7604e77a92e96",
+      "fault_cases": 2,
+      "survivor_token_comparisons": 3072,
+      "replacement_token_comparisons": 16,
+      "control_histogram": [
+        0,
+        120,
+        120,
+        376,
+        15
+      ],
+      "cancel_histogram": [
+        0,
+        110,
+        110,
+        386,
+        15
+      ],
+      "death_histogram": [
+        0,
+        108,
+        108,
+        403,
+        0
+      ],
+      "victim_imported_spans": [
+        0,
+        0
+      ]
+    },
+    {
+      "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+      "raw_sha256": "5374d6383f09c444c9044a52b9a746f52baf5bb297d8af44817098c9af5a5941",
+      "fault_cases": 2,
+      "survivor_token_comparisons": 3072,
+      "replacement_token_comparisons": 16,
+      "control_histogram": [
+        0,
+        174,
+        174,
+        322,
+        15
+      ],
+      "cancel_histogram": [
+        0,
+        164,
+        164,
+        332,
+        15
+      ],
+      "death_histogram": [
+        0,
+        171,
+        171,
+        340,
+        0
+      ],
+      "victim_imported_spans": [
+        0,
+        0
+      ]
+    }
+  ],
+  "limits": "One control/cancel-reuse/producer-death sequence per model, same-lane full-output comparison. All victim triggers precede device import. Not native-PD parity, semantic quality, HTTP disconnect, hardware partial-import safety or speedup evidence."
+}

@@ -1,0 +1,176 @@
+[
+  {
+    "model": "Qwen/Qwen3-0.6B",
+    "raw_file": "atom270-imported-fault-b4-qwen06b.json",
+    "raw_sha256": "e92ca8ba00a8610d4e68b940f325dd9da2588cd9c44143f348088f085a5750de",
+    "runtime_sha256": {
+      "accel/platforms/atom/batching.py": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+      "accel/pd/pd_batching.py": "c827775c1d399bf724a9747c3424ee5ea69f93054493bfbb71d5f0cf08fff65b",
+      "accel/pd/prefill_server.py": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d"
+    },
+    "survivor_token_comparisons": 3072,
+    "replacement_token_comparisons": 16,
+    "cases": [
+      {
+        "case": "cancel-reuse",
+        "trigger": {
+          "host_pending": false,
+          "victim_imported_spans": 1,
+          "slot": 3,
+          "active_tokens": [
+            206,
+            109,
+            11
+          ],
+          "progress_spans": 85,
+          "admitted": false
+        },
+        "histogram": [
+          0,
+          195,
+          195,
+          301,
+          15
+        ]
+      },
+      {
+        "case": "producer-death",
+        "trigger": {
+          "host_pending": false,
+          "victim_imported_spans": 1,
+          "slot": 3,
+          "active_tokens": [
+            192,
+            94,
+            8
+          ],
+          "progress_spans": 85,
+          "admitted": false
+        },
+        "histogram": [
+          0,
+          184,
+          184,
+          327,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "model": "Qwen/Qwen3-4B",
+    "raw_file": "atom270-imported-fault-b4-qwen4b.json",
+    "raw_sha256": "a45e0ec49fa2a1e50554c3f8c41cb9f446164895607344ea8dc8be2bff4689b0",
+    "runtime_sha256": {
+      "accel/platforms/atom/batching.py": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+      "accel/pd/pd_batching.py": "c827775c1d399bf724a9747c3424ee5ea69f93054493bfbb71d5f0cf08fff65b",
+      "accel/pd/prefill_server.py": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d"
+    },
+    "survivor_token_comparisons": 3072,
+    "replacement_token_comparisons": 16,
+    "cases": [
+      {
+        "case": "cancel-reuse",
+        "trigger": {
+          "host_pending": true,
+          "victim_imported_spans": 1,
+          "slot": 3,
+          "active_tokens": [
+            115,
+            57,
+            6
+          ],
+          "progress_spans": 109,
+          "admitted": false
+        },
+        "histogram": [
+          0,
+          109,
+          109,
+          387,
+          15
+        ]
+      },
+      {
+        "case": "producer-death",
+        "trigger": {
+          "host_pending": true,
+          "victim_imported_spans": 1,
+          "slot": 3,
+          "active_tokens": [
+            108,
+            55,
+            5
+          ],
+          "progress_spans": 109,
+          "admitted": false
+        },
+        "histogram": [
+          0,
+          103,
+          103,
+          408,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+    "raw_file": "atom270-imported-fault-b4-koni.json",
+    "raw_sha256": "37787b68b525c50d62fe69868e61091a33b2af180e0345da9dcac715a8d3112d",
+    "runtime_sha256": {
+      "accel/platforms/atom/batching.py": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+      "accel/pd/pd_batching.py": "c827775c1d399bf724a9747c3424ee5ea69f93054493bfbb71d5f0cf08fff65b",
+      "accel/pd/prefill_server.py": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d"
+    },
+    "survivor_token_comparisons": 3072,
+    "replacement_token_comparisons": 16,
+    "cases": [
+      {
+        "case": "cancel-reuse",
+        "trigger": {
+          "host_pending": false,
+          "victim_imported_spans": 1,
+          "slot": 3,
+          "active_tokens": [
+            178,
+            91,
+            7
+          ],
+          "progress_spans": 97,
+          "admitted": false
+        },
+        "histogram": [
+          0,
+          171,
+          171,
+          325,
+          15
+        ]
+      },
+      {
+        "case": "producer-death",
+        "trigger": {
+          "host_pending": true,
+          "victim_imported_spans": 1,
+          "slot": 3,
+          "active_tokens": [
+            182,
+            90,
+            6
+          ],
+          "progress_spans": 97,
+          "admitted": false
+        },
+        "histogram": [
+          0,
+          176,
+          176,
+          335,
+          0
+        ]
+      }
+    ]
+  }
+]

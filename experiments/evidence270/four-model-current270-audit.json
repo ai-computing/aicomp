@@ -1,0 +1,788 @@
+{
+  "http": {
+    "qwen06b/gpu/b4/native": {
+      "file": "stream265-qwen06b-http-c16-native.json",
+      "sha256": "e2e467edfb6ebd2412aec8704e48a96a84563290303c327a0ac40ae74310cbb8",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/gpu/b4/whole": {
+      "file": "stream265-qwen06b-http-c16-whole.json",
+      "sha256": "0d0cc35d41f260798cb8d330cead5c19a112c0508f9bfa241d31da72b5b8ea00",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/gpu/b4/stream": {
+      "file": "stream265-qwen06b-http-c16-stream.json",
+      "sha256": "e8af822f9b8a11bb94130fc8abec6937907da2a5e411b0567e4ca1d19be68562",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/atom/b1/native": {
+      "file": "atom270-qwen06b-tp1-b1-native.json",
+      "sha256": "1375ae8c9eb389b2a14bd70420539d3c48276261bae0d61c55e8e46973ac7b6f",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/atom/b1/whole": {
+      "file": "atom270-qwen06b-tp1-b1-whole.json",
+      "sha256": "a1fa82e039e96027508ab0da5b714575632aee09ff2fdbc9ff24c772a5911314",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/atom/b1/stream": {
+      "file": "atom270-qwen06b-tp1-b1-stream.json",
+      "sha256": "b0b2211cb820c2fa94f67d2cdee39def66032dcbd806320c0ed4d1fec47dfc9e",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/atom/b4/native": {
+      "file": "atom270-qwen06b-tp1-b4-native.json",
+      "sha256": "c9f2a5e4f193b0db8a4d498d332443ceea21b02bf982c6fdb1fe1256d09f96e9",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/atom/b4/whole": {
+      "file": "atom270-qwen06b-tp1-b4-whole.json",
+      "sha256": "b789259526fca6a904ef23e1cfbc256f7a22fbc7444b4d9d8f261154fabbb2b6",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen06b/atom/b4/stream": {
+      "file": "atom270-qwen06b-tp1-b4-stream.json",
+      "sha256": "c415ce39681718661a61a9f64a9115849210235e9b3ce315e636a2cb58a960e4",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/gpu/b4/native": {
+      "file": "stream265-qwen4b-http-c16-native.json",
+      "sha256": "4ac98e035408b6e8ac262569d404db549b5b9cf97b2d86391f7091e9a2f0a392",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/gpu/b4/whole": {
+      "file": "stream265-qwen4b-http-c16-whole.json",
+      "sha256": "6dd9ae92178d14d1f26892651518a8ce68c2c8e7728667048f64efd961536368",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/gpu/b4/stream": {
+      "file": "stream265-qwen4b-http-c16-stream.json",
+      "sha256": "f95fa88b03d9f2f53f36637b8cbbc9f42f90dbec6acf97a7111ba33f830198ce",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/atom/b1/native": {
+      "file": "atom270-qwen4b-tp1-b1-native.json",
+      "sha256": "eb11ac21e4a6f74f2a258aaa319cabfcc7eea0b3b2e30f6dd4f1208d5f5e9c5a",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/atom/b1/whole": {
+      "file": "atom270-qwen4b-tp1-b1-whole.json",
+      "sha256": "ca1d7fe3bc2b55461fd4d7ef01bbeae68265ca4a4af03ade5714faaea509cb5c",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/atom/b1/stream": {
+      "file": "atom270-qwen4b-tp1-b1-stream.json",
+      "sha256": "a079bf27d380ecb93e1c33d7093b187fed24d96ecaea7cdaede8d34acf3263f3",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "qwen4b/atom/b4/native": {
+      "file": "atom270-qwen4b-tp1-b4-native.json",
+      "sha256": "11d07b625862acc161aa95c34cd2d1087e9bd302477c01ff7e7f66677f9234f7",
+      "state": "failed",
+      "reason": "runtime or parity failure",
+      "runtime_complete": true,
+      "parity_passed": false,
+      "failed_token_checks": 36
+    },
+    "qwen4b/atom/b4/whole": {
+      "state": "missing",
+      "file": "atom270-qwen4b-tp1-b4-whole.json"
+    },
+    "qwen4b/atom/b4/stream": {
+      "state": "missing",
+      "file": "atom270-qwen4b-tp1-b4-stream.json"
+    },
+    "koni/gpu/b4/native": {
+      "file": "stream265-koni-http-c16-native.json",
+      "sha256": "cc3a88e2d5c0d23fd791c39beda7a8d2cf374f6b31bef9ef80732fcfffab5a28",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/gpu/b4/whole": {
+      "file": "stream265-koni-http-c16-whole.json",
+      "sha256": "6698b52b83c863fd56d03b7b71ed032f88528e66885e5ae5f932bd1addc0fa64",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/gpu/b4/stream": {
+      "file": "stream265-koni-http-c16-stream.json",
+      "sha256": "c5d44fd309863d83d7d10422d5b35a798dea2427dd035160a41e29cc86f624de",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/atom/b1/native": {
+      "file": "atom270-koni-tp2-b1-native.json",
+      "sha256": "111c24490d36d835efa369d11ba05ce9a63e7c53da89ca4d7d8a72119c688f39",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/atom/b1/whole": {
+      "file": "atom270-koni-tp2-b1-whole.json",
+      "sha256": "a21aa944d52a1f0d9527f75e58d6b6f5bbc60cc7ddbef815517069018ceafe4c",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/atom/b1/stream": {
+      "file": "atom270-koni-tp2-b1-stream.json",
+      "sha256": "37cdbd2af69c954c9d9b485274a765dda72e3f413e0ebeab239c73d60b895fe7",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/atom/b4/native": {
+      "file": "atom270-koni-tp2-b4-native.json",
+      "sha256": "b865d242b87b6a948b81fa3bf97927b302db923c3834f013fbacb0b9de6c509c",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/atom/b4/whole": {
+      "file": "atom270-koni-tp2-b4-whole.json",
+      "sha256": "6d71f099b7811884212c4a00dc9ccfd4a0de661bb491a305aecab693d08048bb",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "koni/atom/b4/stream": {
+      "file": "atom270-koni-tp2-b4-stream.json",
+      "sha256": "dbc521450419643fd1dbe75c8ed4da5b4081656ae3071addab718b3a73cb2996",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/gpu/b4/native": {
+      "file": "stream265-gemma-http-c16-native.json",
+      "sha256": "03ad5688ebb5715bf41b9c7f0f697df132f4c29b9aa902f448d2463a1ef9f1b9",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/gpu/b4/whole": {
+      "file": "stream265-gemma-http-c16-whole.json",
+      "sha256": "64ef67de7e66e0c9a1ab047e59702c831ba977e90be119bb605cd4cf6e666a0d",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/gpu/b4/stream": {
+      "file": "stream265-gemma-http-c16-stream.json",
+      "sha256": "7efef90f546c15c9ea5eeea09e9cf92f72ed35ca2b63d6eadcc6c46b7584d950",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/atom/b1/native": {
+      "file": "atom270-causal-gemma-tp1-b1-native.json",
+      "sha256": "76b81b2728303015358810b1a76391f5bad2f63291ab4b8aad39c44ced7d19b9",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/atom/b1/whole": {
+      "file": "atom270-causal-gemma-tp1-b1-whole.json",
+      "sha256": "22fc823a863bd5ea01a80e7cad1ab01ce8519a89f1ab504f2c2eee8fe74bc54b",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/atom/b1/stream": {
+      "file": "atom270-causal-gemma-tp1-b1-stream.json",
+      "sha256": "2fa51d84d752b2d370dc73504194835cd282aced9ce980e37557b92ef7c4ada1",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/atom/b4/native": {
+      "file": "atom270-causal-gemma-tp1-b4-native.json",
+      "sha256": "d9b5752d5fefe4a26d95118699c7ee50407ab20fc7ea9ee1909fb0a1eec41e78",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/atom/b4/whole": {
+      "file": "atom270-causal-gemma-tp1-b4-whole.json",
+      "sha256": "0750435be2d4dc9c7ace05e59fc29a5362153b0018e9698755ef24fd1c78bbf5",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0
+    },
+    "gemma/atom/b4/stream": {
+      "file": "atom270-timeline-gemma-b4-stream.json",
+      "sha256": "b4658cbaa41b7e1f74de7cd614ef20b8f99bf6ed2983e6d7023e697bafcdf94d",
+      "state": "passed",
+      "audit": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "failed_token_checks": 0,
+      "limits": "Instrumented causal-export run; HTTP parity passes but max active lanes3, so full B4 occupancy remains unverified."
+    }
+  },
+  "route_reference_matches": {
+    "qwen06b/gpu/b4/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen06b/gpu/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen06b/atom/b1/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": false,
+      "512:128": false,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen06b/atom/b1/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen06b/atom/b4/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": false,
+      "512:128": false,
+      "2048:32": false,
+      "2048:128": false,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen06b/atom/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen4b/gpu/b4/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": false,
+      "2048:32": true,
+      "2048:128": false,
+      "8192:32": false,
+      "8192:128": false
+    },
+    "qwen4b/gpu/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen4b/atom/b1/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": false,
+      "2048:32": true,
+      "2048:128": false,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "qwen4b/atom/b1/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "koni/gpu/b4/native-whole": {
+      "128:32": true,
+      "128:128": false,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": false,
+      "8192:32": true,
+      "8192:128": false
+    },
+    "koni/gpu/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "koni/atom/b1/native-whole": {
+      "128:32": false,
+      "128:128": false,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": false
+    },
+    "koni/atom/b1/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "koni/atom/b4/native-whole": {
+      "128:32": true,
+      "128:128": false,
+      "512:32": false,
+      "512:128": false,
+      "2048:32": true,
+      "2048:128": false,
+      "8192:32": true,
+      "8192:128": false
+    },
+    "koni/atom/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "gemma/gpu/b4/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": false,
+      "512:128": false,
+      "2048:32": false,
+      "2048:128": false,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "gemma/gpu/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "gemma/atom/b1/native-whole": {
+      "128:32": false,
+      "128:128": false,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "gemma/atom/b1/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "gemma/atom/b4/native-whole": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": false,
+      "512:128": false,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    },
+    "gemma/atom/b4/whole-stream": {
+      "128:32": true,
+      "128:128": true,
+      "512:32": true,
+      "512:128": true,
+      "2048:32": true,
+      "2048:128": true,
+      "8192:32": true,
+      "8192:128": true
+    }
+  },
+  "quality": {
+    "qwen06b/native-gpu": {
+      "file": "quality263-qwen06b-native-gpu.jsonl",
+      "sha256": "7eae1901548995027bdffafc78a9a62cb0a63056bc0d68587b9d781d332b1463",
+      "cases": 36,
+      "answer_correct": 32,
+      "format_correct": 36
+    },
+    "qwen06b/rngd-gpu": {
+      "file": "quality263-qwen06b-rngd-gpu.jsonl",
+      "sha256": "14d2e4ffe69397e14e12a9157d9a4754585a4f1d925a72b68eac4810a7cdf751",
+      "cases": 36,
+      "answer_correct": 34,
+      "format_correct": 36
+    },
+    "qwen06b/native-atom": {
+      "file": "quality263-qwen06b-native-atom.jsonl",
+      "sha256": "ebac616e36356306ed87cadd8f29f0da18e04f5053de45bdd660b516611b4012",
+      "cases": 36,
+      "answer_correct": 33,
+      "format_correct": 36
+    },
+    "qwen06b/rngd-atom": {
+      "file": "quality263-qwen06b-rngd-atom.jsonl",
+      "sha256": "d8f73b70e85874e05b6fa6da55ffacc33ee0d15b264f9d2f074771ec4ee831b8",
+      "cases": 36,
+      "answer_correct": 33,
+      "format_correct": 36
+    },
+    "qwen4b/native-gpu": {
+      "file": "quality263-qwen4b-native-gpu.jsonl",
+      "sha256": "07de535a0b4e07a73a4e8a987349524843952a74c03e2d90daeb64a56e75c592",
+      "cases": 36,
+      "answer_correct": 36,
+      "format_correct": 36
+    },
+    "qwen4b/rngd-gpu": {
+      "file": "quality263-qwen4b-rngd-gpu.jsonl",
+      "sha256": "cd57299f4ac43a51224d05417533f8b0775c164142260c0c3a005528ee8cf50a",
+      "cases": 36,
+      "answer_correct": 36,
+      "format_correct": 36
+    },
+    "qwen4b/native-atom": {
+      "file": "quality263-qwen4b-native-atom.jsonl",
+      "sha256": "8facfb6ce5caf41faba23bee0825a699102743ba19af7679b9eb49c23ec1c032",
+      "cases": 36,
+      "answer_correct": 36,
+      "format_correct": 36
+    },
+    "qwen4b/rngd-atom": {
+      "file": "quality263-qwen4b-rngd-atom.jsonl",
+      "sha256": "988287bc91e8052c69acf17b91e9d11e76c725cf79f639010e24e278224d2ae6",
+      "cases": 36,
+      "answer_correct": 36,
+      "format_correct": 36
+    },
+    "koni/native-gpu": {
+      "file": "quality263-koni-native-gpu.jsonl",
+      "sha256": "21d9569e7e4bcd07f697aa029662238fdfd489af54e32a8d07c7745371a901cf",
+      "cases": 36,
+      "answer_correct": 31,
+      "format_correct": 34
+    },
+    "koni/rngd-gpu": {
+      "file": "quality263-koni-rngd-gpu.jsonl",
+      "sha256": "859b720c37bd2dc885d4849206b53826a068494a23563e6609fb764b0992fc37",
+      "cases": 36,
+      "answer_correct": 31,
+      "format_correct": 34
+    },
+    "koni/native-atom": {
+      "file": "quality263-koni-native-atom.jsonl",
+      "sha256": "87b43860ee2b5e2cbae939661a2ca2a3d03bd9c079d4b112fbeecf12361dc4b8",
+      "cases": 36,
+      "answer_correct": 31,
+      "format_correct": 34
+    },
+    "koni/rngd-atom": {
+      "file": "quality263-koni-rngd-atom.jsonl",
+      "sha256": "3d6c76f1198cba14cc95e2c5e8f1ab555d19899f6f4097aff6a20f9c6c029fdb",
+      "cases": 36,
+      "answer_correct": 31,
+      "format_correct": 34
+    },
+    "gemma/native-gpu": {
+      "file": "quality263-gemma-native-gpu.jsonl",
+      "sha256": "a2db94f0d9e87d01dc89091de3908716ca00c41f7ee8908b0e658def4cf9fe64",
+      "cases": 36,
+      "answer_correct": 0,
+      "format_correct": 0
+    },
+    "gemma/rngd-gpu": {
+      "file": "quality263-gemma-rngd-gpu.jsonl",
+      "sha256": "2c357b75f063f3f40911a6c05b92b039490789ca41704cecdabb2df8060617d7",
+      "cases": 36,
+      "answer_correct": 0,
+      "format_correct": 0
+    },
+    "gemma/native-atom": {
+      "file": "quality263-gemma-native-atom.jsonl",
+      "sha256": "3ce4573bacaff53daf3f2cf7736f04e37c7a38b107606eb76f068984f3cc1e88",
+      "cases": 36,
+      "answer_correct": 0,
+      "format_correct": 0
+    },
+    "gemma/rngd-atom": {
+      "file": "quality263-gemma-rngd-atom.jsonl",
+      "sha256": "f146eef24ba4d1e406f2750b7dc7bc116041c7e6ecc30670c3f86e9516da62fa",
+      "cases": 36,
+      "answer_correct": 0,
+      "format_correct": 0
+    }
+  },
+  "limits": "Historical task runtimes and isolated artifacts, not current-main acceptance. Same-route parity is not cross-engine parity; timings are not a matched speedup comparison. Missing routes remain missing."
+}

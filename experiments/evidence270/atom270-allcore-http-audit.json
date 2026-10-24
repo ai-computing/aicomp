@@ -1,0 +1,207 @@
+{
+  "audit": {
+    "stage": "passed",
+    "conditions": 8,
+    "warmups": 8,
+    "correctness_responses": 128,
+    "timed_text_responses": 128
+  },
+  "sha256": "c33843569e3e172f9088fca2d15d4ecb9a2758788e5d345cec704a5f998ffaae",
+  "comparisons": {
+    "b1": {
+      "128:32": {
+        "tokens_equal": false,
+        "first_difference": 7
+      },
+      "128:128": {
+        "tokens_equal": false,
+        "first_difference": 7
+      },
+      "512:32": {
+        "tokens_equal": true,
+        "first_difference": null
+      },
+      "512:128": {
+        "tokens_equal": false,
+        "first_difference": 107
+      },
+      "2048:32": {
+        "tokens_equal": true,
+        "first_difference": null
+      },
+      "2048:128": {
+        "tokens_equal": false,
+        "first_difference": 94
+      },
+      "8192:32": {
+        "tokens_equal": true,
+        "first_difference": null
+      },
+      "8192:128": {
+        "tokens_equal": true,
+        "first_difference": null
+      }
+    },
+    "b4": {
+      "128:32": {
+        "tokens_equal": false,
+        "first_difference": 7
+      },
+      "128:128": {
+        "tokens_equal": false,
+        "first_difference": 7
+      },
+      "512:32": {
+        "tokens_equal": true,
+        "first_difference": null
+      },
+      "512:128": {
+        "tokens_equal": false,
+        "first_difference": 64
+      },
+      "2048:32": {
+        "tokens_equal": true,
+        "first_difference": null
+      },
+      "2048:128": {
+        "tokens_equal": false,
+        "first_difference": 59
+      },
+      "8192:32": {
+        "tokens_equal": false,
+        "first_difference": 12
+      },
+      "8192:128": {
+        "tokens_equal": false,
+        "first_difference": 12
+      }
+    }
+  },
+  "measurements": [
+    {
+      "input_tokens": 128,
+      "output_tokens_per_request": 32,
+      "requests": 16,
+      "output_tokens": 512,
+      "wall_s": 8.018060112954117,
+      "output_tok_s": 63.855844529377364,
+      "median_first_sse_s": 3.2187578039593063,
+      "median_tpot_est_s": 0.06104695664591066,
+      "median_e2e_s": 5.11025653447723,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens_per_request": 128,
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 28.876017716014758,
+      "output_tok_s": 70.9239071724274,
+      "median_first_sse_s": 11.027380754472688,
+      "median_tpot_est_s": 0.0559405932600764,
+      "median_e2e_s": 18.142516813473776,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens_per_request": 32,
+      "requests": 16,
+      "output_tokens": 512,
+      "wall_s": 12.007294308044948,
+      "output_tok_s": 42.640747104612686,
+      "median_first_sse_s": 5.380131792451721,
+      "median_tpot_est_s": 0.08467051691766228,
+      "median_e2e_s": 8.009860208956525,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens_per_request": 128,
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 32.64148516498972,
+      "output_tok_s": 62.742243180669476,
+      "median_first_sse_s": 13.037358152447268,
+      "median_tpot_est_s": 0.0615226962717294,
+      "median_e2e_s": 20.855518963944633,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens_per_request": 32,
+      "requests": 16,
+      "output_tokens": 512,
+      "wall_s": 26.342920669005252,
+      "output_tok_s": 19.435961806710853,
+      "median_first_sse_s": 12.92043256550096,
+      "median_tpot_est_s": 0.17363946958099521,
+      "median_e2e_s": 18.30325612251181,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens_per_request": 128,
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 47.36955108807888,
+      "output_tok_s": 43.23452413960925,
+      "median_first_sse_s": 20.766711130505428,
+      "median_tpot_est_s": 0.08371657433857277,
+      "median_e2e_s": 31.39914850803325,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens_per_request": 32,
+      "requests": 16,
+      "output_tokens": 512,
+      "wall_s": 98.85874976590276,
+      "output_tok_s": 5.1791065658064115,
+      "median_first_sse_s": 51.10930258699227,
+      "median_tpot_est_s": 0.617650188402378,
+      "median_e2e_s": 70.26619802654022,
+      "all_text_equal": true
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens_per_request": 128,
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 124.58599320193753,
+      "output_tok_s": 16.43844502391582,
+      "median_first_sse_s": 60.79142673499882,
+      "median_tpot_est_s": 0.20129819753154465,
+      "median_e2e_s": 86.40002300450578,
+      "all_text_equal": true
+    }
+  ],
+  "ATOM270_BINDING": [
+    {
+      "visible_count": 1,
+      "physical_to_visible": {
+        "0": 0
+      },
+      "opened": [
+        "/dev/rbln0"
+      ]
+    }
+  ],
+  "ATOM270_COMPILED": [
+    {
+      "batch_size": 4,
+      "kv_blocks": 5,
+      "context": 9216,
+      "tensor_parallel_size": 1
+    }
+  ],
+  "ATOM270_ACTIVE_LANES": [
+    [
+      0,
+      664,
+      32,
+      32,
+      5008
+    ]
+  ],
+  "limits": "One timed batch per condition; historical references are from other cards. No stable performance gain or general semantic-quality claim."
+}

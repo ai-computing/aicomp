@@ -1,0 +1,18 @@
+{
+  "research_event_id": "0f0d5e4c5fc243f1a8a16b0511518894",
+  "archive": "Raw JSON registered with local research-hub; remote synchronization not independently verified.",
+  "files": [
+    {
+      "file": "atom270-imported-fault-b4-qwen06b.json",
+      "sha256": "e92ca8ba00a8610d4e68b940f325dd9da2588cd9c44143f348088f085a5750de"
+    },
+    {
+      "file": "atom270-imported-fault-b4-qwen4b.json",
+      "sha256": "a45e0ec49fa2a1e50554c3f8c41cb9f446164895607344ea8dc8be2bff4689b0"
+    },
+    {
+      "file": "atom270-imported-fault-b4-koni.json",
+      "sha256": "37787b68b525c50d62fe69868e61091a33b2af180e0345da9dcac715a8d3112d"
+    }
+  ]
+}

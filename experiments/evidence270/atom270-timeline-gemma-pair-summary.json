@@ -1,0 +1,142 @@
+{
+  "routes": {
+    "whole": {
+      "result_sha256": "6a34ace19a9b54cac19e0bfe500e6eb5081fdd76ad4f1bfadfc53b7cb87ecd6b",
+      "load_s": 840.5813920759829,
+      "metrics_8192_128": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 26.845269416924566,
+        "output_tok_s": 76.28904624473022,
+        "median_first_sse_s": 13.461700428510085,
+        "median_tpot_est_s": 0.01794637393712352,
+        "median_e2e_s": 15.955143106519245,
+        "all_text_equal": true
+      },
+      "timeline": {
+        "remote": {
+          "completed": 264,
+          "errors": 0,
+          "submit_to_completion_s": {
+            "count": 264,
+            "sum": 1170.3865798402112,
+            "min": 1.5152255450375378,
+            "median": 4.479313701973297,
+            "max": 6.292836716049351
+          },
+          "completion_gap_s": {
+            "count": 263,
+            "sum": 434.28598437004257,
+            "min": 1.510221569915302,
+            "median": 1.5562208250630647,
+            "max": 3.503013251000084
+          },
+          "backlogged_completion_gap_s": {
+            "count": 240,
+            "sum": 373.0109350649873,
+            "min": 1.510221569915302,
+            "median": 1.5548035525134765,
+            "max": 1.6454418420325965
+          }
+        },
+        "decode": {
+          "calls": 17353,
+          "errors": 0,
+          "lane_histogram": {
+            "1": 13952,
+            "2": 3299,
+            "3": 102
+          },
+          "max_lanes": 3,
+          "calls_with_ready_prefill": 0,
+          "calls_with_waiting": 12429,
+          "calls_with_prefilling": 15457,
+          "host_call_s": {
+            "count": 17353,
+            "sum": 230.8325613248162,
+            "min": 0.011753769940696657,
+            "median": 0.013146739918738604,
+            "max": 0.01930820499546826
+          }
+        },
+        "limits": "All harness phases included. Completion gaps include client/phase idle periods; submit-to-completion includes producer queueing. Queue states are snapshots at decode entry, not continuous ready-time measurements. Python intervals do not prove DMA overlap; overlapping sums are not wall-clock decomposition.",
+        "source_sha256": "cbc6739e05c48039d3118b6422d5a1264c7dc44688ee7eca69538d95f267a415"
+      }
+    },
+    "stream": {
+      "result_sha256": "b4658cbaa41b7e1f74de7cd614ef20b8f99bf6ed2983e6d7023e697bafcdf94d",
+      "load_s": 18.39854133501649,
+      "metrics_8192_128": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 26.31547353998758,
+        "output_tok_s": 77.82493432572929,
+        "median_first_sse_s": 13.238841598504223,
+        "median_tpot_est_s": 0.0175043796968287,
+        "median_e2e_s": 15.669753587979358,
+        "all_text_equal": true
+      },
+      "timeline": {
+        "remote": {
+          "completed": 264,
+          "errors": 0,
+          "submit_to_completion_s": {
+            "count": 264,
+            "sum": 1142.7042513388442,
+            "min": 1.510972999036312,
+            "median": 4.303183654556051,
+            "max": 6.169583000941202
+          },
+          "completion_gap_s": {
+            "count": 263,
+            "sum": 424.09189840906765,
+            "min": 1.4572016739984974,
+            "median": 1.5101190001005307,
+            "max": 3.5004626109730452
+          },
+          "backlogged_completion_gap_s": {
+            "count": 240,
+            "sum": 363.64755154878367,
+            "min": 1.4572016739984974,
+            "median": 1.5085299970232882,
+            "max": 1.793420379050076
+          }
+        },
+        "decode": {
+          "calls": 17220,
+          "errors": 0,
+          "lane_histogram": {
+            "1": 13676,
+            "2": 3452,
+            "3": 92
+          },
+          "max_lanes": 3,
+          "calls_with_ready_prefill": 0,
+          "calls_with_waiting": 12314,
+          "calls_with_prefilling": 15324,
+          "host_call_s": {
+            "count": 17220,
+            "sum": 224.36575269058812,
+            "min": 0.011706677032634616,
+            "median": 0.012880158028565347,
+            "max": 0.018264282029122114
+          }
+        },
+        "limits": "All harness phases included. Completion gaps include client/phase idle periods; submit-to-completion includes producer queueing. Queue states are snapshots at decode entry, not continuous ready-time measurements. Python intervals do not prove DMA overlap; overlapping sums are not wall-clock decomposition.",
+        "source_sha256": "bebfb02bde6f7c764fd6d9acd792c1621d84ebc7bd486c8c84208c37ab552c8a"
+      }
+    }
+  },
+  "limits": "One instrumented timed batch per condition; same physical ATOM2. Not statistical improvement or device overlap proof. Hybrid B4 early device import is deferred.",
+  "full_reference_matches": {
+    "128:32": true,
+    "128:128": true,
+    "512:32": true,
+    "512:128": true,
+    "2048:32": true,
+    "2048:128": true,
+    "8192:32": true,
+    "8192:128": true
+  },
+  "throughput_ratio": 1.0201324850237614
+}

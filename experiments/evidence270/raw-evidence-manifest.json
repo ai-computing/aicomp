@@ -1,0 +1,58 @@
+{
+  "research_event_id": "578a57666040434b90f5b76a51871973",
+  "storage": "research-hub artifact attachments; registered locally, remote synchronization not independently verified",
+  "files": {
+    "atom270-timeline-gemma-b4-whole.json": {
+      "sha256": "6a34ace19a9b54cac19e0bfe500e6eb5081fdd76ad4f1bfadfc53b7cb87ecd6b",
+      "bytes": 545767
+    },
+    "atom270-timeline-gemma-b4-whole.server0.log": {
+      "sha256": "cbc6739e05c48039d3118b6422d5a1264c7dc44688ee7eca69538d95f267a415",
+      "bytes": 2199092
+    },
+    "atom270-timeline-gemma-b4-stream.json": {
+      "sha256": "b4658cbaa41b7e1f74de7cd614ef20b8f99bf6ed2983e6d7023e697bafcdf94d",
+      "bytes": 545802
+    },
+    "atom270-timeline-gemma-b4-stream.server0.log": {
+      "sha256": "bebfb02bde6f7c764fd6d9acd792c1621d84ebc7bd486c8c84208c37ab552c8a",
+      "bytes": 2182393
+    },
+    "atom270-abba-gemma-b4-r0-w8192.json": {
+      "sha256": "40f2702e77e93e120dafb3a46d697575a6a2fbea4b5248562b420f1107492df3",
+      "bytes": 220936
+    },
+    "atom270-abba-gemma-b4-r0-w8192.server0.log": {
+      "sha256": "89bf71fea58f9d11673ef8b71999777a8927d8cc9ea95674eb10b8acafafb0f2",
+      "bytes": 1263839
+    },
+    "atom270-abba-gemma-b4-r1-w1024.json": {
+      "sha256": "9cf1dc2a82ef3e15fb479f2b547b625828f6ab1454f3ae1da065d5e769d7b308",
+      "bytes": 220928
+    },
+    "atom270-abba-gemma-b4-r1-w1024.server0.log": {
+      "sha256": "7bc8be3957f24aba400130619dba6b5c347ac25ce5090f93aaede9fbc83bcbf1",
+      "bytes": 767179
+    },
+    "atom270-abba-gemma-b4-r2-w1024.json": {
+      "sha256": "2939601a01acc5a4885ec5cebe2176a040106e1bb4d0c81b02bb850054085ef0",
+      "bytes": 220929
+    },
+    "atom270-abba-gemma-b4-r2-w1024.server0.log": {
+      "sha256": "a04491e23500acada9a6bfd676d2950f38e69e5f5083498ffe935554af29189e",
+      "bytes": 757068
+    },
+    "atom270-abba-gemma-b4-r3-w8192.json": {
+      "sha256": "cb82aacf02bb2403d2302502b8810db2838e645946843ca602b9e43dbda85efe",
+      "bytes": 220949
+    },
+    "atom270-abba-gemma-b4-r3-w8192.server0.log": {
+      "sha256": "00d8c2924b7cd5338aadbacefd4028b35944852203b1e608035fad49975724d0",
+      "bytes": 1241723
+    },
+    "atom270-shortwidth-gemma-b4-whole.json": {
+      "sha256": "d5b023ca9bddcec08feead487995a505ec09daae804ecf14e79461eb99539db2",
+      "bytes": 220910
+    }
+  }
+}

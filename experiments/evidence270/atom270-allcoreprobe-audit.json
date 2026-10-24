@@ -1,0 +1,58 @@
+{
+  "complete": true,
+  "compile_seconds": 159.2537886829814,
+  "probes": [
+    {
+      "input_tokens": 2048,
+      "index": 12,
+      "tokens": [
+        4588,
+        4588,
+        4588,
+        4588
+      ],
+      "all_hidden_and_attention_outputs_equal": true,
+      "full_vocabulary_logits_equal": true
+    },
+    {
+      "input_tokens": 2048,
+      "index": 13,
+      "tokens": [
+        369,
+        369,
+        369,
+        369
+      ],
+      "all_hidden_and_attention_outputs_equal": true,
+      "full_vocabulary_logits_equal": true
+    },
+    {
+      "input_tokens": 512,
+      "index": 49,
+      "tokens": [
+        807,
+        807,
+        807,
+        807
+      ],
+      "all_hidden_and_attention_outputs_equal": true,
+      "full_vocabulary_logits_equal": true
+    },
+    {
+      "input_tokens": 512,
+      "index": 50,
+      "tokens": [
+        4829,
+        4829,
+        4829,
+        4829
+      ],
+      "all_hidden_and_attention_outputs_equal": true,
+      "full_vocabulary_logits_equal": true
+    }
+  ],
+  "checked_boundary_outputs": 292,
+  "raw_sha256": "32f89a5887a7bf8b69561ba78c2245b2d91baf04585bc283b39f9dfae5ef555c",
+  "scope": "Two forced-history fixtures, four probe positions; not free-generation/native B1/quality/performance acceptance.",
+  "cleanup_exit_code": 0
+}

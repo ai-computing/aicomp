@@ -1,0 +1,127 @@
+{
+  "audits": {
+    "1": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 1,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 1,
+      "active_lane_histogram": [
+        0,
+        20856
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "0": 0
+        },
+        "opened": [
+          "/dev/rbln0"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    },
+    "4": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 4,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 4,
+      "active_lane_histogram": [
+        0,
+        664,
+        32,
+        32,
+        5008
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "2": 0
+        },
+        "opened": [
+          "/dev/rbln2"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    }
+  },
+  "comparisons": {
+    "128:32": {
+      "full": false,
+      "through_eos": true
+    },
+    "128:128": {
+      "full": false,
+      "through_eos": true
+    },
+    "512:32": {
+      "full": false,
+      "through_eos": true
+    },
+    "512:128": {
+      "full": false,
+      "through_eos": true
+    },
+    "2048:32": {
+      "full": true,
+      "through_eos": true
+    },
+    "2048:128": {
+      "full": true,
+      "through_eos": true
+    },
+    "8192:32": {
+      "full": true,
+      "through_eos": true
+    },
+    "8192:128": {
+      "full": true,
+      "through_eos": true
+    }
+  },
+  "metrics_8192_128": {
+    "1": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 35.574109970009886,
+      "output_tok_s": 57.56995752603592,
+      "median_first_sse_s": 17.3802980305627,
+      "median_tpot_est_s": 0.011212882113745656,
+      "median_e2e_s": 18.801305017026607,
+      "all_text_equal": true
+    },
+    "4": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 21.52105758502148,
+      "output_tok_s": 95.16260954691163,
+      "median_first_sse_s": 10.135787407518364,
+      "median_tpot_est_s": 0.036070315672843675,
+      "median_e2e_s": 14.72101910848869,
+      "all_text_equal": true
+    }
+  },
+  "b4_vs_b1_ratio": 1.6529907895776106,
+  "limits": "Single measured batch per condition; compiled batch and physical card can differ (bindings retained). Full sequence parity is reported separately from through-EOS and within-route parity. No statistical claim."
+}

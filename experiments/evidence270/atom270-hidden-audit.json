@@ -1,0 +1,173 @@
+{
+  "complete": true,
+  "compile_seconds": 153.83788209198974,
+  "scope": "Added outputs can change compilation; original target tokens reproduce, original full logit records differ. Not an operator attribution or quality result.",
+  "raw_sha256": "fbeaf63365c11bd62d024aa01f62b889c7b3eea4401fde7ccc96826334f0bb6b",
+  "probes": [
+    {
+      "input_tokens": 2048,
+      "index": 12,
+      "tokens": [
+        4588,
+        4588,
+        4588,
+        4588
+      ],
+      "first_differing_boundary": {
+        "boundary": 1,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.00390625,
+          0.00390625,
+          0.00390625
+        ]
+      },
+      "original_logit_records_equal": false,
+      "last_boundary": {
+        "boundary": 36,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.25,
+          0.25,
+          0.25
+        ]
+      }
+    },
+    {
+      "input_tokens": 2048,
+      "index": 13,
+      "tokens": [
+        369,
+        264,
+        264,
+        264
+      ],
+      "first_differing_boundary": {
+        "boundary": 1,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.0078125,
+          0.0078125,
+          0.0078125
+        ]
+      },
+      "original_logit_records_equal": false,
+      "last_boundary": {
+        "boundary": 36,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.25,
+          0.25,
+          0.25
+        ]
+      }
+    },
+    {
+      "input_tokens": 512,
+      "index": 49,
+      "tokens": [
+        807,
+        807,
+        807,
+        807
+      ],
+      "first_differing_boundary": {
+        "boundary": 1,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.00390625,
+          0.00390625,
+          0.00390625
+        ]
+      },
+      "original_logit_records_equal": false,
+      "last_boundary": {
+        "boundary": 36,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.5,
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "input_tokens": 512,
+      "index": 50,
+      "tokens": [
+        4829,
+        1033,
+        1033,
+        1033
+      ],
+      "first_differing_boundary": {
+        "boundary": 1,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.001953125,
+          0.001953125,
+          0.001953125
+        ]
+      },
+      "original_logit_records_equal": false,
+      "last_boundary": {
+        "boundary": 36,
+        "shape": [
+          4,
+          1,
+          2560
+        ],
+        "dtype": "torch.bfloat16",
+        "max_abs_from_lane0": [
+          0.0,
+          0.25,
+          0.25,
+          0.25
+        ]
+      }
+    }
+  ],
+  "cleanup_exit_code": 0
+}

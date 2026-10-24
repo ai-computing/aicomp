@@ -1,0 +1,89 @@
+{
+  "http_audit": {
+    "stage": "passed",
+    "conditions": 8,
+    "warmups": 8,
+    "correctness_responses": 128,
+    "timed_text_responses": 128
+  },
+  "batch_occupancy_audit": "FAILED: no successful decode call with four active lanes",
+  "active_lane_histogram": [
+    0,
+    14313,
+    3132,
+    93,
+    0
+  ],
+  "comparisons": {
+    "128:32": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null
+    },
+    "128:128": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null
+    },
+    "512:32": {
+      "full": false,
+      "through_eos": true,
+      "first_difference": 8
+    },
+    "512:128": {
+      "full": false,
+      "through_eos": true,
+      "first_difference": 8
+    },
+    "2048:32": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null
+    },
+    "2048:128": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null
+    },
+    "8192:32": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null
+    },
+    "8192:128": {
+      "full": true,
+      "through_eos": true,
+      "first_difference": null
+    }
+  },
+  "metrics_8192_128": {
+    "native": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 21.52105758502148,
+      "output_tok_s": 95.16260954691163,
+      "median_first_sse_s": 10.135787407518364,
+      "median_tpot_est_s": 0.036070315672843675,
+      "median_e2e_s": 14.72101910848869,
+      "all_text_equal": true
+    },
+    "whole": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 26.56643162900582,
+      "output_tok_s": 77.0897660852558,
+      "median_first_sse_s": 13.33676557202125,
+      "median_tpot_est_s": 0.017586364243986217,
+      "median_e2e_s": 15.773472197470255,
+      "all_text_equal": true
+    }
+  },
+  "sources": {
+    "atom270-causal-gemma-tp1-b4-native.json": "d9b5752d5fefe4a26d95118699c7ee50407ab20fc7ea9ee1909fb0a1eec41e78",
+    "atom270-causal-gemma-tp1-b4-native.server0.log": "1b76982780c2e0e4a181b6140f428c447e5696ff599d74bc5f7db9326b5e65e2",
+    "atom270-causal-gemma-tp1-b4-whole.json": "0750435be2d4dc9c7ace05e59fc29a5362153b0018e9698755ef24fd1c78bbf5",
+    "atom270-causal-gemma-tp1-b4-whole.server0.log": "da25643b1628e610cb4c8d1f96e31a12a73b789dde51da872045a1fe616a461a"
+  },
+  "stream": "not run: preceding occupancy audit failed",
+  "limits": "One timed batch; same physical ATOM for native/whole. Within-route correctness is not native parity or answer quality. No device DMA overlap proof."
+}

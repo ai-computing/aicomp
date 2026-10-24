@@ -1,0 +1,41 @@
+{
+  "archive": "Local research-hub registration; remote synchronization not independently verified.",
+  "raws": [
+    {
+      "file": "atom270-qwen4b-hidden-sdk.json",
+      "sha256": "fbeaf63365c11bd62d024aa01f62b889c7b3eea4401fde7ccc96826334f0bb6b",
+      "research_event_id": "b7a8db3a252147529a1215077fd03376"
+    },
+    {
+      "file": "atom270-qwen4b-firstkv-control-sdk.json",
+      "sha256": "f1e4e89bbdb7b44fccc64c4590bff328fad6dcdcf63bb59030142c3366287e19",
+      "research_event_id": "d6d3ec81b1f64913a994fe30ee6cea8d"
+    },
+    {
+      "file": "atom270-qwen4b-layerprobe-sdk.json",
+      "sha256": "8ef2432c82c9d39f4fb801c783776e5891fd5577a8b039fb3bcf2a21e3c31685",
+      "research_event_id": "24858169b62f4e0cbbdc0e3faf61c9e8"
+    },
+    {
+      "file": "atom270-qwen4b-attentionraw-sdk.json",
+      "sha256": "95ea83ef9bac821055405ab9aaedd3bc044076b619889caa0590f6d5202d3856",
+      "research_event_id": "b66fcf032bf348fe92441eed9647fc8a"
+    },
+    {
+      "file": "atom270-attentionprobe.log",
+      "sha256": "5e0c97226839462c03e80dd41cf40f5dd7c01c398c16aa95fa5abba9a0a2bcd5",
+      "research_event_id": "b66fcf032bf348fe92441eed9647fc8a"
+    }
+  ],
+  "sources": {
+    "build_atom270_hidden.py": "6a68702aca558fea48d7eba32237d6f4675c4b816738d08003c450188115950a",
+    "diagnose_atom270_hidden.py": "18ded477299a3e3132d966e3490570b0f345b7d3250a4a6cbacea0b8c1ec94fc",
+    "diagnose_atom270_firstkv_control.py": "ec2e3995f2c9931d4a0660696cfa1462a3d3678aac8606aac280c856d2300264",
+    "atom270_layer_probe.py": "e1b65c2e0559199c45f0c387d1a157b1090c7d29479ac8bcce04c5b6fbfc73eb",
+    "build_atom270_layerprobe.py": "da92ab137ffccefff03b37b23c02e92e00582a4db58a3e280ed885213eb6aedf",
+    "diagnose_atom270_layerprobe.py": "94c1d38b9869daa25a5a1bbaa21e74ee3369f368fa7c8a0ef3afffaa7b647913",
+    "atom270_attention_raw_probe.py": "f6a77b9d5790c4ad9bca282039d81d08eef249e14aae8f03e41e833c6abb010d",
+    "build_atom270_attentionraw.py": "408de9e6fe314b4bebbccd1eb0c8f4a31fb1472710f0706e958be886a1541b14",
+    "diagnose_atom270_attentionraw.py": "9a8ddc28f2034e46a1f03aa550ad9793c271f0d292eab2e219ea30720b8d0671"
+  }
+}

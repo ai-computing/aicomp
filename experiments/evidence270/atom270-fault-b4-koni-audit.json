@@ -1,0 +1,75 @@
+{
+  "model": "KISTI-KONI/KONI-Llama3.1-8B-Instruct-20241024",
+  "producer_startup_s": 409.7310900699813,
+  "decoder_load_s": 12.88959055999294,
+  "stage": "audited",
+  "source_sha256": "5374d6383f09c444c9044a52b9a746f52baf5bb297d8af44817098c9af5a5941",
+  "survivors": 3,
+  "survivor_output_tokens": 512,
+  "replacement_output_tokens": 16,
+  "cases": {
+    "control": {
+      "case": "control",
+      "histogram": [
+        0,
+        174,
+        174,
+        322,
+        15
+      ]
+    },
+    "cancel-reuse": {
+      "case": "cancel-reuse",
+      "trigger": {
+        "host_pending": true,
+        "victim_imported_spans": 0,
+        "slot": 3,
+        "active_tokens": [
+          168,
+          84,
+          4
+        ],
+        "progress_spans": 96,
+        "admitted": false
+      },
+      "histogram": [
+        0,
+        164,
+        164,
+        332,
+        15
+      ],
+      "survivors_exact": true,
+      "idle": true,
+      "poisoned": false,
+      "replacement_exact": true
+    },
+    "producer-death": {
+      "case": "producer-death",
+      "trigger": {
+        "host_pending": true,
+        "victim_imported_spans": 0,
+        "slot": 3,
+        "active_tokens": [
+          176,
+          89,
+          5
+        ],
+        "progress_spans": 96,
+        "admitted": false
+      },
+      "histogram": [
+        0,
+        171,
+        171,
+        340,
+        0
+      ],
+      "survivors_exact": true,
+      "idle": true,
+      "poisoned": false,
+      "victim_error": "RuntimeError('prefill subprocess response failed: prefill subprocess exited')"
+    }
+  },
+  "limits": "One direct-batcher same-lane TP2 fault sequence; not HTTP disconnect, semantic quality, performance/cache-reuse acceptance or hardware partial-victim-import coverage."
+}

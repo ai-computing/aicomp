@@ -1,0 +1,11 @@
+{
+  "stage": "passed",
+  "passed": 53,
+  "elapsed_s": 6.19,
+  "new_cases": 2,
+  "commit": "eaf7daa219a6cea68db4ec5fc08850edc848b271",
+  "batching_sha256": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+  "test_sha256": "d71d813c7fc95f0f44600635f1d804a8e86e25197a1359f23747e3966a28dd78",
+  "scope": "CPU fake SDK: real AtomBatcher, B4/k5 dense cache, three survivors, fourth lane partially imported, cancellation/late completion or producer error, same lane reuse. Survivor outputs equal no-fault control; replacement destination unchanged by late old result. Includes existing batching/hybrid/stream tests. Not hardware, quality, or full repository suite.",
+  "initial_failure": "Both new cases failed on test access to missing admitted attribute; changed test to use existing runtime convention getattr(...,False). No runtime change."
+}

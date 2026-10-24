@@ -1,0 +1,27 @@
+{
+  "complete": true,
+  "raw_sha256": "f1e4e89bbdb7b44fccc64c4590bff328fad6dcdcf63bb59030142c3366287e19",
+  "rows": [
+    {
+      "input_tokens": 2048,
+      "snapshot_count": 8,
+      "all_four_blocks_bit_exact": true,
+      "changed_block": 3,
+      "control_changed_elements_per_kv": 1024,
+      "control_first_changed_position": 0,
+      "restored_exact": true,
+      "prior_hidden_and_logit_probes_exact": true
+    },
+    {
+      "input_tokens": 512,
+      "snapshot_count": 8,
+      "all_four_blocks_bit_exact": true,
+      "changed_block": 3,
+      "control_changed_elements_per_kv": 1024,
+      "control_first_changed_position": 0,
+      "restored_exact": true,
+      "prior_hidden_and_logit_probes_exact": true
+    }
+  ],
+  "scope": "First-layer stored KV at sampled timepoints only; does not identify attention or MLP operator."
+}

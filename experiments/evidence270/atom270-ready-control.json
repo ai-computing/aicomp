@@ -1,0 +1,11 @@
+{
+  "test": "test_atom270_ready_control.py",
+  "sha256": "86e269488fda2b6262ca9ef3b6f371983b00b9f802d12136ad0d18718d9ada1f",
+  "passed": 2,
+  "elapsed_s": 3.04,
+  "all_ready_max_lanes": 4,
+  "serial_ready_max_lanes": 1,
+  "outputs_equal": true,
+  "scope": "CPU FakeBlocks, dense and hybrid-admission branches; synthetic all-global KV. Not Gemma sliding-window or ATOM hardware proof.",
+  "initial_failure": "Hybrid fixture decoder wrapper lacked dec_attn_mask; fixture corrected, production engine untouched."
+}

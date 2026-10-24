@@ -1,0 +1,28 @@
+{
+  "research_event_id": "20b19f6ff2f04da283fd53d98024b4bf",
+  "raws": [
+    {
+      "file": "atom270-qwen4b-samecard-retry1-a1.json",
+      "sha256": "0c7ef20fd373eb1993680aaab83d12c63ab0ed1d45098abca30332dfc6c9383f"
+    },
+    {
+      "file": "atom270-qwen4b-samecard-retry1-b1-prefill0.json",
+      "sha256": "c8f9b4c29d4f583c9753785f67fc90fb35d0088abb1e8820c75972abada0ba77"
+    },
+    {
+      "file": "atom270-qwen4b-samecard-retry1-b2-prefill0.json",
+      "sha256": "c8f9b4c29d4f583c9753785f67fc90fb35d0088abb1e8820c75972abada0ba77"
+    },
+    {
+      "file": "atom270-qwen4b-samecard-retry1-a2.json",
+      "sha256": "0c7ef20fd373eb1993680aaab83d12c63ab0ed1d45098abca30332dfc6c9383f"
+    }
+  ],
+  "raw_archive": "Registered in local research-hub; remote synchronization not independently verified.",
+  "sources": {
+    "diagnose_atom270_direct.py": "28030bbf0ad20f4ba0c5d4c229a95bee90f5afcb7bf2a95b1af96b97f931f654",
+    "diagnose_atom270_samecard_retry1.py": "7a0b383797761558ea0c81ccea02bd12dfe43ea4c6537497826ccf52b08abe0f",
+    "qwen4-lane-fixtures.json": "98ecf202160213ae7591c69d3ba053dab8d786f8ac1fe81147f944881725a154"
+  },
+  "fixture_source_sha256": "11d07b625862acc161aa95c34cd2d1087e9bd302477c01ff7e7f66677f9234f7"
+}

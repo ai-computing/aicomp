@@ -1,0 +1,51 @@
+{
+  "backlogged_gap_by_input": {
+    "128": {
+      "count": 60,
+      "median_s": 1.5538023289991543,
+      "min_s": 1.517794425948523,
+      "max_s": 1.6095911220181733
+    },
+    "512": {
+      "count": 60,
+      "median_s": 1.5557903224835172,
+      "min_s": 1.510746017913334,
+      "max_s": 1.5699333479860798
+    },
+    "2048": {
+      "count": 60,
+      "median_s": 1.5534528234857135,
+      "min_s": 1.510221569915302,
+      "max_s": 1.595483287004754
+    },
+    "8192": {
+      "count": 60,
+      "median_s": 1.5562832074938342,
+      "min_s": 1.5177083379821852,
+      "max_s": 1.6454418420325965
+    }
+  },
+  "load_s": 840.5813920759829,
+  "metrics_8192_128": {
+    "requests": 16,
+    "output_tokens": 2048,
+    "wall_s": 26.845269416924566,
+    "output_tok_s": 76.28904624473022,
+    "median_first_sse_s": 13.461700428510085,
+    "median_tpot_est_s": 0.01794637393712352,
+    "median_e2e_s": 15.955143106519245,
+    "all_text_equal": true
+  },
+  "baseline_metrics_8192_128": {
+    "requests": 16,
+    "output_tokens": 2048,
+    "wall_s": 26.56643162900582,
+    "output_tok_s": 77.0897660852558,
+    "median_first_sse_s": 13.33676557202125,
+    "median_tpot_est_s": 0.017586364243986217,
+    "median_e2e_s": 15.773472197470255,
+    "all_text_equal": true
+  },
+  "reference_match_conditions": 8,
+  "limits": "Not isolated probe overhead: sequential runs with possible host/card variation; one timed batch per condition. Gaps are host completion gaps with backlog, not pure NPU compute."
+}

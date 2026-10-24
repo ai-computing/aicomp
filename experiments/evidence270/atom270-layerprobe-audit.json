@@ -1,0 +1,420 @@
+{
+  "complete": true,
+  "compile_seconds": 154.00004827498924,
+  "scope": "First observed difference is attention module output including output projection. Not a specific kernel diagnosis.",
+  "raw_sha256": "8ef2432c82c9d39f4fb801c783776e5891fd5577a8b039fb3bcf2a21e3c31685",
+  "probes": [
+    {
+      "input_tokens": 2048,
+      "index": 12,
+      "observations": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "pre_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "attention_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.001953125,
+            0.001953125,
+            0.001953125
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "post_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.001953125,
+            0.001953125,
+            0.001953125
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "mlp_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "layer0_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        }
+      ],
+      "prior_instrumented_logit_records_equal": true
+    },
+    {
+      "input_tokens": 2048,
+      "index": 13,
+      "observations": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "pre_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "attention_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0009765625,
+            0.0009765625,
+            0.0009765625
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "post_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.001953125,
+            0.001953125,
+            0.001953125
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "mlp_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "layer0_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0078125,
+            0.0078125,
+            0.0078125
+          ]
+        }
+      ],
+      "prior_instrumented_logit_records_equal": true
+    },
+    {
+      "input_tokens": 512,
+      "index": 49,
+      "observations": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "pre_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "attention_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0009765625,
+            0.0009765625,
+            0.0009765625
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "post_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "mlp_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "layer0_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        }
+      ],
+      "prior_instrumented_logit_records_equal": true
+    },
+    {
+      "input_tokens": 512,
+      "index": 50,
+      "observations": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "pre_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "attention_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "post_attention_norm",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.001953125,
+            0.001953125,
+            0.001953125
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "mlp_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.00390625,
+            0.00390625,
+            0.00390625
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "layer0_output",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.001953125,
+            0.001953125,
+            0.001953125
+          ]
+        }
+      ],
+      "prior_instrumented_logit_records_equal": true
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "stage": "three_routes_audited",
+  "audits": {
+    "native": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 1,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 1,
+      "active_lane_histogram": [
+        0,
+        20856
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "0": 0
+        },
+        "opened": [
+          "/dev/rbln0"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    },
+    "whole": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 1,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 1,
+      "active_lane_histogram": [
+        0,
+        20856
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "0": 0
+        },
+        "opened": [
+          "/dev/rbln0"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    },
+    "stream": {
+      "stage": "audited",
+      "responses": {
+        "stage": "passed",
+        "conditions": 8,
+        "warmups": 8,
+        "correctness_responses": 128,
+        "timed_text_responses": 128
+      },
+      "compiled": {
+        "batch_size": 1,
+        "kv_blocks": 5,
+        "context": 9216,
+        "tensor_parallel_size": 1
+      },
+      "max_active_lanes": 1,
+      "active_lane_histogram": [
+        0,
+        20856
+      ],
+      "binding": {
+        "visible_count": 1,
+        "physical_to_visible": {
+          "0": 0
+        },
+        "opened": [
+          "/dev/rbln0"
+        ]
+      },
+      "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+    }
+  },
+  "result_sha256": {
+    "native": "76b81b2728303015358810b1a76391f5bad2f63291ab4b8aad39c44ced7d19b9",
+    "whole": "22fc823a863bd5ea01a80e7cad1ab01ce8519a89f1ab504f2c2eee8fe74bc54b",
+    "stream": "2fa51d84d752b2d370dc73504194835cd282aced9ce980e37557b92ef7c4ada1"
+  },
+  "eos_ids": [
+    1,
+    106
+  ],
+  "comparisons": {
+    "native_whole": {
+      "128:32": {
+        "full": false,
+        "through_eos": true
+      },
+      "128:128": {
+        "full": false,
+        "through_eos": true
+      },
+      "512:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "512:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "2048:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "2048:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "8192:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "8192:128": {
+        "full": true,
+        "through_eos": true
+      }
+    },
+    "whole_stream": {
+      "128:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "128:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "512:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "512:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "2048:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "2048:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "8192:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "8192:128": {
+        "full": true,
+        "through_eos": true
+      }
+    },
+    "native_stream": {
+      "128:32": {
+        "full": false,
+        "through_eos": true
+      },
+      "128:128": {
+        "full": false,
+        "through_eos": true
+      },
+      "512:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "512:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "2048:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "2048:128": {
+        "full": true,
+        "through_eos": true
+      },
+      "8192:32": {
+        "full": true,
+        "through_eos": true
+      },
+      "8192:128": {
+        "full": true,
+        "through_eos": true
+      }
+    }
+  },
+  "metrics_8192_128": {
+    "native": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 35.574109970009886,
+      "output_tok_s": 57.56995752603592,
+      "median_first_sse_s": 17.3802980305627,
+      "median_tpot_est_s": 0.011212882113745656,
+      "median_e2e_s": 18.801305017026607,
+      "all_text_equal": true
+    },
+    "whole": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 51.24334673094563,
+      "output_tok_s": 39.966164012531635,
+      "median_first_sse_s": 25.982786704960745,
+      "median_tpot_est_s": 0.01119109856718271,
+      "median_e2e_s": 27.402480554475915,
+      "all_text_equal": true
+    },
+    "stream": {
+      "requests": 16,
+      "output_tokens": 2048,
+      "wall_s": 47.38516508892644,
+      "output_tok_s": 43.220277826542855,
+      "median_first_sse_s": 23.757880949531682,
+      "median_tpot_est_s": 0.011299933598369477,
+      "median_e2e_s": 25.19775077648228,
+      "all_text_equal": true
+    }
+  },
+  "stream_whole_pct": 8.142171995768411,
+  "limits": "One timed batch per condition, same corrected B1k5 artifact and ATOM. Native uses one ATOM; PD adds one RNGD. Through-EOS agreement is not full-sequence equality or semantic-quality evidence. Not statistical speedup evidence."
+}

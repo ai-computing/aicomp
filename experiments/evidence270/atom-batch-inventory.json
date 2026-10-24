@@ -1,0 +1,989 @@
+{
+  "scope": "Interim ATOM B1/B4 inventory; within-route pass is not cross-route parity or model quality. Gemma original k5 native violates causality.",
+  "conditions": {
+    "lengths": [
+      128,
+      512,
+      2048,
+      8192
+    ],
+    "outputs": [
+      32,
+      128
+    ],
+    "concurrency": 16,
+    "repeats": 1,
+    "context": 9216,
+    "kv_blocks": 5,
+    "caches": false
+  },
+  "cases": [
+    {
+      "model": "qwen06b",
+      "batch": 1,
+      "mode": "native",
+      "source": "atom270-qwen06b-tp1-b1-native.json",
+      "source_sha256": "1375ae8c9eb389b2a14bd70420539d3c48276261bae0d61c55e8e46973ac7b6f",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 40.69590429693926,
+        "output_tok_s": 50.324474548020554,
+        "median_first_sse_s": 20.20046385045862,
+        "median_tpot_est_s": 0.01152950295661466,
+        "median_e2e_s": 21.6256192799774,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen06b",
+      "batch": 1,
+      "mode": "whole",
+      "source": "atom270-qwen06b-tp1-b1-whole.json",
+      "source_sha256": "a1fa82e039e96027508ab0da5b714575632aee09ff2fdbc9ff24c772a5911314",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 61.76825423899572,
+        "output_tok_s": 33.156190428756695,
+        "median_first_sse_s": 31.377333267533686,
+        "median_tpot_est_s": 0.011457031642226136,
+        "median_e2e_s": 32.836034505977295,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen06b",
+      "batch": 1,
+      "mode": "stream",
+      "source": "atom270-qwen06b-tp1-b1-stream.json",
+      "source_sha256": "b0b2211cb820c2fa94f67d2cdee39def66032dcbd806320c0ed4d1fec47dfc9e",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 47.45461846899707,
+        "output_tok_s": 43.15702172040418,
+        "median_first_sse_s": 23.975205504510086,
+        "median_tpot_est_s": 0.011326029267910076,
+        "median_e2e_s": 25.426549739495385,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen06b",
+      "batch": 4,
+      "mode": "native",
+      "source": "atom270-qwen06b-tp1-b4-native.json",
+      "source_sha256": "c9f2a5e4f193b0db8a4d498d332443ceea21b02bf982c6fdb1fe1256d09f96e9",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 4,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 4,
+        "active_lane_histogram": [
+          0,
+          664,
+          32,
+          32,
+          5008
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 32.18251903599594,
+        "output_tok_s": 63.63703219469319,
+        "median_first_sse_s": 14.797579117992427,
+        "median_tpot_est_s": 0.05466472298799699,
+        "median_e2e_s": 21.75026416644687,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen06b",
+      "batch": 4,
+      "mode": "whole",
+      "source": "atom270-qwen06b-tp1-b4-whole.json",
+      "source_sha256": "b789259526fca6a904ef23e1cfbc256f7a22fbc7444b4d9d8f261154fabbb2b6",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 4,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 4,
+        "active_lane_histogram": [
+          0,
+          13291,
+          2162,
+          319,
+          571
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 35.03081701300107,
+        "output_tok_s": 58.46281002352646,
+        "median_first_sse_s": 17.814400231465697,
+        "median_tpot_est_s": 0.03908897198481837,
+        "median_e2e_s": 22.792797370057087,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen06b",
+      "batch": 4,
+      "mode": "stream",
+      "source": "atom270-qwen06b-tp1-b4-stream.json",
+      "source_sha256": "c415ce39681718661a61a9f64a9115849210235e9b3ce315e636a2cb58a960e4",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 4,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 4,
+        "active_lane_histogram": [
+          0,
+          7313,
+          4068,
+          469,
+          1000
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 45.0327116510598,
+        "output_tok_s": 45.478051951859364,
+        "median_first_sse_s": 22.801500510016922,
+        "median_tpot_est_s": 0.04172879728712288,
+        "median_e2e_s": 28.132468500523828,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen4b",
+      "batch": 1,
+      "mode": "native",
+      "source": "atom270-qwen4b-tp1-b1-native.json",
+      "source_sha256": "eb11ac21e4a6f74f2a258aaa319cabfcc7eea0b3b2e30f6dd4f1208d5f5e9c5a",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "1": 0
+          },
+          "opened": [
+            "/dev/rbln1"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 166.73132611101028,
+        "output_tok_s": 12.283234637241682,
+        "median_first_sse_s": 83.1327906565275,
+        "median_tpot_est_s": 0.042929202673395755,
+        "median_e2e_s": 88.58196617756039,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen4b",
+      "batch": 1,
+      "mode": "whole",
+      "source": "atom270-qwen4b-tp1-b1-whole.json",
+      "source_sha256": "ca1d7fe3bc2b55461fd4d7ef01bbeae68265ca4a4af03ade5714faaea509cb5c",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "1": 0
+          },
+          "opened": [
+            "/dev/rbln1"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 162.32253570703324,
+        "output_tok_s": 12.616855639172119,
+        "median_first_sse_s": 80.82660805253545,
+        "median_tpot_est_s": 0.04286877280348678,
+        "median_e2e_s": 86.27872413001023,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen4b",
+      "batch": 1,
+      "mode": "stream",
+      "source": "atom270-qwen4b-tp1-b1-stream.json",
+      "source_sha256": "a079bf27d380ecb93e1c33d7093b187fed24d96ecaea7cdaede8d34acf3263f3",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "1": 0
+          },
+          "opened": [
+            "/dev/rbln1"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 141.20428703003563,
+        "output_tok_s": 14.50380893580355,
+        "median_first_sse_s": 69.71645488747163,
+        "median_tpot_est_s": 0.04285237829954415,
+        "median_e2e_s": 75.16798075096449,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen4b",
+      "batch": 4,
+      "mode": "native",
+      "source": "atom270-qwen4b-tp1-b4-native.json",
+      "source_sha256": "11d07b625862acc161aa95c34cd2d1087e9bd302477c01ff7e7f66677f9234f7",
+      "state": "audit_failed",
+      "error": "runtime or parity failure",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 112.26723379304167,
+        "output_tok_s": 18.242188132784786,
+        "median_first_sse_s": 54.54269025201211,
+        "median_tpot_est_s": 0.1815217392240453,
+        "median_e2e_s": 77.60018511646194,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "qwen4b",
+      "batch": 4,
+      "mode": "whole",
+      "source": "atom270-qwen4b-tp1-b4-whole.json",
+      "state": "not_collected"
+    },
+    {
+      "model": "qwen4b",
+      "batch": 4,
+      "mode": "stream",
+      "source": "atom270-qwen4b-tp1-b4-stream.json",
+      "state": "not_collected"
+    },
+    {
+      "model": "koni",
+      "batch": 1,
+      "mode": "native",
+      "source": "atom270-koni-tp2-b1-native.json",
+      "source_sha256": "111c24490d36d835efa369d11ba05ce9a63e7c53da89ca4d7d8a72119c688f39",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 2
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 2,
+          "physical_to_visible": {
+            "0": 0,
+            "1": 1
+          },
+          "opened": [
+            "/dev/rbln0",
+            "/dev/rbln1"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 136.36672446795274,
+        "output_tok_s": 15.018326560166782,
+        "median_first_sse_s": 67.78715079504764,
+        "median_tpot_est_s": 0.036702179535581754,
+        "median_e2e_s": 72.43892477202462,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "koni",
+      "batch": 1,
+      "mode": "whole",
+      "source": "atom270-koni-tp2-b1-whole.json",
+      "source_sha256": "a21aa944d52a1f0d9527f75e58d6b6f5bbc60cc7ddbef815517069018ceafe4c",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 2
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 2,
+          "physical_to_visible": {
+            "0": 0,
+            "1": 1
+          },
+          "opened": [
+            "/dev/rbln0",
+            "/dev/rbln1"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 147.397185879061,
+        "output_tok_s": 13.89443080467207,
+        "median_first_sse_s": 73.67303348955465,
+        "median_tpot_est_s": 0.03654847306329537,
+        "median_e2e_s": 78.30206911102869,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "koni",
+      "batch": 1,
+      "mode": "stream",
+      "source": "atom270-koni-tp2-b1-stream.json",
+      "source_sha256": "37cdbd2af69c954c9d9b485274a765dda72e3f413e0ebeab239c73d60b895fe7",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 2
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 2,
+          "physical_to_visible": {
+            "0": 0,
+            "1": 1
+          },
+          "opened": [
+            "/dev/rbln0",
+            "/dev/rbln1"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 119.06118814903311,
+        "output_tok_s": 17.201239394960897,
+        "median_first_sse_s": 58.09352488449076,
+        "median_tpot_est_s": 0.036696354886076935,
+        "median_e2e_s": 62.75135855545523,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "koni",
+      "batch": 4,
+      "mode": "native",
+      "source": "atom270-koni-tp2-b4-native.json",
+      "source_sha256": "b865d242b87b6a948b81fa3bf97927b302db923c3834f013fbacb0b9de6c509c",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 4,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 2
+        },
+        "max_active_lanes": 4,
+        "active_lane_histogram": [
+          0,
+          664,
+          32,
+          32,
+          5008
+        ],
+        "binding": {
+          "visible_count": 2,
+          "physical_to_visible": {
+            "2": 0,
+            "3": 1
+          },
+          "opened": [
+            "/dev/rbln2",
+            "/dev/rbln3"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 85.87466673506424,
+        "output_tok_s": 23.848709728543998,
+        "median_first_sse_s": 41.86685951001709,
+        "median_tpot_est_s": 0.1383990001654817,
+        "median_e2e_s": 59.45633385749534,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "koni",
+      "batch": 4,
+      "mode": "whole",
+      "source": "atom270-koni-tp2-b4-whole.json",
+      "source_sha256": "6d71f099b7811884212c4a00dc9ccfd4a0de661bb491a305aecab693d08048bb",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 4,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 2
+        },
+        "max_active_lanes": 4,
+        "active_lane_histogram": [
+          0,
+          8833,
+          5395,
+          319,
+          69
+        ],
+        "binding": {
+          "visible_count": 2,
+          "physical_to_visible": {
+            "2": 0,
+            "3": 1
+          },
+          "opened": [
+            "/dev/rbln2",
+            "/dev/rbln3"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 64.3446362640243,
+        "output_tok_s": 31.828604821021518,
+        "median_first_sse_s": 33.22209676599596,
+        "median_tpot_est_s": 0.05832567162982254,
+        "median_e2e_s": 40.67323362902971,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "koni",
+      "batch": 4,
+      "mode": "stream",
+      "source": "atom270-koni-tp2-b4-stream.json",
+      "source_sha256": "dbc521450419643fd1dbe75c8ed4da5b4081656ae3071addab718b3a73cb2996",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 4,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 2
+        },
+        "max_active_lanes": 4,
+        "active_lane_histogram": [
+          0,
+          6036,
+          4743,
+          1398,
+          285
+        ],
+        "binding": {
+          "visible_count": 2,
+          "physical_to_visible": {
+            "2": 0,
+            "3": 1
+          },
+          "opened": [
+            "/dev/rbln2",
+            "/dev/rbln3"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 53.119983348064125,
+        "output_tok_s": 38.554228953361225,
+        "median_first_sse_s": 26.988731065008324,
+        "median_tpot_est_s": 0.06271455727524938,
+        "median_e2e_s": 35.03915593097918,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "gemma",
+      "batch": 1,
+      "mode": "native",
+      "source": "atom270-gemma-tp1-b1-native.json",
+      "source_sha256": "9a670a7d4c16fa6b0d1a0ccaf6b94a0b45179ff33d6ef5112955289eb5c6f365",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 35.315574429929256,
+        "output_tok_s": 57.991411241618096,
+        "median_first_sse_s": 17.38664855447132,
+        "median_tpot_est_s": 0.011152653319222163,
+        "median_e2e_s": 18.80122325598495,
+        "all_text_equal": true
+      },
+      "causal_baseline_valid": false
+    },
+    {
+      "model": "gemma",
+      "batch": 1,
+      "mode": "whole",
+      "source": "atom270-gemma-tp1-b1-whole.json",
+      "source_sha256": "e0f4e8e093c9ec353a46edc459104c56a63160afe8a9de444d219e6bbd23548e",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 50.81015266897157,
+        "output_tok_s": 40.30690506566142,
+        "median_first_sse_s": 25.73407808301272,
+        "median_tpot_est_s": 0.011059337752544886,
+        "median_e2e_s": 27.12871677405201,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "gemma",
+      "batch": 1,
+      "mode": "stream",
+      "source": "atom270-gemma-tp1-b1-stream.json",
+      "source_sha256": "9470ce9d2a5f43787bb950a1de6f7c3db6a1a111a4b0428076c1dd27e2256623",
+      "audit": {
+        "stage": "audited",
+        "responses": {
+          "stage": "passed",
+          "conditions": 8,
+          "warmups": 8,
+          "correctness_responses": 128,
+          "timed_text_responses": 128
+        },
+        "compiled": {
+          "batch_size": 1,
+          "kv_blocks": 5,
+          "context": 9216,
+          "tensor_parallel_size": 1
+        },
+        "max_active_lanes": 1,
+        "active_lane_histogram": [
+          0,
+          20856
+        ],
+        "binding": {
+          "visible_count": 1,
+          "physical_to_visible": {
+            "0": 0
+          },
+          "opened": [
+            "/dev/rbln0"
+          ]
+        },
+        "limits": "Full HTTP token/text checks plus successful decode-call lane counts. Not device utilization, answer quality or statistical speedup evidence."
+      },
+      "state": "within_route_pass",
+      "long_case": {
+        "requests": 16,
+        "output_tokens": 2048,
+        "wall_s": 46.951324986992404,
+        "output_tok_s": 43.61964226925197,
+        "median_first_sse_s": 23.561160824494436,
+        "median_tpot_est_s": 0.01107739847644753,
+        "median_e2e_s": 24.964550331467763,
+        "all_text_equal": true
+      }
+    },
+    {
+      "model": "gemma",
+      "batch": 4,
+      "mode": "native",
+      "source": "atom270-gemma-tp1-b4-native.json",
+      "state": "not_collected"
+    },
+    {
+      "model": "gemma",
+      "batch": 4,
+      "mode": "whole",
+      "source": "atom270-gemma-tp1-b4-whole.json",
+      "state": "not_collected"
+    },
+    {
+      "model": "gemma",
+      "batch": 4,
+      "mode": "stream",
+      "source": "atom270-gemma-tp1-b4-stream.json",
+      "state": "not_collected"
+    }
+  ]
+}

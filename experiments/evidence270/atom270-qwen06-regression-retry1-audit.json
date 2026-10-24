@@ -1,0 +1,299 @@
+{
+  "stage": "audited",
+  "responses": 528,
+  "conditions": 16,
+  "binding": {
+    "visible_count": 1,
+    "physical_to_visible": {
+      "2": 0
+    },
+    "opened": [
+      "/dev/rbln2"
+    ]
+  },
+  "raw_sha256": {
+    "atom270-qwen06-regression-retry1-outer.json": "7d05860ae23b3e670061819e6eb5c6adcc6e4b4c861f7a86adf7b9216fc81b8f",
+    "atom270-qwen06-regression-retry1-plan.json": "1aedb3d064f7ac6dcdc662d7a5f799b8f6567d9c7ee0d408aa14f7c99a4b9d5d",
+    "atom270-qwen06-regression-retry1-r0-whole.json": "5fc169b062bd3181b0a6fcfeef06e7586b79b2d0e502c2d485b22a4e020ba940",
+    "atom270-qwen06-regression-retry1-r0-whole.server0.log": "c109d050bdd9023aec04eec148a045715aa0cd8ce56be9ecc18160146ba0bb9c",
+    "atom270-qwen06-regression-retry1-r1-stream.json": "3ff17acf90f08ffe318f60155a0c23a0e3f65f6b0533f81eded290040e8056b5",
+    "atom270-qwen06-regression-retry1-r1-stream.server0.log": "81173dc46ac2c9c6da6230801fce5895e0858437e29091d40eb3bc9bd4023d01",
+    "atom270-qwen06-regression-retry1-r2-stream.json": "0a53097c042a7c46bd55c12c428c99afb792ed579816dd727a239a0dda0adf12",
+    "atom270-qwen06-regression-retry1-r2-stream.server0.log": "34ab0eff903c0f7f3589d7864d473f56bd3bb7470d904b926cf5135ca15e8fb1",
+    "atom270-qwen06-regression-retry1-r3-whole.json": "7621b42a720e44bce355e342ea536578b51fff212a93bf679b21c50704ad7bd7",
+    "atom270-qwen06-regression-retry1-r3-whole.server0.log": "611ba99cae925155b06b967f018bea0d28a25b1ad26b0e983979b38fa0e3f736"
+  },
+  "rows": [
+    {
+      "input_tokens": 2048,
+      "output_tokens": 32,
+      "whole": {
+        "output_tok_s": 23.579197994317543,
+        "median_first_sse_s": 11.793499694002094,
+        "median_e2e_s": 12.110661507525947,
+        "median_tpot_est_s": 0.010216625571633959,
+        "tok_s_samples": [
+          24.394001336303095,
+          22.76439465233199
+        ]
+      },
+      "stream": {
+        "output_tok_s": 30.15207202484281,
+        "median_first_sse_s": 8.865385784505634,
+        "median_e2e_s": 9.423303873481927,
+        "median_tpot_est_s": 0.01704575523411134,
+        "tok_s_samples": [
+          30.12762881891311,
+          30.17651523077251
+        ]
+      },
+      "stream_to_whole_tok_s": 1.2787573195708053,
+      "stream_to_whole_e2e": 0.7780998476116263
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "whole": {
+        "output_tok_s": 93.51517110007593,
+        "median_first_sse_s": 11.028839435486589,
+        "median_e2e_s": 12.644602753745858,
+        "median_tpot_est_s": 0.012733867590629137,
+        "tok_s_samples": [
+          97.60810379362088,
+          89.42223840653098
+        ]
+      },
+      "stream": {
+        "output_tok_s": 113.25741800605329,
+        "median_first_sse_s": 8.921731540991459,
+        "median_e2e_s": 11.22233559601591,
+        "median_tpot_est_s": 0.01881865048611456,
+        "tok_s_samples": [
+          112.6933770293819,
+          113.82145898272465
+        ]
+      },
+      "stream_to_whole_tok_s": 1.2111127710481335,
+      "stream_to_whole_e2e": 0.8875198228502186
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "whole": {
+        "output_tok_s": 20.440929089934805,
+        "median_first_sse_s": 14.119025979511207,
+        "median_e2e_s": 15.826438275515102,
+        "median_tpot_est_s": 0.054870423208358846,
+        "tok_s_samples": [
+          21.44422258867457,
+          19.43763559119504
+        ]
+      },
+      "stream": {
+        "output_tok_s": 16.196140983753573,
+        "median_first_sse_s": 17.364907934999792,
+        "median_e2e_s": 19.79581503351801,
+        "median_tpot_est_s": 0.07701502136431725,
+        "tok_s_samples": [
+          16.23596081322384,
+          16.156321154283308
+        ]
+      },
+      "stream_to_whole_tok_s": 0.7923387881487548,
+      "stream_to_whole_e2e": 1.2508067000863918
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "whole": {
+        "output_tok_s": 53.11295352654426,
+        "median_first_sse_s": 19.572416286740918,
+        "median_e2e_s": 24.817380180757027,
+        "median_tpot_est_s": 0.039747054714528024,
+        "tok_s_samples": [
+          51.875024957976585,
+          54.35088209511194
+        ]
+      },
+      "stream": {
+        "output_tok_s": 53.35442869912747,
+        "median_first_sse_s": 19.17754786973819,
+        "median_e2e_s": 26.33155713728047,
+        "median_tpot_est_s": 0.042779082874217486,
+        "tok_s_samples": [
+          52.7894928068765,
+          53.91936459137844
+        ]
+      },
+      "stream_to_whole_tok_s": 1.004546445952446,
+      "stream_to_whole_e2e": 1.0610127638572224
+    }
+  ],
+  "host_stages": [
+    {
+      "remote_completion": {
+        "calls": 132,
+        "errors": 0,
+        "wall_s": 492.4705371998716
+      },
+      "import": {
+        "calls": 132,
+        "errors": 0,
+        "wall_s": 76.67210865276866
+      },
+      "decode/1": {
+        "calls": 4385,
+        "errors": 0,
+        "wall_s": 45.29988210671581
+      },
+      "decode/2": {
+        "calls": 1361,
+        "errors": 0,
+        "wall_s": 21.072782702278346
+      },
+      "decode/3": {
+        "calls": 255,
+        "errors": 0,
+        "wall_s": 5.946987624512985
+      },
+      "decode/4": {
+        "calls": 639,
+        "errors": 0,
+        "wall_s": 18.24688756687101
+      }
+    },
+    {
+      "import": {
+        "calls": 3696,
+        "errors": 0,
+        "wall_s": 95.6276512950426
+      },
+      "remote_completion": {
+        "calls": 132,
+        "errors": 0,
+        "wall_s": 382.94632272736635
+      },
+      "decode/1": {
+        "calls": 1698,
+        "errors": 0,
+        "wall_s": 18.066271065734327
+      },
+      "decode/2": {
+        "calls": 1359,
+        "errors": 0,
+        "wall_s": 15.615915696835145
+      },
+      "decode/3": {
+        "calls": 480,
+        "errors": 0,
+        "wall_s": 7.34489822620526
+      },
+      "decode/4": {
+        "calls": 1143,
+        "errors": 0,
+        "wall_s": 32.43782124703284
+      }
+    },
+    {
+      "import": {
+        "calls": 3696,
+        "errors": 0,
+        "wall_s": 98.05997085268609
+      },
+      "remote_completion": {
+        "calls": 132,
+        "errors": 0,
+        "wall_s": 379.95639754168224
+      },
+      "decode/1": {
+        "calls": 1645,
+        "errors": 0,
+        "wall_s": 17.683394415304065
+      },
+      "decode/2": {
+        "calls": 1420,
+        "errors": 0,
+        "wall_s": 16.931638494483195
+      },
+      "decode/3": {
+        "calls": 561,
+        "errors": 0,
+        "wall_s": 8.901394719374366
+      },
+      "decode/4": {
+        "calls": 1065,
+        "errors": 0,
+        "wall_s": 30.38444321951829
+      }
+    },
+    {
+      "remote_completion": {
+        "calls": 132,
+        "errors": 0,
+        "wall_s": 490.5047698447015
+      },
+      "import": {
+        "calls": 132,
+        "errors": 0,
+        "wall_s": 78.30497097945772
+      },
+      "decode/1": {
+        "calls": 4781,
+        "errors": 0,
+        "wall_s": 49.53998960473109
+      },
+      "decode/2": {
+        "calls": 1188,
+        "errors": 0,
+        "wall_s": 19.2377365489956
+      },
+      "decode/3": {
+        "calls": 265,
+        "errors": 0,
+        "wall_s": 6.2684115517186
+      },
+      "decode/4": {
+        "calls": 619,
+        "errors": 0,
+        "wall_s": 17.58593289880082
+      }
+    }
+  ],
+  "histograms": [
+    [
+      0,
+      4385,
+      1361,
+      255,
+      639
+    ],
+    [
+      0,
+      1698,
+      1359,
+      480,
+      1143
+    ],
+    [
+      0,
+      1645,
+      1420,
+      561,
+      1065
+    ],
+    [
+      0,
+      4781,
+      1188,
+      265,
+      619
+    ]
+  ],
+  "startup_s": [
+    14.30028600699734,
+    14.053873052005656,
+    14.30276256101206,
+    14.101302650989965
+  ],
+  "limits": "Two measured batches per route/condition, same Pod and exact fixed-input outputs. Not arbitrary prompt quality or confidence intervals. Host import includes conversion/staging/SDK, not pure DMA. No isolated cache-hit claim; startup excluded from throughput."
+}
