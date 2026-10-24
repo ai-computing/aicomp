@@ -1,0 +1,821 @@
+{
+  "complete": true,
+  "compile_seconds": 152.58750150108244,
+  "raw_sha256": "95ea83ef9bac821055405ab9aaedd3bc044076b619889caa0590f6d5202d3856",
+  "scope": "Instrumentation changed numerical behavior; cannot attribute original failure to a particular operator. Later retained boundaries still differ.",
+  "probes": [
+    {
+      "input_tokens": 2048,
+      "index": 12,
+      "tokens": [
+        4588,
+        4588,
+        4588,
+        4588
+      ],
+      "prior_tokens": [
+        4588,
+        4588,
+        4588,
+        4588
+      ],
+      "token_patterns_equal": true,
+      "prior_logit_records_equal": false,
+      "diagnostic_outputs": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "q_proj",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "k_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "v_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "q_norm",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "k_norm",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 6,
+          "label": "rotary_q",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 7,
+          "label": "rotary_k",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 8,
+          "label": "attention_v",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 9,
+          "label": "attention_result",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 10,
+          "label": "o_proj",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "first_retained_differing_boundary": "original_boundary_11"
+    },
+    {
+      "input_tokens": 2048,
+      "index": 13,
+      "tokens": [
+        369,
+        264,
+        264,
+        264
+      ],
+      "prior_tokens": [
+        369,
+        264,
+        264,
+        264
+      ],
+      "token_patterns_equal": true,
+      "prior_logit_records_equal": false,
+      "diagnostic_outputs": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "q_proj",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "k_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "v_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "q_norm",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "k_norm",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 6,
+          "label": "rotary_q",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 7,
+          "label": "rotary_k",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 8,
+          "label": "attention_v",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 9,
+          "label": "attention_result",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 10,
+          "label": "o_proj",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "first_retained_differing_boundary": "original_boundary_11"
+    },
+    {
+      "input_tokens": 512,
+      "index": 49,
+      "tokens": [
+        807,
+        807,
+        807,
+        807
+      ],
+      "prior_tokens": [
+        807,
+        807,
+        807,
+        807
+      ],
+      "token_patterns_equal": true,
+      "prior_logit_records_equal": false,
+      "diagnostic_outputs": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "q_proj",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "k_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "v_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "q_norm",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "k_norm",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 6,
+          "label": "rotary_q",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 7,
+          "label": "rotary_k",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 8,
+          "label": "attention_v",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 9,
+          "label": "attention_result",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 10,
+          "label": "o_proj",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "first_retained_differing_boundary": "original_boundary_11"
+    },
+    {
+      "input_tokens": 512,
+      "index": 50,
+      "tokens": [
+        4829,
+        4829,
+        4829,
+        4829
+      ],
+      "prior_tokens": [
+        4829,
+        1033,
+        1033,
+        1033
+      ],
+      "token_patterns_equal": false,
+      "prior_logit_records_equal": false,
+      "diagnostic_outputs": [
+        {
+          "boundary": 0,
+          "label": "embedding",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 1,
+          "label": "q_proj",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 2,
+          "label": "k_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 3,
+          "label": "v_proj",
+          "shape": [
+            4,
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 4,
+          "label": "q_norm",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 5,
+          "label": "k_norm",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 6,
+          "label": "rotary_q",
+          "shape": [
+            4,
+            32,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 7,
+          "label": "rotary_k",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 8,
+          "label": "attention_v",
+          "shape": [
+            4,
+            8,
+            1,
+            128
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 9,
+          "label": "attention_result",
+          "shape": [
+            4,
+            1,
+            4096
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "boundary": 10,
+          "label": "o_proj",
+          "shape": [
+            4,
+            1,
+            2560
+          ],
+          "dtype": "torch.bfloat16",
+          "max_abs_from_lane0": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "first_retained_differing_boundary": "original_boundary_11"
+    }
+  ],
+  "jit_fallback_counts": {
+    "hidden": 0,
+    "layerprobe": 2,
+    "attentionraw": 2
+  }
+}

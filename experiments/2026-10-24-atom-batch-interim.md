@@ -219,3 +219,10 @@ The same-Pod normal/fixed-prefill/fixed-prefill/normal ABBA completed128 cases. 
 The first attempt failed SDK INIT_INTERNAL when loading a second engine in one process; the retry uses fresh processes in the same Pod. Both failure and accepted retry were recorded. This result plus the earlier direct SDK replay narrows the reproduction to SDK/compiled decode behavior, without identifying the faulty operator or declaring either numerical output correct. The production runtime is unchanged and B4 native parity remains failed.
 
 See evidence270/QWEN4-LANE-REPRO.md for the minimal token fixture, measured diagnostic scripts, prerequisite artifact/SDK versions, exact commands, acceptance criteria and archive hashes. No new hardware run was needed to package this reproduction.
+
+
+## Follow-up instrumentation changes numerical behavior (2026-10-25)
+
+Supported hidden-state output and first-layer module hooks narrow the first observed difference to attention output on their instrumented graphs; first-layer KV equality passes positive/restore controls. However, exposing raw attention internals makes the first-attention probes lane-equal and removes the512/index50 token split, while2048/index13 still diverges later. Thus these observations do not identify the original faulty operator or constitute a fix. A packed-output attempt failed DEVICE_GRAPH_CONVERSION and is retained as failed.
+
+See evidence270/NUMERICS-DIAGNOSTICS.md for the progression, exact source scripts, SDK prerequisites, replay commands, compact audits, archive hashes and acceptance criteria. No production change or new performance gain is claimed.
