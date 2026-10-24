@@ -1,0 +1,129 @@
+{
+  "source_sha256": {
+    "a1": "d0f827e3bac4df406b988737778f9b7967731e29740b32465e4f5d580302fe3e",
+    "b1": "efee28e7491f18e750d3e6c9df427204692a86ba570c770409f2817c66289b34",
+    "b2": "5d6e5d83979c6c53735a55b312383afafb76d0cb7ce1abfb20622e001b4589ba",
+    "a2": "e39070e1d0256398d112b702c0a796b4d7678c1ed3b25249e250201f183d608a"
+  },
+  "arms": {
+    "a1": {
+      "token_checks": 42,
+      "token_mismatches": 29,
+      "stream_checks": 42,
+      "stream_mismatches": 29,
+      "parity_passed": false
+    },
+    "b1": {
+      "token_checks": 42,
+      "token_mismatches": 29,
+      "stream_checks": 42,
+      "stream_mismatches": 29,
+      "parity_passed": false
+    },
+    "b2": {
+      "token_checks": 42,
+      "token_mismatches": 29,
+      "stream_checks": 42,
+      "stream_mismatches": 29,
+      "parity_passed": false
+    },
+    "a2": {
+      "token_checks": 42,
+      "token_mismatches": 29,
+      "stream_checks": 42,
+      "stream_mismatches": 29,
+      "parity_passed": false
+    }
+  },
+  "same_reference_tokens": true,
+  "same_token_multisets": true,
+  "same_stream_text_multisets": true,
+  "timing": [
+    {
+      "input": 128,
+      "output": 128,
+      "concurrency": 1,
+      "arm_output_tok_s": {
+        "a1": 66.61150224590246,
+        "b1": 66.11647845851489,
+        "b2": 65.09286904601046,
+        "a2": 64.41984367428869
+      },
+      "default_mean": 65.51567296009557,
+      "disabled_mean": 65.60467375226267,
+      "disabled_pct_change": 0.13584656639535897
+    },
+    {
+      "input": 128,
+      "output": 128,
+      "concurrency": 4,
+      "arm_output_tok_s": {
+        "a1": 245.49137516687045,
+        "b1": 244.416680688499,
+        "b2": 244.16604587864515,
+        "a2": 231.06717470144406
+      },
+      "default_mean": 238.27927493415726,
+      "disabled_mean": 244.29136328357208,
+      "disabled_pct_change": 2.523126843942314
+    },
+    {
+      "input": 128,
+      "output": 128,
+      "concurrency": 16,
+      "arm_output_tok_s": {
+        "a1": 844.8671847004897,
+        "b1": 830.173733841859,
+        "b2": 839.5666005070382,
+        "a2": 810.2090104581092
+      },
+      "default_mean": 827.5380975792995,
+      "disabled_mean": 834.8701671744486,
+      "disabled_pct_change": 0.8860099150234557
+    },
+    {
+      "input": 8192,
+      "output": 128,
+      "concurrency": 1,
+      "arm_output_tok_s": {
+        "a1": 43.01906135153176,
+        "b1": 42.98217573709919,
+        "b2": 42.574791160393346,
+        "a2": 41.87153236616509
+      },
+      "default_mean": 42.44529685884842,
+      "disabled_mean": 42.77848344874627,
+      "disabled_pct_change": 0.78497881875077
+    },
+    {
+      "input": 8192,
+      "output": 128,
+      "concurrency": 4,
+      "arm_output_tok_s": {
+        "a1": 63.10140383561124,
+        "b1": 64.24500523391306,
+        "b2": 60.96949747891694,
+        "a2": 59.84045759818228
+      },
+      "default_mean": 61.47093071689676,
+      "disabled_mean": 62.607251356415006,
+      "disabled_pct_change": 1.8485495928987072
+    },
+    {
+      "input": 8192,
+      "output": 128,
+      "concurrency": 16,
+      "arm_output_tok_s": {
+        "a1": 79.34569760549765,
+        "b1": 80.33088695566727,
+        "b2": 74.92498778947339,
+        "a2": 72.04136976220437
+      },
+      "default_mean": 75.693533683851,
+      "disabled_mean": 77.62793737257033,
+      "disabled_pct_change": 2.555573236676656
+    }
+  ],
+  "configuration_only_difference": "--no-profile-guided-decode-batching",
+  "interpretation": "Disabling profile-guided batching did not eliminate exact parity failures; no original compiler/numerical root cause established."
+}

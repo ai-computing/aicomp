@@ -55,4 +55,10 @@ python3 experiments/evidence274/selfcheck_native201_quality.py
 
 ## Next experiment
 
-#274 tests default/profile-guided-decode-batching-off/off/default on the same RNGD with128/8192input,128output,c1/4/16. Each arm has independent c1 references; cross-arm references must be compared separately. Results are pending. No serialization workaround or production default change is proposed. Four-model cross-backend validation remains incomplete.
+#274 tests default/profile-guided-decode-batching-off/off/default on the same RNGD with128/8192input,128output,c1/4/16. Each arm has independent c1 references; cross-arm references must be compared separately. The completed result is recorded below. No serialization workaround or production default change is proposed. Four-model cross-backend validation remains incomplete.
+
+## Profile-guided scheduling ABBA completed
+
+Same physical RNGD/Pod, four fresh server processes in default/off/off/default order, same model/FXB/input IDs/cache settings. The only server-config difference was --no-profile-guided-decode-batching. All four arms completed6conditions/86responses each (344total) and failed exact parity:29/42 token checks and29/42 SSE text checks in every arm. The two c1reference records, per-condition token-sequence multisets and per-condition SSE-text multisets were identical across all four arms. Request identities were not assumed to map to the same physical lane. Summary and raw hashes: evidence274/native274-abba-summary.json.
+
+This public setting did not remove the failure on the tested cases. It does not prove the general scheduler or compiler is uninvolved. The two-run mean throughput change with the option disabled ranged+0.14% to+2.56%, while A2 was slower than A1 in all six conditions. Two observations/configuration and this temporal drift do not establish a stable speedup. No default change is recommended from these data. All servers stopped and the owned Pod was UID-checked and deleted (exit0). Original numerical/compiler cause, broader native model registry support and concurrent held-out quality remain open.
