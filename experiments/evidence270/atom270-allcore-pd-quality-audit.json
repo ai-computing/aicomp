@@ -1,0 +1,68 @@
+{
+  "modes": {
+    "whole": {
+      "cases": 36,
+      "answer_correct": 36,
+      "format_correct": 36,
+      "eos_stopped": 36,
+      "length_limited": 0,
+      "active_lanes": [
+        0,
+        230,
+        38,
+        0,
+        0
+      ],
+      "full_batch_observed": false,
+      "historical_pd_comparison": {
+        "cases": 36,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0,
+        "token_equal": 36
+      },
+      "native_allcore_comparison": {
+        "cases": 36,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0,
+        "token_equal": 36
+      },
+      "raw_sha256": "f868c1bf6d024a8284e362ea2a89b55ba4b71cf02513023d1ba55fd581565070"
+    },
+    "stream": {
+      "cases": 36,
+      "answer_correct": 36,
+      "format_correct": 36,
+      "eos_stopped": 36,
+      "length_limited": 0,
+      "active_lanes": [
+        0,
+        233,
+        23,
+        9,
+        0
+      ],
+      "full_batch_observed": false,
+      "historical_pd_comparison": {
+        "cases": 36,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0,
+        "token_equal": 36
+      },
+      "native_allcore_comparison": {
+        "cases": 36,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0,
+        "token_equal": 36
+      },
+      "raw_sha256": "4016161cc6d72357ae8a76b911ccc39199d53093c9f63d46fe5323cb90be6c2b"
+    }
+  },
+  "limits": "Frozen36cases per route, short/2K/8K,c12. Not general quality or performance; actual occupancy is separate from submitted concurrency.",
+  "whole_stream_comparison": {
+    "cases": 36,
+    "correct_to_wrong": 0,
+    "wrong_to_correct": 0,
+    "token_equal": 36
+  },
+  "all_answers_and_formats_pass": true
+}
