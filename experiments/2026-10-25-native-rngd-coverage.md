@@ -99,7 +99,7 @@ Controller exited0 after336responses,24successful all-tier resets,96metric snaps
 
 Cold-start/reuse generated-token multisets match19/24conditions. Five differ:2048input/32output/c16;2048/128/c4;2048/128/c16;8192/128/c4;8192/128/c16. Preserve these failures independently from cache-off reference differences. Cache-off single-reference mismatches total63/168 in cold-start batches and81/168 in reuse batches; these controls also contain known native concurrency/shape sensitivity and do not by themselves identify cache corruption. No equivalent-output speedup claim. Raw hashes and every metric delta/batch wall are in native276-cache-summary.json.
 
-The cache-specific difference triggers the planned follow-up frozen quality checks. Those are not yet run for cache-on. All native quality results previously published used cache off.
+The cache-specific difference triggers the planned follow-up frozen quality checks. The follow-up cache-on quality results are recorded below; earlier native quality results used cache off.
 
 Related#276. Reproduce on an explicitly owned localhost server with --enable-prefix-caching and process-local FURIOSA_SERVER_DEV_MODE=1; keep all other model/FXB/context settings unchanged. Never reset a shared server.
 
@@ -109,3 +109,13 @@ python3 experiments/evidence274/selfcheck_native276_cache.py
 ```
 
 The local336-response fixture checks24resets,96metric snapshots,busy-reset rejection before inference,and exclusive-output protection. Hardware controller completed and owned Pod UID-checked deletion succeeded. Timing is nonstream batch wall time, including thread submission, excluding reset/metric calls; not a TTFT/TPOT measurement. One cold-start/reuse pair per condition; no confidence interval.
+
+## Cache-on frozen quality completed
+
+Same model/FXB/context9216/EOS/scorer and frozen36 cases. One cache-enabled server ran reset-all→Q1 sequential→Q2 sequential reuse→reset-all→C1 concurrent→C2 concurrent reuse. Concurrent cohorts contain12requests each at target lengths0/2048/8192. Both reset requests returned200; all144responses completed without request errors and with finish_reason=stop.
+
+Q1/Q2 each score32/36 strict answers and35/36 formats; C1/C2 each score31/36 answers and34/36 formats. All36 output token sequences match between Q1/Q2 and between C1/C2. Reuse-pass hit/query counter deltas are124737/124737 for both Q2 and C2. These are server token counters, not a request hit rate. First-pass hits are74407/124738 sequential and69588/124738 concurrent: resetting before a whole pass does not make every case cold.
+
+Compared with separate cache-off runs, sequential output differs on passkey-0-8192 (strict format/answer failure becomes success); concurrent output differs on that same case in the opposite direction. C1 also changes JSON whitespace on passkey-0-2048 without changing its score. Therefore neither universal output equivalence nor a general quality gain is established. This36-case synthetic set does not isolate cache corruption or the numerical root cause. No equivalent-output performance gain is claimed. Raw hashes, counters and per-case changes are in evidence274/native276-quality-summary.json.
+
+Reproduction: use the sequential and concurrent quality clients above, same frozen fixtures and explicit EOS IDs128001/128009, with --enable-prefix-caching and process-local FURIOSA_SERVER_DEV_MODE=1. Require successful all-tier reset before Q1 and C1 only, and capture /metrics before/after all four passes. Exact site-specific controller is retained with raw local artifacts and is not published.

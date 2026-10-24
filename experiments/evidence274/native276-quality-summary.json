@@ -1,0 +1,127 @@
+{
+  "arms": {
+    "q1": {
+      "cases": 36,
+      "answers_correct": 32,
+      "format_correct": 35,
+      "stop_completions": 36,
+      "request_errors": 0,
+      "raw_sha256": "16209fb54111a3704de869aa2f667efd80080e845284526c0188f47218b4af38",
+      "cache_token_deltas": {
+        "hits": 74407.0,
+        "queries": 124738.0
+      }
+    },
+    "q2": {
+      "cases": 36,
+      "answers_correct": 32,
+      "format_correct": 35,
+      "stop_completions": 36,
+      "request_errors": 0,
+      "raw_sha256": "b2fd41fdd228550e238b4c9a03bc76d254a889f7ddc660d9ddfd322cdec587ac",
+      "cache_token_deltas": {
+        "hits": 124737.0,
+        "queries": 124737.0
+      }
+    },
+    "c1": {
+      "cases": 36,
+      "answers_correct": 31,
+      "format_correct": 34,
+      "stop_completions": 36,
+      "request_errors": 0,
+      "raw_sha256": "0a8638fb0dfbfcb139cd8bfe5b869454549d6a85ad84eda351518b67635aadd3",
+      "cache_token_deltas": {
+        "hits": 69588.0,
+        "queries": 124738.0
+      }
+    },
+    "c2": {
+      "cases": 36,
+      "answers_correct": 31,
+      "format_correct": 34,
+      "stop_completions": 36,
+      "request_errors": 0,
+      "raw_sha256": "c8726791e7b2ead2b0daf7d3f945a0761c6d7432470b6e952de3ee3680dd9165",
+      "cache_token_deltas": {
+        "hits": 124737.0,
+        "queries": 124737.0
+      }
+    }
+  },
+  "comparisons": {
+    "q1_to_q2": {
+      "token_equal_cases": 36,
+      "changes": []
+    },
+    "c1_to_c2": {
+      "token_equal_cases": 36,
+      "changes": []
+    },
+    "cache_off_to_on_q1": {
+      "token_equal_cases": 35,
+      "changes": [
+        {
+          "case": "passkey-0-8192",
+          "answer_before": false,
+          "answer_after": true,
+          "format_before": false,
+          "format_after": true
+        }
+      ]
+    },
+    "cache_off_to_on_q2": {
+      "token_equal_cases": 35,
+      "changes": [
+        {
+          "case": "passkey-0-8192",
+          "answer_before": false,
+          "answer_after": true,
+          "format_before": false,
+          "format_after": true
+        }
+      ]
+    },
+    "cache_off_to_on_c1": {
+      "token_equal_cases": 34,
+      "changes": [
+        {
+          "case": "passkey-0-2048",
+          "answer_before": true,
+          "answer_after": true,
+          "format_before": true,
+          "format_after": true
+        },
+        {
+          "case": "passkey-0-8192",
+          "answer_before": true,
+          "answer_after": false,
+          "format_before": true,
+          "format_after": false
+        }
+      ]
+    },
+    "cache_off_to_on_c2": {
+      "token_equal_cases": 35,
+      "changes": [
+        {
+          "case": "passkey-0-8192",
+          "answer_before": true,
+          "answer_after": false,
+          "format_before": true,
+          "format_after": false
+        }
+      ]
+    }
+  },
+  "reset_statuses": [
+    200,
+    200
+  ],
+  "events_sha256": "74b2a6c624012f0519bf09f9e2d5cd05a128fad6037b792ad9e068e1c67c7406",
+  "limitations": [
+    "36 frozen synthetic cases; not broad model-quality certification",
+    "Reset before each first full pass, not before each case; within-pass prefix reuse occurs",
+    "Cache-off comparison is a separate server run; no isolated numerical root cause or speedup claim"
+  ]
+}
