@@ -22,5 +22,8 @@
   "native276-quality-summary.json": "8c92a5a5a84a23bf44d3776080057b4490b2f1ef45949f7a50c88d635e8e25ed",
   "native277_boundary.py": "00755e1566920c947fab2a9a799a740c84642f86c5ec6929b1eda756f750b62c",
   "selfcheck_native277_boundary.py": "75d7efd735ddbc144207b7cdc6c42cb217698c1484a6723575d6fb9d957962a0",
-  "native277-boundary-summary.json": "255d059dde4ad95552b93ab1eccea01cd1a523c19122ca56d5993dc92d987e3b"
+  "native277-boundary-summary.json": "255d059dde4ad95552b93ab1eccea01cd1a523c19122ca56d5993dc92d987e3b",
+  "native278_disconnect.py": "dc1c1b4e0301ac92b15cf035ec21c61abff19eea3aa641fdeb48f9e1a4704e96",
+  "selfcheck_native278_disconnect.py": "1bf5253f0c4f1ebb67065e564e10791da19bb313f987931425a7b268760d333b",
+  "native278-disconnect-summary.json": "01711e008e5989554adcabc547562a520514867f4cd50c88f76c5a05eb9ba72b"
 }

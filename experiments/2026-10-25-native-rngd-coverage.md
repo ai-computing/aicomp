@@ -132,3 +132,18 @@ Raw response hashes, statuses and per-request durations: evidence274/native277-b
 python3 experiments/evidence274/selfcheck_native277_boundary.py
 python3 experiments/evidence274/native277_boundary.py --endpoint "$OWNED_ENDPOINT" --model "$KONI_SNAPSHOT" --output "$NEW_OUTPUT" --capacity 9216
 ```
+
+## Native active-disconnect and survivor checks (#278)
+
+Same assigned RNGD, separate cache-off/on server launches; only the cache flag changed. Inputs128/8192, concurrency1/4/16, one streaming victim requesting1024tokens and zero/three/fifteen128-token survivors. Repeated valid token1000, greedy, ignore_eos=true. Each length has a same-server128-token baseline, and every round has a128-token recovery request. Overall100requests:4baselines,12victims,72survivors and12recoveries.
+
+All12victims were closed during nonterminal generation; engine finished_reason=abort counter increased exactly1 per round, and final running/waiting gauges were0. Subtracting completed survivor tokens from generation-counter deltas leaves45tokens per short victim and81per long victim, below1024. Thus engine counters support actual abort rather than a client socket close alone. This does not establish physical allocation reclamation or all possible race schedules.
+
+All72survivors and12recoveries have exact128-token equality to their same-server baseline. Every survivor client was still in flight when the victim connection closed (3/3 or15/15 in concurrent rounds); this is client overlap, not a physical batch occupancy claim. The last received victim event contained44token IDs for short input and80for long input. Earlier SSE events were empty, so the trigger is first nonempty content during decoding, not first generated token or prefill cancellation. Retain this distinction.
+
+Both controllers exited0 after their own server cleanup. Raw hashes, all12counter deltas, client-overlap counts and close times are in evidence274/native278-disconnect-summary.json. Close times are not TTFT or a general latency benchmark. The fixture tests real HTTP streaming/read/close, missing-metric rejection, survivors, recovery, exclusive output, and refuses to classify a terminal full-budget stream as early cancellation. No native binary or production engine change.
+
+```bash
+python3 experiments/evidence274/selfcheck_native278_disconnect.py
+python3 experiments/evidence274/native278_disconnect.py --endpoint "$OWNED_ENDPOINT" --model "$KONI_SNAPSHOT" --output "$NEW_OUTPUT"
+```
