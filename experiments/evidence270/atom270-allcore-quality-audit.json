@@ -1,0 +1,28 @@
+{
+  "cases": 36,
+  "answer_correct": 36,
+  "format_correct": 36,
+  "baseline_comparison": {
+    "cases": 36,
+    "correct_to_wrong": 0,
+    "wrong_to_correct": 0,
+    "token_equal": 36
+  },
+  "eos_stopped": 36,
+  "active_lanes": [
+    0,
+    306,
+    0,
+    0,
+    0
+  ],
+  "geometry": {
+    "batch_size": 4,
+    "kv_blocks": 5,
+    "context": 9216,
+    "tensor_parallel_size": 1
+  },
+  "raw_sha256": "d55ad59583febee514dfc507f932d579cf32d1435eb5fcff63eb89f4001c8626",
+  "cleanup_exit_code": 0,
+  "scope": "Sequential fixed36cases, short/2K/8K; no concurrent B4 quality, general quality or speedup claim."
+}

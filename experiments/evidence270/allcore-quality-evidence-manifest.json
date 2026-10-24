@@ -1,0 +1,16 @@
+{
+  "research_events": [
+    "5ceb6f2bb0644a4da66914ce79bb1fc1"
+  ],
+  "archive": "Local research-hub artifacts; remote synchronization unverified",
+  "files": {
+    "atom270-qwen4b-allcore-quality-retry1.jsonl": {
+      "sha256": "d55ad59583febee514dfc507f932d579cf32d1435eb5fcff63eb89f4001c8626",
+      "bytes": 27463
+    },
+    "atom270-qwen4b-allcore-quality-c12.jsonl": {
+      "sha256": "97dc5c9bb163f455dc6a0a85733c84de6f45dbd23f79fff0535d02a4ffa2d7be",
+      "bytes": 30295
+    }
+  }
+}
