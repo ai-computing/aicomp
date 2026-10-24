@@ -63,3 +63,7 @@ Set PYTHON to the torch/Transformers environment above and FROZEN_MODEL to the f
 ## Remaining acceptance work
 
 #212 stays open. Generalization requires different partial-prefix lengths, shared/diverging prefixes, cache eviction/host reload, chunk/page combinations, all-model numerical controls and answer-quality checks. Aligning page and chunk sizes does not mathematically guarantee identical computation for arbitrary prompt histories. Engine-owned changes require the maintainer's implementation and regression review. Related #201; this is evidence, not a completed four-model GPU/RNGD/ATOM certification.
+
+## Additional prefix-length controls
+
+[Seed controls](seed-controls.md) extend page256/chunk256 to280/536-token initial prompts sharing one/two complete pages with2K requests. Four models,16runs:192/192 within-run token arrays and24/24 paired cacheoff/on serial references match. This adds prefix-length coverage; eviction/host reload is still untested here.
