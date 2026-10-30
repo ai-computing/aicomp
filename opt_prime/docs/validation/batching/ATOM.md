@@ -100,3 +100,13 @@ shared (load average 75–135 from other users' jobs), so absolute values differ
 With one cache block the host tier quadruples the reused prefix (2048 → 11264 tokens). Under that run's host load the
 reloads did not turn into throughput: host staging is CPU-side work. PD mode (KV prefilled elsewhere, ATOM decodes
 only) is measured in `PD.md`.
+
+## Hybrid attention (#207)
+
+Gemma3 standalone external-cache serving uses global block ownership and lane-local sliding cache ownership; a fresh
+prefill resets the owning lane's decode attention mask. PD supports two cases: fresh full-prefix hybrid PD (the remote
+producer returns the whole prompt KV from position zero; global layers go to the lane's block, the latest sliding
+window to the lane-local sliding cache), and batch-1 single-block PD with prefix and host caching off (the sole block is
+used for the request and released afterwards; no prefix entries are retained). Prefix caching and host caching remain
+rejected for hybrid models until sliding-state restoration is implemented (#207), and partial remote prefixes are
+rejected for both cases.
