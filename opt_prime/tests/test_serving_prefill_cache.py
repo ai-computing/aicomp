@@ -72,3 +72,18 @@ def test_producer_chunk_controls_real_prefill_boundaries(tmp_path, monkeypatch):
         args.pd_prefill_chunk = chunk
         with pytest.raises(ValueError, match="positive"):
             factory.prefill_worker(args, 1, model.config)
+
+
+@pytest.mark.parametrize('backend,slots,remote,worker', [('torch',1,True,True),('atom',2,True,True),
+                                                        ('atom',1,False,True),('atom',1,True,False)])
+def test_next_prefill_rejects_unsupported_route_before_load(monkeypatch,backend,slots,remote,worker):
+    path=Path(__file__).parents[1]/'examples/pd/serve_batched.py'
+    spec=importlib.util.spec_from_file_location('serve_prefetch_test',path)
+    factory=importlib.util.module_from_spec(spec);spec.loader.exec_module(factory)
+    args=SimpleNamespace(model='must-not-load',backend=backend,slots=slots,pd_prefetch_next=True,
+                         pd_remote_only=remote,pd_prefill_python='python' if worker else None,pd_prefill_device=None)
+    def unexpected_load(*args,**kwargs):
+        pytest.fail('unsupported prefetch route reached model loading')
+    monkeypatch.setattr(factory.AutoTokenizer,'from_pretrained',unexpected_load)
+    with pytest.raises(ValueError,match='single-lane'):
+        factory.build(args)
