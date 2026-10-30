@@ -8,6 +8,7 @@ from concurrent.futures import Future, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from io import BufferedIOBase
 import queue
 import select
 import socket
@@ -485,11 +486,32 @@ class OwnerExecutor:
 POLL = 0.5          # seconds between client-disconnect checks of a waiting handler (results wake it at once)
 _DONE = object()    # end-of-stream marker in a handler's token queue
 
+class _NoSignalSocketWriter(BufferedIOBase):
+    """Unbuffered HTTP writes that retain EPIPE without invoking native SIGPIPE handlers."""
+    def __init__(self, sock):
+        self._sock = sock
+
+    def writable(self):
+        return True
+
+    def write(self, data):
+        self._sock.sendall(data, getattr(socket, "MSG_NOSIGNAL", 0))
+        with memoryview(data) as view:
+            return view.nbytes
+
+    def fileno(self):
+        return self._sock.fileno()
+
+
 def serve_stage(owner, stage, port):
     if stage not in ("prefill", "decode"):
         raise ValueError("invalid stage")
 
     class Handler(BaseHTTPRequestHandler):
+        def setup(self):
+            super().setup()
+            self.wfile = _NoSignalSocketWriter(self.connection)
+
         def log_message(self, *args):
             pass
 
