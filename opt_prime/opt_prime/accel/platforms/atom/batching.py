@@ -288,7 +288,7 @@ class AtomBatcher(ContinuousBatcher):
     supports_sampling = True          # the decode graph returns logits; sampling runs on the host
 
     def __init__(self, model, *, pad_token_id=None, prefix_cache=False, host_kv_gib=0.0, kv_events=None,
-                 prefill_worker=None, remote_inflight=None, local_prefill=True):
+                 prefill_worker=None, remote_inflight=None, local_prefill=True, remote_prefetch=False):
         """prefix_cache / host_kv_gib need a model compiled with kv_blocks > batch_size (own block tables;
         prefix_cache needs kv_blocks >= batch_size + 2).
         prefill_worker (PD, #120): prompts are prefilled elsewhere (`pd.pd_batching.PrefillWorker` and engines) and their
@@ -298,12 +298,19 @@ class AtomBatcher(ContinuousBatcher):
         (in-flight remote prefills + 1) x remote time per prompt (prefill + KV import) against local (prompts
         queued here + 1) x ATOM prefill time; local prefills run one per iteration, as in aggregated serving. A
         slow prefill device is therefore used only for overflow, and a fast one takes most prompts.
-        local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first)."""
+        local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first).
+        remote_prefetch=True (B1 remote-only): keep one full-prompt result ahead of decode. Cache admission still
+        happens on the owner after the lane is free; early prefills cannot omit a cached prefix from transfer.
+        With prefix_cache the prefetched prompt is re-sent in full and overwrites the restored prefix: correct,
+        but it forfeits the cache's transfer savings."""
         rc = model.rbln_config
         self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
         if self.hybrid_cache and (prefix_cache or host_kv_gib):
             raise ValueError("hybrid sliding cache restoration is not implemented for prefix/host cache")
         self.lanes = rc.batch_size
+        if remote_prefetch and (self.lanes != 1 or prefill_worker is None or local_prefill):
+            raise ValueError("remote_prefetch requires single-lane remote-only PD")
+        self.remote_prefetch, self._prefetched = remote_prefetch, None
         decoders = getattr(model, "decoders", None) or {}
         if self.lanes not in decoders:
             raise ValueError(f"no compiled decode graph for batch {self.lanes} (have {sorted(decoders)})")
@@ -342,6 +349,10 @@ class AtomBatcher(ContinuousBatcher):
             with torch.inference_mode():
                 for lane in range(self.lanes):         # every lane owns a page before the B-lane graph runs
                     self._prefill(lane, [self.pad])
+
+    @property
+    def idle(self):
+        return super().idle and self._prefetched is None
 
     @property
     def hit_tokens(self):
@@ -432,6 +443,8 @@ class AtomBatcher(ContinuousBatcher):
         self._decoded(rows, [self.kv.length[r.slot] for r in rows], logits)
 
     def _finish(self, r, error):
+        if self._prefetched is r and (r.pending is None or r.pending.done()):
+            self._prefetched = None
         if self.blocks is not None and r.slot >= 0:
             self.blocks.release(r.slot, r.request.input_ids if getattr(r, "admitted", False) else None)
         super()._finish(r, error)
@@ -440,10 +453,14 @@ class AtomBatcher(ContinuousBatcher):
     def _pd_step(self):
         from concurrent.futures import FIRST_COMPLETED, wait
         with self._lock:
+            if self._prefetched is not None and self._prefetched.future.done() and self._prefetched.pending.done():
+                self._prefetched = None                     # cancelled writer has now relinquished the source slot
             admitted, local = [], None
             remote = sum(1 for r in self.prefilling if r.pending is not None)
             queued = 0                                 # prompts that will be prefilled here before this one
             while self.free and self.waiting:
+                if self._prefetched is not None and self.waiting[0] is not self._prefetched:
+                    break                                  # a cancelled producer still owns its source buffer
                 go_remote = remote < self.remote_inflight or not self.local_prefill
                 if not self.local_prefill:
                     pass
@@ -468,14 +485,17 @@ class AtomBatcher(ContinuousBatcher):
             for r in admitted:                       # decode-side prefix (device copy / host reload) is not sent
                 start = self.blocks.admit(r.slot, r.request.input_ids)
                 r.admitted = True
-                r.pending = self.worker.submit(r.request, send_from=start, slot=r.slot)
-                self.stats_pd["remote"] += 1
+                if r.pending is None:
+                    r.pending = self.worker.submit(r.request, send_from=start, slot=r.slot)
+                    self.stats_pd["remote"] += 1
             if local is not None:
                 self.stats_pd["local"] += 1
                 t0 = time.perf_counter()
                 self._prefill_request(local)
                 self._local_s = _ema(self._local_s, time.perf_counter() - t0)
             pending = [r for r in self.prefilling if r.pending is not None]
+            if self._prefetched is not None and self._prefetched.future.done():
+                pending.append(self._prefetched)              # wait for a cancelled writer without busy-spinning
             if pending and not self.decoding:
                 wait([r.pending for r in pending], timeout=0.05, return_when=FIRST_COMPLETED)
             for r in pending:
@@ -503,6 +523,8 @@ class AtomBatcher(ContinuousBatcher):
                     with self._lock:
                         self._finish(r, error)
                     continue
+                if self._prefetched is r:
+                    self._prefetched = None                 # only release after the owner has imported the KV
                 if self.hybrid_cache:
                     self.decoder.dec_attn_mask[r.slot].zero_()
                     self.decoder.dec_attn_mask[r.slot, :len(ids)] = 1
@@ -515,6 +537,8 @@ class AtomBatcher(ContinuousBatcher):
                     self.decoding.append(r)
             if self.decoding:
                 self._decode_step()
+            if self.remote_prefetch:
+                self._prefetch_next()
         except BaseException:
             self.poisoned = True
             raise
@@ -522,3 +546,17 @@ class AtomBatcher(ContinuousBatcher):
             events = self.blocks.drain_events()
             if events:
                 self.kv_events.publish(events)
+
+    def _prefetch_next(self):
+        from concurrent.futures import Future
+        with self._lock:
+            if self._prefetched is not None or not self.decoding or not self.waiting:
+                return
+            r = self._prefetched = self.waiting[0]
+        try:
+            # Cache admission waits for the decode lane; reserve one full-prompt result in the existing source slot.
+            r.pending = self.worker.submit(r.request, send_from=0, slot=0)
+        except BaseException as error:
+            r.pending = Future()
+            r.pending.set_exception(error)
+        self.stats_pd["remote"] += 1
