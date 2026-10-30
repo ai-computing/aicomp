@@ -13,10 +13,10 @@ All conditions passed. An independent audit compared actual saved token arrays a
 
 |Model|Conditions|Token checks|SSE checks|2K/128 c1 tok/s|2K/128 c4 tok/s|
 |---|---:|---:|---:|---:|---:|
-|qwen06b|8|20/20|20/20|50.24|78.68|
-|qwen4b|8|20/20|20/20|37.44|52.03|
-|gemma|8|20/20|20/20|40.41|64.17|
-|koni|8|20/20|20/20|44.71|51.73|
+|qwen06b|8|20/20|20/20|50.24|143.18|
+|qwen4b|8|20/20|20/20|37.44|102.97|
+|gemma|8|20/20|20/20|40.41|118.85|
+|koni|8|20/20|20/20|44.71|117.01|
 
 One timing batch per condition. Throughput is aggregate client output tokens divided by batch wall time; no repeated or equal-resource speedup claim. Complete per-condition timings, raw-result hashes and source hashes are in `../evidence265/mid201-gpu-summary.json`.
 
@@ -33,3 +33,7 @@ The first coordinator omitted PYTHONPATH and stopped before Qwen0.6 inference wi
 ## Limits
 
 Cache-on, heterogeneous-route intermediate c1/c4 combinations, default HTTP route and engine-owned export/cache compatibility remain separate work. Earlier Qwen4/KONI cross-engine numerical differences and Gemma strict-format failures remain. These successful native GPU cells do not close #201.
+
+## Output-length summary correction (2026-10-30)
+
+The original c4 throughput column selected32output tokens per request because aggregate128tokens overwrote a same-named per-request field in the summary. The corrected2K/128c4 values above select128tokens per request (512tokens total). Raw measurements, timing arithmetic and correctness results are unchanged. Summary JSON now retains both `output_tokens_per_request` and aggregate `output_tokens`. Native c1 values and the separate PD GPU/ATOM tables were checked against raw condition fields and remain unchanged.

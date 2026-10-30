@@ -128,3 +128,7 @@ Separate600s native run passes264 responses across8 conditions, with original180
 KONI whole HTTP diagnostic:264 responses pass,8K/128 throughput7.7847(native) ->9.3113(whole)tok/s; short inputs slower. Native/whole strict and EOS parity6/8. Stream is pending on a fresh physical-card allocation; no new runtime change. See stream265 ATOM HTTP progress record.
 
 KONI stream HTTP complete: all3 routes264 responses each audited; whole/stream8/8 exact, native/whole6/8.8K/128 native7.7847,whole9.3113,stream10.8298tok/s; stream maxE2E189.105s. All4 model B1/c16 ATOM whole/stream controls complete; native equivalence and B4 remain open.
+
+## Intermediate-length summary correction (2026-10-30)
+
+Fixed an evidence-summary key collision: aggregate `output_tokens` previously overwrote request length. Published native/default/PD GPU summaries now include `output_tokens_per_request` separately. Corrected the native GPU2K/128c4 table, which had selected32tokens/request; raw results and correctness conclusions are unchanged. PD GPU and existing ATOM tables were checked and already selected the intended raw conditions. Portable ATOM raw auditor/selfcheck added under evidence265:10checks, including preserving request/aggregate lengths, duplicate-arm rejection and corrupt/missing raw results. Current ATOM final-HTTP matrix remains in progress; these scripts do not certify uncompleted configurations.
