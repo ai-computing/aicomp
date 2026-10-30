@@ -142,3 +142,7 @@ Native GPU short/long sweep completes four models at128/8192 input,32/128 output
 ## RNGD-to-GPU short/long controls complete (2026-10-30)
 
 Four models, whole/stream, input128/8192, output32/128, c1/c4:64 conditions352 responses independently audited. Whole/stream references match4/4 per model; native matches Qwen0.6B4/4,Qwen4B2/4,Gemma4/4,KONI2/4. Qwen4/KONI pre-EOS differences remain. At8K/128/c4, stream throughput is75.41/36.29/56.54/39.71tok/s respectively, versus native60.84/40.92/58.83/40.46. Single batches and an added RNGD prevent stable/equal-resource claims. All exits0 and local GPU/RNGD idle checks pass. Portable auditor and10 selfchecks included. Remote ATOM short/long sweep remains active. See experiments/2026-10-30-pd-gpu-edge201.md.
+
+## ATOM short/long controls complete (2026-10-30)
+
+All four models complete native/whole/stream at128/8192 input,32/128 output,c1/c4:96conditions528responses. Whole/stream16/16 reference pairs match. Native/PD equality is Qwen0.6/Qwen4=4/4,Gemma2/4(other2equal through EOS),KONI2/4(pre-EOS differences retained). Single-batch8K/128/c4 stream throughput44.24/14.47/43.87/10.44tok/s; one ATOM lane,extra RNGD for PD. Eleven independent auditor selfchecks pass;all exits0 and owned Pod absence verified. Cache and broader goal work remain active. See experiments/2026-10-30-atom-edge201-final.md.
