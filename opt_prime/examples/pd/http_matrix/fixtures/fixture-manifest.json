@@ -1,0 +1,74 @@
+{
+  "quality263-gemma-fixtures.json": {
+    "sha256": "0c24b1e759148dd7de68e15fa435e03c77a85b947fd6e923eee46af8c87edf44",
+    "cases": 36,
+    "length_ranges": {
+      "0": [
+        38,
+        68
+      ],
+      "2048": [
+        2034,
+        2048
+      ],
+      "8192": [
+        8183,
+        8187
+      ]
+    }
+  },
+  "quality263-koni-fixtures.json": {
+    "sha256": "22f6e5b117913530ef6d58ed5352bb47684d55409535157b75f0462d64797eaf",
+    "cases": 36,
+    "length_ranges": {
+      "0": [
+        150,
+        182
+      ],
+      "2048": [
+        2040,
+        2045
+      ],
+      "8192": [
+        8186,
+        8191
+      ]
+    }
+  },
+  "quality263-qwen06b-fixtures.json": {
+    "sha256": "5fd8133ab6026cf757ae005d671e7778c69e141660d1771627cf1df7070e6a83",
+    "cases": 36,
+    "length_ranges": {
+      "0": [
+        40,
+        77
+      ],
+      "2048": [
+        2037,
+        2046
+      ],
+      "8192": [
+        8183,
+        8192
+      ]
+    }
+  },
+  "quality263-qwen4b-fixtures.json": {
+    "sha256": "701be76546e6fa3c7410475bc026a50c21c677abb7725565fb650b514fc71c98",
+    "cases": 36,
+    "length_ranges": {
+      "0": [
+        40,
+        77
+      ],
+      "2048": [
+        2037,
+        2046
+      ],
+      "8192": [
+        8183,
+        8192
+      ]
+    }
+  }
+}

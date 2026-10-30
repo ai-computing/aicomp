@@ -1,0 +1,6 @@
+# Run outputs stay local; only the frozen held-out inputs are tracked.
+evidence*/
+*.json
+*.jsonl
+*.log
+!fixtures/fixture-manifest.json
