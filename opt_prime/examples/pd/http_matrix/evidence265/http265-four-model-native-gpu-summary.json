@@ -1,0 +1,42 @@
+{
+  "scope": "Native GPU c16,4execution slots,cacheoff,inputs128/512/2048/8192,outputs32/128. Same-route reproducibility only; no model-quality or cross-device equivalence claim.",
+  "models": {
+    "qwen06b": {
+      "stage": "passed",
+      "conditions": 8,
+      "warmups": 8,
+      "correctness_responses": 128,
+      "timed_text_responses": 128,
+      "artifact": "stream265-qwen06b-http-c16-native.json"
+    },
+    "qwen4b": {
+      "stage": "passed",
+      "conditions": 8,
+      "warmups": 8,
+      "correctness_responses": 128,
+      "timed_text_responses": 128,
+      "artifact": "stream265-qwen4b-http-c16-native.json"
+    },
+    "gemma": {
+      "stage": "passed",
+      "conditions": 8,
+      "warmups": 8,
+      "correctness_responses": 128,
+      "timed_text_responses": 128,
+      "artifact": "stream265-gemma-http-c16-native.json"
+    },
+    "koni": {
+      "stage": "passed",
+      "conditions": 8,
+      "warmups": 8,
+      "correctness_responses": 128,
+      "timed_text_responses": 128,
+      "artifact": "stream265-koni-http-c16-native.json"
+    }
+  },
+  "totals": {
+    "warmups": 32,
+    "retained_token_checks": 512,
+    "timed_sse_text_checks": 512
+  }
+}

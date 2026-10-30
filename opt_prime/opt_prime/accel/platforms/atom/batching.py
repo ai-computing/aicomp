@@ -246,19 +246,30 @@ class AtomKVBlocks:
     def import_span(self, lane, start, keys, values):
         """PD: write KV computed elsewhere ([layers, kv_heads, n, head_dim], any float dtype) into the lane's block at
         positions start..start+n; the SDK's KV tensors are (key, value) per layer in bfloat16"""
+        if keys.ndim != 4 or len(self.metas) != keys.shape[0] * 2:
+            raise InvalidKVImport("KV export geometry does not match compiled cache")
+        self.import_layer_span(lane, start, 0, keys, values)
+
+    def import_layer_span(self, lane, start, layer_start, keys, values):
+        """Write a model-layer subset into an already reserved lane; never publish cache state."""
         import numpy as np
         if keys.ndim != 4 or values.ndim != 4:
             raise InvalidKVImport("KV export must have layer/head/token/dimension axes")
+        if (any(type(i) is not int for i in (lane, start, layer_start))
+                or not 0 <= lane < self.lanes or start < 0
+                or not 0 <= layer_start < layer_start + keys.shape[0] <= len(self.metas) // 2):
+            raise InvalidKVImport("invalid KV layer span or lane")
         block, n = self.lane_block[lane], keys.shape[2]
         if (self.hybrid_cache or self.single_block) and start:
             raise InvalidKVImport("hybrid or single-block PD requires a full prefix from position zero")
-        if keys.shape != values.shape or len(self.metas) != keys.shape[0] * 2:
+        if keys.shape != values.shape:
             raise InvalidKVImport("KV export geometry does not match compiled cache")
-        stage = self._staging()
+        lo, hi = 2 * layer_start, 2 * (layer_start + keys.shape[0])
+        metas, stage = self.metas[lo:hi], self._staging()[lo:hi]
         if len({buf.dtype for buf in stage}) != 1:
             raise ValueError("mixed physical KV formats are unsupported")
         destinations = []
-        for m, buf in zip(self.metas, stage):
+        for m, buf in zip(metas, stage):
             if (keys.shape[1], keys.shape[3]) != (buf.shape[1], buf.shape[3]):
                 raise InvalidKVImport("KV export heads/dimensions do not match compiled cache")
             local = self.hybrid_cache and m.get("layer_type") == "sliding_attention"
@@ -274,7 +285,7 @@ class AtomKVBlocks:
             data = bf16_to_dlfloat(kv.to(torch.bfloat16).contiguous().view(torch.int16).numpy().view(np.uint16))
         else:
             data = kv.float().numpy()
-        for i, (m, buf) in enumerate(zip(self.metas, stage)):
+        for i, (m, buf) in enumerate(zip(metas, stage)):
             dest, offset, kept = destinations[i]
             buf[dest, :, offset:offset + kept] = data[i // 2, i % 2, :, n - kept:]
             self.io_rt.set_kv_cache_for_layer(m["name"], dest, offset, kept, buf)
@@ -288,7 +299,7 @@ class AtomBatcher(ContinuousBatcher):
     supports_sampling = True          # the decode graph returns logits; sampling runs on the host
 
     def __init__(self, model, *, pad_token_id=None, prefix_cache=False, host_kv_gib=0.0, kv_events=None,
-                 prefill_worker=None, remote_inflight=None, local_prefill=True):
+                 prefill_worker=None, remote_inflight=None, local_prefill=True, remote_prefetch=False):
         """prefix_cache / host_kv_gib need a model compiled with kv_blocks > batch_size (own block tables;
         prefix_cache needs kv_blocks >= batch_size + 2).
         prefill_worker (PD, #120): prompts are prefilled elsewhere (`pd.pd_batching.PrefillWorker` and engines) and their
@@ -298,12 +309,17 @@ class AtomBatcher(ContinuousBatcher):
         (in-flight remote prefills + 1) x remote time per prompt (prefill + KV import) against local (prompts
         queued here + 1) x ATOM prefill time; local prefills run one per iteration, as in aggregated serving. A
         slow prefill device is therefore used only for overflow, and a fast one takes most prompts.
-        local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first)."""
+        local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first).
+        remote_prefetch=True (B1 remote-only): keep one full-prompt result ahead of decode. Cache admission still
+        happens on the owner after the lane is free; early prefills cannot omit a cached prefix from transfer."""
         rc = model.rbln_config
         self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
         if self.hybrid_cache and (prefix_cache or host_kv_gib):
             raise ValueError("hybrid sliding cache restoration is not implemented for prefix/host cache")
         self.lanes = rc.batch_size
+        if remote_prefetch and (self.lanes != 1 or prefill_worker is None or local_prefill):
+            raise ValueError("remote_prefetch requires single-lane remote-only PD")
+        self.remote_prefetch, self._prefetched = remote_prefetch, None
         decoders = getattr(model, "decoders", None) or {}
         if self.lanes not in decoders:
             raise ValueError(f"no compiled decode graph for batch {self.lanes} (have {sorted(decoders)})")
@@ -320,7 +336,8 @@ class AtomBatcher(ContinuousBatcher):
         self.waiting, self.prefilling, self.decoding = deque(), deque(), []
         self.by_id = {}
         self._lock = threading.Lock()
-        self.stats = dict(iterations=0, prefill_chunks=0, decode_steps=0, decode_rows=0)
+        self._prefill_ready = threading.Event()
+        self.stats = dict(iterations=0, prefill_chunks=0, decode_steps=0, decode_rows=0, progress_spans=0)
         self.poisoned = False
         self.kv_events = kv_events
         self.worker = prefill_worker
@@ -342,6 +359,10 @@ class AtomBatcher(ContinuousBatcher):
             with torch.inference_mode():
                 for lane in range(self.lanes):         # every lane owns a page before the B-lane graph runs
                     self._prefill(lane, [self.pad])
+
+    @property
+    def idle(self):
+        return super().idle and self._prefetched is None
 
     @property
     def hit_tokens(self):
@@ -401,12 +422,12 @@ class AtomBatcher(ContinuousBatcher):
     def _prefill_request(self, r):
         ids = r.request.input_ids
         start = self.blocks.admit(r.slot, ids) if self.blocks is not None else 0
-        r.admitted = True
         out = self._prefill(r.slot, ids, start)
         self.stats['prefill_chunks'] += 1
         logits = out.logits[0, -1].float()
         if not torch.isfinite(logits).all():
             raise RuntimeError("non-finite ATOM logits")
+        r.admitted = True
         padded = int(getattr(out, "padded_cache_lengths", 0) or 0)
         self.kv.length[r.slot] = r.prefilled = len(ids) + padded
         self.prefilling.remove(r)                    # PD: requests waiting on remote prefills may be ahead of it
@@ -432,18 +453,52 @@ class AtomBatcher(ContinuousBatcher):
         self._decoded(rows, [self.kv.length[r.slot] for r in rows], logits)
 
     def _finish(self, r, error):
+        if self._prefetched is r and (r.pending is None or r.pending.done()):
+            self._prefetched = None
         if self.blocks is not None and r.slot >= 0:
             self.blocks.release(r.slot, r.request.input_ids if getattr(r, "admitted", False) else None)
         super()._finish(r, error)
 
     # ---- PD: prefill elsewhere, decode here ----
-    def _pd_step(self):
-        from concurrent.futures import FIRST_COMPLETED, wait
+    def _watch_prefill(self, r):
+        r.pending.add_done_callback(lambda _: self._prefill_ready.set())
+        progress = getattr(r.pending, "kv_progress", None)
+        if progress is not None:
+            progress.notify = self._prefill_ready.set
+        self._prefill_ready.set()
+
+    def _import_progress(self, r, *, final=False):
+        progress = getattr(r.pending, "kv_progress", None)
+        if progress is None:
+            return
+        if r.slot < 0 or r not in self.prefilling:
+            return                              # prefetch has no destination until the current decode releases it
+        if self.hybrid_cache and self.lanes > 1 and not final:
+            return                              # idle hybrid lanes still own local KV; defer until joining decode
+        if (progress.coverage.layers * 2 != len(self.blocks.metas)
+                or progress.coverage.end != len(r.request.input_ids)):
+            raise InvalidKVImport("streamed coverage does not match the request cache")
+        for layer, start, keys, values in progress.drain():
+            if (self.hybrid_cache or self.blocks.single_block) and (start != 0 or keys.shape[2] != len(r.request.input_ids)):
+                raise InvalidKVImport("hybrid or single-block layer streaming requires full-prefix layer spans")
+            self.blocks.import_layer_span(r.slot, start, layer, keys, values)
+            self.stats['progress_spans'] += 1
+
+    def _reject_prefill(self, r, error):
         with self._lock:
+            self.prefilling.remove(r)
+            self._finish(r, error)
+
+    def _pd_step(self):
+        with self._lock:
+            if self._prefetched is not None and self._prefetched.future.done() and self._prefetched.pending.done():
+                self._prefetched = None                     # cancelled writer has now relinquished the source slot
             admitted, local = [], None
             remote = sum(1 for r in self.prefilling if r.pending is not None)
             queued = 0                                 # prompts that will be prefilled here before this one
             while self.free and self.waiting:
+                if self._prefetched is not None and self.waiting[0] is not self._prefetched:
+                    break                                  # a cancelled producer still owns its source buffer
                 go_remote = remote < self.remote_inflight or not self.local_prefill
                 if not self.local_prefill:
                     pass
@@ -467,42 +522,58 @@ class AtomBatcher(ContinuousBatcher):
         try:
             for r in admitted:                       # decode-side prefix (device copy / host reload) is not sent
                 start = self.blocks.admit(r.slot, r.request.input_ids)
-                r.admitted = True
-                r.pending = self.worker.submit(r.request, send_from=start, slot=r.slot)
-                self.stats_pd["remote"] += 1
+                if r.pending is None:
+                    r.pending = self.worker.submit(r.request, send_from=start, slot=r.slot)
+                    self.stats_pd["remote"] += 1
+                self._watch_prefill(r)
             if local is not None:
                 self.stats_pd["local"] += 1
                 t0 = time.perf_counter()
                 self._prefill_request(local)
                 self._local_s = _ema(self._local_s, time.perf_counter() - t0)
             pending = [r for r in self.prefilling if r.pending is not None]
+            if self._prefetched is not None and self._prefetched.future.done():
+                pending.append(self._prefetched)              # wait for a cancelled writer without busy-spinning
             if pending and not self.decoding:
-                wait([r.pending for r in pending], timeout=0.05, return_when=FIRST_COMPLETED)
+                self._prefill_ready.clear()
+                if not any(r.pending.done() or (r.slot >= 0 and getattr(r.pending, "kv_progress", None) is not None
+                           and r.pending.kv_progress.coverage.pending) for r in pending):
+                    self._prefill_ready.wait(timeout=0.05)
             for r in pending:
-                if not r.pending.done():
-                    continue
                 with self._lock:
                     if r not in self.prefilling:
                         continue
-                    self.prefilling.remove(r)
+                if not r.pending.done():
+                    try:
+                        self._import_progress(r)
+                    except InvalidKVImport as error:
+                        self._reject_prefill(r, error)
+                    continue
                 try:
                     out = r.pending.result()
                     if (self.hybrid_cache or self.blocks.single_block) and (out.start != 0 or out.keys.shape[2] != len(r.request.input_ids)):
                         raise ValueError("hybrid or single-block PD requires the full prompt KV")
                 except BaseException as error:        # this request fails; the lanes go on
-                    with self._lock:
-                        self._finish(r, error)
+                    self._reject_prefill(r, error)
                     continue
-                r.pending = None
                 ids = r.request.input_ids
                 t0 = time.perf_counter()
                 try:
-                    if out.keys.shape[2]:
+                    progress = getattr(r.pending, "kv_progress", None)
+                    if progress is not None:
+                        if not progress.coverage.finished:
+                            raise InvalidKVImport("streamed coverage was not validated before completion")
+                        self._import_progress(r, final=True)
+                    elif out.keys.shape[2]:
                         self.blocks.import_span(r.slot, out.start, out.keys, out.values)
                 except InvalidKVImport as error:
-                    with self._lock:
-                        self._finish(r, error)
+                    self._reject_prefill(r, error)
                     continue
+                with self._lock:
+                    self.prefilling.remove(r)
+                r.pending = None
+                if self._prefetched is r:
+                    self._prefetched = None                 # only release after the owner has imported the KV
                 if self.hybrid_cache:
                     self.decoder.dec_attn_mask[r.slot].zero_()
                     self.decoder.dec_attn_mask[r.slot, :len(ids)] = 1
@@ -510,11 +581,14 @@ class AtomBatcher(ContinuousBatcher):
                 self._remote_s = _ema(self._remote_s, (out.prefill_s or 0.0) + (out.transfer_s or 0.0) +
                                       time.perf_counter() - t0)
                 self.kv.length[r.slot] = r.prefilled = len(ids)
+                r.admitted = True
                 self.stats['prefill_chunks'] += 1
                 if self._emit(r, out.token):
                     self.decoding.append(r)
             if self.decoding:
                 self._decode_step()
+            if self.remote_prefetch:
+                self._prefetch_next()
         except BaseException:
             self.poisoned = True
             raise
@@ -522,3 +596,18 @@ class AtomBatcher(ContinuousBatcher):
             events = self.blocks.drain_events()
             if events:
                 self.kv_events.publish(events)
+
+    def _prefetch_next(self):
+        from concurrent.futures import Future
+        with self._lock:
+            if self._prefetched is not None or not self.decoding or not self.waiting:
+                return
+            r = self._prefetched = self.waiting[0]
+        try:
+            # Cache admission waits for the decode lane; reserve one full-prompt result in the existing source slot.
+            r.pending = self.worker.submit(r.request, send_from=0, slot=0)
+        except BaseException as error:
+            r.pending = Future()
+            r.pending.set_exception(error)
+        self._watch_prefill(r)
+        self.stats_pd["remote"] += 1

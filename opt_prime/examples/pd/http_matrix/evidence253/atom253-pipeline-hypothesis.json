@@ -1,0 +1,26 @@
+{
+  "warning": "Heuristic only: first SSE includes queueing and KV import, not a pure producer stage. Assumes perfect overlap of first-SSE and remaining decode, ignores import contention and shared resources. Not a throughput prediction or hardware result.",
+  "rows": [
+    {
+      "model": "qwen06b",
+      "first_sse_s": 2.6405895240604877,
+      "e2e_s": 2.9849001180846244,
+      "post_first_sse_s": 0.34431059402413666,
+      "optimistic_pipeline_ratio": 1.1303915625230094
+    },
+    {
+      "model": "qwen4b",
+      "first_sse_s": 4.540284454007633,
+      "e2e_s": 5.850550717907026,
+      "post_first_sse_s": 1.3102662638993934,
+      "optimistic_pipeline_ratio": 1.288586822515678
+    },
+    {
+      "model": "koni",
+      "first_sse_s": 4.553356555989012,
+      "e2e_s": 6.776184441987425,
+      "post_first_sse_s": 2.222827885998413,
+      "optimistic_pipeline_ratio": 1.4881734734950058
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+initializing koni
+{"compile_start": "rms", "width": 512}
+{"compile_done": "rms", "seconds": 0.405996540968772}
+{"compile_start": "attention", "width": 512}
+{"compile_done": "attention", "seconds": 15.376741294981912}
+{"compile_start": "ffn", "width": 512}
+{"compile_done": "ffn", "seconds": 21.216081247024704}
+initialized koni
+{"input_len": 15, "send_from": 0, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 51289, "token_stream": 51289, "elapsed_s": 0.15443208598298952}
+{"input_len": 15, "send_from": 7, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 51289, "token_stream": 51289, "elapsed_s": 0.15679170697694644}
+{"input_len": 15, "send_from": 15, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 51289, "token_stream": 51289, "elapsed_s": 0.13859719497850165}
+{"input_len": 512, "send_from": 0, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 11206, "token_stream": 11206, "elapsed_s": 0.1658161300001666}
+{"input_len": 512, "send_from": 256, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 11206, "token_stream": 11206, "elapsed_s": 0.182822294998914}
+{"input_len": 512, "send_from": 512, "keys_exact": true, "values_exact": true, "logits_exact": true, "max_logit_error": 0.0, "token_whole": 11206, "token_stream": 11206, "elapsed_s": 0.14105109201045707}

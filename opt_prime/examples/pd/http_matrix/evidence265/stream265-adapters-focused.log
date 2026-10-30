@@ -1,0 +1,64 @@
+F...F.......                                                             [100%]
+=================================== FAILURES ===================================
+_________ test_qwen_stream_exports_model_layer_order_before_next_call __________
+
+    def test_qwen_stream_exports_model_layer_order_before_next_call():
+        m=adapter();spans=[]
+        e=SimpleNamespace(width=4,embedding=torch.arange(20).reshape(10,2).float(),device='cpu',
+                          layers=[0,1],fixed=[],rotation=0,mask=0,chip=0,s={'rms_norm_eps':1e-6},
+                          norm=torch.ones(2),head=torch.eye(2),sync=lambda _:None)
+        def layer(x,i,*unused):
+            assert len(spans)==i
+            kv=torch.arange(16).reshape(2,1,2,4).to(torch.bfloat16)+i*16
+            return x+1,kv
+        e.module=layer
+        def emit(i,start,k,v):
+            assert k.shape==v.shape==(1,1,2,2)
+            assert (i,start)==(len(spans),0)
+            spans.append((k.clone(),v.clone()))
+>       logits=m.qwen_stream(e,[1,2],emit)
+
+tests/test_streaming_factories.py:28:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+e = namespace(width=4, embedding=tensor([[ 0.,  1.],
+        [ 2.,  3.],
+        [ 4.,  5.],
+        [ 6.,  7.],
+        [...83520>, module=<function test_qwen_stream_exports_model_layer_order_before_next_call.<locals>.layer at 0x79f248a835b0>)
+tokens = [1, 2]
+emit = <function test_qwen_stream_exports_model_layer_order_before_next_call.<locals>.emit at 0x79f248a83640>
+
+    def qwen_stream(e, tokens, emit):
+        ids = _ids(e, tokens)
+        n = len(ids)
+        x = e.embedding[ids + [ids[-1]] * (e.width - n)].to(torch.bfloat16).to(e.device)
+        for i, layer in enumerate(e.layers):
+>           x, kv = e.module(x, *e.fixed, *layer, e.rotation, e.mask)
+E           TypeError: Value after * must be an iterable, not int
+
+examples/pd/streaming_factories.py:34: TypeError
+______________ test_bad_prompt_rejected_before_computation[gemma] ______________
+
+kind = 'gemma'
+
+    @pytest.mark.parametrize('kind',['qwen','gemma','koni'])
+    def test_bad_prompt_rejected_before_computation(kind):
+        m=adapter();e=SimpleNamespace(width=4)
+>       with pytest.raises(ValueError):getattr(m,kind+'_stream')(e,[],lambda *a:None)
+
+tests/test_streaming_factories.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+e = namespace(width=4), tokens = []
+emit = <function test_bad_prompt_rejected_before_computation.<locals>.<lambda> at 0x79f24746fa30>
+
+    def gemma_stream(e, tokens, emit):
+>       from gemma_parts import initial_hidden, final_logits
+E       ModuleNotFoundError: No module named 'gemma_parts'
+
+examples/pd/streaming_factories.py:45: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_streaming_factories.py::test_qwen_stream_exports_model_layer_order_before_next_call
+FAILED tests/test_streaming_factories.py::test_bad_prompt_rejected_before_computation[gemma]
+2 failed, 10 passed in 1.38s

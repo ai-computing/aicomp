@@ -1,0 +1,97 @@
+...........FFFFFF                                                        [100%]
+=================================== FAILURES ===================================
+________ test_partial_hybrid_write_preserves_other_layers_and_positions ________
+
+    def test_partial_hybrid_write_preserves_other_layers_and_positions():
+        import torch
+        from test_pd_dense_hybrid import pool
+        cache=pool()
+>       assert hasattr(cache,'write_layer_span'), 'partial receiver import is not implemented'
+E       AssertionError: partial receiver import is not implemented
+E       assert False
+E        +  where False = hasattr(<opt_prime.accel.pd.paged.PagedKV object at 0x7a8c9345b7f0>, 'write_layer_span')
+
+tests/test_pd_layer_progress.py:58: AssertionError
+__ test_partial_write_rejects_unreserved_positions_and_unknown_layers[0-10-0] __
+
+slot = 0, start = 10, layer = 0
+
+    @pytest.mark.parametrize('slot,start,layer',[(0,10,0),(0,-1,0),(1,0,0),(0,0,2)])
+    def test_partial_write_rejects_unreserved_positions_and_unknown_layers(slot,start,layer):
+        import torch
+        from test_pd_dense_hybrid import pool
+        cache=pool()
+>       assert hasattr(cache,'write_layer_span'), 'partial receiver import is not implemented'
+E       AssertionError: partial receiver import is not implemented
+E       assert False
+E        +  where False = hasattr(<opt_prime.accel.pd.paged.PagedKV object at 0x7a8bbd226980>, 'write_layer_span')
+
+tests/test_pd_layer_progress.py:75: AssertionError
+__ test_partial_write_rejects_unreserved_positions_and_unknown_layers[0--1-0] __
+
+slot = 0, start = -1, layer = 0
+
+    @pytest.mark.parametrize('slot,start,layer',[(0,10,0),(0,-1,0),(1,0,0),(0,0,2)])
+    def test_partial_write_rejects_unreserved_positions_and_unknown_layers(slot,start,layer):
+        import torch
+        from test_pd_dense_hybrid import pool
+        cache=pool()
+>       assert hasattr(cache,'write_layer_span'), 'partial receiver import is not implemented'
+E       AssertionError: partial receiver import is not implemented
+E       assert False
+E        +  where False = hasattr(<opt_prime.accel.pd.paged.PagedKV object at 0x7a8bbd233970>, 'write_layer_span')
+
+tests/test_pd_layer_progress.py:75: AssertionError
+__ test_partial_write_rejects_unreserved_positions_and_unknown_layers[1-0-0] ___
+
+slot = 1, start = 0, layer = 0
+
+    @pytest.mark.parametrize('slot,start,layer',[(0,10,0),(0,-1,0),(1,0,0),(0,0,2)])
+    def test_partial_write_rejects_unreserved_positions_and_unknown_layers(slot,start,layer):
+        import torch
+        from test_pd_dense_hybrid import pool
+        cache=pool()
+>       assert hasattr(cache,'write_layer_span'), 'partial receiver import is not implemented'
+E       AssertionError: partial receiver import is not implemented
+E       assert False
+E        +  where False = hasattr(<opt_prime.accel.pd.paged.PagedKV object at 0x7a8bbd2259f0>, 'write_layer_span')
+
+tests/test_pd_layer_progress.py:75: AssertionError
+__ test_partial_write_rejects_unreserved_positions_and_unknown_layers[0-0-2] ___
+
+slot = 0, start = 0, layer = 2
+
+    @pytest.mark.parametrize('slot,start,layer',[(0,10,0),(0,-1,0),(1,0,0),(0,0,2)])
+    def test_partial_write_rejects_unreserved_positions_and_unknown_layers(slot,start,layer):
+        import torch
+        from test_pd_dense_hybrid import pool
+        cache=pool()
+>       assert hasattr(cache,'write_layer_span'), 'partial receiver import is not implemented'
+E       AssertionError: partial receiver import is not implemented
+E       assert False
+E        +  where False = hasattr(<opt_prime.accel.pd.paged.PagedKV object at 0x7a8bbd216bc0>, 'write_layer_span')
+
+tests/test_pd_layer_progress.py:75: AssertionError
+_______ test_partial_write_rejects_later_group_geometry_before_mutation ________
+
+    def test_partial_write_rejects_later_group_geometry_before_mutation():
+        import torch
+        from opt_prime.accel.pd.paged import PagedKV
+        from opt_prime.accel.pd.torch_models import KVGroup
+        cache=PagedKV(2,1,1,2,torch.float32,'cpu',pages=4,page_size=4,max_context=16,
+            groups=(KVGroup('a',None,1,2,(0,)),KVGroup('b',None,2,2,(1,))))
+        cache.alloc(0,12)
+>       assert hasattr(cache,'write_layer_span'), 'partial receiver import is not implemented'
+E       AssertionError: partial receiver import is not implemented
+E       assert False
+E        +  where False = hasattr(<opt_prime.accel.pd.paged.PagedKV object at 0x7a8bbd21f460>, 'write_layer_span')
+
+tests/test_pd_layer_progress.py:88: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pd_layer_progress.py::test_partial_hybrid_write_preserves_other_layers_and_positions
+FAILED tests/test_pd_layer_progress.py::test_partial_write_rejects_unreserved_positions_and_unknown_layers[0-10-0]
+FAILED tests/test_pd_layer_progress.py::test_partial_write_rejects_unreserved_positions_and_unknown_layers[0--1-0]
+FAILED tests/test_pd_layer_progress.py::test_partial_write_rejects_unreserved_positions_and_unknown_layers[1-0-0]
+FAILED tests/test_pd_layer_progress.py::test_partial_write_rejects_unreserved_positions_and_unknown_layers[0-0-2]
+FAILED tests/test_pd_layer_progress.py::test_partial_write_rejects_later_group_geometry_before_mutation
+6 failed, 11 passed in 2.43s

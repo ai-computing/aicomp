@@ -1,0 +1,128 @@
+{
+  "qwen06b": {
+    "artifact_name": "Qwen--Qwen3-0.6B-tp1-s9216-b1-k3",
+    "config_hashes": {
+      "config.json": "d0a15e46a6367cd9ae925862e0d01808aeed5c75b9dc7db961d254a31dc7531f",
+      "rbln_config.json": "38ce7518c185668cf5da3ba3f24857cf345049ffb9647dea2c8fc2d0e13b9cd1",
+      "generation_config.json": "81e8e13e77962857509cc06a9960bb68f8b7893096a60357627b2dfaa72d78fe",
+      "tokenizer_config.json": "c4f4c62b741ab2940841480f9942f378d7d3878d47c2babb862af7381c59b952"
+    },
+    "generation_config": {
+      "bos_token_id": 151643,
+      "do_sample": true,
+      "eos_token_id": [
+        151645,
+        151643
+      ],
+      "pad_token_id": 151643,
+      "temperature": 0.6,
+      "top_k": 20,
+      "top_p": 0.95,
+      "transformers_version": "4.51.0"
+    },
+    "tokenizer_eos": "<|im_end|>",
+    "compiled_files": [
+      {
+        "name": "prefill.rbln",
+        "bytes": 1533412203
+      },
+      {
+        "name": "decoder_batch_1.rbln",
+        "bytes": 322135356
+      }
+    ]
+  },
+  "qwen4b": {
+    "artifact_name": "Qwen--Qwen3-4B-tp1-s9216-b1-k3",
+    "config_hashes": {
+      "config.json": "3833b85a7977a1d0d19c0bebbe62a7e571b54bdfa75a1814508d37a6d6fdda8d",
+      "rbln_config.json": "162bc74852b1b6437a9da0311092a40e824c42567d5542fe37d9cd4d23c60c24",
+      "generation_config.json": "81e8e13e77962857509cc06a9960bb68f8b7893096a60357627b2dfaa72d78fe",
+      "tokenizer_config.json": "c4f4c62b741ab2940841480f9942f378d7d3878d47c2babb862af7381c59b952"
+    },
+    "generation_config": {
+      "bos_token_id": 151643,
+      "do_sample": true,
+      "eos_token_id": [
+        151645,
+        151643
+      ],
+      "pad_token_id": 151643,
+      "temperature": 0.6,
+      "top_k": 20,
+      "top_p": 0.95,
+      "transformers_version": "4.51.0"
+    },
+    "tokenizer_eos": "<|im_end|>",
+    "compiled_files": [
+      {
+        "name": "prefill.rbln",
+        "bytes": 8876844572
+      },
+      {
+        "name": "decoder_batch_1.rbln",
+        "bytes": 798810964
+      }
+    ]
+  },
+  "gemma": {
+    "artifact_name": "unsloth--gemma-3-1b-it-tp1-s9216-b1-k3",
+    "config_hashes": {
+      "config.json": "72d89a8870a09cba455f7eb0ebf07559f09b00768bfed386c0541b6aa4504db3",
+      "rbln_config.json": "204d77f67d2566125248a0cc3c74b6a40da7bf718632a14eb70726f4ad47b170",
+      "generation_config.json": "faa83f23a56aee7b9722f2a7263f6419341b62496d604a78775aeff9660701c3",
+      "tokenizer_config.json": "1540858a3d0c634fe9637330aea89823e29b76906e471245abf5306094649fd5"
+    },
+    "generation_config": {
+      "bos_token_id": 2,
+      "cache_implementation": "hybrid",
+      "do_sample": true,
+      "eos_token_id": [
+        1,
+        106
+      ],
+      "max_length": 32768,
+      "pad_token_id": 0,
+      "top_k": 64,
+      "top_p": 0.95,
+      "transformers_version": "4.51.3"
+    },
+    "tokenizer_eos": "<end_of_turn>",
+    "compiled_files": [
+      {
+        "name": "prefill.rbln",
+        "bytes": 3268485997
+      },
+      {
+        "name": "decoder_batch_1.rbln",
+        "bytes": 1244915535
+      }
+    ]
+  },
+  "koni": {
+    "artifact_name": "KISTI-KONI--KONI-Llama3.1-8B-Instruct-20241024-tp1-s9216-b1-k1",
+    "config_hashes": {
+      "config.json": "1c1d69457d2cb98e121aa3dacbbe4ccde4f5be34261d1c27653e5199b805d2b3",
+      "rbln_config.json": "7fe11c23f8334d43804f68ce0804940dab4fda3b1bf6d77ebf7f1c4ab25a0b51",
+      "generation_config.json": "6dfff99bc787def8f28d84f2e6676a4087fa762a321c5ba40e1643197acf929c",
+      "tokenizer_config.json": "6d82f34e7e86370b4c0eef6a4548e0412bed23aae2415add06c76fcdad91a2a1"
+    },
+    "generation_config": {
+      "_from_model_config": true,
+      "bos_token_id": 128000,
+      "eos_token_id": 128001,
+      "transformers_version": "4.43.1"
+    },
+    "tokenizer_eos": "<|eot_id|>",
+    "compiled_files": [
+      {
+        "name": "prefill.rbln",
+        "bytes": 16142230016
+      },
+      {
+        "name": "decoder_batch_1.rbln",
+        "bytes": 1085824953
+      }
+    ]
+  }
+}

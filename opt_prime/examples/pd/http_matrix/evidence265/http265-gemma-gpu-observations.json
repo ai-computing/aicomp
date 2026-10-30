@@ -1,0 +1,141 @@
+{
+  "scope": "One measured batch per condition; fixed width8192,c16,4execution slots. No statistical or equal-resource claim. Whole/stream references exact; native strict4/8,EOS-trimmed8/8 on these fixtures only.",
+  "rows": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 1.4429409714939538,
+        "output_tok_s": 142.32462174360725
+      },
+      "whole": {
+        "ttft_s": 12.77949266450014,
+        "output_tok_s": 20.617471938221524
+      },
+      "stream": {
+        "ttft_s": 12.498802101472393,
+        "output_tok_s": 21.084563406386728
+      },
+      "stream_vs_whole_throughput_pct": 2.2655128114872802
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 5.009372256492497,
+        "output_tok_s": 158.50670695167096
+      },
+      "whole": {
+        "ttft_s": 12.69543952899403,
+        "output_tok_s": 75.1408078485747
+      },
+      "stream": {
+        "ttft_s": 12.634452136000618,
+        "output_tok_s": 76.27339207004022
+      },
+      "stream_vs_whole_throughput_pct": 1.5072824659377204
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 1.6607822559890337,
+        "output_tok_s": 127.67867564223025
+      },
+      "whole": {
+        "ttft_s": 12.830411867500516,
+        "output_tok_s": 20.450608715641145
+      },
+      "stream": {
+        "ttft_s": 12.417750717519084,
+        "output_tok_s": 21.09868942285025
+      },
+      "stream_vs_whole_throughput_pct": 3.169004484025151
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 5.190465262014186,
+        "output_tok_s": 153.18403601085365
+      },
+      "whole": {
+        "ttft_s": 12.826444700534921,
+        "output_tok_s": 75.15566760307061
+      },
+      "stream": {
+        "ttft_s": 12.493657155515393,
+        "output_tok_s": 76.32443871572379
+      },
+      "stream_vs_whole_throughput_pct": 1.555133697735167
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 3.0810348599625286,
+        "output_tok_s": 76.43143570889998
+      },
+      "whole": {
+        "ttft_s": 12.92197634401964,
+        "output_tok_s": 20.501741384936672
+      },
+      "stream": {
+        "ttft_s": 12.510481696488569,
+        "output_tok_s": 21.018265953609117
+      },
+      "stream_vs_whole_throughput_pct": 2.519418028811704
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 6.680608969996683,
+        "output_tok_s": 127.68612443497771
+      },
+      "whole": {
+        "ttft_s": 12.840972991514718,
+        "output_tok_s": 74.9947247491187
+      },
+      "stream": {
+        "ttft_s": 12.526648629514966,
+        "output_tok_s": 76.47067051662455
+      },
+      "stream_vs_whole_throughput_pct": 1.968066117241385
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "native": {
+        "ttft_s": 12.652028317505028,
+        "output_tok_s": 20.412062069211476
+      },
+      "whole": {
+        "ttft_s": 13.650881092995405,
+        "output_tok_s": 20.512012907373666
+      },
+      "stream": {
+        "ttft_s": 12.648423600010574,
+        "output_tok_s": 20.94178687924473
+      },
+      "stream_vs_whole_throughput_pct": 2.095230603704268
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "native": {
+        "ttft_s": 13.936908194475109,
+        "output_tok_s": 68.08396715133561
+      },
+      "whole": {
+        "ttft_s": 13.480653887963854,
+        "output_tok_s": 72.74153171808148
+      },
+      "stream": {
+        "ttft_s": 13.112224978540326,
+        "output_tok_s": 74.33370816891193
+      },
+      "stream_vs_whole_throughput_pct": 2.188813478661844
+    }
+  ]
+}

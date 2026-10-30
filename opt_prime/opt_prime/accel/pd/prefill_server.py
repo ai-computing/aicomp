@@ -100,16 +100,121 @@ class _RngdFull:
         stage = self.engine.begin_device_prefill(list(tokens))
         while not stage.advance(self.engine.ngroups):
             pass
-        logits = torch.from_numpy(self.engine._logits(stage.x, n))
+        logits = self._last_logits(stage.x, n)
         # per layer group: keys [NG, kv_heads, head_dim, C], values [NG, kv_heads, C, head_dim]
         keys = torch.cat([k.cpu()[..., :n] for k in stage.Ks]).transpose(-1, -2)
         values = torch.cat([v.cpu()[:, :, :n] for v in stage.Vs])
         return keys, values, logits
 
+    def prefill_stream(self, tokens, emit):
+        """Export each completed group before scheduling the next group."""
+        import torch
+        n = len(tokens)
+        if not 0 < n <= self.widths[-1]:
+            raise ValueError("prompt exceeds compiled capacity or is empty")
+        stage = self.engine.begin_device_prefill(list(tokens))
+        layer = 0
+        while True:
+            done = stage.advance(1)
+            k, v = stage.Ks[-1], stage.Vs[-1]
+            keys = k.cpu()[..., :n].transpose(-1, -2)
+            values = v.cpu()[:, :, :n]
+            emit(layer, 0, keys, values)
+            layer += keys.shape[0]
+            if done:
+                break
+        return self._last_logits(stage.x, n)
+
+    def _last_logits(self, hidden, n):
+        import torch
+        engine = self.engine
+        if callable(getattr(engine, "_logits", None)):
+            return torch.from_numpy(engine._logits(hidden, n))
+        # Older rngd-pd exposes the same on-card head only through _next_token.
+        out = engine.lmh(hidden[n - 1], engine.lm_norm_d, engine.lm_eps_d,
+                         engine.lm_nh_d, engine.wlm_d)
+        logits = out[0] if isinstance(out, (tuple, list)) else out
+        return logits.detach().cpu().float().reshape(-1)[:engine.V]
+
+
+def stream_result(engine, req, slab, publish):
+    """Copy validated source spans into reserved SHM before notifying the receiver.
+
+    Engines call emit(layer_start, token_start, K, V) with dense [L,H,N,D] spans
+    and return final logits. Calls are synchronous; source buffers may be reused
+    after emit returns. Absolute token spans are clipped to the requested suffix.
+    """
+    import numpy as np
+    import torch
+    from opt_prime.accel.pd.layer_progress import LayerProgress
+    slot, start, end = req["slot"], req["send_from"], len(req["tokens"])
+    if (type(req["id"]) is not int or type(slot) is not int
+            or not 0 <= slot < slab.shape[0] or type(start) is not int
+            or not 0 <= start <= end <= slab.shape[-2] or end == 0):
+        raise ValueError("invalid streamed request reservation")
+    coverage = LayerProgress(slab.shape[2], start, end)
+
+    def emit(layer, first, keys, values):
+        if (type(layer) is not int or type(first) is not int
+                or keys.ndim != 4 or values.shape != keys.shape):
+            raise ValueError("invalid source KV span")
+        layers, heads, count, dim = keys.shape
+        if (layers <= 0 or count <= 0 or not 0 <= layer < layer + layers <= slab.shape[2]
+                or heads != slab.shape[3] or dim != slab.shape[-1]
+                or not 0 <= first < first + count <= end):
+            raise ValueError("invalid source KV geometry")
+        lo, hi = max(start, first), first + count
+        if lo >= hi:
+            return
+        # Validate before touching any published memory. Failed copies abort this request.
+        coverage.publish(layer, layer + layers, lo, hi)
+        arrays = [t[:, :, lo - first:hi - first].to("cpu", torch.bfloat16)
+                  .contiguous().view(torch.int16).numpy().view(np.uint16) for t in (keys, values)]
+        dst = slab[slot, :, layer:layer + layers, :, lo - start:hi - start]
+        dst[0], dst[1] = arrays
+        coverage.drain()
+        publish(dict(id=req["id"], kv_span=[layer, layer + layers, lo, hi]))
+
+    logits = engine.prefill_stream(list(req["tokens"]), emit)
+    coverage.finish()
+    return logits
+
+
+def factory_engine(a):
+    """Load a trusted CLI factory using the same FP32 checkpoint inputs as research workers."""
+    from importlib import import_module
+    from pathlib import Path
+    from safetensors import safe_open
+    path = Path(a.model)
+    config = json.loads((path / "config.json").read_text())
+    width = int(a.width)
+    head_dim = config.get("head_dim") or config["hidden_size"] // config["num_attention_heads"]
+    if (not 0 < width <= a.max_context or a.slots <= 0
+            or (a.layers, a.kv_heads, a.head_dim) !=
+            (config["num_hidden_layers"], config["num_key_value_heads"], head_dim)):
+        raise ValueError("factory width or shared-memory geometry does not match checkpoint")
+    module, sep, name = (a.engine_factory or "").partition(":")
+    if not sep or not module or not name:
+        raise ValueError("engine factory must be module:callable")
+    factory = getattr(import_module(module), name)
+    if not callable(factory):
+        raise ValueError("engine factory must be callable")
+    weights = {}
+    for shard in sorted(path.glob("*.safetensors")):
+        with safe_open(shard, framework="pt") as f:
+            for key in f.keys():
+                if key in weights:
+                    raise ValueError("duplicate tensor in checkpoint shards")
+                weights[key] = f.get_tensor(key).float()
+    if not weights:
+        raise ValueError("factory requires local safetensors weights")
+    return factory(config, weights, width=width, chip=a.chip)
+
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen", "rngd-full"])
+    ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen", "rngd-full", "factory"])
+    ap.add_argument("--engine-factory", help="trusted local module:callable; used only with --engine factory")
     ap.add_argument("--model", required=True); ap.add_argument("--model-id", default=None)
     ap.add_argument("--shm", required=True); ap.add_argument("--slots", type=int, required=True)
     ap.add_argument("--layers", type=int, required=True); ap.add_argument("--kv-heads", type=int, required=True)
@@ -141,9 +246,12 @@ def main():
         engine = TorchPrefillEngine(model, max_context=a.max_context, chunk=a.chunk)
     elif a.engine == "rngd-full":
         engine = _RngdFull(a)
+    elif a.engine == "factory":
+        engine = factory_engine(a)
     else:
         engine = _RngdQwen(a)
-    print(json.dumps({"ready": True}), flush=True)
+    streaming = callable(getattr(engine, "prefill_stream", None))
+    print(json.dumps({"ready": True, **({"kv_progress": 1} if streaming else {})}), flush=True)
     for line in sys.stdin:
         req = json.loads(line)
         try:
@@ -151,11 +259,20 @@ def main():
             from opt_prime.accel.pd import PDRequest
             sampling = _sampling(req.get("sampling"))
             tokens, start = tuple(req["tokens"]), int(req["send_from"])
+            if req.get("stream_layers"):
+                if req["stream_layers"] is not True or not streaming:
+                    raise ValueError("engine does not support requested layer streaming")
+                logits = stream_result(engine, req, slab,
+                                       lambda msg: print(json.dumps(msg), flush=True))
+                token = select_token(logits, sampling, len(tokens))
+                print(json.dumps(dict(id=req["id"], token=int(token), n=len(tokens) - start,
+                                      cached=0, prefill_s=time.perf_counter() - t0)), flush=True)
+                continue
             if a.engine == "torch":
                 out = engine.prefill(PDRequest(f"p{req['id']}", tokens, 1, sampling), start)
                 keys, values, token, cached = out.keys, out.values, out.token, out.prefill_cached
             else:
-                keys, values, logits = engine.prefill(tokens)
+                keys, values, logits = engine.prefill(list(tokens))
                 keys, values = keys[:, :, start:], values[:, :, start:]
                 token, cached = select_token(logits, sampling, len(tokens)), 0
             n = keys.shape[2]

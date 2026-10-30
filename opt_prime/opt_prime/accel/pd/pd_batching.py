@@ -22,7 +22,7 @@ Any engine with `prefill(request, send_from) -> PrefillOut` can be a worker's en
 `platforms.atom.batching.AtomBatcher(prefill_worker=...)` decodes PD requests on ATOM (#123).
 """
 from collections import deque
-from concurrent.futures import Future, wait, FIRST_COMPLETED, ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 import queue
 import threading
@@ -35,6 +35,7 @@ import torch
 
 from opt_prime.accel.pd.batching import ContinuousBatcher, prefill_chunk
 from opt_prime.accel.pd.runtime import RequestCancelled
+from opt_prime.accel.pd.layer_progress import LayerProgress
 from opt_prime.accel.pd.sampling import select_token
 from opt_prime.accel.pd.torch_models import describe_model
 
@@ -323,13 +324,39 @@ class ProcessPrefillWorker:
         self._proc.join(timeout=30)
 
 
+class _KVProgress:
+    """Source coverage plus borrowed SHM views, valid for this request's reservation."""
+    def __init__(self, slab, start, end):
+        self.coverage = LayerProgress(slab.shape[1], start, end)
+        kv = torch.from_numpy(slab[:, :, :, :end - start].view("int16")).view(torch.bfloat16)
+        self.keys, self.values = kv[0], kv[1]
+        self.notify = lambda: None
+
+    def publish(self, *span):
+        self.coverage.publish(*span)
+        self.notify()
+
+    def drain(self):
+        start = self.coverage.start
+        return [(lo, first, self.keys[lo:hi, :, first - start:last - start],
+                 self.values[lo:hi, :, first - start:last - start])
+                for lo, hi, first, last in self.coverage.drain()]
+
+
 class SubprocessPrefillWorker:
     """`opt_prime.accel.pd.prefill_server` run by `python` (another environment); one KV slot per decode lane in a
     shared-memory slab. A result's keys/values are bfloat16 views of the lane's slot: valid until that lane is
-    submitted again, which the decode side does only after importing them."""
+    submitted again, which the decode side does only after importing them.
+
+    Opt-in layer streaming requires ready capability ``kv_progress: 1`` and messages
+    ``{id, kv_span: [layer_start, layer_end, token_start, token_end]}`` after each CPU write.
+    Token offsets are absolute; slab storage starts at send_from. Published spans must remain
+    immutable until completion. Producers must process requests serially, including cancelled
+    requests, so an old request cannot overwrite a reused slot after its successor starts.
+    """
 
     def __init__(self, python, engine_args, *, slots, layers, kv_heads, head_dim, max_context, env=None,
-                 startup_timeout=1800):
+                 startup_timeout=1800, stream_layers=False):
         import json, subprocess
         import numpy as np
         from multiprocessing import shared_memory
@@ -339,6 +366,7 @@ class SubprocessPrefillWorker:
         cmd = [python, "-m", "opt_prime.accel.pd.prefill_server", "--shm", self._shm.name, "--slots", str(slots),
                "--layers", str(layers), "--kv-heads", str(kv_heads), "--head-dim", str(head_dim),
                "--max-context", str(max_context), *engine_args]
+        self.stream_layers = stream_layers
         self._json = json
         self._futures, self._next, self._lock = {}, 0, threading.Lock()
         self._write_lock = threading.Lock()
@@ -368,6 +396,10 @@ class SubprocessPrefillWorker:
         if slot is None or not 0 <= slot < self.slab.shape[0]:
             raise ValueError("SubprocessPrefillWorker needs a valid decode lane (slot)")
         f = Future()
+        if self.stream_layers and (type(send_from) is not int or
+                not 0 <= send_from <= len(request.input_ids) <= self.slab.shape[-2]):
+            f.set_exception(ValueError("invalid streamed KV suffix"))
+            return f
         s = request.sampling
         write_error = None
         # Keep pipe writes ordered without holding the response-map lock across blocking I/O.
@@ -376,14 +408,19 @@ class SubprocessPrefillWorker:
                 error = self._failed
                 key, self._next = self._next, self._next + 1
                 if error is None:
+                    if self.stream_layers:
+                        f.kv_progress = _KVProgress(self.slab[slot], send_from, len(request.input_ids))
                     self._futures[key] = (f, slot, send_from)
             if error is not None:
                 f.set_exception(error)
                 return f
             try:
-                line = self._json.dumps(dict(id=key, tokens=list(request.input_ids), send_from=send_from, slot=slot,
-                                             sampling=dict(temperature=s.temperature, top_p=s.top_p, top_k=s.top_k,
-                                                           seed=s.seed, stop_token_ids=list(s.stop_token_ids))))
+                message = dict(id=key, tokens=list(request.input_ids), send_from=send_from, slot=slot,
+                               sampling=dict(temperature=s.temperature, top_p=s.top_p, top_k=s.top_k,
+                                             seed=s.seed, stop_token_ids=list(s.stop_token_ids)))
+                if self.stream_layers:
+                    message["stream_layers"] = True
+                line = self._json.dumps(message)
                 self._proc.stdin.write(line + "\n")
                 self._proc.stdin.flush()
             except (OSError, ValueError, TypeError) as error:
@@ -413,11 +450,15 @@ class SubprocessPrefillWorker:
                 if not isinstance(msg, dict):
                     continue
                 if msg.get("ready"):
+                    if self.stream_layers and (type(msg.get("kv_progress")) is not int or msg["kv_progress"] != 1):
+                        raise ValueError("producer does not support KV progress version 1")
                     if not ready.done():
                         ready.set_result(True)
                     continue
                 if "id" not in msg:
                     continue                                  # structured SDK logs
+                if type(msg["id"]) is not int:
+                    raise ValueError("invalid prefill response ID")
                 with self._lock:
                     entry = self._futures.get(msg["id"])
                     failed = self._failed
@@ -426,6 +467,13 @@ class SubprocessPrefillWorker:
                 if entry is None:
                     raise ValueError("unknown response ID")
                 f, slot, start = entry
+                progress = getattr(f, "kv_progress", None)
+                if "kv_span" in msg:
+                    if (progress is None or set(msg) != {"id", "kv_span"}
+                            or not isinstance(msg["kv_span"], list) or len(msg["kv_span"]) != 4):
+                        raise ValueError("invalid KV progress message")
+                    progress.publish(*msg["kv_span"])
+                    continue
                 error = None
                 if "error" in msg:
                     error = RuntimeError(f"prefill subprocess: {msg['error']}")
@@ -433,6 +481,10 @@ class SubprocessPrefillWorker:
                     n = msg["n"]
                     if type(n) is not int or not 0 <= n <= self.slab.shape[-2]:
                         raise ValueError("invalid KV span length")
+                    if progress is not None:
+                        if n != progress.coverage.end - start:
+                            raise ValueError("streamed KV completion length differs from requested suffix")
+                        progress.coverage.finish()
                     kv = torch.from_numpy(self.slab[slot, :, :, :, :n].view("int16")).view(torch.bfloat16)
                     out = PrefillOut(msg["token"], start, kv[0], kv[1], msg.get("cached", 0),
                                      msg.get("prefill_s", 0.0))
@@ -522,7 +574,8 @@ class PDBatcher(ContinuousBatcher):
             raise ValueError("PD batching needs kv='paged'")
         super().__init__(model, **kw)
         self.worker = worker
-        self.stats.update(prefills=0, transferred_tokens=0, decode_cached_tokens=0, prefill_cached_tokens=0,
+        self._prefill_ready = threading.Event()
+        self.stats.update(progress_spans=0, prefills=0, transferred_tokens=0, decode_cached_tokens=0, prefill_cached_tokens=0,
                           prefill_s=0.0, transfer_s=0.0)
 
     def step(self):
@@ -540,6 +593,11 @@ class PDBatcher(ContinuousBatcher):
                 r.slot = self.free.pop(0)
                 self.kv.length[r.slot] = r.prefilled = cached
                 r.pending = self.worker.submit(r.request, send_from=cached, slot=r.slot)   # cached blocks not sent
+                r.pending.add_done_callback(lambda _: self._prefill_ready.set())
+                progress = getattr(r.pending, "kv_progress", None)
+                if progress is not None:
+                    progress.notify = self._prefill_ready.set
+                self._prefill_ready.set()                    # include progress emitted before binding the notifier
                 self.prefilling.append(r)
         self._admit_prefilled(block=not self.decoding)
         if self.decoding:
@@ -549,28 +607,60 @@ class PDBatcher(ContinuousBatcher):
             if events:
                 self.kv_events.publish(events)
 
+    @torch.inference_mode()
+    def _import_progress(self, r):
+        progress = getattr(r.pending, "kv_progress", None)
+        if progress is None:
+            return
+        if self.kv.rstate:
+            raise ValueError("layer-progress import does not support recurrent state")
+        touched = False
+        try:
+            for layer, start, keys, values in progress.drain():
+                touched = True
+                self.kv.write_layer_span(r.slot, start, layer, keys, values)
+                self.stats['progress_spans'] += 1
+        finally:
+            # Source slab reads and destination writes must finish before cancellation can reuse the pages.
+            if touched and torch.device(self.device).type == "cuda":
+                torch.cuda.current_stream(self.device).synchronize()
+
     def _admit_prefilled(self, block):
         pending = [r for r in self.prefilling if r.pending is not None]
         if not pending:
             return
-        if block:                                             # nothing to decode: wait for the first prefill
-            wait([r.pending for r in pending], timeout=0.05, return_when=FIRST_COMPLETED)
+        if block:
+            # Clear before inspecting state: a concurrent publication then either remains visible or wakes us.
+            self._prefill_ready.clear()
+            if not any(r.pending.done() or (getattr(r.pending, "kv_progress", None) is not None
+                       and r.pending.kv_progress.coverage.pending) for r in pending):
+                self._prefill_ready.wait(timeout=0.05)
         for r in pending:
-            if not r.pending.done():
-                continue
             with self._lock:
-                if r not in self.prefilling:                  # cancelled meanwhile: lane already released
+                if r not in self.prefilling:
                     continue
-                self.prefilling.remove(r)
             try:
-                out = r.pending.result()
+                if r.pending.done():
+                    out = r.pending.result()                 # failures never import remaining notifications
+                else:
+                    self._import_progress(r)
+                    continue
+                # Drain after observing completion, including progress published between the last drain and result.
+                self._import_progress(r)
+                progress = getattr(r.pending, "kv_progress", None)
+                if progress is not None and not progress.coverage.finished:
+                    raise RuntimeError("streamed KV coverage was not validated before completion")
+                with torch.inference_mode():
+                    if progress is None:
+                        self.kv.write_span(r.slot, out.start, out.keys, out.values)
             except BaseException as error:
                 with self._lock:
+                    self.prefilling.remove(r)
                     self._finish(r, error)
                 continue
+            with self._lock:
+                self.prefilling.remove(r)
             ids = r.request.input_ids
-            with torch.inference_mode():
-                self.kv.write_span(r.slot, out.start, out.keys, out.values)
             self.kv.length[r.slot] = r.prefilled = len(ids)
             self.kv.commit_prompt(r.slot)
             if self.kv.rstate:

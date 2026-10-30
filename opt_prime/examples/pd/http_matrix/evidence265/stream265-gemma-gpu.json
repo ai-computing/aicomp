@@ -1,0 +1,91 @@
+{
+  "model": "gemma",
+  "width": 128,
+  "cases": [
+    {
+      "stream_layers": false,
+      "tokens": [
+        [
+          107,
+          106,
+          107,
+          106,
+          107,
+          106,
+          107,
+          106
+        ],
+        [
+          563,
+          506,
+          5279,
+          529,
+          4257,
+          15400,
+          236761,
+          4308
+        ]
+      ],
+      "stats": {
+        "iterations": 8,
+        "prefill_chunks": 0,
+        "decode_steps": 8,
+        "decode_rows": 14,
+        "progress_spans": 0,
+        "prefills": 2,
+        "transferred_tokens": 142,
+        "decode_cached_tokens": 0,
+        "prefill_cached_tokens": 0,
+        "prefill_s": 0.09421391598880291,
+        "transfer_s": 0.0
+      },
+      "idle": true
+    },
+    {
+      "stream_layers": true,
+      "tokens": [
+        [
+          107,
+          106,
+          107,
+          106,
+          107,
+          106,
+          107,
+          106
+        ],
+        [
+          563,
+          506,
+          5279,
+          529,
+          4257,
+          15400,
+          236761,
+          4308
+        ]
+      ],
+      "stats": {
+        "iterations": 35,
+        "prefill_chunks": 0,
+        "decode_steps": 9,
+        "decode_rows": 14,
+        "progress_spans": 52,
+        "prefills": 2,
+        "transferred_tokens": 142,
+        "decode_cached_tokens": 0,
+        "prefill_cached_tokens": 0,
+        "prefill_s": 0.10299855103949085,
+        "transfer_s": 0.0
+      },
+      "idle": true
+    }
+  ],
+  "scope": "same-route real RNGD to GPU token parity, not cross-backend quality or speedup",
+  "source_sha256": {
+    "prefill_server.py": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d",
+    "streaming_factories.py": "77745350973cc54bf508e0c8b473efc442afef20b1c64f7c4edc179ea1471389"
+  },
+  "tokens_exact": true,
+  "stage": "complete"
+}

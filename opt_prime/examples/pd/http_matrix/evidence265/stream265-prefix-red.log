@@ -1,0 +1,17 @@
+.................F                                                       [100%]
+=================================== FAILURES ===================================
+____________ test_partial_write_cannot_overwrite_an_admitted_prefix ____________
+
+    def test_partial_write_cannot_overwrite_an_admitted_prefix():
+        import torch
+        from test_pd_dense_hybrid import pool
+        cache=pool()
+        cache.length[0]=4
+        keys=torch.ones(1,1,5,2)
+>       with pytest.raises(ValueError,match='prefix'):cache.write_layer_span(0,3,0,keys,keys)
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_pd_layer_progress.py:100: Failed
+=========================== short test summary info ============================
+FAILED tests/test_pd_layer_progress.py::test_partial_write_cannot_overwrite_an_admitted_prefix
+1 failed, 17 passed in 2.54s

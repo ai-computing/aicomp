@@ -1,0 +1,153 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_________ test_qwen_stream_exports_model_layer_order_before_next_call __________
+
+    def test_qwen_stream_exports_model_layer_order_before_next_call():
+>       m=adapter();spans=[]
+
+tests/test_streaming_factories.py:15:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_streaming_factories.py:11: in adapter
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+<frozen importlib._bootstrap_external>:879: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1016: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7b77e1db4040>
+path = '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+<frozen importlib._bootstrap_external>:1073: FileNotFoundError
+____________ test_koni_stream_uses_partitioned_stage_and_host_head _____________
+
+    def test_koni_stream_uses_partitioned_stage_and_host_head():
+>       m=adapter();spans=[]
+
+tests/test_streaming_factories.py:36:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_streaming_factories.py:11: in adapter
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+<frozen importlib._bootstrap_external>:879: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1016: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7b771b896e60>
+path = '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+<frozen importlib._bootstrap_external>:1073: FileNotFoundError
+___________ test_gemma_stream_keeps_padding_and_local_global_inputs ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b771b89fa60>
+
+    def test_gemma_stream_keeps_padding_and_local_global_inputs(monkeypatch):
+>       m=adapter();spans=[];seen=[]
+
+tests/test_streaming_factories.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_streaming_factories.py:11: in adapter
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+<frozen importlib._bootstrap_external>:879: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1016: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7b771b89f670>
+path = '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+<frozen importlib._bootstrap_external>:1073: FileNotFoundError
+______________ test_bad_prompt_rejected_before_computation[qwen] _______________
+
+kind = 'qwen'
+
+    @pytest.mark.parametrize('kind',['qwen','gemma','koni'])
+    def test_bad_prompt_rejected_before_computation(kind):
+>       m=adapter();e=SimpleNamespace(width=4)
+
+tests/test_streaming_factories.py:75:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_streaming_factories.py:11: in adapter
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+<frozen importlib._bootstrap_external>:879: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1016: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7b771b895e10>
+path = '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+<frozen importlib._bootstrap_external>:1073: FileNotFoundError
+______________ test_bad_prompt_rejected_before_computation[gemma] ______________
+
+kind = 'gemma'
+
+    @pytest.mark.parametrize('kind',['qwen','gemma','koni'])
+    def test_bad_prompt_rejected_before_computation(kind):
+>       m=adapter();e=SimpleNamespace(width=4)
+
+tests/test_streaming_factories.py:75:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_streaming_factories.py:11: in adapter
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+<frozen importlib._bootstrap_external>:879: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1016: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7b771b8d3be0>
+path = '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+<frozen importlib._bootstrap_external>:1073: FileNotFoundError
+______________ test_bad_prompt_rejected_before_computation[koni] _______________
+
+kind = 'koni'
+
+    @pytest.mark.parametrize('kind',['qwen','gemma','koni'])
+    def test_bad_prompt_rejected_before_computation(kind):
+>       m=adapter();e=SimpleNamespace(width=4)
+
+tests/test_streaming_factories.py:75:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/test_streaming_factories.py:11: in adapter
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
+<frozen importlib._bootstrap_external>:879: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1016: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7b771ba65c90>
+path = '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/home/gspark/workspace/aicomp-rngd-stream-265/opt_prime/examples/pd/streaming_factories.py'
+
+<frozen importlib._bootstrap_external>:1073: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_streaming_factories.py::test_qwen_stream_exports_model_layer_order_before_next_call
+FAILED tests/test_streaming_factories.py::test_koni_stream_uses_partitioned_stage_and_host_head
+FAILED tests/test_streaming_factories.py::test_gemma_stream_keeps_padding_and_local_global_inputs
+FAILED tests/test_streaming_factories.py::test_bad_prompt_rejected_before_computation[qwen]
+FAILED tests/test_streaming_factories.py::test_bad_prompt_rejected_before_computation[gemma]
+FAILED tests/test_streaming_factories.py::test_bad_prompt_rejected_before_computation[koni]
+6 failed in 0.96s

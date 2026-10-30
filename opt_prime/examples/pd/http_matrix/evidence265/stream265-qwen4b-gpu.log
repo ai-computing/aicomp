@@ -1,0 +1,8 @@
+loading GPU qwen4b
+
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 398/398 [00:00<00:00, 8443.90it/s]
+start mode False
+{"stream_layers": false, "tokens": [[3555, 374, 279, 6722, 315, 4787, 11862, 1939], [374, 279, 6722, 315, 4882, 11862, 13, 4504]], "stats": {"iterations": 13, "prefill_chunks": 0, "decode_steps": 8, "decode_rows": 14, "progress_spans": 0, "prefills": 2, "transferred_tokens": 142, "decode_cached_tokens": 0, "prefill_cached_tokens": 0, "prefill_s": 0.3816630680230446, "transfer_s": 0.0}, "idle": true}
+start mode True
+{"stream_layers": true, "tokens": [[3555, 374, 279, 6722, 315, 4787, 11862, 1939], [374, 279, 6722, 315, 4882, 11862, 13, 4504]], "stats": {"iterations": 50, "prefill_chunks": 0, "decode_steps": 9, "decode_rows": 14, "progress_spans": 72, "prefills": 2, "transferred_tokens": 142, "decode_cached_tokens": 0, "prefill_cached_tokens": 0, "prefill_s": 0.40945649496279657, "transfer_s": 0.0}, "idle": true}

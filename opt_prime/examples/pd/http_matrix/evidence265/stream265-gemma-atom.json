@@ -1,0 +1,588 @@
+{
+  "model": "unsloth/gemma-3-1b-it",
+  "width": 512,
+  "output_tokens": 8,
+  "batch_size": 1,
+  "cases": [
+    {
+      "stream": false,
+      "prefetch": false,
+      "tokens": [
+        [
+          107,
+          106,
+          107,
+          106,
+          107,
+          106,
+          107,
+          106
+        ],
+        [
+          236761,
+          107,
+          106,
+          107,
+          106,
+          50215,
+          563,
+          506
+        ]
+      ],
+      "tokens_exact": true,
+      "progress_spans": 0,
+      "imports": [],
+      "idle": true
+    },
+    {
+      "stream": true,
+      "prefetch": false,
+      "tokens": [
+        [
+          107,
+          106,
+          107,
+          106,
+          107,
+          106,
+          107,
+          106
+        ],
+        [
+          236761,
+          107,
+          106,
+          107,
+          106,
+          50215,
+          563,
+          506
+        ]
+      ],
+      "tokens_exact": true,
+      "progress_spans": 52,
+      "imports": [
+        {
+          "spans": 2,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 3,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        }
+      ],
+      "idle": true
+    },
+    {
+      "stream": true,
+      "prefetch": true,
+      "tokens": [
+        [
+          107,
+          106,
+          107,
+          106,
+          107,
+          106,
+          107,
+          106
+        ],
+        [
+          236761,
+          107,
+          106,
+          107,
+          106,
+          50215,
+          563,
+          506
+        ]
+      ],
+      "tokens_exact": true,
+      "progress_spans": 52,
+      "imports": [
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 3,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 1,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 21,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": false
+        },
+        {
+          "spans": 5,
+          "active_decode": 0,
+          "source_done_before": false,
+          "source_done_after": true
+        }
+      ],
+      "idle": true
+    },
+    {
+      "stream": false,
+      "prefetch": true,
+      "tokens": [
+        [
+          107,
+          106,
+          107,
+          106,
+          107,
+          106,
+          107,
+          106
+        ],
+        [
+          236761,
+          107,
+          106,
+          107,
+          106,
+          50215,
+          563,
+          506
+        ]
+      ],
+      "tokens_exact": true,
+      "progress_spans": 0,
+      "imports": [],
+      "idle": true
+    }
+  ],
+  "scope": "same-route token parity and B1 ownership, not semantic accuracy or speedup",
+  "code_sha256": {
+    "accel/platforms/atom/batching.py": "d98a51d75a36cd8c379a6220adb92528b3607cf80145b85a032270494a429580",
+    "accel/pd/pd_batching.py": "c827775c1d399bf724a9747c3424ee5ea69f93054493bfbb71d5f0cf08fff65b",
+    "accel/pd/prefill_server.py": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d",
+    "accel/pd/layer_progress.py": "19c8853cd20b386dc11064d4be63fa696468c86a26b76ecf5c48cdf3905a700b"
+  },
+  "stage": "complete"
+}

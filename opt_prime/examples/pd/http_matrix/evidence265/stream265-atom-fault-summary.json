@@ -1,0 +1,26 @@
+[
+  {
+    "model": "qwen06b",
+    "cases": 3,
+    "survivor_tokens": 512,
+    "tokens_at_source_death": 13
+  },
+  {
+    "model": "qwen4b",
+    "cases": 3,
+    "survivor_tokens": 512,
+    "tokens_at_source_death": 6
+  },
+  {
+    "model": "gemma",
+    "cases": 3,
+    "survivor_tokens": 512,
+    "tokens_at_source_death": 10
+  },
+  {
+    "model": "koni",
+    "cases": 3,
+    "survivor_tokens": 512,
+    "tokens_at_source_death": 5
+  }
+]

@@ -1,0 +1,8 @@
+GPU loading qwen06b
+
+Loading weights:   0%|          | 0/311 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 311/311 [00:00<00:00, 8708.85it/s]
+Traceback (most recent call last):
+  File "/tmp/stream265-fault-gpu.py", line 56, in <module>
+    assert new.result()==expected and not b.poisoned
+AttributeError: 'ObservedBatcher' object has no attribute 'poisoned'

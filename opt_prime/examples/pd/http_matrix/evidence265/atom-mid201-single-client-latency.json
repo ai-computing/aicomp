@@ -1,0 +1,85 @@
+{
+  "scope": "Single client, one timing batch; first SSE and estimated TPOT are not device kernel times.",
+  "models": {
+    "qwen06b": {
+      "native": {
+        "median_first_sse_s": 0.1879055928438902,
+        "median_tpot_est_s": 0.007809569536686296,
+        "median_e2e_s": 1.1797209240030497,
+        "output_tok_s": 108.48487358883817
+      },
+      "whole": {
+        "median_first_sse_s": 1.828077691141516,
+        "median_tpot_est_s": 0.007671130628611042,
+        "median_e2e_s": 2.8023112809751183,
+        "output_tok_s": 45.67517826810287
+      },
+      "stream": {
+        "median_first_sse_s": 1.011592352995649,
+        "median_tpot_est_s": 0.007834264731738629,
+        "median_e2e_s": 2.006543973926455,
+        "output_tok_s": 63.78602864998999
+      }
+    },
+    "qwen4b": {
+      "native": {
+        "median_first_sse_s": 1.0221819749567658,
+        "median_tpot_est_s": 0.03876677221310596,
+        "median_e2e_s": 5.945562046021223,
+        "output_tok_s": 21.528127850160352
+      },
+      "whole": {
+        "median_first_sse_s": 3.411107431864366,
+        "median_tpot_est_s": 0.03858469991292071,
+        "median_e2e_s": 8.311364320805296,
+        "output_tok_s": 15.400250446373338
+      },
+      "stream": {
+        "median_first_sse_s": 2.533690683078021,
+        "median_tpot_est_s": 0.038604193873058155,
+        "median_e2e_s": 7.436423304956406,
+        "output_tok_s": 17.21219579134921
+      }
+    },
+    "gemma": {
+      "native": {
+        "median_first_sse_s": 0.19625086686573923,
+        "median_tpot_est_s": 0.010694988110418044,
+        "median_e2e_s": 1.5545143568888307,
+        "output_tok_s": 82.33355325003127
+      },
+      "whole": {
+        "median_first_sse_s": 1.6123445159755647,
+        "median_tpot_est_s": 0.01075632953429668,
+        "median_e2e_s": 2.978398366831243,
+        "output_tok_s": 42.973727587950414
+      },
+      "stream": {
+        "median_first_sse_s": 1.5110139569733292,
+        "median_tpot_est_s": 0.010462222070851195,
+        "median_e2e_s": 2.839716159971431,
+        "output_tok_s": 45.07239711661869
+      }
+    },
+    "koni": {
+      "native": {
+        "median_first_sse_s": 1.6276817580219358,
+        "median_tpot_est_s": 0.06816972989046316,
+        "median_e2e_s": 10.285237454110757,
+        "output_tok_s": 12.444834751504189
+      },
+      "whole": {
+        "median_first_sse_s": 3.5296944479923695,
+        "median_tpot_est_s": 0.06797795922781422,
+        "median_e2e_s": 12.162895269924775,
+        "output_tok_s": 10.523703461849538
+      },
+      "stream": {
+        "median_first_sse_s": 3.204868826782331,
+        "median_tpot_est_s": 0.06812688143461884,
+        "median_e2e_s": 11.856982768978924,
+        "output_tok_s": 10.795227079930402
+      }
+    }
+  }
+}

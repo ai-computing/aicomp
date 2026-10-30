@@ -1,0 +1,43 @@
+{
+  "model": "qwen06b",
+  "width": 8192,
+  "input_lengths": [
+    2048,
+    8192
+  ],
+  "output_tokens": 512,
+  "concurrency": 2,
+  "runs": [
+    {
+      "case": "cancel-reuse",
+      "trigger": [
+        {
+          "spans": 1,
+          "admitted": false
+        }
+      ],
+      "tokens_exact": true,
+      "idle": true,
+      "prefix_cache": false
+    },
+    {
+      "case": "producer-death",
+      "trigger": [
+        {
+          "spans": 29,
+          "admitted": false,
+          "active_tokens": 5
+        }
+      ],
+      "error": "RuntimeError('prefill subprocess response failed: prefill subprocess exited')",
+      "idle": true,
+      "prefix_cache": false
+    }
+  ],
+  "scope": "actual streaming cancellation/reuse and source death with active512-token decode; same-route parity, not performance",
+  "source_sha256": {
+    "prefill_server.py": "5af1169ff5c6bfac6ce265ea3edf7f6a031c207bda7ce7bcbc996d7133576b1d",
+    "streaming_factories.py": "77745350973cc54bf508e0c8b473efc442afef20b1c64f7c4edc179ea1471389"
+  },
+  "stage": "complete"
+}

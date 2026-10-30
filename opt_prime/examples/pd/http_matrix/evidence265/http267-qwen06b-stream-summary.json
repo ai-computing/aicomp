@@ -1,0 +1,81 @@
+{
+  "audit": {
+    "stage": "passed",
+    "conditions": 8,
+    "warmups": 8,
+    "correctness_responses": 128,
+    "timed_text_responses": 128
+  },
+  "references_equal_whole": true,
+  "listen_delta": {
+    "ListenDrops": 0,
+    "ListenOverflows": 0
+  },
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "conditions": [
+    {
+      "input_tokens": 128,
+      "output_tokens": 32,
+      "whole_tok_s": 21.79461757300157,
+      "stream_tok_s": 28.880613785792164,
+      "whole_ttft_s": 12.375609098526184,
+      "stream_ttft_s": 9.25000011944212
+    },
+    {
+      "input_tokens": 128,
+      "output_tokens": 128,
+      "whole_tok_s": 60.81903235511154,
+      "stream_tok_s": 72.20073583888896,
+      "whole_ttft_s": 17.149621580494568,
+      "stream_ttft_s": 14.222885368973948
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 32,
+      "whole_tok_s": 20.752056729404103,
+      "stream_tok_s": 27.865405924195933,
+      "whole_ttft_s": 12.950291897985153,
+      "stream_ttft_s": 9.51548828050727
+    },
+    {
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "whole_tok_s": 57.31575181937654,
+      "stream_tok_s": 69.84503837268531,
+      "whole_ttft_s": 18.0400400479557,
+      "stream_ttft_s": 14.657064287515823
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 32,
+      "whole_tok_s": 18.01389675091607,
+      "stream_tok_s": 24.240446444677467,
+      "whole_ttft_s": 14.973558415425941,
+      "stream_ttft_s": 10.926368532993365
+    },
+    {
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "whole_tok_s": 50.47147122039938,
+      "stream_tok_s": 61.79798655048041,
+      "whole_ttft_s": 20.69272880855715,
+      "stream_ttft_s": 16.531915776024107
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 32,
+      "whole_tok_s": 11.557482137320061,
+      "stream_tok_s": 17.118479820012656,
+      "whole_ttft_s": 23.15112400846556,
+      "stream_ttft_s": 15.374032702995464
+    },
+    {
+      "input_tokens": 8192,
+      "output_tokens": 128,
+      "whole_tok_s": 33.066512339847314,
+      "stream_tok_s": 43.3496039211755,
+      "whole_ttft_s": 31.43359338195296,
+      "stream_ttft_s": 23.66630628751591
+    }
+  ]
+}
