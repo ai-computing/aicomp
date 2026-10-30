@@ -679,7 +679,11 @@ def serve_stage(owner, stage, port):
                 send(chunk(usage=response["usage"]))
             send("[DONE]")
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    class Server(ThreadingHTTPServer):
+        # Keep connection bursts queued while the accept thread is briefly delayed.
+        request_queue_size = 128
+
+    server = Server(("127.0.0.1", port), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, thread

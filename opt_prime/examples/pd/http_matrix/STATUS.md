@@ -146,3 +146,21 @@ Four models, whole/stream, input128/8192, output32/128, c1/c4:64 conditions352 r
 ## ATOM short/long controls complete (2026-10-30)
 
 All four models complete native/whole/stream at128/8192 input,32/128 output,c1/c4:96conditions528responses. Whole/stream16/16 reference pairs match. Native/PD equality is Qwen0.6/Qwen4=4/4,Gemma2/4(other2equal through EOS),KONI2/4(pre-EOS differences retained). Single-batch8K/128/c4 stream throughput44.24/14.47/43.87/10.44tok/s; one ATOM lane,extra RNGD for PD. Eleven independent auditor selfchecks pass;all exits0 and owned Pod absence verified. Cache and broader goal work remain active. See experiments/2026-10-30-atom-edge201-final.md.
+
+## HTTP listener backlog candidate (#267)
+
+Backlog128 handles a16connection accept-pause regression;15HTTPtests pass. Qwen4 RNGD-GPU whole/cacheoff retry24conditions344responses exact after originalc16 connection reset;listen drops+36before/+0retry(host-wide). One retry only;ATOM/remaining GPU verification pending. See experiments/2026-10-30-http-backlog267.md.
+
+PR289 follow-up: Qwen4 native ATOM cache-on retry also passes 24 conditions/344 responses; listen drops +82 original/+0 retry, no OOM in original. Both GPU and ATOM have one successful retry; other routes/models remain pending.
+
+PR289 paired-cache follow-up: Qwen4 RNGD-GPU whole KV paired cache off/on:48 conditions,688 responses exact. Across24 conditions throughput improves11,range -3.72% to +15.26%;single ordered pair. Full paired evidence retained;remaining hardware runs pending.
+
+PR289 streamed-control follow-up: Qwen4 GPU stream/off24conditions344responses exact;whole/stream references8/8equal. Same candidate,only stream flag differs. Single ordered pair all24 throughput increases(+4.33..30.38%);8K128c4 31.97->37.54tok/s. Remaining verification pending.
+
+PR289 Qwen4 GPU subset: Qwen4 GPU PD four configurations complete96conditions1376responses exact;all4reference sets equal,listen deltas0. Full grid provenance/timings retained;single ordered samples only. Gemma GPU and Qwen4 ATOM pending.
+
+PR289 ATOM PD follow-up: Qwen4 ATOM whole/on24conditions344responses same-route exact,listen deltas0. Native/PD6/8refs equal;2preEOS differences also present in historical cacheoff. At8K128c4 native23.07vsPD15.04tok/s. Streaming pending.
+
+PR289 Gemma GPU subset: Gemma GPU PD four configurations96conditions1376responses exact,all4reference sets equal,listen deltas0. Full timing/provenance retained;streamcache gain10/24 only(-4.93..+2.58%),single ordered samples. Remaining model tests pending.
+
+PR289 Qwen4 ATOM subset: Qwen4 ATOM native/whole/stream72conditions1032responses same-route exact;whole/stream8/8refs,nativePD6/8.8K128c4 native23.07/whole15.04/stream16.52tok/s. Owned cleanup and freshabsence verified. KONI GPU/TP2 pending.
