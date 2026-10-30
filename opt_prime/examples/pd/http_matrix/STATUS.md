@@ -158,3 +158,5 @@ PR289 paired-cache follow-up: Qwen4 RNGD-GPU whole KV paired cache off/on:48 con
 PR289 streamed-control follow-up: Qwen4 GPU stream/off24conditions344responses exact;whole/stream references8/8equal. Same candidate,only stream flag differs. Single ordered pair all24 throughput increases(+4.33..30.38%);8K128c4 31.97->37.54tok/s. Remaining verification pending.
 
 PR289 Qwen4 GPU subset: Qwen4 GPU PD four configurations complete96conditions1376responses exact;all4reference sets equal,listen deltas0. Full grid provenance/timings retained;single ordered samples only. Gemma GPU and Qwen4 ATOM pending.
+
+PR289 ATOM PD follow-up: Qwen4 ATOM whole/on24conditions344responses same-route exact,listen deltas0. Native/PD6/8refs equal;2preEOS differences also present in historical cacheoff. At8K128c4 native23.07vsPD15.04tok/s. Streaming pending.

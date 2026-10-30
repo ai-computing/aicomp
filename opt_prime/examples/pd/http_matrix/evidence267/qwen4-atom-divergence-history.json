@@ -1,0 +1,27 @@
+{
+  "model": "Qwen3-4B",
+  "kind": "Historical-reference comparison, not new hardware experiment",
+  "sources": {
+    "mid201-atom-final-qwen4b-native.json": "a21a9292094540a8a66c7056a6aa32e4b4832c839b20acf3523e3182e3971261",
+    "edge201-atom-final-qwen4b-native.json": "03254958b234ac5a00d6f6839129f4fc4c8fdd3a7bd54174f191ea751ab7cda5",
+    "mid201-atom-final-qwen4b-whole.json": "55278b0eb5c9a03b1808cdd3a84db0150326904f54504a9c4894d2aeaf750732",
+    "edge201-atom-final-qwen4b-whole.json": "f82833eeea8da4de03276192aada64eb73af5e6294d6d5e507a0830a248da4f6"
+  },
+  "conditions": {
+    "512:128": {
+      "first_divergent_generated_index": 50,
+      "same_native_tokens_off_and_on": true,
+      "same_whole_tokens_off_and_on": true,
+      "native_token_at_divergence": 4829,
+      "whole_token_at_divergence": 2299
+    },
+    "2048:128": {
+      "first_divergent_generated_index": 61,
+      "same_native_tokens_off_and_on": true,
+      "same_whole_tokens_off_and_on": true,
+      "native_token_at_divergence": 1366,
+      "whole_token_at_divergence": 5230
+    }
+  },
+  "conclusion": "The same native versus whole-PD token divergence is already present in archived cache-off references. Current cache-on outputs equal those same-route references. This does not identify the numerical root cause or prove all inputs are cache invariant."
+}
