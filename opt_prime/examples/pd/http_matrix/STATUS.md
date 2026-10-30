@@ -160,3 +160,5 @@ PR289 streamed-control follow-up: Qwen4 GPU stream/off24conditions344responses e
 PR289 Qwen4 GPU subset: Qwen4 GPU PD four configurations complete96conditions1376responses exact;all4reference sets equal,listen deltas0. Full grid provenance/timings retained;single ordered samples only. Gemma GPU and Qwen4 ATOM pending.
 
 PR289 ATOM PD follow-up: Qwen4 ATOM whole/on24conditions344responses same-route exact,listen deltas0. Native/PD6/8refs equal;2preEOS differences also present in historical cacheoff. At8K128c4 native23.07vsPD15.04tok/s. Streaming pending.
+
+PR289 Gemma GPU subset: Gemma GPU PD four configurations96conditions1376responses exact,all4reference sets equal,listen deltas0. Full timing/provenance retained;streamcache gain10/24 only(-4.93..+2.58%),single ordered samples. Remaining model tests pending.
