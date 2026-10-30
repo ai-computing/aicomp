@@ -473,6 +473,36 @@ class PagedKV:
             pk[:, :, idx] = k.to(self.device, pk.dtype, non_blocking=True)
             pv[:, :, idx] = v.to(self.device, pv.dtype, non_blocking=True)
 
+    def write_layer_span(self, slot, start, layer_start, keys, values):
+        """Import a dense model-layer subset into reserved pages, without publishing it.
+
+        The caller owns the reservation until all transfers finish. Length, prefix
+        admission and recurrent state are deliberately unchanged by partial writes.
+        """
+        if (any(type(x) is not int for x in (slot, start, layer_start))
+                or not 0 <= slot < len(self.owned) or start < 0 or layer_start < 0
+                or not isinstance(keys, torch.Tensor) or not isinstance(values, torch.Tensor)
+                or keys.ndim != 4 or values.shape != keys.shape
+                or keys.shape[0] == 0 or keys.shape[2] == 0):
+            raise ValueError("invalid partial KV span")
+        if start < self.length[slot]:
+            raise ValueError("partial KV span cannot overwrite an admitted prefix")
+        end = start + keys.shape[2]
+        if end > min(self.max_context, len(self.owned[slot]) * self.page_size):
+            raise ValueError("partial KV span exceeds reserved pages")
+        layers = range(layer_start, layer_start + keys.shape[0])
+        for layer in layers:
+            if layer not in self.layer_group:
+                raise ValueError("partial KV span contains an unknown attention layer")
+            group = self.groups[self.layer_group[layer][0]]
+            if keys.shape[1] != group.kv_heads or keys.shape[3] != group.head_dim:
+                raise ValueError("partial KV geometry does not match receiver group")
+        idx = self.span_index(slot, start, end)
+        for offset, layer in enumerate(layers):
+            pk, pv = self.layer_kv(layer)
+            pk[:, idx] = keys[offset].to(self.device, pk.dtype)
+            pv[:, idx] = values[offset].to(self.device, pv.dtype)
+
     def read_span(self, slot, start, end):
         """[layers, kv_heads, end - start, head_dim] keys and values of `slot` (the prefill side's export); a list per
         KV group for hybrid models"""
