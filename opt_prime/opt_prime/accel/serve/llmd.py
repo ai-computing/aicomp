@@ -525,7 +525,8 @@ def serve_stage(owner, stage, port):
             if self.path not in ("/ready", "/health"):
                 self.reply(404, dict(error="not found"))
                 return
-            ready = owner.started and owner.service.state != "poisoned"
+            ready = (owner.started and getattr(owner, "accepting", True)
+                     and owner.service.state != "poisoned" and getattr(owner.service, "ready", True))
             self.reply(200 if ready else 503, dict(ready=ready, stage=stage))
 
         def cancel_if_gone(self, rid, state):
