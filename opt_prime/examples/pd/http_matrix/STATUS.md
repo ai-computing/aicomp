@@ -146,3 +146,7 @@ Four models, whole/stream, input128/8192, output32/128, c1/c4:64 conditions352 r
 ## ATOM short/long controls complete (2026-10-30)
 
 All four models complete native/whole/stream at128/8192 input,32/128 output,c1/c4:96conditions528responses. Whole/stream16/16 reference pairs match. Native/PD equality is Qwen0.6/Qwen4=4/4,Gemma2/4(other2equal through EOS),KONI2/4(pre-EOS differences retained). Single-batch8K/128/c4 stream throughput44.24/14.47/43.87/10.44tok/s; one ATOM lane,extra RNGD for PD. Eleven independent auditor selfchecks pass;all exits0 and owned Pod absence verified. Cache and broader goal work remain active. See experiments/2026-10-30-atom-edge201-final.md.
+
+## HTTP listener backlog candidate (#267)
+
+Backlog128 handles a16connection accept-pause regression;15HTTPtests pass. Qwen4 RNGD-GPU whole/cacheoff retry24conditions344responses exact after originalc16 connection reset;listen drops+36before/+0retry(host-wide). One retry only;ATOM/remaining GPU verification pending. See experiments/2026-10-30-http-backlog267.md.
