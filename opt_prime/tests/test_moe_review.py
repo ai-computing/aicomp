@@ -229,7 +229,7 @@ def test_native_start_drains_jobs_of_a_call_that_was_not_waited_for():
     blocking, fns, ctxs = (ctypes.c_int8 * 1)(1), (ctypes.c_void_p * 1)(tier.native_tier(None)[0]), (ctypes.c_void_p * 1)()
     for _ in range(2):                          # the first call raised before moe_disp_wait
         lib.moe_disp_start(d, 2, 1, 4, idx.data_ptr(), w.data_ptr(), x.data_ptr(), owner.data_ptr(), local.data_ptr(),
-                           1, blocking, fns, ctxs, counts.data_ptr())
+                           1, 1, blocking, fns, ctxs, counts.data_ptr())   # num_experts, ntiers
     assert lib.moe_disp_wait(d, 2, 4, acc.data_ptr()) == 0
     assert tier.calls == 2
     torch.testing.assert_close(acc, torch.tensor([[1.] * 4, [.5] * 4]))
