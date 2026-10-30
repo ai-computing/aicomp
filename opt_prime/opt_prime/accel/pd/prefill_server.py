@@ -181,7 +181,10 @@ def stream_result(engine, req, slab, publish):
 
 
 def factory_engine(a):
-    """Load a trusted CLI factory using the same FP32 checkpoint inputs as research workers."""
+    """Load a trusted CLI factory using the same FP32 checkpoint inputs as research workers.
+
+    Research-only: `--engine-factory module:callable` is imported and called without any allow-list, and the whole
+    checkpoint is materialized on the host as fp32 (4 bytes per parameter) before the factory runs."""
     from importlib import import_module
     from pathlib import Path
     from safetensors import safe_open
@@ -214,7 +217,10 @@ def factory_engine(a):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--engine", required=True, choices=["torch", "rngd-qwen", "rngd-full", "factory"])
-    ap.add_argument("--engine-factory", help="trusted local module:callable; used only with --engine factory")
+    ap.add_argument("--engine-factory",
+                    help="--engine factory only: module:callable, imported and called as-is (a trusted research "
+                         "flag: it runs arbitrary code from PYTHONPATH). Loads every *.safetensors tensor of "
+                         "--model into host memory as fp32 first (about 4 bytes per parameter, e.g. ~32 GB for 8B)")
     ap.add_argument("--model", required=True); ap.add_argument("--model-id", default=None)
     ap.add_argument("--shm", required=True); ap.add_argument("--slots", type=int, required=True)
     ap.add_argument("--layers", type=int, required=True); ap.add_argument("--kv-heads", type=int, required=True)
