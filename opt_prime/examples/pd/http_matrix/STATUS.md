@@ -132,3 +132,9 @@ KONI stream HTTP complete: all3 routes264 responses each audited; whole/stream8/
 ## Intermediate-length summary correction (2026-10-30)
 
 Fixed an evidence-summary key collision: aggregate `output_tokens` previously overwrote request length. Published native/default/PD GPU summaries now include `output_tokens_per_request` separately. Corrected the native GPU2K/128c4 table, which had selected32tokens/request; raw results and correctness conclusions are unchanged. PD GPU and existing ATOM tables were checked and already selected the intended raw conditions. Portable ATOM raw auditor/selfcheck added under evidence265:10checks, including preserving request/aggregate lengths, duplicate-arm rejection and corrupt/missing raw results. Current ATOM final-HTTP matrix remains in progress; these scripts do not certify uncompleted configurations.
+
+## Intermediate ATOM and short/long GPU coverage (2026-10-30)
+
+Final-HTTP ATOM native/whole/stream comparison completes all four models at512/2048 input,32/128 output,c1/c4:96 conditions,528 responses. All within-route checks pass and whole/stream references match4/4 per model. Native/PD references match2/4 for each Qwen and4/4 for Gemma/KONI; Qwen pre-EOS differences and prior quality limits remain. One ATOM lane, caches off, research artifacts; c4 is queued clients. Owned Pod cleanup and absence verified. See experiments/2026-10-30-atom-mid201-final.md.
+
+Native GPU short/long sweep completes four models at128/8192 input,32/128 output,c1/c4:32 conditions,176 responses, all16 reference arrays equal historical c16 controls. Four child exits and coordinator exit0; GPU compute-process query empty after completion. Portable raw auditor and8 selfchecks included. See experiments/2026-10-30-native-gpu-edge201.md. ATOM short/long c1/c4, heterogeneous GPU short/long, cache-on and supported export work remain separate; the full four-model goal is not complete.
