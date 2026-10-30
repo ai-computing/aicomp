@@ -180,7 +180,7 @@ class FakeBlocks:
         logits = torch.zeros(B, 1, self.config.vocab_size)
         for lane in range(B):
             block, pos = int(block_tables[lane, 0]), int(cache_position[lane, 0])
-            if block == self.rbln_config.kvcache_num_blocks - 1:
+            if self.rbln_config.kvcache_num_blocks > 1 and block == self.rbln_config.kvcache_num_blocks - 1:
                 continue                                       # scratch block: idle lane
             with torch.inference_mode():
                 out = self.m(input_ids[lane:lane + 1], past_key_values=self._cache(block, pos), use_cache=True,
@@ -351,3 +351,86 @@ def test_pd_remote_only_with_host_tier_events_and_metrics(fake_rebel):
     flat = [e for batch in events.batches for e in batch[1]]
     assert any(e["type"] == "BlockStored" and e["medium"] == "CPU" for e in flat)
     worker.close()
+
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_single_block_pd_reuses_full_prefix_without_cache(fake_rebel, partial):
+    import copy
+    from opt_prime.accel.pd.pd_batching import PrefillWorker, TorchPrefillEngine
+    model = _llama()
+    fake = _blocks_model(fake_rebel, model, batch=1, blocks=1)
+    engine = TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16)
+    original = engine.prefill
+    calls = 0
+    def prefill(request, send_from=0):
+        nonlocal calls
+        out = original(request, send_from)
+        calls += 1
+        if partial and calls == 1:
+            out.start = 1
+            out.keys, out.values = out.keys[:, :, 1:], out.values[:, :, 1:]
+        return out
+    engine.prefill = prefill
+    worker = PrefillWorker(engine)
+    try:
+        b = AtomBatcher(fake, prefix_cache=False, prefill_worker=worker, local_prefill=False)
+        prompts = _prompts(4, 20, 70, seed=236)
+        fs = [b.submit(PDRequest(str(i), p, 5)) for i,p in enumerate(prompts)]
+        b.run_until_idle()
+        for i,(p,f) in enumerate(zip(prompts,fs)):
+            if partial and i == 0:
+                with pytest.raises(ValueError, match="full prompt"):
+                    f.result()
+            else:
+                assert f.result() == _greedy(model,p,5)
+        assert b.stats_pd == {"remote":4,"local":0}
+        assert b.blocks.free == [0] and b.blocks.lane_block == [None]
+        assert not fake.calls and not b.by_id and not b.poisoned
+    finally:
+        worker.close()
+
+
+@pytest.mark.parametrize("batch,blocks,prefix,host", [(1,1,True,0),(1,1,False,1),(2,2,False,0)])
+def test_single_block_pd_keeps_cache_and_multilane_guards(fake_rebel,batch,blocks,prefix,host):
+    model = _llama()
+    fake = _blocks_model(fake_rebel,model,batch=batch,blocks=blocks)
+    with pytest.raises(ValueError):
+        AtomBatcher(fake,prefix_cache=prefix,host_kv_gib=host,prefill_worker=object(),local_prefill=False)
+
+
+def test_single_block_pd_cancel_late_result_and_reuse(fake_rebel):
+    import copy
+    from concurrent.futures import Future
+    from opt_prime.accel.pd.pd_batching import TorchPrefillEngine
+
+    class Worker:
+        def __init__(self):
+            self.pending = []
+
+        def submit(self, request, send_from=0, slot=None):
+            assert send_from == slot == 0
+            f = Future()
+            self.pending.append((request, f))
+            return f
+
+    model = _llama()
+    fake = _blocks_model(fake_rebel, model, batch=1, blocks=1)
+    worker = Worker()
+    engine = TorchPrefillEngine(copy.deepcopy(model), max_context=128, chunk=16, page_size=16)
+    b = AtomBatcher(fake, prefix_cache=False, prefill_worker=worker, local_prefill=False)
+    p,q = _prompts(2,20,35)
+    gone = b.submit(PDRequest('gone',p,5))
+    b.step()
+    assert b.cancel('gone')
+    b.step()
+    with pytest.raises(RequestCancelled):
+        gone.result()
+    good = b.submit(PDRequest('next',q,5))
+    b.step()
+    for request,f in worker.pending:
+        if not f.done():
+            f.set_result(engine.prefill(request))
+    b.run_until_idle()
+    assert good.result() == _greedy(model,q,5)
+    assert b.blocks.free == [0] and b.blocks.lane_block == [None]
+    assert not b.by_id and not b.poisoned

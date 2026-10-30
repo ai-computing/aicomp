@@ -26,6 +26,11 @@ block tables. That enables:
   - a host-DRAM tier: device entries evicted for space are copied to host memory (per-layer `get_kv_cache_for_layer`
     through a 2 MiB-aligned staging buffer that mirrors the layer's block layout) and written back on a later hit;
   - KV events (BlockStored / BlockRemoved, device and CPU tiers) and prefix-hit counters, as for the GPU pool.
+Hybrid fresh PD imports global layers into their assigned block and the latest sliding window into the request
+lane. Source dtype metadata may differ from physical storage, so staging validates allocation size. Hybrid prefix
+and host-cache restoration remain unsupported; remote hybrid requests must return their full prompt KV.
+Static B1 cache-off PD may use its sole block: it never decodes an idle lane alongside an active lane.
+This path requires full prompt KV and releases the block after each request; it retains no prefix entries.
 Idle lanes then decode on a reserved scratch block. Measured on ATOM (Llama-3.2-1B, 600-token prompt): full prefill
 85.5 ms; device copy of a 512-token prefix 0.8 ms + 17.5 ms suffix prefill; host reload 8.9 ms; tokens identical.
 """
@@ -37,6 +42,10 @@ import torch
 
 from opt_prime.accel.pd.batching import ContinuousBatcher
 from opt_prime.accel.pd.sampling import select_token
+
+
+class InvalidKVImport(ValueError):
+    """Invalid remote KV rejected before any device write; the lane remains reusable."""
 
 
 _DLFLOAT = None
@@ -74,20 +83,23 @@ class AtomKVBlocks:
         from opt_prime.accel.pd.paged import block_hashes
         self._hashes = block_hashes
         rc = model.rbln_config
+        self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
         self.unit, self.lanes = rc.prefill_chunk_size, lanes
         self.blocks = rc.kvcache_num_blocks
-        if self.blocks < lanes + 1:
+        self.single_block = self.blocks == lanes == 1 and not (prefix_cache or host_bytes or self.hybrid_cache)
+        if self.blocks < lanes + 1 and not self.single_block:
             raise ValueError("own block tables need kv_blocks >= lanes + 1 (a scratch block for idle lanes)")
         if prefix_cache and self.blocks < lanes + 2:     # else a prefix hit may find only its own source to evict
             raise ValueError("prefix caching needs kv_blocks >= lanes + 2 (a scratch block and an evictable entry)")
         self.scratch = self.blocks - 1
-        self.free = list(range(self.blocks - 1))
+        # B1 cache-off PD never decodes an idle lane beside an active one.
+        self.free = list(range(self.blocks if self.single_block else self.blocks - 1))
         self.lane_block = [None] * lanes
         self.prefix_cache = prefix_cache
         self.entries = OrderedDict()             # block -> prompt unit hashes (unreferenced, least recent first)
         self.index = {}                          # unit hash -> a block holding that prefix
         self.copy_rt, self.io_rt = model.model[0], model.model[1]
-        self.metas = [m if isinstance(m, dict) else {k: getattr(m, k) for k in ("name", "shape", "dtype")
+        self.metas = [m if isinstance(m, dict) else {k: getattr(m, k) for k in ("name", "shape", "dtype", "layer_type")
                                                      if hasattr(m, k)} for m in rc.kvcache_metas]
         self.host_bytes, self.host_used = host_bytes, 0
         self.host = OrderedDict()                # last unit hash -> (hashes, tokens, [per-layer arrays])
@@ -106,7 +118,13 @@ class AtomKVBlocks:
             self._stage = []
             for m in self.metas:
                 n = self.io_rt.get_kv_cache_size_for_layer(m["name"])
-                dt = np.uint16 if m.get("dtype", "bfloat16") == "bfloat16" else np.float32
+                count = int(np.prod(m["shape"]))
+                if n == count * 2:
+                    dt = np.uint16  # physical DLFloat16, even when source metadata says float32
+                elif n == count * 4:
+                    dt = np.float32
+                else:
+                    raise ValueError("unsupported physical KV element size")
                 self._stage.append(aligned_tensor(n // np.dtype(dt).itemsize, dtype=dt, alignment=2 << 20,
                                                   tensor_type="np").reshape(m["shape"]))
         return self._stage
@@ -229,8 +247,27 @@ class AtomKVBlocks:
         """PD: write KV computed elsewhere ([layers, kv_heads, n, head_dim], any float dtype) into the lane's block at
         positions start..start+n; the SDK's KV tensors are (key, value) per layer in bfloat16"""
         import numpy as np
+        if keys.ndim != 4 or values.ndim != 4:
+            raise InvalidKVImport("KV export must have layer/head/token/dimension axes")
         block, n = self.lane_block[lane], keys.shape[2]
+        if (self.hybrid_cache or self.single_block) and start:
+            raise InvalidKVImport("hybrid or single-block PD requires a full prefix from position zero")
+        if keys.shape != values.shape or len(self.metas) != keys.shape[0] * 2:
+            raise InvalidKVImport("KV export geometry does not match compiled cache")
         stage = self._staging()
+        if len({buf.dtype for buf in stage}) != 1:
+            raise ValueError("mixed physical KV formats are unsupported")
+        destinations = []
+        for m, buf in zip(self.metas, stage):
+            if (keys.shape[1], keys.shape[3]) != (buf.shape[1], buf.shape[3]):
+                raise InvalidKVImport("KV export heads/dimensions do not match compiled cache")
+            local = self.hybrid_cache and m.get("layer_type") == "sliding_attention"
+            if self.hybrid_cache and m.get("layer_type") not in ("sliding_attention", "full_attention"):
+                raise ValueError("unknown hybrid KV layer type")
+            dest, offset, kept = (lane, 0, min(n, buf.shape[2])) if local else (block, start, n)
+            if dest is None or not 0 <= dest < buf.shape[0] or offset < 0 or offset + kept > buf.shape[2]:
+                raise InvalidKVImport("KV import exceeds assigned cache capacity")
+            destinations.append((dest, offset, kept))
         # all layers converted at once ([layers, 2, kv_heads, n, head_dim], K then V), then one copy per KV tensor
         kv = torch.stack([keys, values], dim=1).detach().to("cpu")
         if stage[0].dtype == np.uint16:                      # the device holds DLFloat16
@@ -238,8 +275,9 @@ class AtomKVBlocks:
         else:
             data = kv.float().numpy()
         for i, (m, buf) in enumerate(zip(self.metas, stage)):
-            buf[block, :, start:start + n] = data[i // 2, i % 2]
-            self.io_rt.set_kv_cache_for_layer(m["name"], block, start, n, buf)
+            dest, offset, kept = destinations[i]
+            buf[dest, :, offset:offset + kept] = data[i // 2, i % 2, :, n - kept:]
+            self.io_rt.set_kv_cache_for_layer(m["name"], dest, offset, kept, buf)
 
     def drain_events(self):
         out, self.events = self.events, []
@@ -262,6 +300,9 @@ class AtomBatcher(ContinuousBatcher):
         slow prefill device is therefore used only for overflow, and a fast one takes most prompts.
         local_prefill=False keeps every prefill remote (decode never stalls on a prompt; TPOT first)."""
         rc = model.rbln_config
+        self.hybrid_cache = getattr(rc, "cache_impl", None) == "hybrid"
+        if self.hybrid_cache and (prefix_cache or host_kv_gib):
+            raise ValueError("hybrid sliding cache restoration is not implemented for prefix/host cache")
         self.lanes = rc.batch_size
         decoders = getattr(model, "decoders", None) or {}
         if self.lanes not in decoders:
@@ -288,7 +329,10 @@ class AtomBatcher(ContinuousBatcher):
         self._remote_s = self._local_s = None    # moving averages (seconds per prompt)
         self.local_prefill = local_prefill
         self.blocks = None
-        if (getattr(rc, "kvcache_num_blocks", self.lanes) or self.lanes) > self.lanes:
+        blocks = getattr(rc, "kvcache_num_blocks", self.lanes) or self.lanes
+        single_pd = blocks == self.lanes == 1 and prefill_worker is not None and not (
+            prefix_cache or host_kv_gib or self.hybrid_cache)
+        if blocks > self.lanes or single_pd:
             self.blocks = AtomKVBlocks(model, self.lanes, prefix_cache=prefix_cache,
                                        host_bytes=int(host_kv_gib * 2 ** 30))
             self.block_size = self.blocks.unit
@@ -313,9 +357,18 @@ class AtomBatcher(ContinuousBatcher):
     def _prefill(self, lane, prompt, start=0):
         kw = {} if self.blocks is None else dict(block_tables=torch.tensor([self.blocks.lane_block[lane]],
                                                                            dtype=torch.int16))
-        return self.model.prefill_decoder(input_ids=torch.tensor([list(prompt[start:])], dtype=torch.int64),
-                                          cache_position=torch.arange(start, len(prompt), dtype=torch.int32)[None],
-                                          batch_idx=lane, **kw)
+        if self.hybrid_cache and self.blocks is not None:
+            if start:
+                raise ValueError("hybrid sliding cache requires a fresh prefill")
+            kw["local_block_tables"] = torch.tensor([lane], dtype=torch.int16)
+        out = self.model.prefill_decoder(input_ids=torch.tensor([list(prompt[start:])], dtype=torch.int64),
+                                         cache_position=torch.arange(start, len(prompt), dtype=torch.int32)[None],
+                                         batch_idx=lane, **kw)
+        if self.hybrid_cache and self.blocks is not None:
+            # External tables bypass the SDK's prompt mask reset; decode only sets new bits.
+            self.decoder.dec_attn_mask[lane].zero_()
+            self.decoder.dec_attn_mask[lane, :len(prompt)] = 1
+        return out
 
     @torch.inference_mode()
     def step(self):
@@ -367,6 +420,8 @@ class AtomBatcher(ContinuousBatcher):
             tokens[r.slot], positions[r.slot] = r.tokens[-1], self.kv.length[r.slot]
         kw = {} if self.blocks is None else dict(block_tables=self.blocks.table([r.slot for r in rows]))
         cache_position = torch.tensor(positions, dtype=torch.int32)[:, None].contiguous()
+        if self.hybrid_cache and self.blocks is not None:
+            kw["local_block_tables"] = torch.arange(self.lanes, dtype=torch.int16)[:, None]
         if getattr(self.model.rbln_config, "use_position_ids", False):     # e.g. Gemma 3 (sliding attention)
             kw["position_ids"] = cache_position.clone()
         out = self.decoder(input_ids=torch.tensor(tokens, dtype=torch.int64)[:, None].contiguous(),
@@ -432,6 +487,8 @@ class AtomBatcher(ContinuousBatcher):
                     self.prefilling.remove(r)
                 try:
                     out = r.pending.result()
+                    if (self.hybrid_cache or self.blocks.single_block) and (out.start != 0 or out.keys.shape[2] != len(r.request.input_ids)):
+                        raise ValueError("hybrid or single-block PD requires the full prompt KV")
                 except BaseException as error:        # this request fails; the lanes go on
                     with self._lock:
                         self._finish(r, error)
@@ -439,8 +496,16 @@ class AtomBatcher(ContinuousBatcher):
                 r.pending = None
                 ids = r.request.input_ids
                 t0 = time.perf_counter()
-                if out.keys.shape[2]:
-                    self.blocks.import_span(r.slot, out.start, out.keys, out.values)
+                try:
+                    if out.keys.shape[2]:
+                        self.blocks.import_span(r.slot, out.start, out.keys, out.values)
+                except InvalidKVImport as error:
+                    with self._lock:
+                        self._finish(r, error)
+                    continue
+                if self.hybrid_cache:
+                    self.decoder.dec_attn_mask[r.slot].zero_()
+                    self.decoder.dec_attn_mask[r.slot, :len(ids)] = 1
                 # remote cost per prompt: the prefill itself, its transfer and the import here
                 self._remote_s = _ema(self._remote_s, (out.prefill_s or 0.0) + (out.transfer_s or 0.0) +
                                       time.perf_counter() - t0)
