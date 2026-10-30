@@ -71,3 +71,7 @@ Set PYTHON to the torch/Transformers environment above and FROZEN_MODEL to the f
 ## Device eviction and host reload
 
 [Pressure controls](pressure-controls.md) add four-model, one-slot A/B8K experiments with36device pages. All12arms pass pressure checks;72/72 within-arm and48/48 cross-mode response arrays match. Host arms each restore87blocks. Published fixture and verifier are included. Host-tier eviction and concurrent transfer remain outside this scope.
+
+## Full requested native GPU condition grid
+
+The [2026-10-30 full grid](full-grid-controls.md) adds eight matched page256 off/on arms: 192 conditions and 2,752 responses across all four models, with exact token/text checks and explicit limits.
