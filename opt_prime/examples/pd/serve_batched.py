@@ -29,6 +29,13 @@ from opt_prime.accel.serve.llmd import serve_stage
 
 def prefill_worker(a, slots, config):
     """the PD prefill side from the flags, or None (aggregated serving)"""
+    stream_layers = getattr(a, "pd_prefill_stream_layers", False)
+    if stream_layers and (a.backend not in ("torch", "atom") or not a.pd_prefill_python or a.pd_prefill_device):
+        raise ValueError("PD layer streaming requires a subprocess producer and Torch or ATOM decoder")
+    if stream_layers:
+        from opt_prime.accel.pd.torch_models import describe_model
+        if describe_model(config).recurrent:
+            raise ValueError("PD layer streaming does not support recurrent (linear-attention) models")
     if a.pd_prefill_device:
         chunk = getattr(a, "pd_prefill_chunk", 2048)
         if chunk <= 0:
@@ -47,7 +54,7 @@ def prefill_worker(a, slots, config):
         return SubprocessPrefillWorker(a.pd_prefill_python, shlex.split(a.pd_prefill_args) + ["--model", a.model],
                                        slots=slots, layers=c.num_hidden_layers, kv_heads=c.num_key_value_heads,
                                        head_dim=getattr(c, "head_dim", None) or c.hidden_size // c.num_attention_heads,
-                                       max_context=a.max_context, env=env)
+                                       max_context=a.max_context, env=env, stream_layers=stream_layers)
     return None
 
 
@@ -134,6 +141,8 @@ if __name__ == "__main__":
     ap.add_argument("--pd-prefill-python", default=None, help="PD: prefill_server under this interpreter")
     ap.add_argument("--pd-prefill-args", default="--engine torch --device cpu")
     ap.add_argument("--pd-prefill-pythonpath", default=None)
+    ap.add_argument("--pd-prefill-stream-layers", action="store_true",
+                    help="experimental: import layer KV during capable subprocess prefill (Torch or ATOM decoder)")
     ap.add_argument("--pd-remote-only", action="store_true",
                     help="PD on ATOM: every prompt is prefilled by the PD prefill side (no cost routing to ATOM)")
     ap.add_argument("--pd-prefetch-next", action="store_true",
