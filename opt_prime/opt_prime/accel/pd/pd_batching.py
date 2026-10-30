@@ -194,6 +194,11 @@ class ProcessPrefillWorker:
         self._recv = threading.Thread(target=self._receive, daemon=True, name="prefill-receiver")
         self._recv.start()
 
+    @property
+    def ready(self):
+        """False once the child has died or been closed (the serving readiness gate reads this)."""
+        return self._futures is not None and self._proc.is_alive()
+
     def submit(self, request, send_from=0, slot=None) -> Future:
         f = Future()
         with self._lock:
@@ -263,64 +268,149 @@ class SubprocessPrefillWorker:
         cmd = [python, "-m", "opt_prime.accel.pd.prefill_server", "--shm", self._shm.name, "--slots", str(slots),
                "--layers", str(layers), "--kv-heads", str(kv_heads), "--head-dim", str(head_dim),
                "--max-context", str(max_context), *engine_args]
-        self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1,
-                                      env=env)
         self._json = json
         self._futures, self._next, self._lock = {}, 0, threading.Lock()
+        self._write_lock = threading.Lock()
+        self._failed = None
+        self._proc = self._recv = None
+        self._closed = False
         ready = Future()
-        self._recv = threading.Thread(target=self._receive, args=(ready,), daemon=True, name="prefill-subprocess")
-        self._recv.start()
-        ready.result(timeout=startup_timeout)
+        try:
+            self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+                                          bufsize=1, env=env)
+            self._recv = threading.Thread(target=self._receive, args=(ready,), daemon=True,
+                                          name="prefill-subprocess")
+            self._recv.start()
+            ready.result(timeout=startup_timeout)
+        except BaseException:
+            self.close()
+            raise
+
+    @property
+    def ready(self):
+        """Terminal producer failure/closure is distinct from a single rejected request."""
+        with self._lock:
+            return (not self._closed and self._failed is None and self._proc.poll() is None
+                    and self._recv.is_alive())
 
     def submit(self, request, send_from=0, slot=None) -> Future:
-        if slot is None:
-            raise ValueError("SubprocessPrefillWorker needs the decode lane (slot)")
+        if slot is None or not 0 <= slot < self.slab.shape[0]:
+            raise ValueError("SubprocessPrefillWorker needs a valid decode lane (slot)")
         f = Future()
-        with self._lock:
-            key, self._next = self._next, self._next + 1
-            self._futures[key] = (f, slot, send_from)
         s = request.sampling
-        line = self._json.dumps(dict(id=key, tokens=list(request.input_ids), send_from=send_from, slot=slot,
-                                     sampling=dict(temperature=s.temperature, top_p=s.top_p, top_k=s.top_k, seed=s.seed,
-                                                   stop_token_ids=list(s.stop_token_ids))))
-        self._proc.stdin.write(line + "\n")
-        self._proc.stdin.flush()
+        write_error = None
+        # Keep pipe writes ordered without holding the response-map lock across blocking I/O.
+        with self._write_lock:
+            with self._lock:
+                error = self._failed
+                key, self._next = self._next, self._next + 1
+                if error is None:
+                    self._futures[key] = (f, slot, send_from)
+            if error is not None:
+                f.set_exception(error)
+                return f
+            try:
+                line = self._json.dumps(dict(id=key, tokens=list(request.input_ids), send_from=send_from, slot=slot,
+                                             sampling=dict(temperature=s.temperature, top_p=s.top_p, top_k=s.top_k,
+                                                           seed=s.seed, stop_token_ids=list(s.stop_token_ids))))
+                self._proc.stdin.write(line + "\n")
+                self._proc.stdin.flush()
+            except (OSError, ValueError, TypeError) as error:
+                write_error = RuntimeError(f"prefill subprocess write failed: {error}")
+        if write_error is not None:
+            self._fail(write_error)
         return f
 
-    def _receive(self, ready):
-        for line in self._proc.stdout:
-            try:
-                msg = self._json.loads(line)
-            except ValueError:
-                continue                                       # SDK log lines on stdout
-            if msg.get("ready"):
-                ready.set_result(True)
-                continue
-            with self._lock:
-                f, slot, start = self._futures.pop(msg["id"])
-            if "error" in msg:
-                f.set_exception(RuntimeError(f"prefill subprocess: {msg['error']}"))
-                continue
-            n = msg["n"]
-            kv = torch.from_numpy(self.slab[slot, :, :, :, :n].view("int16")).view(torch.bfloat16)
-            f.set_result(PrefillOut(msg["token"], start, kv[0], kv[1], msg.get("cached", 0), msg.get("prefill_s", 0.0)))
-        if not ready.done():
-            ready.set_exception(RuntimeError(f"prefill subprocess exited ({self._proc.wait()})"))
+    def _fail(self, error):
         with self._lock:
-            for f, _, _ in self._futures.values():
-                f.set_exception(RuntimeError("prefill subprocess exited"))
-            self._futures.clear()
+            if self._failed is None:
+                self._failed = error
+            pending, self._futures = self._futures, {}
+            error = self._failed
+        # Future callbacks may call back into the worker; never invoke them under its lock.
+        for f, _, _ in pending.values():
+            if f.set_running_or_notify_cancel():
+                f.set_exception(error)
 
-    def close(self):
+    def _receive(self, ready):
         try:
-            self._proc.stdin.close()
-            self._proc.wait(timeout=60)
-        finally:
-            self._shm.close()
+            for line in self._proc.stdout:
+                try:
+                    msg = self._json.loads(line)
+                except ValueError:
+                    continue                                  # SDK log lines on stdout
+                if not isinstance(msg, dict):
+                    continue
+                if msg.get("ready"):
+                    if not ready.done():
+                        ready.set_result(True)
+                    continue
+                if "id" not in msg:
+                    continue                                  # structured SDK logs
+                with self._lock:
+                    entry = self._futures.get(msg["id"])
+                    failed = self._failed
+                if failed is not None:
+                    return
+                if entry is None:
+                    raise ValueError("unknown response ID")
+                f, slot, start = entry
+                error = None
+                if "error" in msg:
+                    error = RuntimeError(f"prefill subprocess: {msg['error']}")
+                else:
+                    n = msg["n"]
+                    if type(n) is not int or not 0 <= n <= self.slab.shape[-2]:
+                        raise ValueError("invalid KV span length")
+                    kv = torch.from_numpy(self.slab[slot, :, :, :, :n].view("int16")).view(torch.bfloat16)
+                    out = PrefillOut(msg["token"], start, kv[0], kv[1], msg.get("cached", 0),
+                                     msg.get("prefill_s", 0.0))
+                # Keep the request registered until validation succeeds so failure settles it too.
+                with self._lock:
+                    entry = self._futures.pop(msg["id"], None)
+                if entry is not None and f.set_running_or_notify_cancel():
+                    if error is not None:
+                        f.set_exception(error)
+                    else:
+                        f.set_result(out)
+            raise RuntimeError("prefill subprocess exited")
+        except Exception as error:
+            failure = RuntimeError(f"prefill subprocess response failed: {error}")
+            self._fail(failure)
+            if not ready.done():
+                ready.set_exception(failure)
+
+    def close(self, timeout=5):
+        import subprocess
+        if self._closed:
+            return
+        self._closed = True
+        self._fail(RuntimeError("prefill subprocess closed"))
+        if self._proc is not None:
+            # Stop the writer before unmapping its slab, including when startup never completed. Closing stdin first
+            # lets prefill_server leave its request loop and exit normally (the SDK releases the device on exit);
+            # SIGTERM, then SIGKILL, only for a child that does not exit within `timeout`.
             try:
-                self._shm.unlink()
-            except FileNotFoundError:
-                pass
+                self._proc.stdin.close()
+            except OSError:
+                pass                                         # a broken pipe must not leak the slab
+            for stop in (None, self._proc.terminate, self._proc.kill):
+                if self._proc.poll() is not None:
+                    break
+                if stop is not None:
+                    stop()
+                try:
+                    self._proc.wait(timeout=None if stop == self._proc.kill else timeout)
+                except subprocess.TimeoutExpired:
+                    pass
+            if self._recv is not None and self._recv is not threading.current_thread():
+                self._recv.join(timeout=timeout)
+            self._proc.stdout.close()
+        self._shm.close()
+        try:
+            self._shm.unlink()
+        except FileNotFoundError:
+            pass
 
 
 class PrefillWorkerPool:
@@ -333,6 +423,11 @@ class PrefillWorkerPool:
         self.workers = list(workers)
         self._load = [0] * len(self.workers)
         self._lock = threading.Lock()
+
+    @property
+    def ready(self):
+        # The pool still routes to every member; no implicit removal/retry of a failed producer.
+        return all(getattr(worker, "ready", True) for worker in self.workers)
 
     def submit(self, request, send_from=0, slot=None) -> Future:
         with self._lock:

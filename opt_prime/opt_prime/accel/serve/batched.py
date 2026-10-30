@@ -47,6 +47,11 @@ class BatchedService(CompletionAPI):
                 return out + self._pd_metrics(lab)
             self.metrics.extra = extra
 
+    @property
+    def ready(self):
+        worker = getattr(self.batcher, "worker", None)
+        return self.state != "poisoned" and getattr(worker, "ready", True)
+
     def _engines(self):
         return (self.batcher,)
 
@@ -88,6 +93,13 @@ class BatchedService(CompletionAPI):
         if "transferred_tokens" in b.stats:
             out.append(("airm_pd_transferred_tokens_total", "counter", "Prompt KV tokens received from the prefill side.",
                         [f"airm_pd_transferred_tokens_total{{{lab}}} {b.stats['transferred_tokens']}"]))
+        # Worker-reported durations of admitted handoffs, not HTTP request latency or overlap.
+        durations = [f'airm_pd_producer_seconds_total{{{lab},stage="{stage}"}} {b.stats[key]}'
+                     for stage, key in (("prefill", "prefill_s"), ("transfer", "transfer_s")) if key in b.stats]
+        if durations:
+            out.append(("airm_pd_producer_seconds_total", "counter",
+                        "Accumulated worker-reported seconds for admitted PD handoffs; excludes failed/cancelled handoffs. "
+                        "Prefill includes KV gathering; transfer excludes destination KV installation.", durations))
         return out
 
     @staticmethod
@@ -138,6 +150,8 @@ class BatchedOwner:
         svc, b = self.service, self.service.batcher
         if svc.state == "poisoned":
             raise StageError(503, "owner quarantined; restart required", retryable=True)
+        if not svc.ready:
+            raise StageError(503, "prefill producer unavailable", retryable=True)
         _stage, rid, body = args
         request, stops = svc._request(rid, body, chat)
         if len(b.by_id) >= self.capacity:
