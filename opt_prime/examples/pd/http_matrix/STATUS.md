@@ -150,3 +150,5 @@ All four models complete native/whole/stream at128/8192 input,32/128 output,c1/c
 ## HTTP listener backlog candidate (#267)
 
 Backlog128 handles a16connection accept-pause regression;15HTTPtests pass. Qwen4 RNGD-GPU whole/cacheoff retry24conditions344responses exact after originalc16 connection reset;listen drops+36before/+0retry(host-wide). One retry only;ATOM/remaining GPU verification pending. See experiments/2026-10-30-http-backlog267.md.
+
+PR289 follow-up: Qwen4 native ATOM cache-on retry also passes 24 conditions/344 responses; listen drops +82 original/+0 retry, no OOM in original. Both GPU and ATOM have one successful retry; other routes/models remain pending.
