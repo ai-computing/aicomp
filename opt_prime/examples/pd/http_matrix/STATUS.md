@@ -162,3 +162,5 @@ PR289 Qwen4 GPU subset: Qwen4 GPU PD four configurations complete96conditions137
 PR289 ATOM PD follow-up: Qwen4 ATOM whole/on24conditions344responses same-route exact,listen deltas0. Native/PD6/8refs equal;2preEOS differences also present in historical cacheoff. At8K128c4 native23.07vsPD15.04tok/s. Streaming pending.
 
 PR289 Gemma GPU subset: Gemma GPU PD four configurations96conditions1376responses exact,all4reference sets equal,listen deltas0. Full timing/provenance retained;streamcache gain10/24 only(-4.93..+2.58%),single ordered samples. Remaining model tests pending.
+
+PR289 Qwen4 ATOM subset: Qwen4 ATOM native/whole/stream72conditions1032responses same-route exact;whole/stream8/8refs,nativePD6/8.8K128c4 native23.07/whole15.04/stream16.52tok/s. Owned cleanup and freshabsence verified. KONI GPU/TP2 pending.
