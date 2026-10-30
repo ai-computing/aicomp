@@ -67,3 +67,7 @@ Set PYTHON to the torch/Transformers environment above and FROZEN_MODEL to the f
 ## Additional prefix-length controls
 
 [Seed controls](seed-controls.md) extend page256/chunk256 to280/536-token initial prompts sharing one/two complete pages with2K requests. Four models,16runs:192/192 within-run token arrays and24/24 paired cacheoff/on serial references match. This adds prefix-length coverage; eviction/host reload is still untested here.
+
+## Device eviction and host reload
+
+[Pressure controls](pressure-controls.md) add four-model, one-slot A/B8K experiments with36device pages. All12arms pass pressure checks;72/72 within-arm and48/48 cross-mode response arrays match. Host arms each restore87blocks. Published fixture and verifier are included. Host-tier eviction and concurrent transfer remain outside this scope.

@@ -1,0 +1,632 @@
+{
+  "complete": true,
+  "runtime_commit": "a3497e57ac9d8286ad20032db4c842f26272e961",
+  "runs": [
+    {
+      "model": "qwen06b",
+      "mode": "off",
+      "raw_file": "cache212-pressure-qwen06b-off.json",
+      "raw_sha256": "0ecf5dc1420a7e310bff50414e8540b652aa286c591a9460c4ace6a0fd88b157",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 0,
+        "query_tokens": 49152,
+        "device_removed": 0,
+        "host": null,
+        "free_pages": 36,
+        "cached_pages": 0,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "e2e_s": [
+        5.385003567964304,
+        1.5765554350218736,
+        1.5491323450114578,
+        1.5299833959434181,
+        1.5756197990267538,
+        1.545007014006842
+      ]
+    },
+    {
+      "model": "qwen06b",
+      "mode": "device",
+      "raw_file": "cache212-pressure-qwen06b-device.json",
+      "raw_sha256": "5fbc986d8594879521498020b8dee08a5dcdc187666e87f37160dfd0d89ac431",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 7936,
+        "query_tokens": 49152,
+        "device_removed": 125,
+        "host": null,
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        7936,
+        0,
+        0
+      ],
+      "e2e_s": [
+        3.260454720002599,
+        1.4972053889650851,
+        1.4930290959891863,
+        0.606127938022837,
+        1.5138850020011887,
+        1.5170205759932287
+      ]
+    },
+    {
+      "model": "qwen06b",
+      "mode": "host",
+      "raw_file": "cache212-pressure-qwen06b-host.json",
+      "raw_sha256": "5befbbc8afe6ac4f043cbdc6d6957cd3a0f0b44888466d1b2a035ee00af44ccd",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 146
+      },
+      "final": {
+        "hit_tokens": 31744,
+        "query_tokens": 49152,
+        "device_removed": 119,
+        "host": {
+          "offloaded": 61,
+          "reloaded": 87,
+          "evicted": 0,
+          "hit_tokens": 22272
+        },
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        7936,
+        7936,
+        7936,
+        7936
+      ],
+      "e2e_s": [
+        3.3093174670357257,
+        1.6140861760359257,
+        0.6819436340010725,
+        0.6252226729993708,
+        0.6480717139784247,
+        0.6471637980430387
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "mode": "off",
+      "raw_file": "cache212-pressure-qwen4b-off.json",
+      "raw_sha256": "cba61e9ba55f501a61a071a9227b4b17e9301c5c800bba3c52e610b904109f8d",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 0,
+        "query_tokens": 49152,
+        "device_removed": 0,
+        "host": null,
+        "free_pages": 36,
+        "cached_pages": 0,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "e2e_s": [
+        6.405908977030776,
+        2.416883079044055,
+        2.4622079789987765,
+        2.440627100004349,
+        2.4334378790226765,
+        2.4323343339492567
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "mode": "device",
+      "raw_file": "cache212-pressure-qwen4b-device.json",
+      "raw_sha256": "4a3e6c6425d195cfdb51a283f7e6e50b1df2c2281b03433f0a8d47900cb719fc",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 7936,
+        "query_tokens": 49152,
+        "device_removed": 125,
+        "host": null,
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        7936,
+        0,
+        0
+      ],
+      "e2e_s": [
+        4.347054673999082,
+        2.4538909510010853,
+        2.4939875879790634,
+        0.8547962259617634,
+        2.4248506039730273,
+        2.4438971129711717
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "mode": "host",
+      "raw_file": "cache212-pressure-qwen4b-host.json",
+      "raw_sha256": "8bd040639cc37a7eeeb1cdef897fa53e83071429039d8bce20b386f1591ccfd9",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 113
+      },
+      "final": {
+        "hit_tokens": 31744,
+        "query_tokens": 49152,
+        "device_removed": 119,
+        "host": {
+          "offloaded": 61,
+          "reloaded": 87,
+          "evicted": 0,
+          "hit_tokens": 22272
+        },
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        7936,
+        7936,
+        7936,
+        7936
+      ],
+      "e2e_s": [
+        4.305792094965,
+        2.504707904998213,
+        0.9347722270176746,
+        0.8352033799747005,
+        0.8979712160071358,
+        0.9185223130043596
+      ]
+    },
+    {
+      "model": "gemma",
+      "mode": "off",
+      "raw_file": "cache212-pressure-gemma-off.json",
+      "raw_sha256": "97f923ca6d456821eb7cbfbf29a89407e061a63b264995d713bad9d28c406520",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 0,
+        "query_tokens": 49152,
+        "device_removed": 0,
+        "host": null,
+        "free_pages": 36,
+        "cached_pages": 0,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "e2e_s": [
+        6.3791830650297925,
+        1.5864445979823358,
+        1.604944062011782,
+        1.612525127013214,
+        1.6635905010043643,
+        1.596596027025953
+      ]
+    },
+    {
+      "model": "gemma",
+      "mode": "device",
+      "raw_file": "cache212-pressure-gemma-device.json",
+      "raw_sha256": "4e6b2f70f502f6aa89067c4117482ac13ef583c68083ea7cde0cc1ca16b1f616",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 7936,
+        "query_tokens": 49152,
+        "device_removed": 125,
+        "host": null,
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        7936,
+        0,
+        0
+      ],
+      "e2e_s": [
+        3.6794694200507365,
+        1.5420600649667904,
+        1.564297033008188,
+        0.7934570030192845,
+        1.5224925900110975,
+        1.5303668359993026
+      ]
+    },
+    {
+      "model": "gemma",
+      "mode": "host",
+      "raw_file": "cache212-pressure-gemma-host.json",
+      "raw_sha256": "a69650f56b558d6d8ad4b9785ec372c48db22f38ec7f41edb328804f1137b49c",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 630
+      },
+      "final": {
+        "hit_tokens": 31744,
+        "query_tokens": 49152,
+        "device_removed": 119,
+        "host": {
+          "offloaded": 61,
+          "reloaded": 87,
+          "evicted": 0,
+          "hit_tokens": 22272
+        },
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        7936,
+        7936,
+        7936,
+        7936
+      ],
+      "e2e_s": [
+        3.274684755015187,
+        1.5558476579608396,
+        0.734120064007584,
+        0.7612729669781402,
+        0.7419987579924054,
+        0.7180017739883624
+      ]
+    },
+    {
+      "model": "koni",
+      "mode": "off",
+      "raw_file": "cache212-pressure-koni-off.json",
+      "raw_sha256": "a57876d519f5ff48c0007c386934ffd47506bc7fb4bfdb602768bb98f764f00d",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 0,
+        "query_tokens": 49152,
+        "device_removed": 0,
+        "host": null,
+        "free_pages": 36,
+        "cached_pages": 0,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "e2e_s": [
+        4.264613800041843,
+        2.477983280958142,
+        2.48588482796913,
+        2.4766925440053456,
+        2.4800341490190476,
+        2.482764687971212
+      ]
+    },
+    {
+      "model": "koni",
+      "mode": "device",
+      "raw_file": "cache212-pressure-koni-device.json",
+      "raw_sha256": "dee60bda625bdde987bd6401e7c2c22d1c189e61f2cd5106cf720422b84f6953",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 0
+      },
+      "final": {
+        "hit_tokens": 7936,
+        "query_tokens": 49152,
+        "device_removed": 125,
+        "host": null,
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        0,
+        7936,
+        0,
+        0
+      ],
+      "e2e_s": [
+        4.255165301030502,
+        2.49312891298905,
+        2.503698209009599,
+        0.6611570719978772,
+        2.4837937950505875,
+        2.4981202129856683
+      ]
+    },
+    {
+      "model": "koni",
+      "mode": "host",
+      "raw_file": "cache212-pressure-koni-host.json",
+      "raw_sha256": "1c572edbd399394e1549f23052e174a7e0dd625fe4332eb877b185ef2a35b131",
+      "source_sha256": "b0e94b9c6dc310fee374fab52a200da22de3f528c4eb01eb5fba85ee376cfaef",
+      "matches": 6,
+      "checks": 6,
+      "capacity": {
+        "device_pages": 36,
+        "page_size": 256,
+        "host_pages": 128
+      },
+      "final": {
+        "hit_tokens": 31744,
+        "query_tokens": 49152,
+        "device_removed": 119,
+        "host": {
+          "offloaded": 61,
+          "reloaded": 87,
+          "evicted": 0,
+          "hit_tokens": 22272
+        },
+        "free_pages": 1,
+        "cached_pages": 35,
+        "live_refs": 0
+      },
+      "reused_tokens": [
+        0,
+        0,
+        7936,
+        7936,
+        7936,
+        7936
+      ],
+      "e2e_s": [
+        4.223334787006024,
+        2.554156060970854,
+        0.7771319029852748,
+        0.6810026449966244,
+        0.7124446380184963,
+        0.7097291889949702
+      ]
+    }
+  ],
+  "cross_mode": [
+    {
+      "model": "qwen06b",
+      "mode": "device",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "qwen06b",
+      "mode": "host",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "mode": "device",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "qwen4b",
+      "mode": "host",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "gemma",
+      "mode": "device",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "gemma",
+      "mode": "host",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "koni",
+      "mode": "device",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "model": "koni",
+      "mode": "host",
+      "reference_equal": {
+        "A": true,
+        "B": true
+      },
+      "rows_equal": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "cleanup_note": "All12children exited0 on2026-10-25; reviewed2026-10-30. Current GPU has an unrelated workload; no global idle claim.",
+  "versions": {
+    "torch": "2.13.0+cu130",
+    "transformers": "5.15.0",
+    "gpu": "A10080GB PCIe",
+    "driver": "580.178.04"
+  },
+  "published_fixture_sha256": "74f24ea41f358201660984a83b22cd82b467947e298bfc60bae53fddd05b8e43"
+}
