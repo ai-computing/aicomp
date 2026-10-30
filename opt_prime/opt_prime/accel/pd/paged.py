@@ -415,7 +415,7 @@ class PagedKV:
         return out
 
     def physical(self, slots, positions):
-        s = torch.as_tensor(slots, device=self.device)
+        s = torch.as_tensor(slots, dtype=torch.long, device=self.device)
         p = torch.as_tensor(positions, device=self.device)
         return self.table[s, p // self.page_size].long() * self.page_size + p % self.page_size
 
