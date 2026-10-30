@@ -32,6 +32,10 @@ def prefill_worker(a, slots, config):
     stream_layers = getattr(a, "pd_prefill_stream_layers", False)
     if stream_layers and (a.backend not in ("torch", "atom") or not a.pd_prefill_python or a.pd_prefill_device):
         raise ValueError("PD layer streaming requires a subprocess producer and Torch or ATOM decoder")
+    if stream_layers:
+        from opt_prime.accel.pd.torch_models import describe_model
+        if describe_model(config).recurrent:
+            raise ValueError("PD layer streaming does not support recurrent (linear-attention) models")
     if a.pd_prefill_device:
         chunk = getattr(a, "pd_prefill_chunk", 2048)
         if chunk <= 0:

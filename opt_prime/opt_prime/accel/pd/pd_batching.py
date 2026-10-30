@@ -285,10 +285,14 @@ class SubprocessPrefillWorker:
     """
 
     def __init__(self, python, engine_args, *, slots, layers, kv_heads, head_dim, max_context, env=None,
-                 startup_timeout=1800, stream_layers=False):
+                 startup_timeout=1800, stream_layers=False, recurrent_state=False):
+        """recurrent_state: the decode model has linear-attention (recurrent) layers; their state is not part of
+        the layer stream, so stream_layers is rejected for it here, before any process or slab exists."""
         import json, subprocess
         import numpy as np
         from multiprocessing import shared_memory
+        if stream_layers and recurrent_state:
+            raise ValueError("layer streaming does not support recurrent (linear-attention) state")
         shape = (slots, 2, layers, kv_heads, max_context, head_dim)
         self._shm = shared_memory.SharedMemory(create=True, size=int(np.prod(shape)) * 2)
         self.slab = np.ndarray(shape, dtype=np.uint16, buffer=self._shm.buf)
@@ -506,6 +510,8 @@ class PDBatcher(ContinuousBatcher):
         if kw["kv"] != "paged":
             raise ValueError("PD batching needs kv='paged'")
         super().__init__(model, **kw)
+        if getattr(worker, "stream_layers", False) and self.kv.rstate:
+            raise ValueError("layer streaming does not support recurrent (linear-attention) state")
         self.worker = worker
         self._prefill_ready = threading.Event()
         self.stats.update(progress_spans=0, prefills=0, transferred_tokens=0, decode_cached_tokens=0, prefill_cached_tokens=0,
@@ -545,7 +551,7 @@ class PDBatcher(ContinuousBatcher):
         progress = getattr(r.pending, "kv_progress", None)
         if progress is None:
             return
-        if self.kv.rstate:
+        if self.kv.rstate:                           # setup rejects stream_layers workers; guards other producers
             raise ValueError("layer-progress import does not support recurrent state")
         touched = False
         try:
