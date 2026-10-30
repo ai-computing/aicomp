@@ -52,7 +52,10 @@ def opt_grouped_mm(self, hidden_states, top_k_index, top_k_weights, device=None)
     gated = getattr(self, "has_gate", hasattr(self, "gate_up_proj"))
     lin = lambda x, w, b: (x @ w if tr else x @ w.t()) + (b if b is not None else 0)
     get = lambda name, e: getattr(self, name)[e].to(dev) if getattr(self, name, None) is not None else None
-    out = hidden_states.float() * 0 + top_k_weights.float().sum() * 0
+    # zeros that stay connected to both inputs (all-padding calls still get zero gradients); empty slices, so an
+    # inf in hidden_states does not turn into NaN
+    out = (torch.zeros(T, H, dtype=torch.float32, device=hidden_states.device)
+           + hidden_states[:0].float().sum() + top_k_weights[:0].float().sum())
     for e in torch.unique(flat).tolist():
         if not 0 <= e < self.num_experts:
             continue

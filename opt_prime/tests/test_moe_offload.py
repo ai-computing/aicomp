@@ -127,6 +127,35 @@ def test_native_host_kernel_matches_torch(rows, wdtype):
     assert (a != b).float().mean().item() < 0.05
 
 
+@pytest.mark.parametrize("pad", [-1, NUM_EXPERTS, -5])
+def test_native_dispatch_drops_padding_ids(pad):
+    """#89: the C dispatcher must skip padding ids (-1 and num_experts) instead of indexing the owner table, and
+    skip other negative ids rather than read the table out of bounds"""
+    import opt_prime.accel.platforms.cpu.native as native
+    from opt_prime.accel.moe.backends import get_backend
+    from opt_prime.accel.moe.config import MoEOffloadConfig
+    from opt_prime.accel.moe.layer import OffloadedLayer
+    from opt_prime.accel.spec.adapters import adapter_for
+    if native.load() is None or native.load_dispatch() is None:
+        pytest.skip("no AVX-512 BF16 or no gcc")
+    m = build_tiny("qwen3_moe", torch.bfloat16)
+    ex = find_moe_experts(m)[0].module
+    ad = adapter_for(ex)
+    tier = get_backend("cpu", kernel="native")
+    handle = tier.load(ad.weights(ex, list(range(NUM_EXPERTS))))
+    layer = OffloadedLayer(NUM_EXPERTS, [tier], [handle], [list(range(NUM_EXPERTS))], ["host"],
+                           MoEOffloadConfig(native_dispatch=True), ad, ex)
+    h = torch.randn(3, ex.gate_up_proj.shape[2], dtype=torch.bfloat16)
+    idx = torch.tensor([[1, pad], [pad, pad], [2, 0]])
+    w = torch.rand(3, 2).to(torch.bfloat16)
+    assert layer._native_plan(layer._snapshot(h.device)[3], True) is not None
+    got = layer.forward(h, idx, w)
+    valid = (idx >= 0) & (idx < NUM_EXPERTS)
+    ref = tier.run(handle, h, idx.clamp(0, NUM_EXPERTS - 1), w * valid)
+    assert got[1].abs().max().item() == 0
+    assert (got.float() - ref.float()).abs().max().item() <= 2e-2 * ref.float().abs().max().item() + 1e-6
+
+
 # ---------- heterogeneous tiers, planner, backends ----------
 
 @pytest.mark.parametrize("fast_rows,kernel", [(0, "torch"), (64, "torch"), (64, "auto")])
