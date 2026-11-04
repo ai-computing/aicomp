@@ -12,6 +12,8 @@ dependencies = ["torch", "transformers", "numpy", "psutil"]
 
 [project.optional-dependencies]
 torch-pd = ["torch==2.11.0", "transformers==5.8.1"]
+# KV transport for accel.pd (built from source: needs a Rust toolchain)
+pd = ["hetero-kv @ git+https://github.com/ai-computing/hetero-kv@d4625f28ba24d7c8bbe4ffab95c13f852fe35922#subdirectory=crates/hetero-kv-py"]
 test = ["pytest", "requests", "pyzmq", "safetensors", "scipy"]
 
 [tool.setuptools.packages.find]

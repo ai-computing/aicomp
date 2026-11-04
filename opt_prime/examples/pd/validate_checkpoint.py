@@ -8,7 +8,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from opt_prime.accel.pd import PDRequest, PDRuntime
 from opt_prime.accel.pd.torch_engine import TorchCausalLMEngine
-from opt_prime.accel.pd.torch_cache import TorchCacheTransport
+from opt_prime.accel.pd.transport import TorchCacheTransport
 
 
 def main():

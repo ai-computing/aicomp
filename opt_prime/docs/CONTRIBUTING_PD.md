@@ -14,16 +14,15 @@ dependencies, see [NPU backend extensions](NPU_BACKEND_EXTENSIONS.md).
 | `contracts.py` | Request, continuation, physical KV identity, engine/transport protocols | Import SDKs or infer device addresses |
 | `runtime.py` | Single-flight execution and poisoned-lane owner retention | Model-specific layout conversion or service routing |
 | `torch_models.py` | Explicit family support and cache geometry constraints | Load weights or silently accept hybrid/sliding caches |
-| `torch_cache.py` | Optimus KVCacheManager storage and explicit tensor-copy transport | Choose a fallback after DMA failure |
-| `torch_engine.py` | Model forward calls, continuation handling, greedy decoding | HTTP request handling or vendor driver calls |
+| `torch_engine.py` | Model forward calls, continuation handling, greedy decoding; per-layer cache storage | HTTP request handling or vendor driver calls |
+| `transport.py` | Optimus glue to hetero-kv: tensor-copy and P2P transports on hetero-kv sessions | Choose a fallback after DMA failure; bypass completion validation |
 | `koni.py` | Existing RNGD prefix and owned ATOM worker adaptation | Reimplement allocation/export ABI |
-| `hetero_p2p.py` | Bridge to checked CopySession | Bypass completion validation |
 | `llmd.py` (feature branch) | HTTP/control-plane ownership queue | Run DMA inside HTTP worker threads |
 
 Earlier `opt_prime.accel.pd.runtime.KVSpec` and
 `opt_prime.accel.pd.torch_engine.TorchCacheTransport` imports remain compatibility
-exports. New code should import contracts from `opt_prime.accel.pd`, and the Torch
-transport from `opt_prime.accel.pd.torch_cache`.
+exports. New code should import contracts from `opt_prime.accel.pd`, and transports
+from `opt_prime.accel.pd.transport`.
 
 ## Adding a Torch model
 
@@ -124,5 +123,5 @@ A native checkpoint success does **not** register it with `KoniRngdEngine` or
 `KoniAtomWorkerEngine`. Qwen requires Q/K/V projection biases, tied embedding
 handling, checkpoint-specific layer/head dimensions and cache layouts in both
 compiled graphs. Each new physical layout needs export/import/packing and fence
-validation before it can use `HeteroP2PTransport`. Keep vendor-native baseline
+validation before it can use `p2p_transport`. Keep vendor-native baseline
 support and end-to-end heterogeneous PD support as separate evidence columns.

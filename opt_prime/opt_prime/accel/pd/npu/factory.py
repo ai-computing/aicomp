@@ -174,7 +174,7 @@ def create_qwen_p2p(config_path, engine, binding, packer, backend, directory):
     config explicitly enables the harness; it is never inferred or auto-loaded.
     """
     from opt_prime.accel.pd.npu.engines import QwenRngdEngine, QwenAtomWorkerEngine
-    from opt_prime.accel.pd.hetero_p2p import HeteroP2PTransport
+    from opt_prime.accel.pd.transport import p2p_transport
     from opt_prime.accel.pd.runtime import PDRuntime
 
     cfg = json.loads(Path(config_path).read_text())
@@ -205,7 +205,7 @@ def create_qwen_p2p(config_path, engine, binding, packer, backend, directory):
     from opt_prime.accel.pd.capabilities import negotiate
 
     negotiate(source.capabilities, decoder.capabilities, "p2p")
-    transport = HeteroP2PTransport(
+    transport = p2p_transport(
         backend,
         decoder.build_plan,
         lambda _: None,

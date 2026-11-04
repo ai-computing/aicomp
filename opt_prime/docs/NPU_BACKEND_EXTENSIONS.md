@@ -10,13 +10,13 @@ serving/control plane. Neither branch is the upstream main branch.
 | Layer | Files | Responsibility | New device/model work |
 |---|---|---|---|
 | Common lifecycle | `contracts.py`, `runtime.py` | Requests, continuation boundary, physical KV identity, fenced stages, retained owners on error | Usually none |
-| Torch backend | `torch_models.py`, `torch_cache.py`, `torch_engine.py` | Dense HuggingFace model execution and explicit tensor copy | Add family policy and numerical tests; actual GPU validation still required |
+| Torch backend | `torch_models.py`, `torch_engine.py`, `transport.py` | Dense HuggingFace model execution and explicit tensor copy | Add family policy and numerical tests; actual GPU validation still required |
 | Dense NPU model contract | `npu/model.py` | Immutable checkpoint geometry, full-attention policy, QKV bias/tied-weight checks, per-head DMA alignment | Add explicit semantics; reject unsupported architectures |
 | RNGD graph | `npu/rngd.py` | Model-sized biased attention/MLP prefill; device-resident BF16 KV | Implement supported compiler operations and precision policy |
 | ATOM graph | `npu/atom.py` | Model-sized resident paged decode | Compile and validate exact input/cache contract |
 | ATOM runtime | `npu/atom_runtime.py`, `npu/atom_device.py` | Pinned SDK runtime, physical-device binding, cache visibility | Replace version-specific implementation for a new SDK/device |
 | Endpoint adapters | `npu/engines.py` | Adapt these graphs/worker to the common prefill/decode protocols | Preserve lease ownership and explicit completion fences |
-| Transport | `hetero_p2p.py`, external `hetero-npu-p2p` library | Validate physical route/layout, export/import/copy completion | Implement a separately negotiated route; no implicit fallback |
+| Transport | `transport.py` on hetero-kv, external `hetero-npu-p2p` backend | Validate physical route/layout, export/import/copy completion | Implement a separately negotiated route; no implicit fallback |
 | Serving | `llmd.py` on feature branch | Request validation, source preparation, serial owner, HTTP | Independent of model dimensions and vendor graph implementation |
 | Experiments | `examples/pd/*qwen*.py` | Build artifacts, compare references, finite test runs and diagnostics | Extend measured cases; do not put test traffic into the serving engine |
 

@@ -15,9 +15,10 @@ Caller / future llm-d service adapter
              \           /
                Transport
                   |
-       optional HeteroP2PTransport
+   accel/pd/transport.py (Optimus glue)
                   |
-     hetero_p2p.CopySession + checked backend
+   hetero-kv Session + engine (TorchCopyEngine,
+   P2PBackendEngine over a checked hetero_p2p backend)
                   |
         supported driver / device pair
 ```
@@ -25,8 +26,12 @@ Caller / future llm-d service adapter
 `from opt_prime import PDRuntime` and `from opt_prime.accel.pd import ...` do not
 initialize PyTorch, CUDA, or a vendor SDK. Existing `Optimus_Inference` imports
 and behavior remain unchanged. Run from the repository with `PYTHONPATH=opt_prime`.
-The optional P2P bridge imports `hetero_p2p` only when constructed. Install that
-separate project in the same environment; no vendor implementation is vendored.
+KV transports (`opt_prime.accel.pd.transport`) run on the separate library
+[hetero-kv](https://github.com/ai-computing/hetero-kv) (`pd` extra): it owns the
+reserve -> transfer -> fence -> admit -> finish lifecycle, poisoning and explicit
+routes; Optimus keeps its engine contracts and maps its caches onto hetero-kv
+buffers. The RNGD -> ATOM path imports `hetero_p2p` only when a transfer runs.
+Install that separate project in the same environment; no vendor implementation is vendored.
 
 ## Interface and lifetime contract
 
@@ -64,12 +69,12 @@ object garbage collection is not a recovery procedure.
 
 ```python
 from opt_prime import PDRuntime
-from opt_prime.accel.pd.hetero_p2p import HeteroP2PTransport
+from opt_prime.accel.pd.transport import p2p_transport
 
 # Real endpoint adapters must implement the contracts above.
-transport = HeteroP2PTransport(
+transport = p2p_transport(
     checked_backend, build_plan_from_live_leases, mark_atom_cache_visible,
-    source="rngd:3", destination="atom:2", spec=prefill_engine.spec,
+    source="/dev/rngd/npu3ch0", destination="atom:2", spec=prefill_engine.spec,
 )
 runtime = PDRuntime(prefill_engine, decode_engine, transport)
 tokens = runtime.generate(request)
@@ -79,8 +84,13 @@ The snippet illustrates dependency injection; use the bundled KONI endpoint
 adapters and explicit validation runner to bind existing hardware resources.
 `build_plan_from_live_leases` must produce the existing validated `TransferPlan`:
 RNGD-owned source allocation, ATOM-owned exported DMA-BUF destinations and bounded
-copy spans. The bridge checks the physical format and delegates completion receipt,
-owner retention and decode sequencing to the real `CopySession`. Hardware backend
+copy spans. `p2p_transport` checks the physical format, maps the plan onto
+hetero-kv buffers (one selection per DMA span) and runs it through a hetero-kv
+`Session`: `P2PBackendEngine` executes each destination's spans as a validated
+`TransferPlan` with the original command grouping and checks the completion receipt
+as `CopySession` did; the session fences before `notify`, retains owners and
+poisons on uncertainty (fenced = `CopySession` "ready", admitted = "decoding"). Other
+device pairs use `SessionTransport` with any hetero-kv engine. Hardware backend
 construction must retain its driver/SDK/helper ABI checks. The transfer adapter
 never discovers raw addresses or attempts reverse import.
 
@@ -119,13 +129,17 @@ process; do not kill it as a routine timeout cleanup.
 
 ```bash
 python -m pip install -e ./opt_prime  # SDK-free contracts
+# KV transports (hetero-kv; builds from source, needs a Rust toolchain):
+python -m pip install -e './opt_prime[pd]'
 # Optional isolated Torch validation environment (not the NPU SDK environment):
-python -m pip install -e './opt_prime[torch-pd]'
+python -m pip install -e './opt_prime[torch-pd,pd]'
 ```
 
 The Torch validation extra pins the versions actually tested. Keep vendor SDK
 Python environments separate; the core package has no mandatory torch dependency.
 KONI uses the existing RNGD Python environment and a separate ATOM owning process.
+An SDK environment that streams layers (`pd.prefill_server`) or runs a transport
+also needs hetero-kv installed.
 The hardware runner accepts `--config` and `--hetero-repo` explicitly rather than
 embedding local artifact paths in the engine package.
 
@@ -151,14 +165,14 @@ explicit, independently validated adapter rather than a transport side effect.
 
 ```bash
 PYTHONPATH=opt_prime python3 -m unittest discover -s opt_prime/tests -v
-# Also exercise the real optional CopySession with a fake CPU backend:
+# Also exercise the hetero_p2p plan path with a fake CPU backend:
 PYTHONPATH=opt_prime:/path/to/hetero-npu-p2p/src \
   python3 -m unittest discover -s opt_prime/tests -v
 ```
 
 Tests include 24 actual GPT-2/Llama parity cases and cover request reuse, output-token accounting, incompatible revisions,
 unsupported routes, transfer/decode failures, owner retention, lazy imports and
-P2P completion-before-notify ordering. The small randomly initialized CPU models test execution parity, not task quality.
+P2P completion-before-notify ordering on the hetero-kv session. The small randomly initialized CPU models test execution parity, not task quality.
 Contract fixtures and CPU tests do not measure NPU performance, MFU or power.
 
 Measured results and exact scope: [validation record](validation/RESULTS.md).

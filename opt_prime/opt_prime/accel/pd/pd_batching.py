@@ -35,7 +35,7 @@ import torch
 
 from opt_prime.accel.pd.batching import ContinuousBatcher, prefill_chunk
 from opt_prime.accel.pd.runtime import RequestCancelled
-from opt_prime.accel.pd.layer_progress import LayerProgress
+from hetero_kv import LayerProgress
 from opt_prime.accel.pd.sampling import select_token
 from opt_prime.accel.pd.torch_models import describe_model
 

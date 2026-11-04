@@ -1,15 +1,6 @@
-"""Partial KV must cover every layer/position without overlaps before publication."""
-import importlib.util
-from pathlib import Path
+"""Partial KV must cover every layer/position without overlaps before publication (hetero-kv LayerProgress)."""
 import pytest
-
-path=Path(__file__).parents[1]/'opt_prime/accel/pd/layer_progress.py'
-
-def tracker(*args):
-    assert path.exists(), 'layer-progress validator is not implemented'
-    spec=importlib.util.spec_from_file_location('layer_progress',path)
-    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
-    return m.LayerProgress(*args)
+from hetero_kv import LayerProgress as tracker
 
 
 def test_partial_prefix_and_out_of_order_layers_require_complete_coverage():
