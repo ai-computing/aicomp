@@ -2027,6 +2027,14 @@ class IR(object):
         if export_kwargs:
             _strip_runtime_asserts(exported_program)
 
+        # Re-render the hook signatures now that export is done.  The shape strings were taken while tracing, and a
+        # later guard can still merge symbols: with torch 2.10 + transformers 4.46 LLaMA, position_ids gets its own
+        # batch symbol that rotary_emb later unifies with input_ids', so layer 0's input_layernorm was recorded as
+        # (s72, s70, 64) while its node carries (s44, s70, 64).  The stale string kept the no-op alias fold from
+        # matching and the norm was indexed as a 2-tuple (#292).
+        _out_specs = {fqn: [_tensor_output_sig(s[3]) if s is not None else None for s in spec]
+                      for fqn, spec in _out_specs.items()}
+
         # Reconstruct module-level graph from nn_module_stack metadata
         # (bypasses unflatten() which is broken for LLaMA — PyTorch #147348)
         self.gm = build_module_graph_from_export(exported_program, model, input_names,
