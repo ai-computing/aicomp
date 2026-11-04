@@ -42,6 +42,19 @@ def test_hftracer_kv_cache_trace(tiny):
     torch.testing.assert_close(out["logits"], ref)
 
 
+def test_export_kv_cache_trace(tiny):
+    # torch 2.10 + transformers 4.46: a stale hook signature left layer 0's input_layernorm indexed as a 2-tuple
+    # (#292); the exported graph must compute the model's logits.
+    ir = IR(tiny, SimpleNamespace(model2type={"hf": 50, "sy": 51, "vt": 52}))
+    ir.retrieve_IR(tiny, use_kv_cache=True, dynamo_capture=True)
+    ids = torch.randint(0, 128, (2, 6), generator=torch.Generator().manual_seed(0))
+    pos = torch.arange(6).expand(2, -1)
+    with torch.no_grad():
+        out = ir.gm(input_ids=ids, position_ids=pos)[0]   # (logits, *present key/values)
+        ref = tiny(ids).logits
+    torch.testing.assert_close(out, ref)
+
+
 @needs_gpu
 @pytest.mark.parametrize("dynamo_capture", [True, pytest.param(False, marks=needs_hf_fx)])
 @pytest.mark.parametrize("batch", [1, 2])
