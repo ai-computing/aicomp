@@ -2,8 +2,16 @@
 
 opt_prime.accel targets transformers 5.x. On an older transformers, tests that need a model family or config
 attribute it does not have are skipped instead of failing.
+
+An installed NPU torch backend (furiosa-torch) autoloads with torch as the PrivateUse1 accelerator; torch then keeps
+no CUDA streams for autograd and every CUDA backward hits the engine.cpp stream assert (#114). Tests run on CUDA or
+the CPU, so autoloading is off here; code that needs the rngd device imports furiosa.torch, which still registers it.
 """
-import pytest
+import os
+
+os.environ.setdefault("TORCH_DEVICE_BACKEND_AUTOLOAD", "0")    # before anything imports torch
+
+import pytest  # noqa: E402
 
 try:
     import transformers
