@@ -1786,6 +1786,11 @@ class IR(object):
                 for p in sig.parameters.values()
                 if p.name not in input_names
             }
+            # With use_cache left at its default, the model returns its DynamicCache, which HFTracer cannot emit as a
+            # graph output (ProxyableDynamicCache, #191).  KV-cache inference does not use that output anyway
+            # (CachedSDPA modules are injected into the graph afterwards), so trace without it.
+            if use_kv_cache and 'use_cache' in concrete_args:
+                concrete_args['use_cache'] = False
 
             tracer = hf_fx.HFTracer()
 
