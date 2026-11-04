@@ -33,6 +33,9 @@ NAME = "opt_paged"
 Q_BLOCK = 128                           # flex decode on our setup lowers only with a 128-row query block
 _CTX = threading.local()                # the block mask of the step being run (set by PagedKV.decode)
 _FLEX = {}
+# torch 2.10's flex decode kernel has no config for KV blocks (pages) under 64 tokens and fails to lower (2.11 clamps
+# its block to the page); there such pages run the regular flex kernel with a page-sized block instead
+_DECODE_KV_BLOCK = 64 if torch.torch_version.TorchVersion(torch.__version__) < (2, 11) else 1
 
 
 def _flex(device_type):
@@ -47,8 +50,11 @@ def _paged_attention(module, query, key, value, attention_mask, scaling=None, dr
     if softcap:                         # Gemma 2 style attention logit soft-capping
         def score_mod(score, b, h, q, kv):
             return torch.tanh(score / softcap) * softcap
-    out = _flex(query.device.type)(query, key, value, block_mask=_CTX.masks[group], scale=scaling,
-                                   score_mod=score_mod, enable_gqa=key.shape[1] != query.shape[1])
+    mask, options = _CTX.masks[group], None
+    if query.device.type == "cuda" and mask.BLOCK_SIZE[1] % _DECODE_KV_BLOCK:
+        options = {"FORCE_USE_FLEX_ATTENTION": True, "BLOCK_N": mask.BLOCK_SIZE[1]}
+    out = _flex(query.device.type)(query, key, value, block_mask=mask, scale=scaling, score_mod=score_mod,
+                                   enable_gqa=key.shape[1] != query.shape[1], kernel_options=options)
     return out.transpose(1, 2).contiguous(), None
 
 
