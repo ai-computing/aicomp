@@ -32,7 +32,7 @@ def main():
     from hetero_p2p import RngdPdmaBackend
     from opt_prime.accel.pd import PDRuntime, PDRequest
     from opt_prime.accel.pd.koni import KoniRngdEngine, KoniAtomWorkerEngine
-    from opt_prime.accel.pd.hetero_p2p import HeteroP2PTransport
+    from opt_prime.accel.pd.transport import p2p_transport
     device = cfg['atom_devices'][0]
     if cfg['atom_devices'] != [device] or device not in (2, 3):
         raise ValueError('one authorized ATOM2/3 required')
@@ -137,8 +137,8 @@ def main():
     print('REFERENCES_READY', flush=True)
     source = KoniRngdEngine(engine, packer, binding, revision=model_dir.name, max_prefix=capacity)
     decoder = KoniAtomWorkerEngine(owner, spec=source.spec, device=device, batch_size=batch)
-    transport = HeteroP2PTransport(backend, decoder.build_plan, lambda lease: None,
-                                 source=binding.device_path, destination=f'atom:{device}', spec=source.spec)
+    transport = p2p_transport(backend, decoder.build_plan, lambda lease: None,
+                              source=binding.device_path, destination=f'atom:{device}', spec=source.spec)
     runtime = PDRuntime(source, decoder, transport)
     rows = []
     for repeat in range(cfg.get('repeats', 2)):

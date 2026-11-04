@@ -25,7 +25,7 @@ Initial0.5B r1/r2 lacked dedicated warmup and are preserved, not headline result
 
 `hetero-npu-p2p/src/hetero_p2p/atom_experimental.py` exports verified live eager
 allocations at pinned thunk ABI. `qwen_atom_worker.py` supplies external KV tensor
-addresses; `npu/engines.py` builds the plan and `pd/hetero_p2p.py` uses CopySession.
+addresses; `npu/engines.py` builds the plan and `pd/transport.py` runs it on a hetero-kv session.
 RNGD writes ATOM-owned exported buffers directly, then the owner marks KV updated.
 
 Installed `rebel/kv_cache.py` native `set_kv_cache_for_layer` accepts **host** data.

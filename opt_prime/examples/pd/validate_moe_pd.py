@@ -17,7 +17,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from opt_prime.accel.pd import PDRequest, PDRuntime
-from opt_prime.accel.pd.torch_cache import TorchCacheTransport
+from opt_prime.accel.pd.transport import TorchCacheTransport
 from opt_prime.accel.pd.torch_engine import TorchCausalLMEngine
 
 PROMPTS = ("The capital of France is",

@@ -193,6 +193,10 @@ class KVCacheManager:
             value_cache[:, :, :self._seq_len, :],
         )
 
+    def storage(self, layer_idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Full-capacity (key, value) tensors of a layer, [batch, num_heads, max_seq_len, head_dim] (KV transport)."""
+        return self._cache[layer_idx]
+
     def get_seq_len(self) -> int:
         """Get current sequence length in cache."""
         return self._seq_len

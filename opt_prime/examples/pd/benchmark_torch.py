@@ -12,7 +12,7 @@ from transformers import (GPT2Config, GPT2LMHeadModel, LlamaConfig, LlamaForCaus
                           MistralConfig, MistralForCausalLM)
 from opt_prime.accel.pd import PDRequest, PDRuntime
 from opt_prime.accel.pd.torch_engine import TorchCausalLMEngine
-from opt_prime.accel.pd.torch_cache import TorchCacheTransport
+from opt_prime.accel.pd.transport import TorchCacheTransport
 
 
 class Timed:

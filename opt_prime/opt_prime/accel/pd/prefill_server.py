@@ -146,7 +146,7 @@ def stream_result(engine, req, slab, publish):
     """
     import numpy as np
     import torch
-    from opt_prime.accel.pd.layer_progress import LayerProgress
+    from hetero_kv import LayerProgress
     slot, start, end = req["slot"], req["send_from"], len(req["tokens"])
     if (type(req["id"]) is not int or type(slot) is not int
             or not 0 <= slot < slab.shape[0] or type(start) is not int

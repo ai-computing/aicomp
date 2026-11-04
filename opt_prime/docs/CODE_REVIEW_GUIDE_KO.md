@@ -13,7 +13,7 @@
 | 3 | `examples/pd/validate_native_no_primer.py` | 실제 ATOM 검증. 첫 요청 전 prefill 금지, 이후 참조 방식과 전체 vocabulary logits 비교 |
 | 4 | `examples/pd/native_rngd_prefix_worker.py` | 별도 Furiosa SDK 프로세스에서 요청마다 실제 RNGD prefill. 현재는 NPZ 파일을 이용한 호스트 전달 검증 도구 |
 | 5 | `opt_prime/pd/contracts.py`, `runtime.py` | 모델 revision·물리 KV 규격, 수명, prefill→reserve→transfer→decode→finish 계약 |
-| 6 | `opt_prime/pd/npu/engines.py`, `hetero_p2p.py` | 기존 커스텀 NPU 엔진과 P2P 전송을 공통 런타임에 연결하는 어댑터 |
+| 6 | `opt_prime/pd/npu/engines.py`, `transport.py` | 기존 커스텀 NPU 엔진과 P2P 전송을 공통 런타임에 연결하는 어댑터 |
 | 7 | `opt_prime/pd/llmd.py` | llm-d stage 서비스, 요청/취소 상태, 소유 스레드 실행과 HTTP 경계 |
 
 ## 제조사 제공 기능과 우리 코드
